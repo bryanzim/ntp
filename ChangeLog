@@ -1,4 +1,4 @@
----
+
 * [Bug 3960] Remove duplicate ntp.conf.def content, reported by
              Ulrich Windl. <stenn@ntp.org>
 * Makefile.am: Fix distcheck problem with check-local.  <stenn@ntp.org>
