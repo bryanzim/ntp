@@ -1,7 +1,7 @@
 /*
  *  EDIT THIS FILE WITH CAUTION  (ntp-keygen-opts.h)
  *
- *  It has been AutoGen-ed  December 28, 2024 at 02:14:56 AM by AutoGen 5.18.16
+ *  It has been AutoGen-ed  November  2, 2025 at 03:45:33 AM by AutoGen 5.18.16
  *  From the definitions    ntp-keygen-opts.def
  *  and the template file   options
  *
@@ -18,7 +18,7 @@
  * The ntp-keygen program is copyrighted and licensed
  * under the following terms:
  *
- *  Copyright (C) 1992-2024 The University of Delaware and Network Time Foundation, all rights reserved.
+ *  Copyright (C) 1992-2025 The University of Delaware and Network Time Foundation, all rights reserved.
  *  This is free software. It is licensed for use, modification and
  *  redistribution under the terms of the NTP License, copies of which
  *  can be seen at:
