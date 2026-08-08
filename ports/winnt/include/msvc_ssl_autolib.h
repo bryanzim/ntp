@@ -18,9 +18,15 @@
  * VC binaries from Shining Light Productions is probably easiest:
  *   https://slproweb.com/products/Win32OpenSSL.html
  *
- * If 'OPENSSL_AUTOLINK_STRICT' is defined, then target bit width,
- * runtime model and debug/release info are encoded into the library
- * file name, according to this scheme:
+ * Point OPENSSL_INC / OPENSSL_LIB (and OPENSSL64_*) at the include
+ * and lib roots (e.g. ...\include and ...\lib). The VS property sheets
+ * append VC\<arch>\<MT|MTd|MD|MDd> from the project runtime settings.
+ * OpenSSL 4.x static libraries are named libcrypto_static.lib
+ * (and libssl_static.lib).
+ *
+ * If 'OPENSSL_AUTOLINK_STRICT' is defined (OpenSSL before 4.x), then
+ * target bit width, runtime model and debug/release info are encoded
+ * into the library file name, according to this scheme:
  *
  *  basename<width><RT><DebRel>.lib
  *
@@ -91,7 +97,14 @@
  * build variant.
  */
 
-#  if OPENSSL_VERSION_NUMBER >= 0x10100000L
+/* OpenSSL 4.x (e.g. SLP 4.0.1) ships static libs as libcrypto_static.lib
+ * under lib\VC\<arch>\<MT|MTd|MD|MDd>; the property sheets select the
+ * subdirectory from OPENSSL_LIB / OPENSSL64_LIB.
+ */
+#  if OPENSSL_VERSION_NUMBER >= 0x40000000L
+#   pragma comment(lib, "libcrypto_static.lib")
+#   pragma comment(lib, "crypt32.lib")
+#  elif OPENSSL_VERSION_NUMBER >= 0x10100000L
 #   pragma comment(lib, "libcrypto" LTAG_SIZE LTAG_RTLIB LTAG_DEBUG ".lib")
 #  else
 #   pragma comment(lib, "libeay32" LTAG_RTLIB LTAG_DEBUG ".lib")
@@ -99,7 +112,10 @@
 
 # else
 
-# if OPENSSL_VERSION_NUMBER >= 0x10100000L
+# if OPENSSL_VERSION_NUMBER >= 0x40000000L
+#  pragma comment(lib, "libcrypto_static.lib")
+#  pragma comment(lib, "crypt32.lib")
+# elif OPENSSL_VERSION_NUMBER >= 0x10100000L
 #  pragma comment(lib, "libcrypto.lib")
 # else
 #  pragma comment(lib, "libeay32.lib")
