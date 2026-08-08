@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<!-- Distribution tarball: copy sntp\scm-rev into the project directory -->
+	<ItemGroup>
+		<CustomBuild Include="..\..\..\..\sntp\scm-rev" Condition="exists('..\..\..\..\sntp\scm-rev')">
+			<Message>Copying scm-rev from distribution...</Message>
+			<Command>call ..\..\scripts\mkver.bat -U scm-rev</Command>
+			<Outputs>scm-rev</Outputs>
+		</CustomBuild>
+	</ItemGroup>
+	<!-- BitKeeper checkout -->
+	<ItemGroup>
+		<CustomBuild Include="..\..\..\..\.bk\SCCS\ChangeSet,s" Condition="exists('..\..\..\..\.bk\SCCS\ChangeSet,s')">
+			<Message>Generating scm-rev from bk...</Message>
+			<Command>call ..\..\scripts\mkver.bat -G scm-rev</Command>
+			<Outputs>scm-rev</Outputs>
+		</CustomBuild>
+	</ItemGroup>
+	<!-- Git checkout: write short HEAD hash to scm-rev -->
+	<ItemGroup>
+		<CustomBuild Include="..\..\..\..\.git\HEAD" Condition="!exists('..\..\..\..\sntp\scm-rev') and !exists('..\..\..\..\.bk\SCCS\ChangeSet,s') and exists('..\..\..\..\.git\HEAD')">
+			<Message>Generating scm-rev from git...</Message>
+			<Command>git -C "$(MSBuildThisFileDirectory)..\..\..\.." rev-parse --short HEAD &gt; scm-rev</Command>
+			<Outputs>scm-rev</Outputs>
+		</CustomBuild>
+	</ItemGroup>
+	<!-- Generate version.c; Include a file that always exists to avoid MSB8064 -->
+	<ItemGroup>
+		<CustomBuild Include="..\..\..\..\packageinfo.sh">
+			<Message>Using NT Shell Script to generate version.c</Message>
+			<Command>if not exist scm-rev echo. &gt; scm-rev
+call ..\..\scripts\mkver.bat -S scm-rev -P $(ProjectName)</Command>
+			<Inputs>.version;..\..\..\..\packageinfo.sh</Inputs>
+			<AdditionalInputs Condition="exists('scm-rev')">scm-rev</AdditionalInputs>
+			<Outputs>version.c</Outputs>
+		</CustomBuild>
+	</ItemGroup>
+</Project>

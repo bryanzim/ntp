@@ -7,3 +7,11 @@
 **/version.*
 **/*.mf
 sntp/libevent/build-aux
+
+# Visual Studio / Windows port build artifacts
+**/.vs/
+**/*.vcxproj.user
+**/.version
+ports/winnt/**/*-out/
+ports/winnt/**/*-tmp/
+ports/winnt/**/scm-rev

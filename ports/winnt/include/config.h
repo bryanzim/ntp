@@ -13,6 +13,7 @@
  /*
   * Known predifined MS C compiler _MSC_VER values:
   *
+  *  1950  MSVC++ 14.5 (Visual Studio 2026)
   *  1930  MSVC++ 14.3 (Visual Studio 2022)
   *  1920  MSVC++ 14.2 (Visual Studio 2019)
   *  1910  MSVC++ 14.1 (Visual Studio 2017)
