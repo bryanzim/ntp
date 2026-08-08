@@ -57,7 +57,7 @@ iohpAttach(
 	)
 {
 	if (lp != NULL)
-		InterlockedIncrement(&lp->refc_count);
+		InterlockedIncrement((PLONG)&lp->refc_count);
 	return lp;
 
 }
@@ -74,7 +74,7 @@ iohpDetach(
 	IoHndPad_T *	lp
 	)
 {
-	if (lp != NULL && !InterlockedDecrement(&lp->refc_count)) {
+	if (lp != NULL && !InterlockedDecrement((PLONG)&lp->refc_count)) {
 		memset(lp, 0xFF, sizeof(IoHndPad_T));
 		IOCPLPoolFree(lp, "Lock");
 	}
@@ -166,7 +166,7 @@ DevCtxAttach(
 	)
 {
 	if (devCtx != NULL)
-		InterlockedIncrement(&devCtx->ref_count);
+		InterlockedIncrement((PLONG)&devCtx->ref_count);
 	return devCtx;
 }
 
@@ -175,7 +175,7 @@ DevCtxDetach(
 	DevCtx_t *	devCtx
 	)
 {
-	if (devCtx && !InterlockedDecrement(&devCtx->ref_count))
+	if (devCtx && !InterlockedDecrement((PLONG)&devCtx->ref_count))
 		IOCPLPoolFree(devCtx, "DEV ctx");
 	return NULL;
 }

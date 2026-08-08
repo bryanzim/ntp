@@ -84,7 +84,7 @@ enum io_packet_handling {
 
 static const char * const st_packet_handling[3] = {
 	"accepted",
-	"dropped"
+	"dropped",
 	"error"
 };
 
@@ -1655,8 +1655,8 @@ OnSocketRecv(
 
 		if (iohpEndPointOK(iopad)) {
 			InterlockedIncrement(&ep->received);
-			InterlockedIncrement(&packets_received);
-			InterlockedIncrement(&handler_pkts);
+			InterlockedIncrement((PLONG)&packets_received);
+			InterlockedIncrement((PLONG)&handler_pkts);
 		}
 
 		DPRINTF(2, ("Received %d bytes fd %d in buffer %p from %s, state = %s\n",
@@ -1692,8 +1692,8 @@ OnSocketSend(
 	if (rc != PKT_OK) {
 		InterlockedIncrement(&ep->notsent);
 		InterlockedDecrement(&ep->sent);
-		InterlockedIncrement(&packets_notsent);
-		InterlockedDecrement(&packets_sent);
+		InterlockedIncrement((PLONG)&packets_notsent);
+		InterlockedDecrement((PLONG)&packets_sent);
 	}
 	IoCtxRelease(lpo);
 }

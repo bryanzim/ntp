@@ -925,8 +925,6 @@ TimerApcFunction(
 	DWORD dwTimerHighValue
 	)
 {
-	static BOOL		ctr_freq_timer_started = FALSE;
-	static ULONGLONG	prev_count;
 	ULONGLONG		now_time;
 	FT_ULL			now_count;
 
@@ -1580,7 +1578,7 @@ tune_ctr_freq(
 	    dispcount < report_at_count)	/* TUNE_CTR_DEPTH samples */
 		return;
 
-	NLOG(NLOG_CLOCKINFO)
+	NLOG(NLOG_CLOCKINFO) {
 		if (count <= COUNTOF(diffs))
 			/* moving to observed freq. from nominal (startup) */
 			msyslog(LOG_INFO,
@@ -1599,6 +1597,7 @@ tune_ctr_freq(
 				   : "ctr %.6f MHz %+.2f PPM",
 				freq, 
 				1e6 * (freq - nom_freq) / nom_freq);
+	}
 
 	if (disbelieved) {
 		msyslog(LOG_ERR, 

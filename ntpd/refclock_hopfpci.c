@@ -142,7 +142,7 @@ hopfpci_start(
 	pp->io.clock_recv = noentry;
 	pp->io.srcclock = peer;
 	pp->io.datalen = 0;
-	pp->io.fd = INVALID_SOCKET;
+	pp->io.fd = -1;
 	pp->unitptr = up;
 
 	get_systime(&pp->lastrec);
