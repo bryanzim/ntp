@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Overrides for LLVM clang-cl (PlatformToolset ClangCL). Imported after debug/release props. -->
+<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <_PropertySheetDisplayName>clang-cl</_PropertySheetDisplayName>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <!-- /ZI (EditAndContinue) is not supported by clang-cl -->
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <!-- /GL whole-program opts are MSVC-specific; disable for clang-cl -->
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <!-- Soften clang diagnostics that are errors/noise vs historical NTP/MSVC code -->
+      <AdditionalOptions>-Wno-incompatible-function-pointer-types -Wno-format -Wno-bitwise-conditional-parentheses -Wno-unused-function -Wno-deprecated-declarations %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <Lib>
+      <LinkTimeCodeGeneration>false</LinkTimeCodeGeneration>
+    </Lib>
+  </ItemDefinitionGroup>
+</Project>
