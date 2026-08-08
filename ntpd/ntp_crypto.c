@@ -3217,15 +3217,15 @@ cert_sign(
 	X509_set_serialNumber(cert, serial);
 	X509_gmtime_adj(X509_getm_notBefore(cert), 0L);
 	X509_gmtime_adj(X509_getm_notAfter(cert), YEAR);
-	subj = X509_get_issuer_name(cert);
+	subj = (X509_NAME *)X509_get_issuer_name(cert);
 	X509_NAME_add_entry_by_txt(subj, "commonName", MBSTRING_ASC,
 	    hostval.ptr, strlen((const char *)hostval.ptr), -1, 0);
-	subj = X509_get_subject_name(req);
+	subj = (X509_NAME *)X509_get_subject_name(req);
 	X509_set_subject_name(cert, subj);
 	X509_set_pubkey(cert, pkey);
 	temp = X509_get_ext_count(req);
 	for (i = 0; i < temp; i++) {
-		ext = X509_get_ext(req, i);
+		ext = (X509_EXTENSION *)X509_get_ext(req, i);
 		INSIST(X509_add_ext(cert, ext, -1));
 	}
 	X509_free(req);
@@ -3534,11 +3534,11 @@ cert_parse(
 	 */
 	cnt = X509_get_ext_count(cert);
 	for (i = 0; i < cnt; i++) {
-		X509_EXTENSION *ext;
-		ASN1_OBJECT *obj;
+		const X509_EXTENSION *ext;
+		const ASN1_OBJECT *obj;
 		int nid;
 		int datalen;
-		ASN1_OCTET_STRING *data;
+		const ASN1_OCTET_STRING *data;
 		const unsigned char *dataptr;
 
 		ext = X509_get_ext(cert, i);
@@ -3555,7 +3555,7 @@ cert_parse(
 		 */
 		case NID_ext_key_usage:
 			bp = BIO_new(BIO_s_mem());
-			X509V3_EXT_print(bp, ext, 0, 0);
+			X509V3_EXT_print(bp, (X509_EXTENSION *)ext, 0, 0);
 			BIO_gets(bp, pathbuf, sizeof(pathbuf));
 			BIO_free(bp);
 			if (strcmp(pathbuf, "Trust Root") == 0)

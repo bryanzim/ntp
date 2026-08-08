@@ -109,7 +109,8 @@ myRegReadMultiString(
 		if (rType != REG_NONE) {
 			retv = emalloc(rSize += 2);
 		}
-		rc = RegQueryValueExA(hKey, szValue, NULL, &rType, retv, &rSize);
+		rc = RegQueryValueExA(hKey, szValue, NULL, &rType,
+				      (LPBYTE)retv, &rSize);
 		if (ERROR_SUCCESS != rc || (REG_SZ != rType && REG_MULTI_SZ != rType))
 			goto fail;	
 	} while (NULL == retv);
@@ -666,7 +667,6 @@ time_pps_getparams(
 	pps_unit_t *	punit = unit_from_ppsapi_handle(handle);
 
 	/* Check for valid arguments */
-	punit;
 	if (NULL == punit)
 		return set_pps_errno(EBADF);
 	if (NULL == params_buf)
@@ -691,7 +691,7 @@ time_pps_getcap(
 	if (NULL == pmode)
 		return set_pps_errno(EFAULT);
 	/* Copy out capabilities */
-		*pmode = punit->provider->caps;
+	*pmode = punit->provider->caps;
 	return 0;
 }
 
