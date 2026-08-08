@@ -50,13 +50,23 @@
 #define _WIN32_WINNT 0x0501
 #endif
 
+/*
+ * Pure MSVC does not support GNU/Clang __attribute__. clang-cl does,
+ * and must keep it (e.g. for vector_size in mmintrin.h). Guard so we
+ * do not affect Clang on Linux/mac (this header is Windows-only).
+ */
+#if defined(_MSC_VER) && !defined(__clang__)
 #define __attribute__(x) /* empty */
+#endif
 #define _CRT_SECURE_NO_DEPRECATE 1
 
 /*
- * ANSI C compliance enabled
+ * Force __STDC__ for pure MSVC. clang-cl already reports a proper
+ * standard via /std:c* and must not have this forced.
  */
+#if defined(_MSC_VER) && !defined(__clang__)
 #define __STDC__ 1
+#endif
 
 /*
  * Enable the debug build of MS C runtime to dump leaks
@@ -281,8 +291,21 @@ extern void arc4random_buf(void *buf, size_t nbytes);
 #define write		_write
 #define strdup		_strdup
 #define alloca		_alloca
+/*
+ * Map POSIX stat/fstat to the MSVC names for pure MSVC.
+ *
+ * Do NOT do this for clang-cl: UCRT provides inline POSIX stat/fstat
+ * wrappers, and with #define stat _stat (which itself maps to
+ * _stat64i32) those wrappers become strong definitions of
+ * __stat64i32/__fstat64i32 in every TU. link.exe may COMDAT-merge
+ * them; lld-link reports duplicate symbols (seen on Win32 ClangCL).
+ * clang-cl uses the UCRT POSIX names instead. Linux/mac Clang never
+ * includes this Windows config.h.
+ */
+#if !(defined(_MSC_VER) && defined(__clang__))
 #define stat		_stat		/*struct stat from  <sys/stat.h> */
 #define fstat		_fstat
+#endif
 #define unlink		_unlink
 /*
  * punt on fchmod on Windows
@@ -304,7 +327,9 @@ extern void arc4random_buf(void *buf, size_t nbytes);
 /*
  * symbol returning the name of the current function
  */
+#if !(defined(_MSC_VER) && defined(__clang__))
 #define __func__	__FUNCTION__
+#endif
 
 typedef int	pid_t;	/* PID is an int */
 

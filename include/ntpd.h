@@ -592,7 +592,7 @@ extern struct leap_smear_info leap_smear;
 extern int	leap_smear_intv;
 #endif
 #ifdef SYS_WINNT
-HANDLE WaitableTimerHandle;
+extern HANDLE WaitableTimerHandle;
 #endif
 
 /* ntp_util.c */
