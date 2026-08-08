@@ -1458,7 +1458,7 @@ cast(LDOUBLE value)
 	 * comparison (cf. C99: 6.3.1.4, 2).  It might then equal the LDOUBLE
 	 * value although converting the latter to UINTMAX_T would overflow.
 	 */
-	if (value >= UINTMAX_MAX)
+	if (value >= (LDOUBLE)UINTMAX_MAX)
 		return UINTMAX_MAX;
 
 	result = (UINTMAX_T)value;

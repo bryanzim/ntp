@@ -317,7 +317,6 @@ main(
 	int	iffkey = 0;	/* generate IFF keys */
 	int	gqkey = 0;	/* generate GQ keys */
 	int	mvkey = 0;	/* update MV keys */
-	int	mvpar = 0;	/* generate MV parameters */
 	char	*sign = NULL;	/* sign key */
 	EVP_PKEY *pkey = NULL;	/* temp key */
 	const EVP_MD *ectx;	/* EVP digest */
@@ -413,7 +412,7 @@ main(
 		nkeys = OPT_VALUE_MV_PARAMS;
 	}
 	if (HAVE_OPT( MV_KEYS )) {
-		mvpar++;	/* not used! */	/* DLH are these two swapped? */
+		/* DLH are these two swapped? */
 		nkeys = OPT_VALUE_MV_KEYS;
 	}
 
@@ -543,8 +542,8 @@ main(
 			ptr = strstr(groupbuf, "CN=");
 			cnt = X509_get_ext_count(cert);
 			for (i = 0; i < cnt; i++) {
-				X509_EXTENSION *ext;
-				ASN1_OBJECT *obj;
+				const X509_EXTENSION *ext;
+				const ASN1_OBJECT *obj;
 
 				ext = X509_get_ext(cert, i);
 				obj = X509_EXTENSION_get_object(ext);
@@ -552,7 +551,8 @@ main(
 				if (OBJ_obj2nid(obj) ==
 				    NID_ext_key_usage) {
 					bp = BIO_new(BIO_s_mem());
-					X509V3_EXT_print(bp, ext, 0, 0);
+					X509V3_EXT_print(bp,
+					    (X509_EXTENSION *)ext, 0, 0);
 					BIO_gets(bp, pathbuf,
 					    MAXFILENAME);
 					BIO_free(bp);
@@ -2003,10 +2003,10 @@ x509	(
 	ASN1_INTEGER_free(serial);
 	X509_time_adj(X509_getm_notBefore(cert), 0L, &epoch);
 	X509_time_adj(X509_getm_notAfter(cert), lifetime * SECSPERDAY, &epoch);
-	subj = X509_get_subject_name(cert);
+	subj = (X509_NAME *)X509_get_subject_name(cert);
 	X509_NAME_add_entry_by_txt(subj, "commonName", MBSTRING_ASC,
 	    (u_char *)name, -1, -1, 0);
-	subj = X509_get_issuer_name(cert);
+	subj = (X509_NAME *)X509_get_issuer_name(cert);
 	X509_NAME_add_entry_by_txt(subj, "commonName", MBSTRING_ASC,
 	    (u_char *)name, -1, -1, 0);
 	if (!X509_set_pubkey(cert, pkey)) {

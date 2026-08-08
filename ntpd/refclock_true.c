@@ -206,7 +206,7 @@ struct	refclock refclock_true = {
 };
 
 
-#if !defined(__STDC__)
+#if !defined(__STDC__) && !defined(_MSC_VER)
 # define true_debug (void)
 #else
 NTP_PRINTF(2, 3)

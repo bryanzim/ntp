@@ -198,8 +198,10 @@ static	struct refclockio *refio;
  * File descriptor masks etc. for call to select
  * Not needed for I/O Completion Ports or anything outside this file
  */
+#ifndef HAVE_IO_COMPLETION_PORT
 static fd_set activefds;
 static int maxactivefd;
+#endif
 
 /*
  * bit alternating value to detect verified interfaces during an update cycle
@@ -515,7 +517,9 @@ io_open_sockets(void)
 
 	init_async_notifications();
 
+#ifndef HAVE_IO_COMPLETION_PORT
 	DPRINTF(3, ("io_open_sockets: maxactivefd %d\n", maxactivefd));
+#endif
 }
 
 

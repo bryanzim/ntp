@@ -143,6 +143,10 @@ typedef unsigned long pps_seq_t;	/* sequence number */
 
 #pragma warning(push)
 #pragma warning(disable: 201)		/* nonstd extension nameless union */
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wmicrosoft-anon-tag"
+#endif
 
 typedef struct ntp_fp {
 	union ntp_fp_sec {
@@ -152,6 +156,9 @@ typedef struct ntp_fp {
 	unsigned int	fractional;
 } ntp_fp_t;				/* NTP-compatible time stamp */
 
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 #pragma warning(pop)
 
 typedef union pps_timeu {		/* timestamp format */

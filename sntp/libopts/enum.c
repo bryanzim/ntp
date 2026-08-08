@@ -345,7 +345,7 @@ set_memb_names(tOptions * opts, tOptDesc * od, char const * const * nm_list,
                unsigned int nm_ct)
 {
     char *     pz;
-    uintptr_t  mask = (1UL << (uintptr_t)nm_ct) - 1UL;
+    uintptr_t  mask = ((uintptr_t)1 << nm_ct) - (uintptr_t)1;
     uintptr_t  bits = (uintptr_t)od->optCookie & mask;
     unsigned int ix = 0;
     size_t     len  = 1;
@@ -476,7 +476,7 @@ find_member_bit(tOptions * opts, tOptDesc * od, char const * pz, int len,
         if (shift_ct >= nm_ct)
             return 0UL;
 
-        return 1UL << shift_ct;
+        return (uintptr_t)1 << shift_ct;
     }
 }
 
@@ -608,7 +608,7 @@ optionSetMembers(tOptions * opts, tOptDesc * od,
             res ^= ~0UL;
 
         if (nm_ct < (8 * sizeof(uintptr_t)))
-            res &= (1UL << nm_ct) - 1UL;
+            res &= ((uintptr_t)1 << nm_ct) - (uintptr_t)1;
 
         od->optCookie = VOIDP(res);
     }

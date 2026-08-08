@@ -60,15 +60,15 @@ syslog(int level, const char *fmt, ...) {
 		case LOG_NOTICE:
 		case LOG_DEBUG:
 			ReportEvent(hAppLog, EVENTLOG_INFORMATION_TYPE, 0,
-				    NTP_INFO, NULL, 1, 0, str, NULL);
+				    NTP_INFO, NULL, 1, 0, (LPCSTR *)str, NULL);
 			break;
 		case LOG_WARNING:
 			ReportEvent(hAppLog, EVENTLOG_WARNING_TYPE, 0,
-				    NTP_WARNING, NULL, 1, 0, str, NULL);
+				    NTP_WARNING, NULL, 1, 0, (LPCSTR *)str, NULL);
 			break;
 		default:
 			ReportEvent(hAppLog, EVENTLOG_ERROR_TYPE, 0,
-				    NTP_ERROR, NULL, 1, 0, str, NULL);
+				    NTP_ERROR, NULL, 1, 0, (LPCSTR *)str, NULL);
 			break;
 		}
 }
