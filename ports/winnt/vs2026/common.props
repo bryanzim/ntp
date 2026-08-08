@@ -48,6 +48,13 @@
       <DataExecutionPrevention>true</DataExecutionPrevention>
     </Link>
   </ItemDefinitionGroup>
+  <!-- Non-XP configs: latest ISO C / C++ language standards (/std:clatest, /std:c++latest) -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'!='DebugXP' And '$(Configuration)'!='ReleaseXP'">
+    <ClCompile>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <LanguageStandard_C>stdclatest</LanguageStandard_C>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <BuildMacro Include="OutBaseDir">
       <Value>$(OutBaseDir)</Value>
