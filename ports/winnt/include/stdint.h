@@ -13,9 +13,18 @@
 #ifndef __STDINT_INCLUDED
 #define __STDINT_INCLUDED
 
-#if !defined(_MSC_VER) || _MSC_VER >= 1800
+/*
+ * clang-cl (Clang in MSVC-compatible mode) defines both __clang__ and
+ * _MSC_VER. It may find this file first via AdditionalIncludeDirectories
+ * when the system <inttypes.h> pulls in <stdint.h>; defer to the real
+ * header. Plain Clang on Linux/mac does not define _MSC_VER and should
+ * not use this Windows polyfill.
+ */
+#if defined(__clang__) && defined(_MSC_VER)
+# include_next <stdint.h>
+#elif !defined(_MSC_VER) || _MSC_VER >= 1800
 # error Use only with MSVC6 - MSVC11(VS2012)
-#endif
+#else
 
 #include <crtdefs.h>
 #include <limits.h>
@@ -240,5 +249,7 @@ typedef unsigned __int64 uintmax_t;
 # define UINTMAX_C(lit) _VC_UI_LIT(lit,64)
 #endif
 
-#endif
+#endif /* old MSVC polyfill */
+
+#endif /* __STDINT_INCLUDED */
 /**** EOF ****/
