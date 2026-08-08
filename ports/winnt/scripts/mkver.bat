@@ -337,7 +337,8 @@ REM ****************************************************************************
 
 :EMPTYCSET
 	ECHO Warning: mkver.bat : Could not find sntp\scm-rev nor bk ChangeSet!
-	REM like touch, create empty file >%OUTPUTSCMREV%
+	REM touch an empty scm-rev so MSBuild CustomBuild dependencies exist
+	ECHO. >%OUTPUTSCMREV%
 	GOTO EOF
 
 :HAVECHANGESETREVISION
