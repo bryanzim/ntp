@@ -15,20 +15,14 @@
       <AdditionalIncludeDirectories>$(OPENSSL64_INC);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;OPENSSL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
-	<!-- vvv Edit & Continue vvv -->
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <MinimalRebuild>true</MinimalRebuild>
-      <MultiProcessorCompilation>false</MultiProcessorCompilation>
-	<!-- ^^^ Edit & Continue ^^^ -->
     </ClCompile>
     <Link>
       <TargetMachine>MachineX64</TargetMachine>
       <AdditionalLibraryDirectories>$(OPENSSL64_LIB)\VC\x64\MTd;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>libcrypto_static.lib;crypt32.lib;%(AdditionalDependencies)</AdditionalDependencies>
-	<!-- vvv Edit & Continue vvv -->
       <EnableCOMDATFolding>false</EnableCOMDATFolding>
       <OptimizeReferences>false</OptimizeReferences>
-	<!-- ^^^ Edit & Continue ^^^ -->
     </Link>
   </ItemDefinitionGroup>
 </Project>
