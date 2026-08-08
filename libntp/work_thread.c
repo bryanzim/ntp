@@ -116,6 +116,9 @@ exit_worker(
 	)
 {
 	thread_exit(exitcode);	/* see #define thread_exit */
+#ifdef SYS_WINNT
+	abort();		/* noreturn: _endthreadex is not */
+#endif
 }
 
 /* --------------------------------------------------------------------
@@ -532,6 +535,7 @@ start_blocking_thread_internal(
 	}
 	resumed = ResumeThread(c->thr_table[0].thnd);
 	DEBUG_INSIST(resumed);
+	(void)resumed;
 	c->thread_ref = &c->thr_table[0];
 }
 #else	/* pthreads start_blocking_thread_internal() follows */
