@@ -476,7 +476,7 @@ find_member_bit(tOptions * opts, tOptDesc * od, char const * pz, int len,
         if (shift_ct >= nm_ct)
             return 0UL;
 
-        return 1UL << shift_ct;
+        return (uintptr_t)1 << shift_ct;
     }
 }
 
