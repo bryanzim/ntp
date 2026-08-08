@@ -441,7 +441,9 @@ int main(int argc, char *argv[])
         ok = RemoveService(szServiceName);
     else
         ok = InstallService(szServiceName, szDisplayName,
-                            getServicePath(argv+1, argc-1), s_acSvcDeps);
+                            getServicePath((const char * const *)(argv + 1),
+                                           argc - 1),
+                            s_acSvcDeps);
 
     CloseServiceHandle(schSCManager);
 
