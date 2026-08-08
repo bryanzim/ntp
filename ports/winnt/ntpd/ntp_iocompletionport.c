@@ -82,11 +82,13 @@ enum io_packet_handling {
 
 
 
+#ifdef DEBUG
 static const char * const st_packet_handling[3] = {
 	"accepted",
 	"dropped",
 	"error"
 };
+#endif
 
 /*
  * local function definitions
