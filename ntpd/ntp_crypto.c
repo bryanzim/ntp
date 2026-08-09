@@ -1660,6 +1660,7 @@ crypto_ident(
 	 * Use the first one available.
 	 */
 	scheme_name = NULL;
+	scheme_id = CRYPTO_NULL;
 	if (peer->crypto & CRYPTO_FLAG_IFF) {
 		scheme_name = "iff";
 		scheme_id = CRYPTO_IFF;

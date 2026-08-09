@@ -30,7 +30,8 @@ isc_thread_create(isc_threadfunc_t start, isc_threadarg_t arg,
 	isc_thread_t thread;
 	unsigned int id;
 
-	thread = (isc_thread_t)_beginthreadex(NULL, 0, start, arg, 0, &id);
+	thread = (isc_thread_t)_beginthreadex(
+		NULL, 0, (unsigned (__stdcall *)(void *))start, arg, 0, &id);
 	if (thread == NULL) {
 		/* XXX */
 		return (ISC_R_UNEXPECTED);
@@ -85,7 +86,7 @@ int
 isc_thread_key_create(isc_thread_key_t *key, void (*func)(void *)) {
 	*key = TlsAlloc();
 
-	return ((*key != -1) ? 0 : GetLastError());
+	return ((*key != TLS_OUT_OF_INDEXES) ? 0 : GetLastError());
 }
 
 int
