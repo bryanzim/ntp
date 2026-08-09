@@ -580,11 +580,16 @@ process_private(
 		/*
 		 * If this guy is restricted from doing this, don't let
 		 * him.  If the wrong key was used, or packet doesn't
-		 * have mac, return.
+		 * have mac, return.  Also enforce key IP ACLs the same
+		 * way mode 6 does via authistrustedip().
 		 */
-		/* XXX: Use authistrustedip(), or equivalent. */
 		if (!INFO_IS_AUTH(inpkt->auth_seq) || !info_auth_keyid
-		    || ntohl(tailinpkt->keyid) != info_auth_keyid) {
+		    || ntohl(tailinpkt->keyid) != info_auth_keyid
+		    || !authistrustedip(info_auth_keyid, srcadr)
+#ifdef OPENSSL
+		    || NID_md5 == auth_getkeytype(info_auth_keyid)
+#endif
+		    ) {
 			DPRINTF(5, ("failed auth %d info_auth_keyid %u pkt keyid %u maclen %lu\n",
 				    INFO_IS_AUTH(inpkt->auth_seq),
 				    info_auth_keyid,
@@ -2353,7 +2358,8 @@ set_keyid_checked(
 	tmpkey = ntohl(*pkeyid);
 
 	/* validate the new key id, claim data error on failure */
-	if (tmpkey < 1 || tmpkey > NTP_MAXKEY || !auth_havekey(tmpkey)) {
+	if (tmpkey < 1 || tmpkey > NTP_MAXKEY || !auth_havekey(tmpkey)
+	    || !auth_approve_mgmt_key(tmpkey, what)) {
 		msyslog(LOG_ERR, "set_keyid_checked[%s]: invalid key id: %ld",
 			what, (long)tmpkey);
 		req_ack(srcadr, inter, inpkt, INFO_ERR_NODATA);

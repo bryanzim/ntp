@@ -167,6 +167,10 @@ ntservice_init(void)
 		SetConsoleTitle(ConsoleTitle);
 	}
 
+	msyslog(LOG_INFO,
+		"ntservice: prefer a least-privilege service account "
+		"(not Local System) when SeSystemTimePrivilege can be granted");
+
 #ifdef _CRTDBG_MAP_ALLOC
 		/* ask the runtime to dump memory leaks at exit */
 		_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF

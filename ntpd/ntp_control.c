@@ -1302,7 +1302,11 @@ process_control(
 				    res_opcode));
 			if (cc->flags == AUTH
 			    && (!res_authokay
-				|| res_keyid != ctl_auth_keyid)) {
+				|| res_keyid != ctl_auth_keyid
+#ifdef OPENSSL
+				|| NID_md5 == auth_getkeytype(res_keyid)
+#endif
+				)) {
 				ctl_error(CERR_PERMISSION);
 				return;
 			}

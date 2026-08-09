@@ -35,8 +35,8 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_NTP_PARSER_H_INCLUDED
-# define YY_YY_NTP_PARSER_H_INCLUDED
+#ifndef YY_YY_F_GIT_NTP_NTPD_NTP_PARSER_H_INCLUDED
+# define YY_YY_F_GIT_NTP_NTPD_NTP_PARSER_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 1
@@ -248,33 +248,32 @@ extern int yydebug;
     T_UEdigest = 449,              /* T_UEdigest  */
     T_Unconfig = 450,              /* T_Unconfig  */
     T_Unpeer = 451,                /* T_Unpeer  */
-    T_Version = 452,               /* T_Version  */
-    T_WanderThreshold = 453,       /* T_WanderThreshold  */
-    T_Week = 454,                  /* T_Week  */
-    T_Wildcard = 455,              /* T_Wildcard  */
-    T_Xleave = 456,                /* T_Xleave  */
-    T_Xmtnonce = 457,              /* T_Xmtnonce  */
-    T_Year = 458,                  /* T_Year  */
-    T_Flag = 459,                  /* T_Flag  */
-    T_EOC = 460,                   /* T_EOC  */
-    T_Simulate = 461,              /* T_Simulate  */
-    T_Beep_Delay = 462,            /* T_Beep_Delay  */
-    T_Sim_Duration = 463,          /* T_Sim_Duration  */
-    T_Server_Offset = 464,         /* T_Server_Offset  */
-    T_Duration = 465,              /* T_Duration  */
-    T_Freq_Offset = 466,           /* T_Freq_Offset  */
-    T_Wander = 467,                /* T_Wander  */
-    T_Jitter = 468,                /* T_Jitter  */
-    T_Prop_Delay = 469,            /* T_Prop_Delay  */
-    T_Proc_Delay = 470             /* T_Proc_Delay  */
+    T_User = 452,                  /* T_User  */
+    T_Version = 453,               /* T_Version  */
+    T_WanderThreshold = 454,       /* T_WanderThreshold  */
+    T_Week = 455,                  /* T_Week  */
+    T_Wildcard = 456,              /* T_Wildcard  */
+    T_Xleave = 457,                /* T_Xleave  */
+    T_Xmtnonce = 458,              /* T_Xmtnonce  */
+    T_Year = 459,                  /* T_Year  */
+    T_Flag = 460,                  /* T_Flag  */
+    T_EOC = 461,                   /* T_EOC  */
+    T_Simulate = 462,              /* T_Simulate  */
+    T_Beep_Delay = 463,            /* T_Beep_Delay  */
+    T_Sim_Duration = 464,          /* T_Sim_Duration  */
+    T_Server_Offset = 465,         /* T_Server_Offset  */
+    T_Duration = 466,              /* T_Duration  */
+    T_Freq_Offset = 467,           /* T_Freq_Offset  */
+    T_Wander = 468,                /* T_Wander  */
+    T_Jitter = 469,                /* T_Jitter  */
+    T_Prop_Delay = 470,            /* T_Prop_Delay  */
+    T_Proc_Delay = 471             /* T_Proc_Delay  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
-/* Token kinds.  */
-#define YYEMPTY -2
-#define YYEOF 0
-#define YYerror 256
-#define YYUNDEF 257
+
+
+/* Tokens.  */
 #define T_Abbrev 258
 #define T_Age 259
 #define T_All 260
@@ -469,31 +468,32 @@ extern int yydebug;
 #define T_UEdigest 449
 #define T_Unconfig 450
 #define T_Unpeer 451
-#define T_Version 452
-#define T_WanderThreshold 453
-#define T_Week 454
-#define T_Wildcard 455
-#define T_Xleave 456
-#define T_Xmtnonce 457
-#define T_Year 458
-#define T_Flag 459
-#define T_EOC 460
-#define T_Simulate 461
-#define T_Beep_Delay 462
-#define T_Sim_Duration 463
-#define T_Server_Offset 464
-#define T_Duration 465
-#define T_Freq_Offset 466
-#define T_Wander 467
-#define T_Jitter 468
-#define T_Prop_Delay 469
-#define T_Proc_Delay 470
+#define T_User 452
+#define T_Version 453
+#define T_WanderThreshold 454
+#define T_Week 455
+#define T_Wildcard 456
+#define T_Xleave 457
+#define T_Xmtnonce 458
+#define T_Year 459
+#define T_Flag 460
+#define T_EOC 461
+#define T_Simulate 462
+#define T_Beep_Delay 463
+#define T_Sim_Duration 464
+#define T_Server_Offset 465
+#define T_Duration 466
+#define T_Freq_Offset 467
+#define T_Wander 468
+#define T_Jitter 469
+#define T_Prop_Delay 470
+#define T_Proc_Delay 471
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 52 "../../ntpd/ntp_parser.y"
+#line 52 "ntp_parser.y"
 
 	char *			String;
 	double			Double;
@@ -512,7 +512,7 @@ union YYSTYPE
 	script_info *		Sim_script;
 	script_info_fifo *	Sim_script_fifo;
 
-#line 516 "ntp_parser.h"
+#line 299 "ntp_parser.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -527,4 +527,4 @@ extern YYSTYPE yylval;
 int yyparse (void);
 
 
-#endif /* !YY_YY_NTP_PARSER_H_INCLUDED  */
+#endif /* !YY_YY_F_GIT_NTP_NTPD_NTP_PARSER_H_INCLUDED  */

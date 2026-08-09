@@ -36,6 +36,8 @@
 # include <assert.h>
 # include <unistd.h>
 # include <stdio.h>
+#else
+# include <aclapi.h>
 #endif
 
 #ifdef HAVE_STDATOMIC_H
@@ -160,6 +162,11 @@ getShmTime(
 	HANDLE shmid = 0;
 	SECURITY_DESCRIPTOR sd;
 	SECURITY_ATTRIBUTES sa;
+	PACL pacl = NULL;
+	PSID sidAdmin = NULL;
+	PSID sidSystem = NULL;
+	SID_IDENTIFIER_AUTHORITY ntAuth = SECURITY_NT_AUTHORITY;
+	EXPLICIT_ACCESS ea[2];
 	unsigned int numch;
 
 	numch = snprintf(buf, sizeof(buf), "%s\\NTP%d",
@@ -168,13 +175,53 @@ getShmTime(
 		msyslog(LOG_ERR, "SHM name too long (unit %d)", unit);
 		return NULL;
 	}
-	if (forall) { /* world access */
+	if (forall) {
+		/*
+		 * Cross-session SHM: grant write to Administrators and
+		 * Local System only. Never use a NULL DACL (world-writable).
+		 */
 		if (!InitializeSecurityDescriptor(&sd, SECURITY_DESCRIPTOR_REVISION)) {
 			msyslog(LOG_ERR,"SHM InitializeSecurityDescriptor (unit %d): %m", unit);
 			return NULL;
 		}
-		if (!SetSecurityDescriptorDacl(&sd, TRUE, NULL, FALSE)) {
+		if (!AllocateAndInitializeSid(&ntAuth, 2,
+					      SECURITY_BUILTIN_DOMAIN_RID,
+					      DOMAIN_ALIAS_RID_ADMINS,
+					      0, 0, 0, 0, 0, 0, &sidAdmin)) {
+			msyslog(LOG_ERR, "SHM AllocateAndInitializeSid Administrators (unit %d): %m", unit);
+			return NULL;
+		}
+		if (!AllocateAndInitializeSid(&ntAuth, 1,
+					      SECURITY_LOCAL_SYSTEM_RID,
+					      0, 0, 0, 0, 0, 0, 0, &sidSystem)) {
+			msyslog(LOG_ERR, "SHM AllocateAndInitializeSid SYSTEM (unit %d): %m", unit);
+			FreeSid(sidAdmin);
+			return NULL;
+		}
+		ZERO(ea);
+		ea[0].grfAccessPermissions = FILE_MAP_ALL_ACCESS;
+		ea[0].grfAccessMode = SET_ACCESS;
+		ea[0].grfInheritance = NO_INHERITANCE;
+		ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		ea[0].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+		ea[0].Trustee.ptstrName = (LPTSTR)sidAdmin;
+		ea[1].grfAccessPermissions = FILE_MAP_ALL_ACCESS;
+		ea[1].grfAccessMode = SET_ACCESS;
+		ea[1].grfInheritance = NO_INHERITANCE;
+		ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		ea[1].Trustee.TrusteeType = TRUSTEE_IS_USER;
+		ea[1].Trustee.ptstrName = (LPTSTR)sidSystem;
+		if (SetEntriesInAcl(2, ea, NULL, &pacl) != ERROR_SUCCESS) {
+			msyslog(LOG_ERR, "SHM SetEntriesInAcl (unit %d): %m", unit);
+			FreeSid(sidAdmin);
+			FreeSid(sidSystem);
+			return NULL;
+		}
+		if (!SetSecurityDescriptorDacl(&sd, TRUE, pacl, FALSE)) {
 			msyslog(LOG_ERR, "SHM SetSecurityDescriptorDacl (unit %d): %m", unit);
+			LocalFree(pacl);
+			FreeSid(sidAdmin);
+			FreeSid(sidSystem);
 			return NULL;
 		}
 		sa.nLength = sizeof(SECURITY_ATTRIBUTES);
@@ -184,6 +231,14 @@ getShmTime(
 	}
 	shmid = CreateFileMapping ((HANDLE)0xffffffff, psec, PAGE_READWRITE,
 				   0, sizeof (struct shmTime), buf);
+	if (forall) {
+		if (pacl != NULL)
+			LocalFree(pacl);
+		if (sidAdmin != NULL)
+			FreeSid(sidAdmin);
+		if (sidSystem != NULL)
+			FreeSid(sidSystem);
+	}
 	if (shmid == NULL) { /*error*/
 		char buf[1000];		
 		FormatMessage (FORMAT_MESSAGE_FROM_SYSTEM,
