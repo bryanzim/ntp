@@ -509,7 +509,7 @@ find_end_xml(char const * src, size_t nm_len, char const * val, size_t * len)
 static char const *
 scan_xml(char const * xml_name, tOptionValue * res_val)
 {
-    size_t          nm_len, v_len;
+    size_t          nm_len, v_len = 0;
     char const *    scan;
     char const *    val_str;
     tOptionValue    valu;
@@ -551,7 +551,7 @@ scan_xml(char const * xml_name, tOptionValue * res_val)
         tOptionValue * new_val = add_string(
             &(res_val->v.nestVal), xml_name, nm_len, val_str, v_len);
 
-        if (option_load_mode != OPTION_LOAD_KEEP)
+        if (new_val != NULL && option_load_mode != OPTION_LOAD_KEEP)
             munge_str(new_val->v.strVal, option_load_mode);
 
         break;

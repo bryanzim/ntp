@@ -93,7 +93,7 @@ static const char * const st_packet_handling[3] = {
 /*
  * local function definitions
  */
-static	void ntpd_addremove_semaphore(HANDLE, int);
+static	void ntpd_addremove_semaphore(sem_ref, int);
 static	void set_serial_recv_time    (recvbuf_t *, IoCtx_t *);
 
 /* Initiate/Request async IO operations */
@@ -428,15 +428,19 @@ ip_interface_changed(ULONG_PTR ctx)
  */
 static void
 ntpd_addremove_semaphore(
-	HANDLE	sem,
+	sem_ref	sem,
 	int	remove
 	)
 {
 	DWORD	hi;
+	HANDLE	hnd;
+
+	INSIST(NULL != sem);
+	hnd = sem->shnd;
 
 	/* search for a matching entry first. */
 	for (hi = 3; hi < ActiveWaitHandles; hi++)
-		if (sem == WaitHandles[hi])
+		if (hnd == WaitHandles[hi])
 			break;
 
 	if (remove) {
@@ -456,7 +460,7 @@ ntpd_addremove_semaphore(
 		 */
 		if (hi >= ActiveWaitHandles) {
 			INSIST(ActiveWaitHandles < COUNTOF(WaitHandles));
-			WaitHandles[ActiveWaitHandles] = sem;
+			WaitHandles[ActiveWaitHandles] = hnd;
 			ActiveWaitHandles++;
 		}
 	}

@@ -4865,7 +4865,7 @@ pool_xmit(
 	endpt *		lcladr;
 	sockaddr_u *	rmtadr;
 	u_short		af;
-	struct peer *	p;
+	struct peer *	p = NULL;
 	l_fp		xmt_tx;
 
 	DEBUG_REQUIRE(pool);

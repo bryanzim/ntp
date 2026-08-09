@@ -477,6 +477,7 @@ init_io(void)
 }
 
 
+#ifdef WORK_PIPE
 static void
 ntpd_addremove_io_fd(
 	int	fd,
@@ -493,6 +494,7 @@ ntpd_addremove_io_fd(
 
 	maintain_activefds(fd, remove_it);
 }
+#endif /* WORK_PIPE */
 
 
 /*

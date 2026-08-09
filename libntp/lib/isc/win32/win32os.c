@@ -35,6 +35,10 @@ initialize_action(void) {
 	 * so we compensate by casting the argument
 	 */
 	osVer.dwOSVersionInfoSize = sizeof(OSVERSIONINFOEX);
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
 	bSuccess = GetVersionEx((OSVERSIONINFO *) &osVer);
 
 	/*
@@ -46,6 +50,9 @@ initialize_action(void) {
 		osVer.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
 		bSuccess = GetVersionEx((OSVERSIONINFO *) &osVer);
 	}
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 	bInit = TRUE;
 }
 
