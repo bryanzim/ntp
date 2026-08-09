@@ -80,8 +80,9 @@ int	old_rv = 1;
 /*
  * How should we display the refid?
  * REFID_HASH, REFID_IPV4
+ * Unset until options are processed; cast avoids -Wassign-enum.
  */
-te_Refid drefid = -1;
+te_Refid drefid = (te_Refid)-1;
 
 /*
  * for get_systime()
@@ -3345,7 +3346,7 @@ nextvar(
 				ch = pf_nextch(datap, cpend);
 				st = sValU;
 			} else {
-				pf_error("no closing quote, stop", cp, cpend);
+				pf_error("no closing quote, stop", *datap, cpend);
 				goto final_done;
 			}
 			break;
@@ -4024,7 +4025,7 @@ insert_cmac(char *list)
 		/* Find proper insertion point */
 		if (insert) {
 			char *last_nl;
-			char *point;
+			char *point = list;
 			char *delim;
 			int found;
 

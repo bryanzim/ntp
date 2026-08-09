@@ -1520,7 +1520,7 @@ static int _parse_frac(UCC *cp, UCC **ep, l_fp *into)
  */
 static int _parse_time(UCC *cp, UCC ** ep, TCivilDate *into)
 {
-	uint16_t	s, m, h;
+	uint16_t	s = 0, m = 0, h = 0;
 	int		rc;
 	UCC *		xp = cp;
 
@@ -1546,7 +1546,7 @@ static int _parse_time(UCC *cp, UCC ** ep, TCivilDate *into)
  */
 static int _parse_date1(UCC *cp, UCC **ep, TCivilDate *into)
 {
-	unsigned short	d, m, y;
+	unsigned short	d = 0, m = 0, y = 0;
 	int		rc;
 	UCC *		xp = cp;
 
@@ -1572,7 +1572,7 @@ static int _parse_date1(UCC *cp, UCC **ep, TCivilDate *into)
  */
 static int _parse_date3(UCC *cp, UCC **ep, TCivilDate *into)
 {
-	uint16_t	d, m, y;
+	uint16_t	d = 0, m = 0, y = 0;
 	int		rc;
 	UCC *		xp = cp;
 
@@ -1693,14 +1693,15 @@ parse_gpsw(
 	int          leapidx
 	)
 {
-	uint32_t	secs;
-	uint16_t	week, leap = 0;
+	uint32_t	secs = 0;
+	uint16_t	week = 0, leap = 0;
 	l_fp		fofs;
 	int		rc;
 
 	UCC *	dpw = (UCC*)field_parse(rd, weekidx);
 	UCC *	dps = (UCC*)field_parse(rd, timeidx);
 
+	ZERO(fofs);
 	rc =   _parse_u16 (dpw, &dpw, &week, 5)
 	    && _parse_eof (dpw, &dpw)
 	    && _parse_u32 (dps, &dps, &secs, 9)

@@ -78,7 +78,9 @@ static	void	growpktdata	(void);
 static	int	getresponse	(int, int, size_t *, size_t *, const char **, size_t);
 static	int	sendrequest	(int, int, int, size_t, size_t, const char *);
 static	void	getcmds		(void);
+#ifndef SYS_WINNT /* Under NT cannot handle SIGINT, WIN32 spawns a handler */
 static	RETSIGTYPE abortcmd	(int);
+#endif
 static	void	docmd		(const char *);
 static	void	tokenize	(const char *, char **, int *);
 static	int	findcmd		(char *, struct xcmd *, struct xcmd *, struct xcmd **);
