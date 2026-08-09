@@ -3279,7 +3279,7 @@ nextvar(
 
 	static char	name[MAXVARLEN], value[MAXVALLEN];
 
-	const char	*cp, *cpend;
+	const char	*cpend;
 	const char	*np, *vp;
 	size_t		nlen, vlen;
 	int		ch;
@@ -3302,7 +3302,6 @@ nextvar(
 				ch = pf_nextch(datap, cpend);
 			if (cp_namechar(ch)) {
 				np = *datap;
-				cp = np;
 				st = sName;
 				ch = pf_nextch(datap, cpend);
 			} else {
