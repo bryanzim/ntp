@@ -511,7 +511,7 @@ start_blocking_thread_internal(
 	BOOL	resumed;
 
 	c->thread_ref = NULL;
-	(*addremove_io_semaphore)(c->responses_pending->shnd, FALSE);
+	(*addremove_io_semaphore)(c->responses_pending, FALSE);
 	c->thr_table[0].thnd =
 		(HANDLE)_beginthreadex(
 			NULL,
@@ -932,7 +932,7 @@ cleanup_after_child(
 	c->resp_read_pipe = -1;
 #   else
 	DEBUG_INSIST(NULL != c->responses_pending);
-	(*addremove_io_semaphore)(c->responses_pending->shnd, TRUE);
+	(*addremove_io_semaphore)(c->responses_pending, TRUE);
 	c->responses_pending = delete_sema(c->responses_pending);
 #   endif
 

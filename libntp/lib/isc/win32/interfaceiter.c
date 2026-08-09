@@ -180,6 +180,7 @@ isc_interfaceiter_create(isc_mem_t *mctx, isc_interfaceiter_t **iterp) {
 		goto use_ioctls;
 
 	iter->ipaasize = 16 * 1024;
+	err = ERROR_INVALID_FUNCTION;
 
 	for (tries = 0; tries < 5; tries++) {
 		iter->ipaa = isc_mem_reallocate(mctx, iter->ipaa,

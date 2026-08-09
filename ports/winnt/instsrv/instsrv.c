@@ -387,7 +387,14 @@ int main(int argc, char *argv[])
     int   ok = 0;  
   
     // check if Win32s, if so, display notice and terminate
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#endif
     if (GetVersion() & 0x80000000) {
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
         MessageBoxA(NULL,
                     "This application cannot run on Windows 3.1.\n"
                     "This application will now terminate.",
@@ -397,7 +404,7 @@ int main(int argc, char *argv[])
     }
 
     if (argc >= 2)
-            bRemovingService = (!stricmp(argv[1], "remove"));
+            bRemovingService = (!_stricmp(argv[1], "remove"));
 
     if ((bRemovingService && argc != 2) || (!bRemovingService && argc < 2)) {
         DisplayHelp();

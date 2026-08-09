@@ -3766,8 +3766,10 @@ parse_process(
 	l_fp off, rectime, reftime;
 	double fudge;
 
-	/* silence warning: 'off.Ul_i.Xl_i' may be used uninitialized in this function */
+	/* silence -Wconditional-uninitialized on PPS/timecode paths */
 	ZERO(off);
+	ZERO(rectime);
+	ZERO(reftime);
 
 	/*
 	 * check for changes in conversion status

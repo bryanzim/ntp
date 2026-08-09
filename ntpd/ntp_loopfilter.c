@@ -188,6 +188,7 @@ static sigjmp_buf env;		/* environment var. for pll_trap() */
 #endif /* SIGSYS */
 #endif /* KERNEL_PLL */
 
+#ifdef KERNEL_PLL
 static void
 sync_status(const char *what, int ostatus, int nstatus)
 {
@@ -216,6 +217,7 @@ static char *file_name(void)
 	}
 	return this_file;
 }
+#endif /* KERNEL_PLL */
 
 /*
  * init_loopfilter - initialize loop filter data
