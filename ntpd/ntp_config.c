@@ -2155,14 +2155,19 @@ config_auth(
 		getauthkeys(ptree->auth.keys);
 
 	/* Control Key Command */
-	if (ptree->auth.control_key)
+	if (ptree->auth.control_key) {
 		ctl_auth_keyid = (keyid_t)ptree->auth.control_key;
+		if (!auth_approve_mgmt_key(ctl_auth_keyid, "controlkey"))
+			ctl_auth_keyid = 0;
+	}
 
 	/* Requested Key Command */
 	if (ptree->auth.request_key) {
 		DPRINTF(4, ("set info_auth_keyid to %08lx\n",
 			    (u_long) ptree->auth.request_key));
 		info_auth_keyid = (keyid_t)ptree->auth.request_key;
+		if (!auth_approve_mgmt_key(info_auth_keyid, "requestkey"))
+			info_auth_keyid = 0;
 	}
 
 	/* Trusted Key Command */
@@ -4229,6 +4234,42 @@ config_vars(
 					    curr_var->value.s);
 			}
 			break;
+
+#ifdef HAVE_DROPROOT
+		case T_User:
+			/*
+			 * Command-line -u / -i take precedence over
+			 * ntp.conf "user".  Format matches -u: user[:group]
+			 */
+			if (HAVE_OPT(USER) || HAVE_OPT(JAILDIR))
+				break;
+			if (user != NULL) {
+				free(user);
+				user = NULL;
+			}
+			if (group != NULL) {
+				free(group);
+				group = NULL;
+			}
+			droproot = 1;
+			user = estrdup(curr_var->value.s);
+			group = strrchr(user, ':');
+			if (group != NULL) {
+				size_t ulen;
+
+				*group++ = '\0';
+				ulen = group - user;
+				group = estrdup(group);
+				user = erealloc(user, ulen);
+			}
+			break;
+#else
+		case T_User:
+			msyslog(LOG_WARNING,
+				"user \"%s\" ignored (built without privilege-drop support)",
+				curr_var->value.s);
+			break;
+#endif /* HAVE_DROPROOT */
 
 		case T_Automax:
 #ifdef AUTOKEY

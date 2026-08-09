@@ -734,6 +734,94 @@ authistrusted(
 	return FALSE;
 }
 
+
+/*
+ * auth_getkeytype - return digest NID for a known key, or 0 if unknown
+ */
+int
+auth_getkeytype(
+	keyid_t	keyno
+	)
+{
+	symkey *sk;
+
+	if (keyno == cache_keyid)
+		return cache_type;
+
+	sk = auth_findkey(keyno);
+	if (NULL == sk)
+		return 0;
+	return sk->type;
+}
+
+
+/*
+ * auth_key_has_access_list - TRUE if the key has a non-empty IP ACL
+ */
+int
+auth_key_has_access_list(
+	keyid_t	keyno
+	)
+{
+	symkey *sk;
+
+	if (keyno == cache_keyid)
+		return (NULL != cache_keyacclist);
+
+	sk = auth_findkey(keyno);
+	if (NULL == sk)
+		return FALSE;
+	return (NULL != sk->keyacclist);
+}
+
+
+/*
+ * auth_approve_mgmt_key - validate a controlkey/requestkey for AUTH use.
+ * Rejects MD5 when stronger digests are available (OpenSSL builds).
+ * Warns when the key has no IP access list (any source IP may use it,
+ * subject to restrict flags).
+ */
+int
+auth_approve_mgmt_key(
+	keyid_t		keyno,
+	const char *	what
+	)
+{
+	int keytype;
+
+	if (0 == keyno)
+		return FALSE;
+
+	keytype = auth_getkeytype(keyno);
+	if (0 == keytype) {
+		msyslog(LOG_ERR,
+			"%s key %u is not loaded; management AUTH disabled for it",
+			what, (unsigned)keyno);
+		return FALSE;
+	}
+
+	if (NID_md5 == keytype) {
+#ifdef OPENSSL
+		msyslog(LOG_ERR,
+			"%s key %u uses MD5; refused for management AUTH (use SHA-2 or CMAC)",
+			what, (unsigned)keyno);
+		return FALSE;
+#else
+		msyslog(LOG_WARNING,
+			"%s key %u uses MD5; prefer an OpenSSL build with SHA-2/CMAC for management AUTH",
+			what, (unsigned)keyno);
+#endif
+	}
+
+	if (!auth_key_has_access_list(keyno)) {
+		msyslog(LOG_WARNING,
+			"%s key %u has no IP ACL; any source may use it subject to restrict",
+			what, (unsigned)keyno);
+	}
+
+	return TRUE;
+}
+
 /* Note: There are two locations below where 'strncpy()' is used. While
  * this function is a hazard by itself, it's essential that it is used
  * here. Bug 1243 involved that the secret was filled with NUL bytes

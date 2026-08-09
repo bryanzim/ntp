@@ -26,6 +26,9 @@ ntpd_precmd()
                 return 0;
         fi
 
+        # Drop privileges when a chroot is configured.  Privilege drop is
+        # also available without chroot via ntpd_flags="-u ntpd:ntpd" or
+        # the ntp.conf "user" directive.
         rc_flags="-u ntpd:ntpd -i ${ntpd_chrootdir} $rc_flags"
 }
 

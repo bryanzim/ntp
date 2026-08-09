@@ -1196,6 +1196,16 @@ ntpdmain(
 # endif /* HAVE_LINUX_CAPABILITIES */
 
 # ifdef HAVE_DROPROOT
+	/*
+	 * Privilege drop is opt-in via -u / -i or ntp.conf "user".
+	 * Warn loudly when still running as root without drop configured.
+	 */
+	if (!droproot && 0 == geteuid()) {
+		msyslog(LOG_WARNING,
+			"ntpd is running as root without privilege drop; "
+			"configure 'user <user>[:<group>]' in ntp.conf or "
+			"start with -u <user>[:<group>] (and optionally -i <jaildir>)");
+	}
 #  ifdef HAVE_LINUX_CAPABILITIES
 	if (droproot && have_caps) {
 #  else

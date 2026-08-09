@@ -49,6 +49,9 @@
  */
 %token-table
 
+/* Keep parser trace support (yydebug) enabled by default; matches AM_YFLAGS -t. */
+%define parse.trace
+
 %union {
 	char *			String;
 	double			Double;
@@ -263,6 +266,7 @@
 %token	<Integer>	T_UEdigest
 %token	<Integer>	T_Unconfig
 %token	<Integer>	T_Unpeer
+%token	<Integer>	T_User
 %token	<Integer>	T_Version
 %token	<Integer>	T_WanderThreshold	/* Not a token */
 %token	<Integer>	T_Week
@@ -1398,6 +1402,7 @@ misc_cmd_str_lcl_keyword
 	:	T_Logfile
 	|	T_Pidfile
 	|	T_Saveconfigdir
+	|	T_User
 	;
 
 drift_parm

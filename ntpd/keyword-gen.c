@@ -88,6 +88,7 @@ struct key_tok ntp_keywords[] = {
 { "trap",		T_Trap,			FOLLBY_STRING },
 { "unconfig",		T_Unconfig,		FOLLBY_STRING },
 { "unpeer",		T_Unpeer,		FOLLBY_STRING },
+{ "user",		T_User,			FOLLBY_STRING },
 { "xmtnonce",		T_Xmtnonce,		FOLLBY_TOKEN },
 /* authentication_command */
 { "controlkey",		T_ControlKey,		FOLLBY_TOKEN },
