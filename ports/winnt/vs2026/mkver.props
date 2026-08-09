@@ -20,7 +20,7 @@
 	<ItemGroup>
 		<CustomBuild Include="..\..\..\..\.git\HEAD" Condition="!exists('..\..\..\..\sntp\scm-rev') and !exists('..\..\..\..\.bk\SCCS\ChangeSet,s') and exists('..\..\..\..\.git\HEAD')">
 			<Message>Generating scm-rev from git...</Message>
-			<Command>git -C "$(MSBuildThisFileDirectory)..\..\..\.." rev-parse --short HEAD &gt; scm-rev</Command>
+			<Command>git -C "$(MSBuildThisFileDirectory)..\..\.." rev-parse --short HEAD &gt; scm-rev</Command>
 			<Outputs>scm-rev</Outputs>
 		</CustomBuild>
 	</ItemGroup>
