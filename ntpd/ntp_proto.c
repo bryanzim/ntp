@@ -327,10 +327,10 @@ valid_NAK(
 	 * Only server responses can contain NAK's
 	 */
 
-	if (hismode != MODE_SERVER &&
-	    hismode != MODE_ACTIVE &&
-	    hismode != MODE_PASSIVE
-	    ) {
+	if (   hismode != MODE_SERVER
+	    && hismode != MODE_ACTIVE
+	    && hismode != MODE_PASSIVE
+	   ) {
 		return INVALIDNAK;
 	}
 
@@ -474,7 +474,7 @@ transmit(
 	/* [Bug 3851] drop pool servers which can no longer be reached. */
 	if (MDF_PCLNT & peer->cast_flags) {
 		if (   (IS_IPV6(&peer->srcadr) && !nonlocal_v6_addr_up)
-		    || !nonlocal_v4_addr_up) {
+		    || (IS_IPV4(&peer->srcadr) && !nonlocal_v4_addr_up)) {
 			unpeer(peer);
 			return;
 		}
@@ -805,7 +805,7 @@ receive(
 
 	/*
 	 * Validate the poll interval in the packet.
-	 * 0 probably indicates a data-minimized packet.
+	 * 0 can indicate a data-minimized packet.
 	 * A valid poll interval is required for RATEKISS, where
 	 * a value of 0 is not allowed.  We check for this below.
 	 * 
@@ -1219,7 +1219,7 @@ receive(
 	 * Now come at this from a different perspective:
 	 * - If we expect a MAC and it's not there, we drop it.
 	 * - If we expect one keyID and get another, we drop it.
-	 * - If we have a MAC ahd it hasn't been validated yet, try.
+	 * - If we have a MAC and it hasn't been validated yet, try.
 	 * - if the provided MAC doesn't validate, we drop it.
 	 *
 	 * There might be more to this.
@@ -1274,7 +1274,7 @@ receive(
 	**
 	** Verify protocol operations consistent with the on-wire protocol.
 	** The protocol discards bogus and duplicate packets as well as
-	** minimizes disruptions doe to protocol restarts and dropped
+	** minimizes disruptions due to protocol restarts and dropped
 	** packets.  The operations are controlled by two timestamps:
 	** the transmit timestamp saved in the client state variables,
 	** and the origin timestamp in the server packet header.  The
@@ -1380,7 +1380,7 @@ receive(
 		    || rbufp->dstadr->addr_refid == pkt->refid
 #	    ifdef WORDS_BIGENDIAN	/* see local_refid() comment */
 		    || (   IS_IPV6(&rbufp->dstadr->sin)
-			&&rbufp->dstadr->old_refid ==  pkt->refid)
+			&& rbufp->dstadr->old_refid ==  pkt->refid)
 #	    endif
 								  ) {
 			DPRINTF(2, ("receive: sys leap: %0x, sys_stratum %d > hisstratum+1 %d, !sys_cohort %d && sys_stratum == hisstratum+1, loop refid %#x == pkt refid %#x\n", sys_leap, sys_stratum, hisstratum + 1, !sys_cohort, rbufp->dstadr->addr_refid, pkt->refid));
@@ -1420,8 +1420,7 @@ receive(
 			    rbufp->recv_length - MIN_V4_PKT_LEN, (u_char *)&pkt->exten);
 
 			/* Bug 3596: Do we want to fuzz the reftime? */
-			fast_xmit(rbufp, MODE_SERVER, skeyid,
-			    restrict_mask);
+			fast_xmit(rbufp, MODE_SERVER, skeyid, restrict_mask);
 		}
 		return;				/* hooray */
 
@@ -1507,13 +1506,13 @@ receive(
 		}
 
 		/*
-		 * After each ephemeral pool association is spun,
+		 * After each preemptible pool association is spun,
 		 * accelerate the next poll for the pool solicitor so
 		 * the pool will fill promptly.
 		 */
-		if (peer2->cast_flags & MDF_POOL)
+		if (MDF_POOL & peer2->cast_flags) {
 			peer2->nextdate = current_time + 1;
-
+		}
 		/*
 		 * Further processing of the solicitation response would
 		 * simply detect its origin timestamp as bogus for the
@@ -1588,14 +1587,14 @@ receive(
 		 * with the same remote address.  newpeer() will not
 		 * find duplicate associations on other local endpoints
 		 * if a non-NULL endpoint is supplied.  multicastclient
-		 * ephemeral associations are unique across all local
+		 * preemptible associations are unique across all local
 		 * endpoints.
 		 */
-		if (!(INT_MCASTOPEN & rbufp->dstadr->flags))
+		if (!(INT_MCASTOPEN & rbufp->dstadr->flags)) {
 			match_ep = rbufp->dstadr;
-		else
+		} else {
 			match_ep = NULL;
-
+		}
 		/*
 		 * Determine whether to execute the initial volley.
 		 */
@@ -1662,7 +1661,7 @@ receive(
 	 * This is the first packet received from a potential ephemeral
 	 * symmetric active peer.  First, deal with broken Windows clients.
 	 * Then, if NOEPEER is enabled, drop it.  If the packet meets our
-	 * authenticty requirements and is the first he sent, mobilize
+	 * authenticity requirements and is the first he sent, mobilize
 	 * a passive association.
 	 * Otherwise, kiss the frog.
 	 *
@@ -2307,36 +2306,49 @@ receive(
 	 * headroom. Very intricate.
 	 */
 
-	/*
-	 * Check for any kiss codes. Note this is only used when a server
-	 * responds to a packet request.
-	 */
-
-	/*
-	 * Check to see if this is a RATE Kiss Code
-	 * Currently this kiss code will accept whatever valid poll
-	 * rate that the server sends
-	 */
-	if (   (NTP_MINPOLL > pkt->ppoll)
-	    || (NTP_MAXPOLL < pkt->ppoll)
-	   ) {
-		DPRINTF(2, ("RATEKISS: Invalid ppoll (%d) from %s\n",
-				pkt->ppoll, stoa(&rbufp->recv_srcadr)));
-		sys_badlength++;
-		return;			/* invalid packet poll */
+	/* HMS: XXX
+	** make sure NTP_MINPOLL <= pkt->ppoll <= NTP_MAXPOLL
+	**
+	** Remember that data minimized or broken implementations
+	** may send a packet with a 0 ppoll.  How sure are we that
+	** peer->minpoll is in a valid range?
+	*/
+	if (peer->ppoll != max(peer->minpoll,pkt->ppoll)) {
+		msyslog(LOG_INFO,
+			"receive: peer->ppoll changing from %d to max(peer->minpoll (%d), pkt->ppoll (%d)) per %s",
+			peer->ppoll, peer->minpoll, pkt->ppoll,
+			stoa(&rbufp->recv_srcadr));
 	}
 	peer->ppoll = max(peer->minpoll, pkt->ppoll);
+
+	/*
+	 * Check for any kiss codes. Note this is only used when a server
+	 * responds to a client request.
+	 *
+	 * Note Well: by this time, we've already just used pkt->ppoll...
+	 * Harlan thinks that for RATEKISS (at least) we might want to
+	 * delay setting peer->ppoll until after we validate pkt->ppoll.
+	 *
+	 * HMS: Best to make sure we've sanity checked pkt->ppoll already,
+	 * and data minimizing and broken folks may send a 0 pkt->ppoll.
+	 */
 	if (kissCode == RATEKISS) {
+		if (   pkt->ppoll < NTP_MINPOLL
+		    || pkt->ppoll > NTP_MAXPOLL) {
+			DPRINTF(2, ("Ignoring ppoll %d RATE KoD from %s\n",
+				    pkt->ppoll, stoa(&rbufp->recv_srcadr)));
+			sys_badlength++;
+			return;			/* invalid packet poll */
+		}
 		peer->selbroken++;	/* Increment the KoD count */
 		report_event(PEVNT_RATE, peer, NULL);
-		if (pkt->ppoll > peer->minpoll)
-			peer->minpoll = peer->ppoll;
+		peer->minpoll = peer->ppoll;
 		peer->burst = peer->retry = 0;
 		peer->throttle = (NTP_SHIFT + 1) * (1 << peer->minpoll);
 		poll_update(peer, pkt->ppoll, 0);
 		return;				/* kiss-o'-death */
-	}
-	if (kissCode != NOKISS) {
+
+	} else if (kissCode != NOKISS) {
 		peer->selbroken++;	/* Increment the KoD count */
 		return;		/* Drop any other kiss code packets */
 	}
@@ -3575,8 +3587,8 @@ clock_select(void)
 	indx_size = ALIGNED_SIZE(nlist * 2 * sizeof(*indx));
 	octets = endpoint_size + peers_size + indx_size;
 	endpoint = erealloc(endpoint, octets);
-	peers = INC_ALIGNED_PTR(endpoint, endpoint_size);
-	indx = INC_ALIGNED_PTR(peers, peers_size);
+	peers = INCR_PTR(endpoint, endpoint_size);
+	indx = INCR_PTR(peers, peers_size);
 
 	/*
 	 * Initially, we populate the island with all the rifraff peers
