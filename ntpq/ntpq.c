@@ -4007,8 +4007,8 @@ digest_alg_works(
 	const size_t	pay_len = MIN_V4_PKT_LEN;
 	void *		vp_pkt;
 	pay_u *		pp_pkt;
-	int		i;
-	const char *	secret;
+	size_t		i;
+	const u_char *	secret;
 	size_t		secret_len;
 	int		nid;
 	size_t		mac_len;
@@ -4025,7 +4025,7 @@ digest_alg_works(
 	}
 
 	/* arbitrarily use the program name as the irrelevant test key */
-	secret = progname;
+	secret = (const u_char *)progname;
 	secret_len = strlen(progname);
 
 	/* don't log digest errors for this use */

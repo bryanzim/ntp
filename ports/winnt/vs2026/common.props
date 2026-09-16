@@ -3,8 +3,8 @@
   <ImportGroup Label="PropertySheets">
   </ImportGroup>
   <PropertyGroup Label="UserMacros">
-    <OutBaseDir>$(SolutionDir)\$(Platform)-out\$(Configuration)</OutBaseDir>
-    <TmpBaseDir>$(SolutionDir)\$(Platform)-tmp\$(Configuration)</TmpBaseDir>
+    <OutBaseDir>$(SolutionDir)$(Platform)-out\$(Configuration)</OutBaseDir>
+    <TmpBaseDir>$(SolutionDir)$(Platform)-tmp\$(Configuration)</TmpBaseDir>
   </PropertyGroup>
   <PropertyGroup>
     <_ProjectFileVersion>12.0.30501.0</_ProjectFileVersion>
@@ -26,7 +26,8 @@
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <XMLDocumentationFileName>$(IntDir)</XMLDocumentationFileName>
-      <BrowseInformation>true</BrowseInformation>
+      <!-- Browse info .sbr files race under /MP and are unused by VS2026 IntelliSense. -->
+      <BrowseInformation>false</BrowseInformation>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>CompileAsC</CompileAs>
@@ -34,6 +35,9 @@
       <WarningLevel>Level3</WarningLevel>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
+    <Bscmake>
+      <Skip>true</Skip>
+    </Bscmake>
     <Link>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <Version>4.2</Version>

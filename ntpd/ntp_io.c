@@ -1653,7 +1653,7 @@ rename_multi_iface_endpt(
 
 	rc = snprintf(new_name, sizeof(new_name), "%s,%s",
 		      target->name, other->name);
-	if (rc < sizeof(new_name)) {
+	if (rc >= 0 && (size_t)rc < sizeof(new_name)) {
 		strlcpy(target->name, new_name, sizeof(target->name));
 	} else {
 		msyslog(LOG_INFO, "%s on %s & %s -> *multiple*",
