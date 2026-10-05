@@ -728,7 +728,7 @@ void test_addDynamic(void)
 		TEST_ASSERT_EQUAL(TRUE, rc);
 	}
 	// try to slip in a previous entry
-	rc = leapsec_add_dyn(TRUE, insns[0] - 20*SECSPERDAY - 100, NULL);
+	rc = leapsec_add_dyn(TRUE, insns[0U] - 20*SECSPERDAY - 100, NULL);
 	TEST_ASSERT_EQUAL(FALSE, rc);
 	//leap_table_t  * pt = leapsec_get_table(0);
 	//leapsec_dump(pt, (leapsec_dumper)fprintf, stdout);
@@ -778,9 +778,9 @@ void no_test_addFixed(void)
 	}
 	// try to slip in a previous entry
 	rc = leapsec_add_fix(
-	    insns[0].of,
-	    insns[0].tt,
-	    insns[0].tt + SECSPERDAY,
+	    insns[0U].of,
+	    insns[0U].tt,
+	    insns[0U].tt + SECSPERDAY,
 	    NULL);
 	TEST_ASSERT_EQUAL(FALSE, rc);
 	//leap_table_t * pt = leapsec_get_table(0);
@@ -865,16 +865,16 @@ void no_test_setFixedExtend(void)
 		TEST_ASSERT_EQUAL(TRUE, rc);
 	}
 
-	rc = leapsec_query(&qr, insns[0].tt - 86400, NULL);
+	rc = leapsec_query(&qr, insns[0U].tt - 86400, NULL);
 	TEST_ASSERT_EQUAL(28, qr.tai_offs);
 
-	rc = leapsec_query(&qr, insns[0].tt + 86400, NULL);
+	rc = leapsec_query(&qr, insns[0U].tt + 86400, NULL);
 	TEST_ASSERT_EQUAL(29, qr.tai_offs);
 
-	rc = leapsec_query(&qr, insns[1].tt - 86400, NULL);
+	rc = leapsec_query(&qr, insns[1U].tt - 86400, NULL);
 	TEST_ASSERT_EQUAL(29, qr.tai_offs);
 
-	rc = leapsec_query(&qr, insns[1].tt + 86400, NULL);
+	rc = leapsec_query(&qr, insns[1U].tt + 86400, NULL);
 	TEST_ASSERT_EQUAL(30, qr.tai_offs);
 
 	//leap_table_t * pt = leapsec_get_table(0);

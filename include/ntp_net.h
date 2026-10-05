@@ -106,7 +106,7 @@ typedef union {
 
 /* v6 is interface ID scope universal, as with MAC-derived addresses */
 #define IS_IID_UNIV(psau)					\
-	(!!(0x02 & NSRCADR6(psau)[8]))
+	(!!(0x02 & NSRCADR6(psau)[8U]))
 
 #define SIZEOF_INADDR(fam)					\
 	((AF_INET == (fam))					\

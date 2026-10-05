@@ -163,7 +163,7 @@ inp_trimtaip(
 		parseprintf(DD_PARSE, ("inp_trimptaip: START seen\n"));
 
 		parseio->parse_index = 1;
-		parseio->parse_data[0] = ch;
+		parseio->parse_data[0U] = ch;
 		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
 		return PARSE_INP_SKIP;
 

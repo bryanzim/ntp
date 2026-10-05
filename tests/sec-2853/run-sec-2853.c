@@ -54,7 +54,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("sec-2853.c");
   RUN_TEST(test_main, 10);

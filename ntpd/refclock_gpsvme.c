@@ -214,7 +214,7 @@ psc_poll(
        leap second notification.      */
     if (pp->hour < up->last_hour) {
 	check_leap_sec(pp, unit);
-	up->msg_flag[0] = up->msg_flag[1] = 0;	/* reset flags	*/
+	up->msg_flag[0U] = up->msg_flag[1U] = 0;	/* reset flags	*/
     }
     up->last_hour = pp->hour;
 }

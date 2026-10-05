@@ -65,7 +65,7 @@ void tearDown(void)
 
 void test_RegularTime(void)
 {
-	u_long testDate = 3485080800UL; // 2010-06-09 14:00:00
+	u_long testDate = 3485080800U; // 2010-06-09 14:00:00
 	struct calendar expected = {2010,160,6,9,14,0,0};
 
 	struct calendar actual;
@@ -77,7 +77,7 @@ void test_RegularTime(void)
 
 void test_LeapYear(void)
 {
-	u_long input = 3549902400UL; // 2012-06-28 20:00:00Z
+	u_long input = 3549902400U; // 2012-06-28 20:00:00Z
 	struct calendar expected = {2012, 179, 6, 28, 20, 0, 0};
 
 	struct calendar actual;
@@ -89,7 +89,7 @@ void test_LeapYear(void)
 
 void test_uLongBoundary(void)
 {
-	u_long enc_time = 4294967295UL; // 2036-02-07 6:28:15
+	u_long enc_time = 4294967295U; // 2036-02-07 6:28:15
 	struct calendar expected = {2036,0,2,7,6,28,15};
 
 	struct calendar actual;

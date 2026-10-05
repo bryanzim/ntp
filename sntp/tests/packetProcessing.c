@@ -110,8 +110,8 @@ setUp(void)
 	 * same value as the transmit timestamp of the sent packet.
 	 */
 	l_fp tmp;
-	tmp.l_ui = 1000UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000U;
+	tmp.l_uf = 0U;
 
 	HTONL_FP(&tmp, &testpkt.p.org);
 	HTONL_FP(&tmp, &testspkt.p.xmt);
@@ -226,14 +226,14 @@ test_AuthenticatedPacketInvalid(void)
 	TEST_ASSERT_TRUE(ENABLED_OPT(AUTHENTICATION));
 
 	/* Prepare the packet. */
-	testpkt.p.exten[0] = htonl(50);
+	testpkt.p.exten[0U] = htonl(50);
 	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr,
-			   &testpkt.p.exten[1], MAX_MDG_LEN);
+			   &testpkt.p.exten[1U], MAX_MDG_LEN);
 
 	pkt_len += KEY_MAC_LEN + mac_len;
 
 	/* Now, alter the MAC so it becomes invalid. */
-	testpkt.p.exten[1] += 1;
+	testpkt.p.exten[1U] += 1;
 
 	TEST_ASSERT_EQUAL(SERVER_AUTH_FAIL,
 			  process_pkt(&testpkt.p, &testsock, pkt_len,
@@ -261,9 +261,9 @@ test_AuthenticatedPacketUnknownKey(void)
 	/* Prepare the packet. Note that the Key-ID expected is 30, but
 	 * the packet has a key id of 50.
 	 */
-	testpkt.p.exten[0] = htonl(50);
+	testpkt.p.exten[0U] = htonl(50);
 	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr,
-			   &testpkt.p.exten[1], MAX_MDG_LEN);
+			   &testpkt.p.exten[1U], MAX_MDG_LEN);
 	pkt_len += KEY_MAC_LEN + mac_len;
 
 	TEST_ASSERT_EQUAL(SERVER_AUTH_FAIL,
@@ -382,12 +382,12 @@ test_RejectWrongResponseServerMode(void)
 	TEST_ASSERT_FALSE(ENABLED_OPT(AUTHENTICATION));
 
 	l_fp tmp;
-	tmp.l_ui = 1000UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000U;
+	tmp.l_uf = 0U;
 	HTONL_FP(&tmp, &testpkt.p.org);
 
-	tmp.l_ui = 2000UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 2000U;
+	tmp.l_uf = 0U;
 	HTONL_FP(&tmp, &testspkt.p.xmt);
 
 	TEST_ASSERT_EQUAL(PACKET_UNUSEABLE,
@@ -435,9 +435,9 @@ test_CorrectAuthenticatedPacketMD5(void)
 	TEST_ASSERT_TRUE(ENABLED_OPT(AUTHENTICATION));
 
 	/* Prepare the packet. */
-	testpkt.p.exten[0] = htonl(k_id);
+	testpkt.p.exten[0U] = htonl(k_id);
 	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr,
-			   &testpkt.p.exten[1], MAX_MDG_LEN);
+			   &testpkt.p.exten[1U], MAX_MDG_LEN);
 
 	/* TODO: Should not expect failure if non-FIPS OpenSSL */
 	TEST_EXPECT_FAIL_MESSAGE("FIPS OpenSSL bars MD5");
@@ -469,8 +469,8 @@ test_CorrectAuthenticatedPacketSHA256(void)
 	TEST_ASSERT_TRUE(ENABLED_OPT(AUTHENTICATION));
 
 	/* Prepare the packet. */
-	testpkt.p.exten[0] = htonl(k_id);
-	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr, &testpkt.p.exten[1],
+	testpkt.p.exten[0U] = htonl(k_id);
+	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr, &testpkt.p.exten[1U],
 			   MAX_MDG_LEN);
 
 	pkt_len += KEY_MAC_LEN + mac_len;
@@ -500,8 +500,8 @@ test_CorrectAuthenticatedPacketSHA1(void)
 	TEST_ASSERT_TRUE(ENABLED_OPT(AUTHENTICATION));
 
 	/* Prepare the packet. */
-	testpkt.p.exten[0] = htonl(k_id);
-	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr, &testpkt.p.exten[1],
+	testpkt.p.exten[0U] = htonl(k_id);
+	mac_len = make_mac(&testpkt.p, pkt_len, key_ptr, &testpkt.p.exten[1U],
 			   SHA1_LENGTH);
 
 	pkt_len += KEY_MAC_LEN + mac_len;
@@ -529,9 +529,9 @@ test_CorrectAuthenticatedPacketCMAC(void)
 	int pkt_len = LEN_PKT_NOMAC;
 
 	/* Prepare the packet. */
-	testpkt.p.exten[0] = htonl(30);
+	testpkt.p.exten[0U] = htonl(30);
 	int mac_len = make_mac(&testpkt.p, pkt_len, key_ptr,
-			       &testpkt.p.exten[1], MAX_MAC_LEN);
+			       &testpkt.p.exten[1U], MAX_MAC_LEN);
 
 	pkt_len += 4 + mac_len;
 

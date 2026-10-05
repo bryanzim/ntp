@@ -52,7 +52,7 @@ void
 test_CurrentYear(void)
 {
 	/* Timestamp: 2010-06-24 12:50:00Z */
-	const u_int32 timestamp = 3486372600UL;
+	const u_int32 timestamp = 3486372600U;
 	const u_int32 expected	= timestamp; /* exactly the same. */
 
 	const int yday=175, hour=12, minute=50, second=0, tzoff=0;
@@ -78,8 +78,8 @@ test_CurrentYearFuzz(void)
 	 * timestamp for the 12:00:00 time.
 	 */
 
-	const u_int32 timestamp = 3486372600UL; /* 2010-06-24 12:50:00Z */
-	const u_int32 expected	= 3486369600UL; /* 2010-06-24 12:00:00Z */
+	const u_int32 timestamp = 3486372600U; /* 2010-06-24 12:50:00Z */
+	const u_int32 expected	= 3486369600U; /* 2010-06-24 12:00:00Z */
 
 	const int yday=175, hour=12, minute=0, second=0, tzoff=0;
 
@@ -102,7 +102,7 @@ test_TimeZoneOffset(void)
 	 *
 	 * Time sent into function is 04:00:00 +0800
 	 */
-	const u_int32 timestamp = 3486369600UL;
+	const u_int32 timestamp = 3486369600U;
 	const u_int32 expected	= timestamp;
 
 	const int yday=175, hour=4, minute=0, second=0, tzoff=8;
@@ -123,12 +123,12 @@ test_WrongYearStart(void)
 	 * Time sent into function is 11:00:00.
 	 * Yearstart sent into function is the yearstart of 2009!
 	 */
-	const u_int32 timestamp = 3471418800UL;
+	const u_int32 timestamp = 3471418800U;
 	const u_int32 expected	= timestamp;
 
 	const int yday=2, hour=11, minute=0, second=0, tzoff=0;
 
-	u_long yearstart = 302024100UL; /* Yearstart of 2009. */
+	u_long yearstart = 302024100U; /* Yearstart of 2009. */
 	u_int32 actual;
 
 	TEST_ASSERT_TRUE(clocktime(yday, hour, minute, second, tzoff, timestamp,
@@ -144,8 +144,8 @@ test_PreviousYear(void)
 	 * Time sent into function is 23:00:00
 	 * (which is meant to be 2009-12-31 23:00:00Z)
 	 */
-	const u_int32 timestamp = 3471296400UL;
-	const u_int32 expected	= 3471289200UL;
+	const u_int32 timestamp = 3471296400U;
+	const u_int32 expected	= 3471289200U;
 
 	const int yday=365, hour=23, minute=0, second=0, tzoff=0;
 
@@ -165,8 +165,8 @@ test_NextYear(void)
 	 * Time sent into function is 01:00:00
 	 * (which is meant to be 2010-01-01 01:00:00Z)
 	 */
-	const u_int32 timestamp = 3471289200UL;
-	const u_int32 expected	= 3471296400UL;
+	const u_int32 timestamp = 3471289200U;
+	const u_int32 expected	= 3471296400U;
 
 	const int yday=1, hour=1, minute=0, second=0, tzoff=0;
 	u_long yearstart = 0;
@@ -183,7 +183,7 @@ void
 test_NoReasonableConversion(void)
 {
 	/* Timestamp is: 2010-01-02 11:00:00Z */
-	const u_int32 timestamp = 3471418800UL;
+	const u_int32 timestamp = 3471418800U;
 
 	const int yday=100, hour=12, minute=0, second=0, tzoff=0;
 	u_long yearstart = 0;
@@ -211,7 +211,7 @@ void
 test_AlwaysInLimit(void)
 {
 	/* Timestamp is: 2010-01-02 11:00:00Z */
-	const u_int32 timestamp = 3471418800UL;
+	const u_int32 timestamp = 3471418800U;
 	const u_short prime_incs[] = { 127, 151, 163, 179 };
 	int	cyc;
 	int	yday;
@@ -235,7 +235,7 @@ test_AlwaysInLimit(void)
 						  timestamp, &yearstart,
 						  &actual);
 					diff = actual - timestamp;
-					if (diff >= 0x80000000UL)
+					if (diff >= 0x80000000U)
 						diff = ~diff + 1;
 					TEST_ASSERT_TRUE(isLE(diff, (183u * SECSPERDAY)));
 				}

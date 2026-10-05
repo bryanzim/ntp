@@ -192,8 +192,8 @@ get_mbg_tzdl(
   tzdlp->offs_dl = get_lsb_long(buffpp);
   get_mbg_tm(buffpp, &tzdlp->tm_on);
   get_mbg_tm(buffpp, &tzdlp->tm_off);
-  get_mbg_tzname(buffpp, (char *)tzdlp->name[0]);
-  get_mbg_tzname(buffpp, (char *)tzdlp->name[1]);
+  get_mbg_tzname(buffpp, (char *)tzdlp->name[0U]);
+  get_mbg_tzname(buffpp, (char *)tzdlp->name[1U]);
 }
 
 void

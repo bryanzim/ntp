@@ -59,7 +59,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("statestr.c");
   RUN_TEST(test_PeerRestart, 10);

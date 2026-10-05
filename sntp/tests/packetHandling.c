@@ -118,14 +118,14 @@ test_GenerateAuthenticatedPacket(void)
 	NTOHL_FP(&testpkt.xmt, &actual_xmt);
 	TEST_ASSERT_TRUE(LfpEquality(expected_xmt, actual_xmt));
 
-	TEST_ASSERT_EQUAL(testkey.key_id, ntohl(testpkt.exten[0]));
+	TEST_ASSERT_EQUAL(testkey.key_id, ntohl(testpkt.exten[0U]));
 
 	TEST_ASSERT_EQUAL(sizeof(expected_mac), MAX_MDG_LEN);
  	mac_sz = make_mac(&testpkt, LEN_PKT_NOMAC, &testkey,
-			  &testpkt.exten[1], MAX_MDG_LEN);
+			  &testpkt.exten[1U], MAX_MDG_LEN);
 	TEST_ASSERT_EQUAL(mac_sz, MAX_MDG_LEN);
-	dump_mac(__func__, (void *)&testpkt.exten[1], mac_sz);
-	TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_mac, (void *)&testpkt.exten[1],
+	dump_mac(__func__, (void *)&testpkt.exten[1U], mac_sz);
+	TEST_ASSERT_EQUAL_HEX8_ARRAY(expected_mac, (void *)&testpkt.exten[1U],
 				     mac_sz);
 
 #else	/* !OPENSSL follows */
@@ -153,23 +153,23 @@ test_OffsetCalculationPositiveOffset(void)
 	HTONL_FP(&reftime, &rpkt.reftime);
 
 	/* T1 - Originate timestamp */
-	tmp.l_ui = 1000000000UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000000000U;
+	tmp.l_uf = 0U;
 	HTONL_FP(&tmp, &rpkt.org);
 
 	/* T2 - Receive timestamp */
-	tmp.l_ui = 1000000001UL;
-	tmp.l_uf = 2147483648UL;
+	tmp.l_ui = 1000000001U;
+	tmp.l_uf = 2147483648U;
 	HTONL_FP(&tmp, &rpkt.rec);
 
 	/* T3 - Transmit timestamp */
-	tmp.l_ui = 1000000002UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000000002U;
+	tmp.l_uf = 0U;
 	HTONL_FP(&tmp, &rpkt.xmt);
 
 	/* T4 - Destination timestamp as standard timeval */
-	tmp.l_ui = 1000000001UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000000001U;
+	tmp.l_uf = 0U;
 	TSTOTV(&tmp, &dst);
 	dst.tv_sec -= JAN_1970;
 
@@ -199,23 +199,23 @@ test_OffsetCalculationNegativeOffset(void)
 	HTONL_FP(&reftime, &rpkt.reftime);
 
 	/* T1 - Originate timestamp */
-	tmp.l_ui = 1000000001UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000000001U;
+	tmp.l_uf = 0U;
 	HTONL_FP(&tmp, &rpkt.org);
 
 	/* T2 - Receive timestamp */
-	tmp.l_ui = 1000000000UL;
-	tmp.l_uf = 2147483648UL;
+	tmp.l_ui = 1000000000U;
+	tmp.l_uf = 2147483648U;
 	HTONL_FP(&tmp, &rpkt.rec);
 
 	/*/ T3 - Transmit timestamp */
-	tmp.l_ui = 1000000001UL;
-	tmp.l_uf = 2147483648UL;
+	tmp.l_ui = 1000000001U;
+	tmp.l_uf = 2147483648U;
 	HTONL_FP(&tmp, &rpkt.xmt);
 
 	/* T4 - Destination timestamp as standard timeval */
-	tmp.l_ui = 1000000003UL;
-	tmp.l_uf = 0UL;
+	tmp.l_ui = 1000000003U;
+	tmp.l_uf = 0U;
 
 	TSTOTV(&tmp, &dst);
 	dst.tv_sec -= JAN_1970;

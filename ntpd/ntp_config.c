@@ -225,7 +225,7 @@ bc_entry bc_list[] = {
  * initialized with the appropriate value for other libntp clients, and
  * redirect it to point into bc_list during ntpd startup.
  */
-int *p_bcXXXX_enabled = &bc_list[0].enabled;
+int *p_bcXXXX_enabled = &bc_list[0U].enabled;
 #endif
 
 /* FUNCTION PROTOTYPES */
@@ -562,7 +562,7 @@ dump_config_tree(
 		if (!strftime(timestamp, sizeof(timestamp),
 			      "%Y-%m-%d %H:%M:%S",
 			      localtime(&ptree->timestamp)))
-			timestamp[0] = '\0';
+			timestamp[0U] = '\0';
 
 		fprintf(df, "# %s %s %s\n",
 			timestamp,
@@ -4171,7 +4171,7 @@ config_vars(
 			break;
 
 		case T_Driftfile:
-			if ('\0' == curr_var->value.s[0])
+			if ('\0' == curr_var->value.s[0U])
 				msyslog(LOG_INFO, "config: driftfile disabled");
 			stats_config(STATS_FREQ_FILE, curr_var->value.s, TRUE);
 			break;
@@ -4972,7 +4972,7 @@ config_sim(
 	for (; serv_info != NULL; serv_info = serv_info->link)
 		simulation.num_of_servers++;
 	simulation.servers = eallocarray(simulation.num_of_servers,
-				     sizeof(simulation.servers[0]));
+				     sizeof(simulation.servers[0U]));
 
 	i = 0;
 	serv_info = HEAD_PFIFO(sim_n->servers);
@@ -5594,7 +5594,7 @@ gettokens_netinfo (
 
 		msyslog(LOG_INFO, "%s %s", keywords[prop_index].text, val_list[val_index]);
 
-		(const char*)tokenlist[0] = keywords[prop_index].text;
+		(const char*)tokenlist[0U] = keywords[prop_index].text;
 		for (ntok = 1; ntok < MAXTOKENS; ntok++) {
 			tokenlist[ntok] = tokens;
 			while (!ISEOL(*tokens) && (!ISSPACE(*tokens) || quoted))

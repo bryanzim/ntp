@@ -63,7 +63,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("crypto.c");
   RUN_TEST(test_MakeSHA256Mac, 12);

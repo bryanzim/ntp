@@ -454,7 +454,7 @@ jjy_start ( int unit, struct peer *peer )
 	struct	jjyunit      *up ;
 	int 	rc ;
 	int 	fd ;
-	char	sDeviceName [ sizeof(DEVICE) + 10 ], sLog [ 60 ] ;
+	char	sDeviceName [ sizeof(DEVICE) + 10 ], sLog [ 60U ] ;
 
 #ifdef DEBUG
 	if ( debug ) {
@@ -917,15 +917,15 @@ jjy_poll ( int unit, struct peer *peer )
 
 	pp->polls ++ ;
 
-	sReach[0] = peer->reach & 0x80 ? '1' : '0' ;
-	sReach[1] = peer->reach & 0x40 ? '1' : '0' ;
-	sReach[2] = peer->reach & 0x20 ? '1' : '0' ;
-	sReach[3] = peer->reach & 0x10 ? '1' : '0' ;
-	sReach[4] = peer->reach & 0x08 ? '1' : '0' ;
-	sReach[5] = peer->reach & 0x04 ? '1' : '0' ;
-	sReach[6] = peer->reach & 0x02 ? '1' : '0' ;
-	sReach[7] = 0 ; /* This poll */
-	sReach[8] = 0 ;
+	sReach[0U] = peer->reach & 0x80 ? '1' : '0' ;
+	sReach[1U] = peer->reach & 0x40 ? '1' : '0' ;
+	sReach[2U] = peer->reach & 0x20 ? '1' : '0' ;
+	sReach[3U] = peer->reach & 0x10 ? '1' : '0' ;
+	sReach[4U] = peer->reach & 0x08 ? '1' : '0' ;
+	sReach[5U] = peer->reach & 0x04 ? '1' : '0' ;
+	sReach[6U] = peer->reach & 0x02 ? '1' : '0' ;
+	sReach[7U] = 0 ; /* This poll */
+	sReach[8U] = 0 ;
 
 	snprintf( sLog, sizeof(sLog), "polls=%ld reach=%s", pp->polls, sReach ) ;
 	jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_ATTENTION, sLog ) ;
@@ -1218,8 +1218,8 @@ jjy_receive_tristate_jjy01 ( struct recvbuf *rbufp )
 
 	/* Check reply length */
 
-	if ( iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[0]
-	  && iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[1] ) {
+	if ( iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[0U]
+	  && iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[1U] ) {
 		/* Unexpected reply length */
 		snprintf( sLog, sizeof(sLog)-1, JJY_CLOCKSTATS_MESSAGE_INVALID_LENGTH,
 			  iLen ) ;
@@ -1355,21 +1355,21 @@ jjy_receive_tristate_jjy01 ( struct recvbuf *rbufp )
 			}
 			jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_INFORMATION, sLog ) ;
 			return JJY_RECEIVE_SKIP ;
-		} else if ( up->iTimestamp[1] - 2 <= up->iTimestamp[0]
-		         && up->iTimestamp[0]     <= up->iTimestamp[1] ) {
+		} else if ( up->iTimestamp[1U] - 2 <= up->iTimestamp[0U]
+		         && up->iTimestamp[0U]     <= up->iTimestamp[1U] ) {
 			/* 3 commands (time,date,stim) was executed in two seconds */
 			jjy_synctime( peer, pp, up ) ;
 			return JJY_RECEIVE_DONE ;
-		} else if ( up->iTimestamp[0] > up->iTimestamp[1] ) {
+		} else if ( up->iTimestamp[0U] > up->iTimestamp[1U] ) {
 			/* Over midnight, and date is unsure */
 			snprintf( sLog, sizeof(sLog)-1, JJY_CLOCKSTATS_MESSAGE_OVER_MIDNIGHT_2,
-				  up->iTimestamp[0], up->iTimestamp[1] ) ;
+				  up->iTimestamp[0U], up->iTimestamp[1U] ) ;
 			jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_INFORMATION, sLog ) ;
 			return JJY_RECEIVE_SKIP ;
 		} else {
 			/* Slow reply */
 			snprintf( sLog, sizeof(sLog)-1, JJY_CLOCKSTATS_MESSAGE_SLOW_REPLY_2,
-				  up->iTimestamp[0], up->iTimestamp[1] ) ;
+				  up->iTimestamp[0U], up->iTimestamp[1U] ) ;
 			jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_ERROR, sLog ) ;
 			up->bLineError = TRUE ;
 			return JJY_RECEIVE_ERROR ;
@@ -1714,9 +1714,9 @@ jjy_receive_echokeisokuki_lt2000 ( struct recvbuf *rbufp )
 
 		ibcc1 = 0x30 | ( ( ibcc >> 4 ) & 0xF ) ;
 		ibcc2 = 0x30 | ( ( ibcc      ) & 0xF ) ;
-		if ( pBuf[13] != ibcc1 || pBuf[14] != ibcc2 ) {
+		if ( pBuf[13U] != ibcc1 || pBuf[14U] != ibcc2 ) {
 			snprintf( sErr, sizeof(sErr)-1, " BCC error : Recv=%02X,%02X / Calc=%02X,%02X ",
-				  pBuf[13] & 0xFF, pBuf[14] & 0xFF,
+				  pBuf[13U] & 0xFF, pBuf[14] & 0xFF,
 				  ibcc1, ibcc2 ) ;
 			snprintf( sLog, sizeof(sLog)-1, JJY_CLOCKSTATS_MESSAGE_INVALID_REPLY,
 				  sErr ) ;
@@ -1824,14 +1824,14 @@ jjy_poll_echokeisokuki_lt2000 ( int unit, struct peer *peer )
 
 	switch ( up->operationmode ) {
 	case ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND :
-		sCmd[0] = 'T' ;
+		sCmd[0U] = 'T' ;
 		break ;
 	case ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS :
 	case ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS :
-		sCmd[0] = 'C' ;
+		sCmd[0U] = 'C' ;
 		break ;
 	}
-	sCmd[1] = 0 ;
+	sCmd[1U] = 0 ;
 
 	if ( write ( pp->io.fd, sCmd, 1 ) != 1  ) {
 		refclock_report ( peer, CEVNT_FAULT ) ;
@@ -1929,7 +1929,7 @@ jjy_receive_citizentic_jjy200 ( struct recvbuf *rbufp )
 		      &cApostrophe, sStatus,
 		      &up->year, &up->month, &up->day, &iWeekday,
 		      &up->hour, &up->minute, &up->second ) ;
-	sStatus[2] = 0 ;
+	sStatus[2U] = 0 ;
 
 	if ( rc != 9 || cApostrophe != '\''
 	  || ( strcmp( sStatus, "OK" ) != 0
@@ -2231,21 +2231,21 @@ jjy_receive_tristate_gpsclock01 ( struct recvbuf *rbufp )
 	if ( up->iTimestampCount == 2 ) {
 		/* Process date and time */
 
-		if ( up->iTimestamp[1] - 2 <= up->iTimestamp[0]
-		  && up->iTimestamp[0]     <= up->iTimestamp[1] ) {
+		if ( up->iTimestamp[1U] - 2 <= up->iTimestamp[0U]
+		  && up->iTimestamp[0U]     <= up->iTimestamp[1U] ) {
 			/* 3 commands (time,date,stim) was executed in two seconds */
 			jjy_synctime( peer, pp, up ) ;
 			return JJY_RECEIVE_DONE ;
-		} else if ( up->iTimestamp[0] > up->iTimestamp[1] ) {
+		} else if ( up->iTimestamp[0U] > up->iTimestamp[1U] ) {
 			/* Over midnight, and date is unsure */
 			snprintf( sLog, sizeof(sLog)-1, JJY_CLOCKSTATS_MESSAGE_OVER_MIDNIGHT_2,
-				  up->iTimestamp[0], up->iTimestamp[1] ) ;
+				  up->iTimestamp[0U], up->iTimestamp[1U] ) ;
 			jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_INFORMATION, sLog ) ;
 			return JJY_RECEIVE_SKIP ;
 		} else {
 			/* Slow reply */
 			snprintf( sLog, sizeof(sLog)-1, JJY_CLOCKSTATS_MESSAGE_SLOW_REPLY_2,
-				  up->iTimestamp[0], up->iTimestamp[1] ) ;
+				  up->iTimestamp[0U], up->iTimestamp[1U] ) ;
 			jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_ERROR, sLog ) ;
 			up->bLineError = TRUE ;
 			return JJY_RECEIVE_ERROR ;
@@ -2758,26 +2758,26 @@ jjy_start_telephone ( int unit, struct peer *peer, struct jjyunit *up )
 
 	/* Check the telephone number */
 
-	if ( sys_phone[0] == NULL ) {
+	if ( sys_phone[0U] == NULL ) {
 		msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone in the ntpd.conf must be specified." ) ;
 		up->bInitError = TRUE ;
 		return 1 ;
 	}
 
-	if ( sys_phone[1] != NULL ) {
+	if ( sys_phone[1U] != NULL ) {
 		msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone in the ntpd.conf should be only one." ) ;
 		up->bInitError = TRUE ;
 		return 1 ;
 	}
 
 	iNumberOfDigitsOfPhoneNumber = iCommaCount = iCommaPosition = iFirstThreeDigitsCount = 0 ;
-	for ( i = 0 ; i < strlen( sys_phone[0] ) ; i ++ ) {
-		if ( isdigit( (u_char)sys_phone[0][i] ) ) {
+	for ( i = 0 ; i < strlen( sys_phone[0U] ) ; i ++ ) {
+		if ( isdigit( (u_char)sys_phone[0U][i] ) ) {
 			if ( iFirstThreeDigitsCount < sizeof(sFirstThreeDigits)-1 ) {
-				sFirstThreeDigits[iFirstThreeDigitsCount++] = sys_phone[0][i] ;
+				sFirstThreeDigits[iFirstThreeDigitsCount++] = sys_phone[0U][i] ;
 			}
 			iNumberOfDigitsOfPhoneNumber ++ ;
-		} else if ( sys_phone[0][i] == ',' ) {
+		} else if ( sys_phone[0U][i] == ',' ) {
 			iCommaCount ++ ;
 			if ( iCommaCount > 1 ) {
 				msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone in the ntpd.conf should be zero or one comma." ) ;
@@ -2786,7 +2786,7 @@ jjy_start_telephone ( int unit, struct peer *peer, struct jjyunit *up )
 			}
 			iFirstThreeDigitsCount = 0 ;
 			iCommaPosition = i ;
-		} else if ( sys_phone[0][i] != '-' ) {
+		} else if ( sys_phone[0U][i] != '-' ) {
 			msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone in the ntpd.conf should be a number or a hyphen." ) ;
 			up->bInitError = TRUE ;
 			return 1 ;
@@ -2795,7 +2795,7 @@ jjy_start_telephone ( int unit, struct peer *peer, struct jjyunit *up )
 	sFirstThreeDigits[iFirstThreeDigitsCount] = 0 ;
 
 	if ( iCommaCount == 1 ) {
-		if ( iCommaPosition != 1 || *sys_phone[0] != '0' ) {
+		if ( iCommaPosition != 1 || *sys_phone[0U] != '0' ) {
 			msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : Getting an outside line should be '0,'." ) ;
 			up->bInitError = TRUE ;
 			return 1 ;
@@ -2804,7 +2804,7 @@ jjy_start_telephone ( int unit, struct peer *peer, struct jjyunit *up )
 
 	if ( iNumberOfDigitsOfPhoneNumber - iCommaPosition < 6 || 10 < iNumberOfDigitsOfPhoneNumber - iCommaPosition ) {
 		/* Too short or too long */
-		msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone=%s : Number of digits should be 6 to 10.", sys_phone[0] ) ;
+		msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone=%s : Number of digits should be 6 to 10.", sys_phone[0U] ) ;
 		up->bInitError = TRUE ;
 		return 1 ;
 	}
@@ -2815,14 +2815,14 @@ jjy_start_telephone ( int unit, struct peer *peer, struct jjyunit *up )
 	  || strncmp( sFirstThreeDigits + iCommaPosition, "12" , 2 ) == 0
 	  || strncmp( sFirstThreeDigits + iCommaPosition, "171", 3 ) == 0
 	  || strncmp( sFirstThreeDigits + iCommaPosition, "177", 3 ) == 0
-	  || ( sFirstThreeDigits[0] == '0' &&  sFirstThreeDigits[2] == '0' ) ) {
+	  || ( sFirstThreeDigits[0U] == '0' &&  sFirstThreeDigits[2U] == '0' ) ) {
 		/* Not allowed because of emergency numbers or special service numbers */
-		msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone=%s : First 2 or 3 digits are not allowed.", sys_phone[0] ) ;
+		msyslog( LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone=%s : First 2 or 3 digits are not allowed.", sys_phone[0U] ) ;
 		up->bInitError = TRUE ;
 		return 1 ;
 	}
 
-	snprintf( sLog, sizeof(sLog), "phone=%s", sys_phone[0] ) ;
+	snprintf( sLog, sizeof(sLog), "phone=%s", sys_phone[0U] ) ;
 	jjy_write_clockstats( peer, JJY_CLOCKSTATS_MARK_JJY, sLog ) ;
 
 	if ( peer->minpoll < 8 ) {
@@ -3462,7 +3462,7 @@ teljjy_conn_data ( struct peer *peer, struct refclockproc *pp, struct jjyunit *u
 
 	if ( teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength == iLen
 	  && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK
-	  && up->sTextBuf[0] == *(teljjy_command_sequence[up->iClockCommandSeq].command)
+	  && up->sTextBuf[0U] == *(teljjy_command_sequence[up->iClockCommandSeq].command)
 	  && up->iLoopbackCount < MAX_LOOPBACK ) {
 		/* Loopback */
 
@@ -3527,7 +3527,7 @@ teljjy_conn_data ( struct peer *peer, struct refclockproc *pp, struct jjyunit *u
 #if DEBUG
 			printf( "refclock_jjy.c : teljjy_conn_data : bLineError=%d iTimestamp=%d, %d, %d\n",
 				up->bLineError,
-				up->iTimestamp[3], up->iTimestamp[4], up->iTimestamp[5] ) ;
+				up->iTimestamp[3U], up->iTimestamp[4U], up->iTimestamp[5U] ) ;
 #endif
 			bAdjustment = TRUE ;
 
@@ -3543,10 +3543,10 @@ teljjy_conn_data ( struct peer *peer, struct refclockproc *pp, struct jjyunit *u
 				}
 			}
 
-			if ( ( up->iTimestamp[3] - 15 ) <= up->iTimestamp[2]
-			  &&   up->iTimestamp[2]        <= up->iTimestamp[3]
-			  && ( up->iTimestamp[3] +  1 ) == up->iTimestamp[4]
-			  && ( up->iTimestamp[4] +  1 ) == up->iTimestamp[5] ) {
+			if ( ( up->iTimestamp[3U] - 15 ) <= up->iTimestamp[2U]
+			  &&   up->iTimestamp[2U]        <= up->iTimestamp[3U]
+			  && ( up->iTimestamp[3U] +  1 ) == up->iTimestamp[4U]
+			  && ( up->iTimestamp[4U] +  1 ) == up->iTimestamp[5U] ) {
 				/* Non over midnight */
 
 				jjy_synctime( peer, pp, up ) ;

@@ -41,7 +41,7 @@ netof(
 		SET_ADDR4(netaddr, netnum);
 	} else if (IS_IPV6(netaddr))
 		/* assume the typical /64 subnet size */
-		zero_mem(&NSRCADR6(netaddr)[8], 8);
+		zero_mem(&NSRCADR6(netaddr)[8U], 8);
 #ifdef DEBUG
 	else {
 		msyslog(LOG_ERR, "netof unknown AF %d", AF(netaddr));

@@ -606,14 +606,14 @@ void wpa_msg(void *ctx, int level, const char *fmt, ...)
 		return;
 	}
 	va_start(ap, fmt);
-	prefix[0] = '\0';
+	prefix[0U] = '\0';
 	if (wpa_msg_ifname_cb) {
 		const char *ifname = wpa_msg_ifname_cb(ctx);
 		if (ifname) {
 			int res = os_snprintf(prefix, sizeof(prefix), "%s: ",
 					      ifname);
 			if (res < 0 || res >= (int) sizeof(prefix))
-				prefix[0] = '\0';
+				prefix[0U] = '\0';
 		}
 	}
 	len = vsnprintf(buf, buflen, fmt, ap);

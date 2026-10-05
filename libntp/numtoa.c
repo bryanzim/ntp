@@ -59,8 +59,8 @@ refid_str(
 	printable = FALSE;
 	if (stratum < 2) {
 		text = lib_getbuf();
-		text[0] = '.';
-		memcpy(&text[1], &refid, sizeof(refid));
+		text[0U] = '.';
+		memcpy(&text[1U], &refid, sizeof(refid));
 		text[1 + sizeof(refid)] = '\0';
 		tlen = strlen(text);
 		text[tlen] = '.';

@@ -126,7 +126,7 @@ ensure_parent_dir(char *filepath)
 	if (slash == NULL)
 		return (TRUE);
 	*slash = '\0';
-	if (dir[0] == '\0')
+	if (dir[0U] == '\0')
 		return (TRUE);
 	if (CreateDirectoryA(dir, NULL) || GetLastError() == ERROR_ALREADY_EXISTS)
 		return (TRUE);

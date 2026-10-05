@@ -593,7 +593,7 @@ nmea_timer(
 		/* expire one (the oldest) sample, if any */
 		refclock_samples_expire(pp, 1);
 		/* reset message assembly buffer */
-		up->lb_buf[0] = '\0';
+		up->lb_buf[0U] = '\0';
 		up->lb_len    = 0;
 	}
 
@@ -1443,8 +1443,8 @@ static int _parse_num2d(UCC *cp, UCC ** ep, uint16_t *into)
 {
 	int	rc = FALSE;
 
-	if (isdigit(cp[0]) && isdigit(cp[1])) {
-		*into = (cp[0] - '0') * 10 + (cp[1] - '0');
+	if (isdigit(cp[0U]) && isdigit(cp[1U])) {
+		*into = (cp[0U] - '0') * 10 + (cp[1U] - '0');
 		cp += 2;
 		rc = TRUE;
 	}

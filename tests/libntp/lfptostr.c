@@ -128,7 +128,7 @@ test_MillisecondsRoundingDown(void) {
 }
 
 void test_UnsignedInteger(void) {
-	l_fp test = {{3000000000UL}, 0};
+	l_fp test = {{3000000000U}, 0};
 
 	TEST_ASSERT_EQUAL_STRING("3000000000.0", ulfptoa(&test, 1));
 }

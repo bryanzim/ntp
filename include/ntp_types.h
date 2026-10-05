@@ -67,7 +67,7 @@ typedef int bool;	/* Can't use enum TRUE/FALSE because of above */
 /*
  * COUNTOF(array) - size of array in elements
  */
-#define COUNTOF(arr)	(sizeof(arr) / sizeof((arr)[0]))
+#define COUNTOF(arr)	(sizeof(arr) / sizeof((arr)[0U]))
 
 /*
  * VMS DECC (v4.1), {u_char,u_short,u_long} are only in SOCKET.H,

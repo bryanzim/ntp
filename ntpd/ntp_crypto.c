@@ -250,20 +250,20 @@ session_key(
 	hdlen = 0;
 	switch(AF(srcadr)) {
 	case AF_INET:
-		header[0] = NSRCADR(srcadr);
-		header[1] = NSRCADR(dstadr);
-		header[2] = htonl(keyno);
-		header[3] = htonl(private);
+		header[0U] = NSRCADR(srcadr);
+		header[1U] = NSRCADR(dstadr);
+		header[2U] = htonl(keyno);
+		header[3U] = htonl(private);
 		hdlen = 4 * sizeof(u_int32);
 		break;
 
 	case AF_INET6:
-		memcpy(&header[0], PSOCK_ADDR6(srcadr),
+		memcpy(&header[0U], PSOCK_ADDR6(srcadr),
 		    sizeof(struct in6_addr));
-		memcpy(&header[4], PSOCK_ADDR6(dstadr),
+		memcpy(&header[4U], PSOCK_ADDR6(dstadr),
 		    sizeof(struct in6_addr));
-		header[8] = htonl(keyno);
-		header[9] = htonl(private);
+		header[8U] = htonl(keyno);
+		header[9U] = htonl(private);
 		hdlen = 10 * sizeof(u_int32);
 		break;
 	}
@@ -463,7 +463,7 @@ crypto_recv(
 		code = ntohl(ep->opcode) & 0xffff0000;
 		len = ntohl(ep->opcode) & 0x0000ffff;
 		// HMS: Why pkt[1] instead of ep->associd ?
-		associd = (associd_t)ntohl(pkt[1]);
+		associd = (associd_t)ntohl(pkt[1U]);
 		rval = XEVNT_OK;
 		DPRINTF(1, ("crypto_recv: flags 0x%x ext offset %d len %u code 0x%x associd %d\n",
 			    peer->crypto, authlen, len, code >> 16,
@@ -990,19 +990,19 @@ crypto_recv(
 			 * message.
 			 */
 			if (sys_leap != LEAP_NOTINSYNC)
-				leapsec_autokey_tai(ntohl(ep->pkt[0]),
+				leapsec_autokey_tai(ntohl(ep->pkt[0U]),
 						    rbufp->recv_time.l_ui, NULL);
 			tai_leap.tstamp = ep->tstamp;
 			tai_leap.fstamp = ep->fstamp;
 			crypto_update();
 			mprintf_event(EVNT_TAI, peer,
-				      "%d seconds", ntohl(ep->pkt[0]));
+				      "%d seconds", ntohl(ep->pkt[0U]));
 			peer->crypto |= CRYPTO_FLAG_LEAP;
 			peer->flash &= ~TEST8;
 			snprintf(statstr, sizeof(statstr),
 				 "leap TAI offset %d at %u expire %u fs %u",
-				 ntohl(ep->pkt[0]), ntohl(ep->pkt[1]),
-				 ntohl(ep->pkt[2]), ntohl(ep->fstamp));
+				 ntohl(ep->pkt[0U]), ntohl(ep->pkt[1U]),
+				 ntohl(ep->pkt[2U]), ntohl(ep->fstamp));
 			record_crypto_stats(&peer->srcadr, statstr);
 			DPRINTF(1, ("crypto_recv: %s\n", statstr));
 			break;
@@ -1917,12 +1917,12 @@ crypto_update(void)
 		/* create a TAI / leap era block. The end time is a
 		 * fake -- maybe we can do better.
 		 */
-		ptr[0] = htonl(leap_data.tai_offs);
-		ptr[1] = htonl(leap_data.ebase.d_s.lo);
+		ptr[0U] = htonl(leap_data.tai_offs);
+		ptr[1U] = htonl(leap_data.ebase.d_s.lo);
 		if (leap_data.ttime.d_s.hi >= 0)
-			ptr[2] = htonl(leap_data.ttime.D_s.lo +  7*86400);
+			ptr[2U] = htonl(leap_data.ttime.D_s.lo +  7*86400);
 		else
-			ptr[2] = htonl(leap_data.ebase.D_s.lo + 25*86400);
+			ptr[2U] = htonl(leap_data.ebase.D_s.lo + 25*86400);
 	} else {
 		/* no leap era available */
 		memset(ptr, 0, len);
@@ -2078,10 +2078,10 @@ asn_to_calendar	(
 
 	temp = strtoul(v, NULL, 10);
 	/* handle two-digit years */
-	if (temp < 50UL)
-	    temp += 100UL;
-	if (temp < 150UL)
-	    temp += 1900UL;
+	if (temp < 50U)
+	    temp += 100U;
+	if (temp < 150U)
+	    temp += 1900U;
 	pjd->year = temp;
 
 	pjd->yearday = pjd->weekday = 0;
@@ -3773,7 +3773,7 @@ crypto_key(
 	 */
 	if ((ptr = strrchr(linkname, '\n')) != NULL)
 		*ptr = '\0'; 
-	snprintf(statstr, sizeof(statstr), "%s mod %d", &linkname[2],
+	snprintf(statstr, sizeof(statstr), "%s mod %d", &linkname[2U],
 	    EVP_PKEY_size(pkey) * 8);
 	record_crypto_stats(addr, statstr);
 	
@@ -3891,7 +3891,7 @@ crypto_cert(
 	if ((ptr = strrchr(linkname, '\n')) != NULL)
 		*ptr = '\0'; 
 	snprintf(statstr, sizeof(statstr), "%s 0x%x len %lu",
-	    &linkname[2], ret->flags, len);
+	    &linkname[2U], ret->flags, len);
 	record_crypto_stats(NULL, statstr);
 	DPRINTF(1, ("crypto_cert: %s\n", statstr));
 	return (ret);

@@ -111,7 +111,7 @@ main(
 	volatile int rawtime	= 0;
 
 	ZERO(ntx);
-	progname = argv[0];
+	progname = argv[0U];
 	while ((ch = ntp_getopt(argc, argv, optargs)) != EOF) {
 		switch (ch) {
 #ifdef MOD_MICRO
@@ -256,7 +256,7 @@ main(
 			}
 		}
 		if (pll_control >= 0) {
-			printf("[ us %06d:", times[0]);
+			printf("[ us %06d:", times[0U]);
 			for (c = 1; c < COUNTOF(times); c++)
 			    printf(" %d", times[c] - times[c - 1]);
 			printf(" ]\n");

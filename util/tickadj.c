@@ -43,13 +43,13 @@ main(
 	extern int ntp_optind;
 	extern char *ntp_optarg;
 
-	progname = argv[0];
-	if (argc==2 && argv[1][0] != '-') { /* old Linux format, for compatability */
-	    if ((i = atoi(argv[1])) > 0) {
+	progname = argv[0U];
+	if (argc==2 && argv[1U][0U] != '-') { /* old Linux format, for compatability */
+	    if ((i = atoi(argv[1U])) > 0) {
 		    txc.time_tick = i;
 		    txc.modes = ADJ_TIMETICK;
 	    } else {
-		    fprintf(stderr, "Silly value for tick: %s\n", argv[1]);
+		    fprintf(stderr, "Silly value for tick: %s\n", argv[1U]);
 		    errflg++;
 	    }
 	} else {
@@ -112,18 +112,18 @@ main(
 {
 	if (argc > 2)
 	{
-		fprintf(stderr, "Usage: %s [tick_value]\n", argv[0]);
+		fprintf(stderr, "Usage: %s [tick_value]\n", argv[0U]);
 		exit(-1);
 	}
 	else if (argc == 2)
 	{
 #ifdef ADJ_TIMETICK
-		if ( (txc.time_tick = atoi(argv[1])) < 1 )
+		if ( (txc.time_tick = atoi(argv[1U])) < 1 )
 #else
-		if ( (txc.tick = atoi(argv[1])) < 1 )
+		if ( (txc.tick = atoi(argv[1U])) < 1 )
 #endif
 		{
-			fprintf(stderr, "Silly value for tick: %s\n", argv[1]);
+			fprintf(stderr, "Silly value for tick: %s\n", argv[1U]);
 			exit(-1);
 		}
 #ifdef ADJ_TIMETICK
@@ -260,7 +260,7 @@ main(
 
 	init_lib();
 
-	progname = argv[0];
+	progname = argv[0U];
 	while ((c = ntp_getopt(argc, argv, "a:Adkpqst:")) != EOF)
 	{
 		switch (c)
@@ -732,17 +732,17 @@ getoffsets(
 	kvm_close(kvm_handle);
 #else /* not HAVE_KVM_OPEN */
 #ifdef HAVE_GETBOOTFILE		/* *** SEE HERE! *** */
-	if (kernels[0] == NULL)
+	if (kernels[0U] == NULL)
 	{
 		char * cp = (char *)getbootfile();
 
 		if (cp)
 		{
-			kernels[0] = cp;
+			kernels[0U] = cp;
 		}
 		else
 		{
-			kernels[0] = "/Placeholder";
+			kernels[0U] = "/Placeholder";
 		}
 	}
 #endif /* HAVE_GETBOOTFILE */

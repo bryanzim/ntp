@@ -77,7 +77,7 @@ main(
 	int nofork = 0;
 	int fd;
 
-	progname = argv[0];
+	progname = argv[0U];
 
 #ifdef LOG_LOCAL6
 	openlog("adjtimed", LOG_PID, LOG_LOCAL6);
@@ -365,7 +365,7 @@ GetClockRate(void)
 {
 	long rate, mask;
 
-	if (lseek(kmem, (off_t)nl[0].n_value, 0) == -1L)
+	if (lseek(kmem, (off_t)nl[0U].n_value, 0) == -1L)
 	    return (-1L);
 
 	mask = sigblock(sigmask(SIGALRM));
@@ -387,7 +387,7 @@ SetClockRate(
 {
 	long mask;
 
-	if (lseek(kmem, (off_t)nl[0].n_value, 0) == -1L)
+	if (lseek(kmem, (off_t)nl[0U].n_value, 0) == -1L)
 	    return (-1);
 
 	mask = sigblock(sigmask(SIGALRM));
@@ -424,7 +424,7 @@ InitClockRate(void)
 
 	nlist("/hp-ux", nl);
 
-	if (nl[0].n_type == 0) {
+	if (nl[0U].n_type == 0) {
 		fputs("adjtimed: /hp-ux has no symbol table\n", stderr);
 		msyslog(LOG_ERR, "/hp-ux has no symbol table");
 		return (-1);

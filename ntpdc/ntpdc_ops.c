@@ -522,7 +522,7 @@ refid_string(
 {
 	if (stratum <= 1) {
 		static char junk[5];
-		junk[4] = 0;
+		junk[4U] = 0;
 		memcpy(junk, &refid, 4);
 		return junk;
 	}
@@ -887,9 +887,9 @@ loopinfo(
 	l_fp tempts;
 
 	if (pcmd->nargs > 0) {
-		if (STREQ(pcmd->argval[0].string, "oneline"))
+		if (STREQ(pcmd->argval[0U].string, "oneline"))
 		    oneline = 1;
-		else if (STREQ(pcmd->argval[0].string, "multiline"))
+		else if (STREQ(pcmd->argval[0U].string, "multiline"))
 		    oneline = 0;
 		else {
 			(void) fprintf(stderr, "How many lines?\n");
@@ -1434,8 +1434,8 @@ again:
 
 	ZERO(cpeer);
 
-	if (IS_IPV4(&pcmd->argval[0].netnum)) {
-		cpeer.peeraddr = NSRCADR(&pcmd->argval[0].netnum);
+	if (IS_IPV4(&pcmd->argval[0U].netnum)) {
+		cpeer.peeraddr = NSRCADR(&pcmd->argval[0U].netnum);
 		if (impl_ver == IMPL_XNTPD)
 			cpeer.v6_flag = 0;
 	} else {
@@ -1444,7 +1444,7 @@ again:
 			    "***Server doesn't understand IPv6 addresses\n");
 			return;
 		}
-		cpeer.peeraddr6 = SOCK_ADDR6(&pcmd->argval[0].netnum);
+		cpeer.peeraddr6 = SOCK_ADDR6(&pcmd->argval[0U].netnum);
 		cpeer.v6_flag = 1;
 	}
 	cpeer.hmode = (u_char) mode;
@@ -1505,7 +1505,7 @@ again:
 
 	qitemlim = min(pcmd->nargs, COUNTOF(plist));
 	for (qitems = 0, pl = plist; qitems < qitemlim; qitems++) {
-		if (IS_IPV4(&pcmd->argval[0].netnum)) {
+		if (IS_IPV4(&pcmd->argval[0U].netnum)) {
 			pl->peeraddr = NSRCADR(&pcmd->argval[qitems].netnum);
 			if (impl_ver == IMPL_XNTPD)
 				pl->v6_flag = 0;
@@ -1741,10 +1741,10 @@ again:
 		count = ntohl(rl->count);
 		rflags = ntohs(rl->rflags);
 		mflags = ntohs(rl->mflags);
-		flagstr[0] = '\0';
+		flagstr[0U] = '\0';
 
 		res = 1;
-		rf = &resmflags[0];
+		rf = &resmflags[0U];
 		while (rf->bit != 0) {
 			if (mflags & rf->bit) {
 				if (!res)
@@ -1758,8 +1758,8 @@ again:
 		}
 
 		rf = (impl_ver == IMPL_XNTPD_OLD)
-			 ? &resflagsV2[0]
-			 : &resflagsV3[0];
+			 ? &resflagsV2[0U]
+			 : &resflagsV3[0U];
 
 		while (rf->bit != 0) {
 			if (rflags & rf->bit) {
@@ -1773,7 +1773,7 @@ again:
 			rf++;
 		}
 
-		if (flagstr[0] == '\0')
+		if (flagstr[0U] == '\0')
 			strlcpy(flagstr, "none", sizeof(flagstr));
 
 		if (!skip)
@@ -1859,9 +1859,9 @@ again:
 	else
 		sendsize = v4sizeof(struct conf_restrict);
 
-	if (IS_IPV4(&pcmd->argval[0].netnum)) {
-		cres.addr = NSRCADR(&pcmd->argval[0].netnum);
-		cres.mask = NSRCADR(&pcmd->argval[1].netnum);
+	if (IS_IPV4(&pcmd->argval[0U].netnum)) {
+		cres.addr = NSRCADR(&pcmd->argval[0U].netnum);
+		cres.mask = NSRCADR(&pcmd->argval[1U].netnum);
 		if (impl_ver == IMPL_XNTPD)
 			cres.v6_flag = 0;
 	} else {
@@ -1870,7 +1870,7 @@ again:
 				"***Server doesn't understand IPv6 addresses\n");
 			return;
 		}
-		cres.addr6 = SOCK_ADDR6(&pcmd->argval[0].netnum);
+		cres.addr6 = SOCK_ADDR6(&pcmd->argval[0U].netnum);
 		cres.v6_flag = 1;
 	}
 	cres.flags = 0;
@@ -1907,7 +1907,7 @@ again:
 	 * Make sure mask for default address is zero.  Otherwise,
 	 * make sure mask bits are contiguous.
 	 */
-	if (IS_IPV4(&pcmd->argval[0].netnum)) {
+	if (IS_IPV4(&pcmd->argval[0U].netnum)) {
 		if (cres.addr == 0) {
 			cres.mask = 0;
 		} else {
@@ -1967,7 +1967,7 @@ monlist(
 	int version = -1;
 
 	if (pcmd->nargs > 0)
-		version = pcmd->argval[0].ival;
+		version = pcmd->argval[0U].ival;
 
 again:
 	res = doquery(impl_ver,
@@ -2467,8 +2467,8 @@ again:
 	else
 		sendsize = v4sizeof(struct conf_trap);
 
-	if (IS_IPV4(&pcmd->argval[0].netnum)) {
-		ctrap.trap_address = NSRCADR(&pcmd->argval[0].netnum);
+	if (IS_IPV4(&pcmd->argval[0U].netnum)) {
+		ctrap.trap_address = NSRCADR(&pcmd->argval[0U].netnum);
 		if (impl_ver == IMPL_XNTPD)
 			ctrap.v6_flag = 0;
 	} else {
@@ -2477,7 +2477,7 @@ again:
 			    "***Server doesn't understand IPv6 addresses\n");
 			return;
 		}
-		ctrap.trap_address6 = SOCK_ADDR6(&pcmd->argval[0].netnum);
+		ctrap.trap_address6 = SOCK_ADDR6(&pcmd->argval[0U].netnum);
 		ctrap.v6_flag = 1;
 	}
 	ctrap.local_address = 0;
@@ -2485,18 +2485,18 @@ again:
 	ctrap.unused = 0;
 
 	if (pcmd->nargs > 1) {
-		ctrap.trap_port	= htons((u_short)pcmd->argval[1].uval);
+		ctrap.trap_port	= htons((u_short)pcmd->argval[1U].uval);
 		if (pcmd->nargs > 2) {
-			if (AF(&pcmd->argval[2].netnum) !=
-			    AF(&pcmd->argval[0].netnum)) {
+			if (AF(&pcmd->argval[2U].netnum) !=
+			    AF(&pcmd->argval[0U].netnum)) {
 				fprintf(stderr,
 				    "***Cannot mix IPv4 and IPv6 addresses\n");
 				return;
 			}
-			if (IS_IPV4(&pcmd->argval[2].netnum))
-				ctrap.local_address = NSRCADR(&pcmd->argval[2].netnum);
+			if (IS_IPV4(&pcmd->argval[2U].netnum))
+				ctrap.local_address = NSRCADR(&pcmd->argval[2U].netnum);
 			else
-				ctrap.local_address6 = SOCK_ADDR6(&pcmd->argval[2].netnum);
+				ctrap.local_address6 = SOCK_ADDR6(&pcmd->argval[2U].netnum);
 		}
 	}
 
@@ -2560,7 +2560,7 @@ do_changekey(
 	int res;
 
 
-	key = htonl((u_int32)pcmd->argval[0].uval);
+	key = htonl((u_int32)pcmd->argval[0U].uval);
 
 again:
 	res = doquery(impl_ver, req, 1, 1, sizeof(u_int32),
@@ -2765,47 +2765,47 @@ fudge(
 
 	err = 0;
 	ZERO(fudgedata);
-	fudgedata.clockadr = NSRCADR(&pcmd->argval[0].netnum);
+	fudgedata.clockadr = NSRCADR(&pcmd->argval[0U].netnum);
 
-	if (STREQ(pcmd->argval[1].string, "time1")) {
+	if (STREQ(pcmd->argval[1U].string, "time1")) {
 		fudgedata.which = htonl(FUDGE_TIME1);
-		if (!atolfp(pcmd->argval[2].string, &ts))
+		if (!atolfp(pcmd->argval[2U].string, &ts))
 		    err = 1;
 		else
 		    NTOHL_FP(&ts, &fudgedata.fudgetime);
-	} else if (STREQ(pcmd->argval[1].string, "time2")) {
+	} else if (STREQ(pcmd->argval[1U].string, "time2")) {
 		fudgedata.which = htonl(FUDGE_TIME2);
-		if (!atolfp(pcmd->argval[2].string, &ts))
+		if (!atolfp(pcmd->argval[2U].string, &ts))
 		    err = 1;
 		else
 		    NTOHL_FP(&ts, &fudgedata.fudgetime);
-	} else if (STREQ(pcmd->argval[1].string, "val1")) {
+	} else if (STREQ(pcmd->argval[1U].string, "val1")) {
 		fudgedata.which = htonl(FUDGE_VAL1);
-		if (!atoint(pcmd->argval[2].string, &val))
+		if (!atoint(pcmd->argval[2U].string, &val))
 		    err = 1;
 		else
 		    fudgedata.fudgeval_flags = htonl(val);
-	} else if (STREQ(pcmd->argval[1].string, "val2")) {
+	} else if (STREQ(pcmd->argval[1U].string, "val2")) {
 		fudgedata.which = htonl(FUDGE_VAL2);
-		if (!atoint(pcmd->argval[2].string, &val))
+		if (!atoint(pcmd->argval[2U].string, &val))
 		    err = 1;
 		else
 		    fudgedata.fudgeval_flags = htonl((u_int32)val);
-	} else if (STREQ(pcmd->argval[1].string, "flags")) {
+	} else if (STREQ(pcmd->argval[1U].string, "flags")) {
 		fudgedata.which = htonl(FUDGE_FLAGS);
-		if (!hextoint(pcmd->argval[2].string, &u_val))
+		if (!hextoint(pcmd->argval[2U].string, &u_val))
 		    err = 1;
 		else
 		    fudgedata.fudgeval_flags = htonl((u_int32)(u_val & 0xf));
 	} else {
 		(void) fprintf(stderr, "What fudge is %s?\n",
-			       pcmd->argval[1].string);
+			       pcmd->argval[1U].string);
 		return;
 	}
 
 	if (err) {
 		(void) fprintf(stderr, "Unknown fudge parameter %s\n",
-			       pcmd->argval[2].string);
+			       pcmd->argval[2U].string);
 		return;
 	}
 

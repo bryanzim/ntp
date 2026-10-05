@@ -278,7 +278,7 @@ arb_receive(
 		 * median filter is full, send B0.
 		 */
 		if (!strncmp(tbuf, "TQ", 2)) {
-			up->qualchar = tbuf[2];
+			up->qualchar = tbuf[2U];
 			refclock_write(peer, "SR", 2, "SR");
 			return;
 

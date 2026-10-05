@@ -37,7 +37,7 @@ dolfptoa(
 	 * can *always* be represented with at most 10 decimal digits,
 	 * including a possible rounding from the fractional part.
 	 */
-	cp = cpend = cpdec = &cbuf[10];
+	cp = cpend = cpdec = &cbuf[10U];
 	for (dec = (int)(cp - cbuf); dec > 0 && fpi != 0; dec--) {
 		/* can add another digit */
 		u_int32 digit;

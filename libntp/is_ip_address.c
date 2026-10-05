@@ -58,8 +58,8 @@ sau_from_string(
 
 	if (AF_UNSPEC == af || AF_INET6 == af)
 		if (sizeof(tmpbuf) > strlen(host)) {
-			if ('[' == host[0]) {
-				strlcpy(tmpbuf, &host[1], sizeof(tmpbuf));
+			if ('[' == host[0U]) {
+				strlcpy(tmpbuf, &host[1U], sizeof(tmpbuf));
 				pch = strchr(tmpbuf, ']');
 				if (pch != NULL)
 					*pch = '\0';

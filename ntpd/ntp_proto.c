@@ -3185,7 +3185,7 @@ poll_update(
 			next = 1 << hpoll;
 		else
 #endif /* REFCLOCK */
-			next = ((0x1000UL | (ntp_random() & 0x0ff)) <<
+			next = ((0x1000U | (ntp_random() & 0x0ff)) <<
 			    hpoll) >> 12;
 		next += peer->outdate;
 		/* XXX: bug3596: Deal with poll skew list? */
@@ -3447,7 +3447,7 @@ clock_filter(
 	 * lowest delay sample.
 	 */
 	peer->disp = peer->jitter = 0;
-	k = ord[0];
+	k = ord[0U];
 	for (i = NTP_SHIFT - 1; i >= 0; i--) {
 		j = ord[i];
 		peer->disp = NTP_FWEIGHT * (  peer->disp
@@ -3847,22 +3847,22 @@ clock_select(void)
 	 * Otherwise, give up and leave the island to the rats.
 	 */
 	if (nlist == 0) {
-		peers[0].error = 0;
-		peers[0].synch = sys_mindisp;
+		peers[0U].error = 0;
+		peers[0U].synch = sys_mindisp;
 #ifdef REFCLOCK
 		if (typeacts != NULL) {
-			peers[0].peer = typeacts;
+			peers[0U].peer = typeacts;
 			nlist = 1;
 		} else if (typelocal != NULL) {
-			peers[0].peer = typelocal;
+			peers[0U].peer = typelocal;
 			nlist = 1;
 		} else
 #endif /* REFCLOCK */
 		if (typeorphan != NULL) {
-			peers[0].peer = typeorphan;
+			peers[0U].peer = typeorphan;
 			nlist = 1;
 		} else if (typelastresort != NULL) {
-			peers[0].peer = typelastresort;
+			peers[0U].peer = typelastresort;
 			nlist = 1;
 		}
 	}
@@ -4835,7 +4835,7 @@ fast_xmit(
 			session_key(&rbufp->dstadr->sin,
 			    &rbufp->recv_srcadr, xkeyid, 0, 2);
 			temp32 = CRYPTO_RESP;
-			rpkt->exten[0] |= htonl(temp32);
+			rpkt->exten[0U] |= htonl(temp32);
 			sendlen += crypto_xmit(NULL, &xpkt, rbufp,
 			    sendlen, (struct exten *)rpkt->exten,
 			    cookie);

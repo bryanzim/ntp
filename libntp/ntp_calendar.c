@@ -852,9 +852,9 @@ priv_timesplit(
 	uh ^= sf32;
 	ud ^= sf32;
 
-	split[0] = (int32_t)(uh - ud * HRSPERDAY );
-	split[1] = (int32_t)(um - uh * MINSPERHR );
-	split[2] = (int32_t)(us - um * SECSPERMIN);
+	split[0U] = (int32_t)(uh - ud * HRSPERDAY );
+	split[1U] = (int32_t)(um - uh * MINSPERHR );
+	split[2U] = (int32_t)(us - um * SECSPERMIN);
 
 	return uint32_2cpl_to_int32(ud);
 }
@@ -1069,9 +1069,9 @@ ntpcal_daysec_to_date(
 	int   ts[3];
 
 	days = priv_timesplit(ts, sec);
-	jd->hour   = (uint8_t)ts[0];
-	jd->minute = (uint8_t)ts[1];
-	jd->second = (uint8_t)ts[2];
+	jd->hour   = (uint8_t)ts[0U];
+	jd->minute = (uint8_t)ts[1U];
+	jd->second = (uint8_t)ts[2U];
 
 	return days;
 }
@@ -1092,9 +1092,9 @@ ntpcal_daysec_to_tm(
 	int32_t ts[3];
 
 	days = priv_timesplit(ts, sec);
-	utm->tm_hour = ts[0];
-	utm->tm_min  = ts[1];
-	utm->tm_sec  = ts[2];
+	utm->tm_hour = ts[0U];
+	utm->tm_min  = ts[1U];
+	utm->tm_sec  = ts[2U];
 
 	return days;
 }
@@ -1911,9 +1911,9 @@ isocal_ntp64_to_date(
 
 	/* split time part */
 	ds.hi += priv_timesplit(ts, ds.lo);
-	id->hour   = (uint8_t)ts[0];
-	id->minute = (uint8_t)ts[1];
-	id->second = (uint8_t)ts[2];
+	id->hour   = (uint8_t)ts[0U];
+	id->minute = (uint8_t)ts[1U];
+	id->second = (uint8_t)ts[2U];
 
 	/* split days into days and weeks, using floor division in unsigned */
 	ds.hi += DAY_NTP_STARTS - 1; /* shift from NTP to RDN */

@@ -101,7 +101,7 @@ inp_sel240x( parse_t      *parseio,
 	{
 	case '\x01':
 		parseio->parse_index = 1;
-		parseio->parse_data[0] = ch;
+		parseio->parse_data[0U] = ch;
 		parseio->parse_dtime.parse_stime = *tstamp;
 		rc = PARSE_INP_SKIP;
 		break;

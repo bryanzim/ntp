@@ -54,7 +54,7 @@
  */
 
 #define PPS_API_VERS_1		1		/* API version number */
-#define PPS_JAN_1970		2208988800UL	/* 1970 - 1900 in seconds */
+#define PPS_JAN_1970		2208988800U	/* 1970 - 1900 in seconds */
 #define PPS_NANOSECOND		1000000000L	/* one nanosecond in decimal */
 #define PPS_FRAC		4294967296.	/* 2^32 as a double */
 #define PPS_HECTONANOSECONDS	10000000	/* 100ns units in a second */
@@ -467,8 +467,8 @@ load_pps_provider(
 	prov->short_name = _strdup(short_name);
 	prov->full_name = _strdup(full_name);
 
-	if (NULL == prov->short_name || !prov->short_name[0]
-	    || NULL == prov->full_name || !prov->full_name[0]) {
+	if (NULL == prov->short_name || !prov->short_name[0U]
+	    || NULL == prov->full_name || !prov->full_name[0U]) {
 
 		if (prov->short_name)
 			free(prov->short_name);
@@ -563,7 +563,7 @@ time_pps_create(
 	} else
 		dlls = dll = NULL;
 
-	while (dll != NULL && dll[0]) {
+	while (dll != NULL && dll[0U]) {
 		pch = strchr(dll, ';');
 		if (pch != NULL)
 			*pch = 0;

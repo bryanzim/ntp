@@ -505,7 +505,7 @@ get_datumtime(struct vmedate *time_vme)
 			break;
 
 		case 2:				/* Linux/Windows, PCI, 2 32bit time words */
-			if (safeReadBinTime(stfp_handle, &btm[1], &btm[0], &dmy) == 0) {
+			if (safeReadBinTime(stfp_handle, &btm[1U], &btm[0U], &dmy) == 0) {
 	    		msyslog(LOG_ERR, "get_datumtime error: %m"); 
 				return(NULL);
 			}
@@ -541,35 +541,35 @@ get_datumtime(struct vmedate *time_vme)
 			}
 			/* Get day */
 			snprintf(cbuf, sizeof(cbuf), "%3.3x",
-				 ((vts.btfp_time[ 0 ] & 0x000f) << 8) +
-				  ((vts.btfp_time[ 1 ] & 0xff00) >> 8));  
+				 ((vts.btfp_time[ 0U ] & 0x000f) << 8) +
+				  ((vts.btfp_time[ 1U ] & 0xff00) >> 8));  
 			time_vme->day = (unsigned short)atoi(cbuf);
 
 			/* Get hour */
 			snprintf(cbuf, sizeof(cbuf), "%2.2x",
-				 vts.btfp_time[ 1 ] & 0x00ff);
+				 vts.btfp_time[ 1U ] & 0x00ff);
 			time_vme->hr = (unsigned short)atoi(cbuf);
 
 			/* Get minutes */
 			snprintf(cbuf, sizeof(cbuf), "%2.2x",
-				 (vts.btfp_time[ 2 ] & 0xff00) >> 8);
+				 (vts.btfp_time[ 2U ] & 0xff00) >> 8);
 			time_vme->mn = (unsigned short)atoi(cbuf);
 
 			/* Get seconds */
 			snprintf(cbuf, sizeof(cbuf), "%2.2x",
-				 vts.btfp_time[ 2 ] & 0x00ff);
+				 vts.btfp_time[ 2U ] & 0x00ff);
 			time_vme->sec = (unsigned short)atoi(cbuf);
 
 			/* Get microseconds.  Yes, we ignore the 0.1 microsecond digit so
 				 we can use the TVTOTSF function  later on...*/
 
 			snprintf(cbuf, sizeof(cbuf), "%4.4x%2.2x",
-				 vts.btfp_time[ 3 ],
-				 vts.btfp_time[ 4 ] >> 8);
+				 vts.btfp_time[ 3U ],
+				 vts.btfp_time[ 4U ] >> 8);
 			time_vme->frac = (u_long) atoi(cbuf);
 
 			/* Get status bit */
-			time_vme->status = (vts.btfp_time[0] & 0x0010) >> 4;
+			time_vme->status = (vts.btfp_time[0U] & 0x0010) >> 4;
 
 			break;
 	}
@@ -587,8 +587,8 @@ tvme_fill(struct vmedate *time_vme, uint32_t btm[2])
 	time_t   dmaj;
 	uint32_t dmin;
 
-	dmaj = btm[1];			/* syntax sugar & expansion */
-	dmin = btm[0];			/* just syntax sugar */
+	dmaj = btm[1U];			/* syntax sugar & expansion */
+	dmin = btm[0U];			/* just syntax sugar */
 
 	gmtime_r(&dmaj, &maj);
 	time_vme->day  = maj.tm_yday+1;

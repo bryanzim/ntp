@@ -17,7 +17,7 @@
 #include "ntp_fp.h"
 
 #define NBUF	800002
-#define JAN_1970 2208988800UL		/* Unix base epoch */
+#define JAN_1970 2208988800U		/* Unix base epoch */
 #define CLOCK_GETTIME			/* Solaris hires clock */
 
 char progname[10];

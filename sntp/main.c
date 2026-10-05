@@ -85,8 +85,8 @@ struct timeval	start_tv;
 struct timeval	wakeup_tv = { 0, 888888 };
 
 sent_pkt *	fam_listheads[2];
-#define v4_pkts_list	(fam_listheads[0])
-#define v6_pkts_list	(fam_listheads[1])
+#define v4_pkts_list	(fam_listheads[0U])
+#define v6_pkts_list	(fam_listheads[1U])
 
 static union {
 	struct pkt pkt;
@@ -142,7 +142,7 @@ sntp_main (
 	struct event_config *	evcfg;
 
 	/* Initialize logging system - sets up progname */
-	sntp_init_logging(argv[0]);
+	sntp_init_logging(argv[0U]);
 
 	if (!libevent_version_ok())
 		exit(EX_SOFTWARE);
@@ -1143,9 +1143,9 @@ generate_pkt (
 		printf("generate_pkt: key_id %d, key pointer %p\n", key_id, pkt_key);
 	}
 	if (pkt_key != NULL) {
-		x_pkt->exten[0] = htonl(key_id);
+		x_pkt->exten[0U] = htonl(key_id);
 		mac_size = make_mac(x_pkt, pkt_len, pkt_key,
-				    (char *)&x_pkt->exten[1], MAX_MDG_LEN);
+				    (char *)&x_pkt->exten[1U], MAX_MDG_LEN);
 		if (mac_size > 0)
 			pkt_len += mac_size + KEY_MAC_LEN;
 #ifdef DEBUG
@@ -1213,7 +1213,7 @@ handle_pkt(
 		ref = (char *)&rpkt->refid;
 		add_entry(addrtxt, ref);
 		msyslog(LOG_WARNING, "KOD code %c%c%c%c from %s %s",
-			ref[0], ref[1], ref[2], ref[3], addrtxt, hostname);
+			ref[0U], ref[1], ref[2], ref[3], addrtxt, hostname);
 		break;
 
 	case KOD_RATE:
@@ -1269,7 +1269,7 @@ handle_pkt(
 					 "ERROR %d >= %d", cnt,
 					 (int)sizeof(disptxt));
 		} else {
-			disptxt[0] = '\0';
+			disptxt[0U] = '\0';
 		}
 
 		switch (PKT_LEAP(rpkt->li_vn_mode)) {

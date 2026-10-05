@@ -81,7 +81,7 @@
  *
  * time_t t = ( gps_week * ::SECS_PER_WEEK ) + sec_of_week + ::GPS_SEC_BIAS
  */
-#define GPS_SEC_BIAS   315964800UL     // ( ( ( 10UL * 365UL ) + 2 + 5 ) * SECS_PER_DAY )
+#define GPS_SEC_BIAS   315964800U     // ( ( ( 10UL * 365UL ) + 2 + 5 ) * SECS_PER_DAY )
 
 
 #ifndef _COM_HS_DEFINED
@@ -590,13 +590,13 @@ typedef l_fp LLA[N_LLA];
 /**
  * @brief The maximum frequency that can be configured for the synthesizer
  */
-#define MAX_SYNTH_FREQ_VAL   10000000UL     ///< 10 MHz
+#define MAX_SYNTH_FREQ_VAL   10000000U     ///< 10 MHz
 /*   == MAX_SYNTH_FREQ * 10^(MAX_SYNTH_RANGE-1) */
 
 /**
  * @brief The synthesizer's phase is only be synchronized if the frequency is below this limit
  */
-#define SYNTH_PHASE_SYNC_LIMIT   10000UL    ///< 10 kHz
+#define SYNTH_PHASE_SYNC_LIMIT   10000U    ///< 10 kHz
 
 /**
  * A Macro used to determine the position of the decimal point

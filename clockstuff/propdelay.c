@@ -146,7 +146,7 @@ main(
 
 	init_lib();
 
-	progname = argv[0];
+	progname = argv[0U];
 	while ((c = ntp_getopt(argc, argv, "dh:CWG")) != EOF)
 	    switch (c) {
 		case 'd':

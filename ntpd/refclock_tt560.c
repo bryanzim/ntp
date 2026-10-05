@@ -254,13 +254,13 @@ byte_swap(unsigned int input_num)
 
     byte_swap.long_word = input_num;
 
-    temp              = byte_swap.byte[3];
-    byte_swap.byte[3] = byte_swap.byte[0];
-    byte_swap.byte[0] = temp;
+    temp              = byte_swap.byte[3U];
+    byte_swap.byte[3U] = byte_swap.byte[0U];
+    byte_swap.byte[0U] = temp;
 
-    temp              = byte_swap.byte[2];
-    byte_swap.byte[2] = byte_swap.byte[1];
-    byte_swap.byte[1] = temp;
+    temp              = byte_swap.byte[2U];
+    byte_swap.byte[2U] = byte_swap.byte[1U];
+    byte_swap.byte[1U] = temp;
 
     return (byte_swap.long_word);
 }

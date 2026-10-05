@@ -109,7 +109,7 @@ fmt_hex(
 	int	i;
 
 	LIB_GETBUF(buf);
-	buf[0] = '\0';
+	buf[0U] = '\0';
 	for (i = 0; i < length; i++) {
 		snprintf(hex, sizeof(hex), "%02x", bufp[i]);
 		strlcat(buf, hex, LIB_BUFLENGTH);
@@ -565,9 +565,9 @@ int main(
   
   if (argc == 2)
     {
-      if (sscanf(argv[1], "%lf", &f) != 1)
+      if (sscanf(argv[1U], "%lf", &f) != 1)
 	{
-	  printf("cannot convert %s to a float\n", argv[1]);
+	  printf("cannot convert %s to a float\n", argv[1U]);
 	  return 1;
 	}
     }

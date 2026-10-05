@@ -104,7 +104,7 @@ CalendarFromCalToString(
 		 cal->year, (u_int)cal->month, (u_int)cal->monthday,
 		 cal->yearday,
 		 (u_int)cal->hour, (u_int)cal->minute, (u_int)cal->second);
-	str[99] = '\0'; /* paranoia rulez! */
+	str[99U] = '\0'; /* paranoia rulez! */
 	return str;
 }
 
@@ -116,7 +116,7 @@ CalendarFromIsoToString(
 	snprintf(str, 100, "%u-W%02u-%02u %02u:%02u:%02u",
 		 iso->year, (u_int)iso->week, (u_int)iso->weekday,
 		 (u_int)iso->hour, (u_int)iso->minute, (u_int)iso->second);
-	str[99] = '\0'; /* paranoia rulez! */
+	str[99U] = '\0'; /* paranoia rulez! */
 	return str;
 }
 
@@ -175,7 +175,7 @@ DateFromCalToString(
 	snprintf(str, 100, "%u-%02u-%02u (%u)",
 		 cal->year, (u_int)cal->month, (u_int)cal->monthday,
 		 cal->yearday);
-	str[99] = '\0'; /* paranoia rulez! */
+	str[99U] = '\0'; /* paranoia rulez! */
 	return str;
 }
 
@@ -187,7 +187,7 @@ DateFromIsoToString(
 	char * str = emalloc (sizeof (char) * 100);
 	snprintf(str, 100, "%u-W%02u-%02u",
 		 iso->year, (u_int)iso->week, (u_int)iso->weekday);
-	str[99] = '\0'; /* paranoia rulez! */
+	str[99U] = '\0'; /* paranoia rulez! */
 	return str;
 }
 
@@ -371,8 +371,8 @@ test_SplitYearDays1(void)
 		ntpcal_split split = ntpcal_split_yeardays(eyd, 0);
 		if (split.lo >= 0 && split.hi >= 0) {
 			TEST_ASSERT_TRUE(isGT(12,split.hi));
-			TEST_ASSERT_TRUE(isGT(real_month_days[0][split.hi+1], split.lo));
-			int32 tyd = real_month_table[0][split.hi] + split.lo;
+			TEST_ASSERT_TRUE(isGT(real_month_days[0U][split.hi+1], split.lo));
+			int32 tyd = real_month_table[0U][split.hi] + split.lo;
 			TEST_ASSERT_EQUAL(eyd, tyd);
 		} else
 			TEST_ASSERT_TRUE(eyd < 0 || eyd > 364);
@@ -392,8 +392,8 @@ test_SplitYearDays2(void)
 			/* basic checks do not work on compunds :( */
 			/* would like: TEST_ASSERT_TRUE(12 > split.hi); */
 			TEST_ASSERT_TRUE(isGT(12,split.hi));
-			TEST_ASSERT_TRUE(isGT(real_month_days[1][split.hi+1], split.lo));
-			int32 tyd = real_month_table[1][split.hi] + split.lo;
+			TEST_ASSERT_TRUE(isGT(real_month_days[1U][split.hi+1], split.lo));
+			int32 tyd = real_month_table[1U][split.hi] + split.lo;
 			TEST_ASSERT_EQUAL(eyd, tyd);
 		} else
 			TEST_ASSERT_TRUE(eyd < 0 || eyd > 365);

@@ -122,7 +122,7 @@ main (
 
 	if (argc<=1) {
 	  usage:
-		printf ("usage: %s [uu:]{r[c][l]|w|snnn}\n",argv[0]);
+		printf ("usage: %s [uu:]{r[c][l]|w|snnn}\n",argv[0U]);
 		printf ("       uu use clock unit uu (default: 2)\n");
 		printf ("       r read shared memory\n");
 		printf ("       c clear valid-flag\n");
@@ -136,8 +136,8 @@ main (
 
 	srand(time(NULL));
 		
-	unit = strtoul(argv[1], &argp, 10);
-	if (argp == argv[1])
+	unit = strtoul(argv[1U], &argp, 10);
+	if (argp == argv[1U])
 		unit = 2;
 	else if (*argp == ':')
 		argp++;

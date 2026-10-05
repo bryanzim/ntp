@@ -81,14 +81,14 @@ clocktime(
 	 */
 	if (*yearstart) {
 		/* -- get time stamp of potential solution */
-		test[0] = (u_int32)(*yearstart) + tmp;
+		test[0U] = (u_int32)(*yearstart) + tmp;
 		/* -- calc absolute difference to receive time */
-		diff[0] = test[0] - rec_ui;
-		if (diff[0] >= 0x80000000u)
-			diff[0] = ~diff[0] + 1;
+		diff[0U] = test[0U] - rec_ui;
+		if (diff[0U] >= 0x80000000u)
+			diff[0U] = ~diff[0U] + 1;
 		/* -- can't get closer if diff < NEARTIME */
-		if (diff[0] < NEARTIME) {
-			*ts_ui = test[0];
+		if (diff[0U] < NEARTIME) {
+			*ts_ui = test[0U];
 			return diff[0] < CLOSETIME;
 		}
 	}

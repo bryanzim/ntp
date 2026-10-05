@@ -79,7 +79,7 @@ main(
 	}
 	if (n == 0)
 		return;
-	qsort(&ovfl, (size_t)n, sizeof(ovfl[0]), col);
+	qsort(&ovfl, (size_t)n, sizeof(ovfl[0U]), col);
 	w = 0;
 	j = 0;
 	for (i = 0; i < n; i++) {

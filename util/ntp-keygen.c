@@ -282,7 +282,7 @@ followlink(
 	target = emalloc(bufsiz);
 	len = readlink(fname, target, bufsiz);
 	if (len < 0) {
-		fname[0] = '\0';
+		fname[0U] = '\0';
 		return;
 	}
 	if ((size_t)len > bufsiz - 1)
@@ -338,7 +338,7 @@ main(
 	int sslvmatch;
 #endif /* OPENSSL */
 
-	progname = argv[0];
+	progname = argv[0U];
 
 #ifdef SYS_WINNT
 	/* Initialize before OpenSSL checks */
@@ -808,7 +808,7 @@ main(
 		    filename);
 		fprintf(stdout, "# %s\n# %s\n", filename,
 		    ctime(&epoch));
-		pkey = pkey_mvpar[2];
+		pkey = pkey_mvpar[2U];
 		PEM_write_PKCS8PrivateKey(stdout, pkey, NULL, NULL, 0,
 		    NULL, NULL);
 		fflush(stdout);
@@ -827,7 +827,7 @@ main(
 		    filename);
 		fprintf(stdout, "# %s\n# %s\n", filename,
 		    ctime(&epoch));
-		pkey = pkey_mvpar[1];
+		pkey = pkey_mvpar[1U];
 		PEM_write_PKCS8PrivateKey(stdout, pkey, cipher, NULL, 0,
 		    NULL, passwd2);
 		fflush(stdout);
@@ -2132,14 +2132,14 @@ asn2ntp	(
 	if (asn1time->length > 13)
 		return (-1);
 	v = (char *)asn1time->data;
-	tm.tm_year = (v[0] - '0') * 10 + v[1] - '0';
+	tm.tm_year = (v[0U] - '0') * 10 + v[1U] - '0';
 	if (tm.tm_year < 50)
 		tm.tm_year += 100;
-	tm.tm_mon = (v[2] - '0') * 10 + v[3] - '0' - 1;
-	tm.tm_mday = (v[4] - '0') * 10 + v[5] - '0';
-	tm.tm_hour = (v[6] - '0') * 10 + v[7] - '0';
-	tm.tm_min = (v[8] - '0') * 10 + v[9] - '0';
-	tm.tm_sec = (v[10] - '0') * 10 + v[11] - '0';
+	tm.tm_mon = (v[2U] - '0') * 10 + v[3U] - '0' - 1;
+	tm.tm_mday = (v[4U] - '0') * 10 + v[5U] - '0';
+	tm.tm_hour = (v[6U] - '0') * 10 + v[7U] - '0';
+	tm.tm_min = (v[8U] - '0') * 10 + v[9U] - '0';
+	tm.tm_sec = (v[10U] - '0') * 10 + v[11U] - '0';
 	tm.tm_wday = 0;
 	tm.tm_yday = 0;
 	tm.tm_isdst = 0;

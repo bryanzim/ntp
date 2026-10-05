@@ -42,7 +42,7 @@ char *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   Unity.TestFile = "nameresolution.c";
   UnityBegin("nameresolution.c");
   RUN_TEST(test_ResolveSingleAddress, 41);

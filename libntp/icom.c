@@ -80,12 +80,12 @@ icom_freq(
 	int temp;
 	int rc;
 
-	cmd[3] = (char)ident;
+	cmd[3U] = (char)ident;
 	if (ident == IC735)
 		temp = 4;
 	else
 		temp = 5;
-	doublefreq(freq * 1e6, &cmd[6], temp);
+	doublefreq(freq * 1e6, &cmd[6U], temp);
 	rc = write(fd, cmd, temp + 7);
 	if (rc == -1) {
 		msyslog(LOG_ERR, "icom_freq: write() failed: %m");

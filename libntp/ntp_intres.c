@@ -918,8 +918,8 @@ reload_resolv_conf(
 static u_int
 reserve_dnschild_ctx(void)
 {
-	const size_t	ps = sizeof(dnschild_contexts[0]);
-	const size_t	cs = sizeof(*dnschild_contexts[0]);
+	const size_t	ps = sizeof(dnschild_contexts[0U]);
+	const size_t	cs = sizeof(*dnschild_contexts[0U]);
 	u_int		c;
 	u_int		new_alloc;
 	size_t		octets;

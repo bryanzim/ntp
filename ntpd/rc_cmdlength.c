@@ -30,7 +30,7 @@ remoteconfig_cmdlength(
 	}
 	/* now do a forward scan */
 	for (scan = src_buf; scan != src_end; ++scan) {
-		ch = scan[0];
+		ch = scan[0U];
 		if ((ch < ' ' || ch >= 128) && ch != '\t')
 			break;
 	}

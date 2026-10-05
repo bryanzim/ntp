@@ -254,7 +254,7 @@ clockformat_t clock_meinberg[] =
 		gps_input,	/* no input handling */
 		cvt_mgps,	/* Meinberg GPS receiver conversion */
 		pps_one,	/* easy PPS monitoring */
-		(void *)&meinberg_fmt[2], /* conversion configuration */
+		(void *)&meinberg_fmt[2U], /* conversion configuration */
 		"Meinberg GPS Extended",  /* Meinberg FAU GPS format */
 		512,		/* string buffer */
 		sizeof(struct msg_buf)	/* no private data (complete packets) */
@@ -280,15 +280,15 @@ cvt_meinberg(
 	/*
 	 * select automagically correct data format
 	 */
-	if (Strok(buffer, meinberg_fmt[0].fixed_string))
+	if (Strok(buffer, meinberg_fmt[0U].fixed_string))
 	{
-		format = &meinberg_fmt[0];
+		format = &meinberg_fmt[0U];
 	}
 	else
 	{
-		if (Strok(buffer, meinberg_fmt[1].fixed_string))
+		if (Strok(buffer, meinberg_fmt[1U].fixed_string))
 		{
-			format = &meinberg_fmt[1];
+			format = &meinberg_fmt[1U];
 		}
 		else
 		{
@@ -377,13 +377,13 @@ cvt_meinberg(
 		if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
 			clock_time->flags    |= PARSEB_DST;
 
-		if (f[0] == '#')
+		if (f[0U] == '#')
 			clock_time->flags |= PARSEB_POWERUP;
 
-		if (f[1] == '*')
+		if (f[1U] == '*')
 			clock_time->flags |= PARSEB_NOSYNC;
 
-		if (f[3] == '!')
+		if (f[3U] == '!')
 			clock_time->flags |= PARSEB_ANNOUNCE;
 
 		/*
@@ -391,10 +391,10 @@ cvt_meinberg(
 		 * 'a' code not confirmed - earth is not
 		 * expected to speed up
 		 */
-		if (f[3] == 'A')
+		if (f[3U] == 'A')
 			clock_time->flags |= PARSEB_LEAPADD;
 
-		if (f[3] == 'a')
+		if (f[3U] == 'a')
 			clock_time->flags |= PARSEB_LEAPDEL;
 
 
@@ -409,10 +409,10 @@ cvt_meinberg(
 			 */
 			clock_time->flags &= ~PARSEB_LEAPDEL;
 
-			if (f[4] == 'A')
+			if (f[4U] == 'A')
 				clock_time->flags |= PARSEB_LEAPADD;
 
-			if (f[5] == 'R')
+			if (f[5U] == 'R')
 				clock_time->flags |= PARSEB_CALLBIT;
 		}
 		return CVT_OK;
@@ -442,7 +442,7 @@ mbg_input(
 		parseprintf(DD_PARSE, ("mbg_input: STX seen\n"));
 
 		parseio->parse_index = 1;
-		parseio->parse_data[0] = ch;
+		parseio->parse_data[0U] = ch;
 		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
 		return PARSE_INP_SKIP;
 
@@ -540,13 +540,13 @@ cvt_mgps(
 			/*
 			 * no sv's seen - no time & position
 			 */
-			if (f[0] == '#')
+			if (f[0U] == '#')
 			    clock_time->flags |= PARSEB_POWERUP;
 
 			/*
 			 * at least one sv seen - time (for last position)
 			 */
-			if (f[1] == '*')
+			if (f[1U] == '*')
 			    clock_time->flags |= PARSEB_NOSYNC;
 			else
 			    if (!(clock_time->flags & PARSEB_POWERUP))
@@ -555,7 +555,7 @@ cvt_mgps(
 			/*
 			 * oncoming zone switch
 			 */
-			if (f[3] == '!')
+			if (f[3U] == '!')
 			    clock_time->flags |= PARSEB_ANNOUNCE;
 
 			/*
@@ -563,10 +563,10 @@ cvt_mgps(
 			 * 'a' code not confirmed - earth is not
 			 * expected to speed up
 			 */
-			if (f[4] == 'A')
+			if (f[4U] == 'A')
 			    clock_time->flags |= PARSEB_LEAPADD;
 
-			if (f[4] == 'a')
+			if (f[4U] == 'a')
 			    clock_time->flags |= PARSEB_LEAPDEL;
 
 			/*
@@ -576,7 +576,7 @@ cvt_mgps(
 			/*
 			 * this is the leap second
 			 */
-			if ((f[6] == 'L') || (clock_time->second == 60))
+			if ((f[6U] == 'L') || (clock_time->second == 60))
 			    clock_time->flags |= PARSEB_LEAPSECOND;
 
 			return CVT_OK;
@@ -624,7 +624,7 @@ gps_input(
 	  msg_buf->len = 0;
 	  msg_buf->phase = MBG_STRING; /* prepare to receive ASCII ETX delimited message */
 	  parseio->parse_index = 1;
-	  parseio->parse_data[0] = ch;
+	  parseio->parse_data[0U] = ch;
 	  break;
 
 	default:
@@ -632,7 +632,7 @@ gps_input(
 	}
 
       parseio->parse_dtime.parse_msglen = 1; /* reset buffer pointer */
-      parseio->parse_dtime.parse_msg[0] = ch; /* fill in first character */
+      parseio->parse_dtime.parse_msg[0U] = ch; /* fill in first character */
       parseio->parse_dtime.parse_stime  = *tstamp; /* collect timestamp */
       return PARSE_INP_SKIP;
     }

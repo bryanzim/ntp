@@ -105,13 +105,13 @@ errno_to_str(
 # if defined(STRERROR_R_CHAR_P) || !HAVE_DECL_STRERROR_R
 	char *	pstatic;
 
-	buf[0] = '\0';
+	buf[0U] = '\0';
 #  ifdef STRERROR_R_CHAR_P
 	pstatic = strerror_r(err, buf, bufsiz);
 #  else
 	pstatic = strerror(err);
 #  endif
-	if (NULL == pstatic && '\0' == buf[0])
+	if (NULL == pstatic && '\0' == buf[0U])
 		snprintf(buf, bufsiz, "%s(%d): errno %d",
 #  ifdef STRERROR_R_CHAR_P
 			 "strerror_r",
@@ -492,7 +492,7 @@ change_logfile(
 			log_fname = syslog_abs_fname;
 #if !defined(SYS_WINNT) && !defined(SYS_VXWORKS) && !defined(VMS)
 		if (log_fname != syslog_abs_fname &&
-		    DIR_SEP != log_fname[0] &&
+		    DIR_SEP != log_fname[0U] &&
 		    0 != strcmp(log_fname, "stderr") &&
 		    0 != strcmp(log_fname, "stdout") &&
 		    NULL != getcwd(curdir, sizeof(curdir))) {

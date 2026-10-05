@@ -270,9 +270,9 @@ init_io_completion_port(void)
 		&& NULL != hndIOCPLPort);
 
 	/* Initialize the Wait Handles table */
-	WaitHandles[0] = WaitableTimerHandle;
-	WaitHandles[1] = WaitableExitEventHandle; /* exit request */
-	WaitHandles[2] = WaitableIoEventHandle;
+	WaitHandles[0U] = WaitableTimerHandle;
+	WaitHandles[1U] = WaitableExitEventHandle; /* exit request */
+	WaitHandles[2U] = WaitableIoEventHandle;
 	ActiveWaitHandles = 3;
 
 	/* Supply ntp_worker.c with function to add or remove a
@@ -621,7 +621,7 @@ getRioFromIoCtx(
 		rio = iopad->rsrc.rio;
 		if (key != iopad->rsrc.key)
 			rio = NULL;
-		else if (ctx->io.hnd != iopad->handles[0])
+		else if (ctx->io.hnd != iopad->handles[0U])
 			rio = NULL;
 	}
 	if (rio != NULL) switch (ctx->errCode) {
@@ -1471,7 +1471,7 @@ io_completion_port_add_clock_io(
 			msgh);
 		goto fail;
 	}
-	iopad->handles[0] = h;
+	iopad->handles[0U] = h;
 	iopad->riofd      = rio->fd;
 	iopad->rsrc.rio   = rio;
 
@@ -1519,9 +1519,9 @@ OnSerialDetach(
 	IoHndPad_T *	iopad = lpo->iopad;
 
 	INSIST(NULL != iopad);
-	if (iopad->handles[0] == lpo->io.hnd) {
-		iopad->handles[0] = INVALID_HANDLE_VALUE;
-		iopad->handles[1] = INVALID_HANDLE_VALUE;
+	if (iopad->handles[0U] == lpo->io.hnd) {
+		iopad->handles[0U] = INVALID_HANDLE_VALUE;
+		iopad->handles[1U] = INVALID_HANDLE_VALUE;
 		iopad->rsrc.rio   = NULL;
 		iopad->riofd      = -1;
 	}
@@ -1717,8 +1717,8 @@ OnInterfaceDetach(
 	IoHndPad_T *	iopad = lpo->iopad;
 
 	INSIST(NULL != iopad);
-	iopad->handles[0] = INVALID_HANDLE_VALUE;
-	iopad->handles[1] = INVALID_HANDLE_VALUE;
+	iopad->handles[0U] = INVALID_HANDLE_VALUE;
+	iopad->handles[1U] = INVALID_HANDLE_VALUE;
 	iopad->rsrc.ept = NULL;
 
 	SetEvent(lpo->ppswake);
@@ -1768,10 +1768,10 @@ OnSocketDetach(
 	IoHndPad_T *	iopad = lpo->iopad;
 
 	INSIST(NULL != iopad);
-	if (iopad->handles[0] == lpo->io.hnd)
-		iopad->handles[0] = INVALID_HANDLE_VALUE;
-	if (iopad->handles[1] == lpo->io.hnd)
-		iopad->handles[1] = INVALID_HANDLE_VALUE;
+	if (iopad->handles[0U] == lpo->io.hnd)
+		iopad->handles[0U] = INVALID_HANDLE_VALUE;
+	if (iopad->handles[1U] == lpo->io.hnd)
+		iopad->handles[1U] = INVALID_HANDLE_VALUE;
 
 	SetEvent(lpo->ppswake);
 }

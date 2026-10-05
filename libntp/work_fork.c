@@ -459,15 +459,15 @@ fork_blocking_child(
 	 * 3 child write response
 	 */
 	if (-1 == c->req_write_pipe) {
-		rc = pipe_socketpair(&blocking_pipes[0], &was_pipe);
+		rc = pipe_socketpair(&blocking_pipes[0U], &was_pipe);
 		if (0 != rc) {
 			saved_errno = errno;
 		} else {
-			rc = pipe_socketpair(&blocking_pipes[2], &is_pipe);
+			rc = pipe_socketpair(&blocking_pipes[2U], &is_pipe);
 			if (0 != rc) {
 				saved_errno = errno;
-				close(blocking_pipes[0]);
-				close(blocking_pipes[1]);
+				close(blocking_pipes[0U]);
+				close(blocking_pipes[1U]);
 			} else {
 				INSIST(was_pipe == is_pipe);
 			}
@@ -482,8 +482,8 @@ fork_blocking_child(
 		 * Move the descriptors the parent will keep open out of the
 		 * low descriptors preferred by C runtime buffered FILE *.
 		 */
-		c->req_write_pipe = move_fd(blocking_pipes[1]);
-		c->resp_read_pipe = move_fd(blocking_pipes[2]);
+		c->req_write_pipe = move_fd(blocking_pipes[1U]);
+		c->resp_read_pipe = move_fd(blocking_pipes[2U]);
 		/*
 		 * wake any worker child on orderly shutdown of the
 		 * daemon so that it can notice the broken pipes and
@@ -523,8 +523,8 @@ fork_blocking_child(
 		c->ispipe = is_pipe;
 
 		/* close the child's pipe descriptors. */
-		close(blocking_pipes[0]);
-		close(blocking_pipes[3]);
+		close(blocking_pipes[0U]);
+		close(blocking_pipes[3U]);
 
 		memset(blocking_pipes, -1, sizeof(blocking_pipes));
 
@@ -554,7 +554,7 @@ fork_blocking_child(
 			argvlen += l + 1;
 			memset(saved_argv[argcc], 0, l);
 		}
-		strlcpy(saved_argv[0], "ntpd: asynchronous dns resolver", argvlen);
+		strlcpy(saved_argv[0U], "ntpd: asynchronous dns resolver", argvlen);
 	}
 
 	/*
@@ -563,8 +563,8 @@ fork_blocking_child(
 	 */
 	DEBUG_INSIST(-1 == c->req_read_pipe);
 	DEBUG_INSIST(-1 == c->resp_write_pipe);
-	c->req_read_pipe = blocking_pipes[0];
-	c->resp_write_pipe = blocking_pipes[3];
+	c->req_read_pipe = blocking_pipes[0U];
+	c->resp_write_pipe = blocking_pipes[3U];
 
 	kill_asyncio(0);
 	closelog();

@@ -94,7 +94,7 @@ insert_com_unit(
 	if (num_comh >= max_comh) {
 		/* round up to next multiple of 4 */
 		max_comh = (num_comh + 4) & ~(size_t)3;
-		tab_comh = erealloc(tab_comh, max_comh * sizeof(tab_comh[0]));
+		tab_comh = erealloc(tab_comh, max_comh * sizeof(tab_comh[0U]));
 	}
 
 	/* create a new slot and populate it. */
@@ -180,7 +180,7 @@ common_serial_open(
 	if (0 == _strnicmp("\\\\.\\COM", dev, 7)) {
 		 pch = dev + 7;
 		 TRACE(1, ("common_serial_open skipped '\\\\.\\COM' leaving %s\n", pch));
-	} else if ('/' == dev[0]) {
+	} else if ('/' == dev[0U]) {
 		pch = dev + strlen(dev);
 		while (isdigit((u_char)pch[-1]))
 			--pch;
@@ -190,7 +190,7 @@ common_serial_open(
 		TRACE(1, ("common_serial_open skipped 'COM' leaving %s\n", pch));
 	}
 
-	if (!pch || !isdigit((u_char)pch[0])) {
+	if (!pch || !isdigit((u_char)pch[0U])) {
 		TRACE(1, ("not a digit: %s\n", pch ? pch : "[NULL]"));
 		return INVALID_HANDLE_VALUE;
 	}
@@ -209,7 +209,7 @@ common_serial_open(
 	slot = insert_com_unit(unit);
 	if (slot->nhnd == 0) {
 		TRACE(1, ("windows device %s\n", slot->comName));
-		slot->htab[0] = CreateFileA(
+		slot->htab[0U] = CreateFileA(
 				slot->comName,
 			GENERIC_READ | GENERIC_WRITE,
 			0, /* sharing prohibited */
@@ -217,14 +217,14 @@ common_serial_open(
 			OPEN_EXISTING,
 			FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED,
 			NULL);
-		if (INVALID_HANDLE_VALUE != slot->htab[0]) {
+		if (INVALID_HANDLE_VALUE != slot->htab[0U]) {
 			slot->nhnd     = 1;
-			handle         = slot->htab[0];
+			handle         = slot->htab[0U];
 			*pwindev       = slot->comName;
 		}
 	} else if (slot->nhnd >= MAX_COMDUP) {
 		SetLastError(ERROR_TOO_MANY_OPEN_FILES);
-	} else if (DuplicateHandle(GetCurrentProcess(), slot->htab[0],
+	} else if (DuplicateHandle(GetCurrentProcess(), slot->htab[0U],
 				   GetCurrentProcess(), &slot->htab[slot->nhnd],
 				   0, FALSE, DUPLICATE_SAME_ACCESS))
 	{

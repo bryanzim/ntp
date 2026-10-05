@@ -399,7 +399,7 @@ main(
 	char *argv[]
 	)
 {
-	progname = argv[0];
+	progname = argv[0U];
 	parse_cmdline_opts(&argc, &argv);
 #ifdef DEBUG
 	debug = OPT_VALUE_SET_DEBUG_LEVEL;
@@ -589,10 +589,10 @@ detach_from_terminal(
 			msyslog(LOG_ERR, "fork: %m");
 			exit_code = EX_OSERR;
 		} else {
-			close(pipes[1]);
-			pipes[1] = -1;
+			close(pipes[1U]);
+			pipes[1U] = -1;
 			exit_code = wait_child_sync_if(
-					pipes[0], wait_sync);
+					pipes[0U], wait_sync);
 			if (exit_code <= 0) {
 				/* probe daemon exit code -- wait for
 				 * child process if we have an unexpected
@@ -616,8 +616,8 @@ detach_from_terminal(
 		syslog_file = NULL;
 		syslogit = TRUE;
 	}
-	close_all_except(pipes[1]);
-	pipes[0] = -1;
+	close_all_except(pipes[1U]);
+	pipes[0U] = -1;
 	INSIST(0 == open("/dev/null", 0) && 1 == dup2(0, 1) \
 		&& 2 == dup2(0, 2));
 
@@ -842,7 +842,7 @@ ntpdmain(
 # endif
 	saved_argc = argc;
 	saved_argv = argv;
-	progname = argv[0];
+	progname = argv[0U];
 	initializing = TRUE;		/* mark that we are initializing */
 	parse_cmdline_opts(&argc, &argv);
 # ifdef DEBUG
@@ -1444,12 +1444,12 @@ int scmp_sc[] = {
 
 	ntservice_isup();
 #if defined(HAVE_WORKING_FORK)
-	if (daemon_pipe[1] != -1 && 0 == wait_sync) {
-		if (2 != write(daemon_pipe[1], "R\n", 2)) {
+	if (daemon_pipe[1U] != -1 && 0 == wait_sync) {
+		if (2 != write(daemon_pipe[1U], "R\n", 2)) {
 			msyslog(LOG_ERR, "daemon failed to notify parent ntpd after init");
 		}
-		close(daemon_pipe[1]);
-		daemon_pipe[1] = -1;
+		close(daemon_pipe[1U]);
+		daemon_pipe[1U] = -1;
 	}
 #endif /* HAVE_WORKING_FORK */
 

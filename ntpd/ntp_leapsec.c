@@ -89,13 +89,13 @@ leapsec_get_table(
 	leap_table_t *p1, *p2;
 
 	p1 = _lptr;
-	if (p1 == &_ltab[0]) {
-		p2 = &_ltab[1];
-	} else if (p1 == &_ltab[1]) {
-		p2 = &_ltab[0];
+	if (p1 == &_ltab[0U]) {
+		p2 = &_ltab[1U];
+	} else if (p1 == &_ltab[1U]) {
+		p2 = &_ltab[0U];
 	} else {
-		p1 = &_ltab[0];
-		p2 = &_ltab[1];
+		p1 = &_ltab[0U];
+		p2 = &_ltab[1U];
 		reset_times(p1);
 		reset_times(p2);
 		_lptr = p1;
@@ -113,7 +113,7 @@ int/*BOOL*/
 leapsec_set_table(
 	leap_table_t * pt)
 {
-	if (pt == &_ltab[0] || pt == &_ltab[1])
+	if (pt == &_ltab[0U] || pt == &_ltab[1U])
 		_lptr = pt;
 	return _lptr == pt;
 }
@@ -131,7 +131,7 @@ leapsec_electric(
 	if (_electric == res)
 		return res;
 
-	if (_lptr == &_ltab[0] || _lptr == &_ltab[1])
+	if (_lptr == &_ltab[0U] || _lptr == &_ltab[1U])
 		reset_times(_lptr);
 
 	return res;
@@ -465,7 +465,7 @@ leapsec_load_stream(
 	if (pt->head.size)
 		msyslog(LOG_NOTICE, "%s ('%s'): loaded, expire=%s last=%s ofs=%d",
 			logPrefix, fname, lstostr(&pt->head.expire),
-			lstostr(&pt->info[0].ttime), pt->info[0].taiof);
+			lstostr(&pt->info[0U].ttime), pt->info[0U].taiof);
 	else
 		msyslog(LOG_NOTICE,
 			"%s ('%s'): loaded, expire=%s ofs=%d (no entries after build date)",
@@ -752,7 +752,7 @@ add_range(
 
 	/* make room in lower end and insert item */
 	memmove(pt->info+1, pt->info, pt->head.size*sizeof(*pt->info));
-	pt->info[0] = *pi;
+	pt->info[0U] = *pi;
 	pt->head.size++;
 
 	/* invalidate the cached limit data -- we might have news ;-)
@@ -942,7 +942,7 @@ leapsec_add(
 	 * the extend the table beyond the expiration!
 	 */
 	if (   ucmpv64(now64, &pt->head.expire) < 0
-	    || (pt->head.size && ucmpv64(now64, &pt->info[0].ttime) <= 0)) {
+	    || (pt->head.size && ucmpv64(now64, &pt->info[0U].ttime) <= 0)) {
 		errno = ERANGE;
 		return FALSE;
 	}
@@ -967,7 +967,7 @@ leapsec_add(
 
 	li.ttime = ttime;
 	li.stime = ttime.D_s.lo - starttime.D_s.lo;
-	li.taiof = (pt->head.size ? pt->info[0].taiof : pt->head.base_tai)
+	li.taiof = (pt->head.size ? pt->info[0U].taiof : pt->head.base_tai)
 	         + (insert ? 1 : -1);
 	li.dynls = 1;
 	return add_range(pt, &li);
@@ -996,9 +996,9 @@ leapsec_raw(
 	 * Otherwise paranoia rulez!
 	 */
 	if (pt->head.size) {
-		int cmp = ucmpv64(ttime, &pt->info[0].ttime);
+		int cmp = ucmpv64(ttime, &pt->info[0U].ttime);
 		if (cmp == 0)
-			cmp -= (taiof != pt->info[0].taiof);
+			cmp -= (taiof != pt->info[0U].taiof);
 		if (cmp < 0) {
 			errno = ERANGE;
 			return FALSE;
@@ -1070,7 +1070,7 @@ do_leap_hash(
 
 	memset(mac, 0, sizeof(*mac));
 	num = sscanf(cp, " %lx %lx %lx %lx %lx%n",
-		     &tmp[0], &tmp[1], &tmp[2], &tmp[3], &tmp[4],
+		     &tmp[0U], &tmp[1], &tmp[2], &tmp[3], &tmp[4],
 		     &len);
 	if (num != 5 || cp[len] > ' ')
 		return FALSE;
@@ -1131,7 +1131,7 @@ leapsec_validate(
 			do_hash_data(&mdctx, line+2);
 		else if (!strncmp(line, "#$", 2))
 			do_hash_data(&mdctx, line+2);
-		else if (isdigit((unsigned char)line[0]))
+		else if (isdigit((unsigned char)line[0U]))
 			do_hash_data(&mdctx, line);
 	}
 	isc_sha1_final(&mdctx, ldig.hv);

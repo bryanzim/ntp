@@ -682,9 +682,9 @@ wwv_start(
 	 * The companded samples are encoded sign-magnitude. The table
 	 * contains all the 256 values in the interest of speed.
 	 */
-	up->comp[0] = up->comp[OFFSET] = 0.;
-	up->comp[1] = 1.; up->comp[OFFSET + 1] = -1.;
-	up->comp[2] = 3.; up->comp[OFFSET + 2] = -3.;
+	up->comp[0U] = up->comp[OFFSET] = 0.;
+	up->comp[1U] = 1.; up->comp[OFFSET + 1] = -1.;
+	up->comp[2U] = 3.; up->comp[OFFSET + 2] = -3.;
 	step = 2.;
 	for (i = 3; i < OFFSET; i++) {
 		up->comp[i] = up->comp[i - 1] + step;
@@ -1008,16 +1008,16 @@ wwv_rf(
 	 * Matlab IIR 4th-order IIR elliptic, 150 Hz lowpass, 0.2 dB
 	 * passband ripple, -50 dB stopband ripple, phase delay 0.97 ms.
 	 */
-	data = (lpf[4] = lpf[3]) * 8.360961e-01;
-	data += (lpf[3] = lpf[2]) * -3.481740e+00;
-	data += (lpf[2] = lpf[1]) * 5.452988e+00;
-	data += (lpf[1] = lpf[0]) * -3.807229e+00;
-	lpf[0] = isig * DGAIN - data;
-	data = lpf[0] * 3.281435e-03
-	    + lpf[1] * -1.149947e-02
-	    + lpf[2] * 1.654858e-02
-	    + lpf[3] * -1.149947e-02
-	    + lpf[4] * 3.281435e-03;
+	data = (lpf[4U] = lpf[3U]) * 8.360961e-01;
+	data += (lpf[3U] = lpf[2U]) * -3.481740e+00;
+	data += (lpf[2U] = lpf[1U]) * 5.452988e+00;
+	data += (lpf[1U] = lpf[0U]) * -3.807229e+00;
+	lpf[0U] = isig * DGAIN - data;
+	data = lpf[0U] * 3.281435e-03
+	    + lpf[1U] * -1.149947e-02
+	    + lpf[2U] * 1.654858e-02
+	    + lpf[3U] * -1.149947e-02
+	    + lpf[4U] * 3.281435e-03;
 
 	/*
 	 * The 100-Hz data signal is demodulated using a pair of
@@ -1052,24 +1052,24 @@ wwv_rf(
 	 * Matlab 4th-order IIR elliptic, 800-1400 Hz bandpass, 0.2 dB
 	 * passband ripple, -50 dB stopband ripple, phase delay 0.91 ms.
 	 */
-	syncx = (bpf[8] = bpf[7]) * 4.897278e-01;
-	syncx += (bpf[7] = bpf[6]) * -2.765914e+00;
-	syncx += (bpf[6] = bpf[5]) * 8.110921e+00;
-	syncx += (bpf[5] = bpf[4]) * -1.517732e+01;
-	syncx += (bpf[4] = bpf[3]) * 1.975197e+01;
-	syncx += (bpf[3] = bpf[2]) * -1.814365e+01;
-	syncx += (bpf[2] = bpf[1]) * 1.159783e+01;
-	syncx += (bpf[1] = bpf[0]) * -4.735040e+00;
-	bpf[0] = isig - syncx;
-	syncx = bpf[0] * 8.203628e-03
-	    + bpf[1] * -2.375732e-02
-	    + bpf[2] * 3.353214e-02
-	    + bpf[3] * -4.080258e-02
-	    + bpf[4] * 4.605479e-02
-	    + bpf[5] * -4.080258e-02
-	    + bpf[6] * 3.353214e-02
-	    + bpf[7] * -2.375732e-02
-	    + bpf[8] * 8.203628e-03;
+	syncx = (bpf[8U] = bpf[7U]) * 4.897278e-01;
+	syncx += (bpf[7U] = bpf[6U]) * -2.765914e+00;
+	syncx += (bpf[6U] = bpf[5U]) * 8.110921e+00;
+	syncx += (bpf[5U] = bpf[4U]) * -1.517732e+01;
+	syncx += (bpf[4U] = bpf[3U]) * 1.975197e+01;
+	syncx += (bpf[3U] = bpf[2U]) * -1.814365e+01;
+	syncx += (bpf[2U] = bpf[1U]) * 1.159783e+01;
+	syncx += (bpf[1U] = bpf[0U]) * -4.735040e+00;
+	bpf[0U] = isig - syncx;
+	syncx = bpf[0U] * 8.203628e-03
+	    + bpf[1U] * -2.375732e-02
+	    + bpf[2U] * 3.353214e-02
+	    + bpf[3U] * -4.080258e-02
+	    + bpf[4U] * 4.605479e-02
+	    + bpf[5U] * -4.080258e-02
+	    + bpf[6U] * 3.353214e-02
+	    + bpf[7U] * -2.375732e-02
+	    + bpf[8U] * 8.203628e-03;
 
 	/*
 	 * The 1000/1200 sync signals are demodulated using a pair of
@@ -1431,23 +1431,23 @@ wwv_endpoc(
 	 * second sync pulse. The median sample becomes the candidate
 	 * epoch.
 	 */
-	epoch_mf[2] = epoch_mf[1];
-	epoch_mf[1] = epoch_mf[0];
-	epoch_mf[0] = epopos;
-	if (epoch_mf[0] > epoch_mf[1]) {
-		if (epoch_mf[1] > epoch_mf[2])
-			tepoch = epoch_mf[1];	/* 0 1 2 */
-		else if (epoch_mf[2] > epoch_mf[0])
-			tepoch = epoch_mf[0];	/* 2 0 1 */
+	epoch_mf[2U] = epoch_mf[1U];
+	epoch_mf[1U] = epoch_mf[0U];
+	epoch_mf[0U] = epopos;
+	if (epoch_mf[0U] > epoch_mf[1U]) {
+		if (epoch_mf[1U] > epoch_mf[2U])
+			tepoch = epoch_mf[1U];	/* 0 1 2 */
+		else if (epoch_mf[2U] > epoch_mf[0U])
+			tepoch = epoch_mf[0U];	/* 2 0 1 */
 		else
-			tepoch = epoch_mf[2];	/* 0 2 1 */
+			tepoch = epoch_mf[2U];	/* 0 2 1 */
 	} else {
-		if (epoch_mf[1] < epoch_mf[2])
-			tepoch = epoch_mf[1];	/* 2 1 0 */
-		else if (epoch_mf[2] < epoch_mf[0])
-			tepoch = epoch_mf[0];	/* 1 0 2 */
+		if (epoch_mf[1U] < epoch_mf[2U])
+			tepoch = epoch_mf[1U];	/* 2 1 0 */
+		else if (epoch_mf[2U] < epoch_mf[0U])
+			tepoch = epoch_mf[0U];	/* 1 0 2 */
 		else
-			tepoch = epoch_mf[2];	/* 1 2 0 */
+			tepoch = epoch_mf[2U];	/* 1 2 0 */
 	}
 
 
@@ -2140,7 +2140,7 @@ wwv_corr4(
  	 */
 	mldigit = 0;
 	topmax = nxtmax = -MAXAMP;
-	for (i = 0; tab[i][0] != 0; i++) {
+	for (i = 0; tab[i][0U] != 0; i++) {
 		acc = 0;
 		for (j = 0; j < 4; j++)
 			acc += data[j] * tab[i][j];
@@ -2322,7 +2322,7 @@ carry(
 	temp = dp->like[dp->radix - 1];
 	for (j = dp->radix - 1; j > 0; j--)
 		dp->like[j] = dp->like[j - 1];
-	dp->like[0] = temp;
+	dp->like[0U] = temp;
 	return (dp->digit);
 }
 

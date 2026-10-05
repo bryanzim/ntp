@@ -250,9 +250,9 @@ pst_receive(
 	 * was last heard, which depends on the time since last update,
 	 * as reported by the clock.
 	 */
-	if (info[9] != '8')
+	if (info[9U] != '8')
 		pp->leap = LEAP_NOTINSYNC;
-	if (info[12] == 'H')
+	if (info[12U] == 'H')
 		memcpy((char *)&pp->refid, WWVHREFID, 4);
 	else
 		memcpy((char *)&pp->refid, WWVREFID, 4);

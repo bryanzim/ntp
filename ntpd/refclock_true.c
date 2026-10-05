@@ -398,7 +398,7 @@ true_receive(
 	/*
 	 * Clock misunderstood our last command?
 	 */
-	if (pp->a_lastcode[0] == '?' ||
+	if (pp->a_lastcode[0U] == '?' ||
 	    strcmp(pp->a_lastcode, "ERROR 05 NO SUCH FUNCTION") == 0) {
 		true_doevent(peer, e_Huh);
 		return;
@@ -408,8 +408,8 @@ true_receive(
 	 * Timecode: "nnnnn+nnn-nnn"
 	 * (from GOES clock when asked about satellite position)
 	 */
-	if ((pp->a_lastcode[5] == '+' || pp->a_lastcode[5] == '-') &&
-	    (pp->a_lastcode[9] == '+' || pp->a_lastcode[9] == '-') &&
+	if ((pp->a_lastcode[5U] == '+' || pp->a_lastcode[5U] == '-') &&
+	    (pp->a_lastcode[9U] == '+' || pp->a_lastcode[9U] == '-') &&
 	    sscanf(pp->a_lastcode, "%5d%*c%3d%*c%3d", &lon, &lat, &off) == 3
 	    ) {
 		const char *label = "Botch!";
@@ -470,8 +470,8 @@ true_receive(
          * Timecode: "VER xx.xx"
          * (from a TL3 when sent "QV", so id's it during initialization.)
          */
-        if (pp->a_lastcode[0] == 'V' && pp->a_lastcode[1] == 'E' &&
-            pp->a_lastcode[2] == 'R' && pp->a_lastcode[6] == '.') {
+        if (pp->a_lastcode[0U] == 'V' && pp->a_lastcode[1U] == 'E' &&
+            pp->a_lastcode[2U] == 'R' && pp->a_lastcode[6U] == '.') {
                 true_doevent(peer, e_TL3);
                 NLOG(NLOG_CLOCKSTATUS) {
                         msyslog(LOG_INFO, "TL3: %s", pp->a_lastcode);
@@ -498,9 +498,9 @@ true_receive(
 	 * index      0123456789012345678901234
 	 * (from a TCU during initialization)
 	 */
-	if ((pp->a_lastcode[0] == 'N' || pp->a_lastcode[0] == 'S') &&
-	    (pp->a_lastcode[9] == 'W' || pp->a_lastcode[9] == 'E') &&
-	    pp->a_lastcode[18] == '+') {
+	if ((pp->a_lastcode[0U] == 'N' || pp->a_lastcode[0U] == 'S') &&
+	    (pp->a_lastcode[9U] == 'W' || pp->a_lastcode[9U] == 'E') &&
+	    pp->a_lastcode[18U] == '+') {
 		true_doevent(peer, e_Location);
 		NLOG(NLOG_CLOCKSTATUS) {
 			msyslog(LOG_INFO, "TCU-800: %s", pp->a_lastcode);
@@ -513,9 +513,9 @@ true_receive(
 	 * index      0123456789012345678901234
 	 * (from all clocks supported by this driver.)
 	 */
-	if (pp->a_lastcode[3] == ':' &&
-	    pp->a_lastcode[6] == ':' &&
-	    pp->a_lastcode[9] == ':' &&
+	if (pp->a_lastcode[3U] == ':' &&
+	    pp->a_lastcode[6U] == ':' &&
+	    pp->a_lastcode[9U] == ':' &&
 	    sscanf(pp->a_lastcode, "%3d:%2d:%2d:%2d%c",
 		   &pp->day, &pp->hour, &pp->minute,
 		   &pp->second, &synced) == 5) {

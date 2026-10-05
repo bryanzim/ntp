@@ -30,10 +30,10 @@ main(
 	u.l = 0x04030201;
 #endif
 	if (sizeof(long) > 4) {
-		if (u.c[0] == 0x08) big = 1;
+		if (u.c[0U] == 0x08) big = 1;
 		else		    big = 0;
 	} else {
-		if (u.c[0] == 0x04) big = 1;
+		if (u.c[0U] == 0x04) big = 1;
 		else		    big = 0;
 	}
 	for (i=0; i< sizeof(long); i++) {

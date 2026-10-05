@@ -24,7 +24,7 @@ test_Seconds(void) {
 
 void
 test_MicrosecondsExact(void) {
-	const u_long HALF = 2147483648UL;
+	const u_long HALF = 2147483648U;
 	const l_fp input = {{50}, HALF}; /* 50.5 s */
 	const struct timeval expected = {50, 500000};
 	struct timeval actual;
@@ -38,7 +38,7 @@ test_MicrosecondsExact(void) {
 
 void
 test_MicrosecondsRounding(void) {
-	const l_fp input = {{50}, 3865471UL}; /* Should round to 50.0009 */
+	const l_fp input = {{50}, 3865471U}; /* Should round to 50.0009 */
 	const struct timeval expected = {50, 900};
 	struct timeval actual;
 

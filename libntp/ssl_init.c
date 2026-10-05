@@ -119,7 +119,7 @@ keytype_from_text(
 	 */
 	INIT_SSL();
 
-	if ('m' == tolower(text[0]) && '\0' == text[1]) {
+	if ('m' == tolower(text[0U]) && '\0' == text[1U]) {
 		upcased = strdup("MD5");
 	} else {
 		upcased = _strupr(strdup(text));
@@ -135,7 +135,7 @@ keytype_from_text(
 	upcased = NULL;
 
 #else	/* !OPENSSL follows */
-	if ('m' == tolower(text[0])) {
+	if ('m' == tolower(text[0U])) {
 		key_type = NID_md5;
 	} else {
 		key_type = 0;

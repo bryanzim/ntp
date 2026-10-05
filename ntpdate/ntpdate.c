@@ -344,7 +344,7 @@ ntpdatemain (
 #else
 	errflg = (argc < 2);	/* need at least server on cmdline */
 #endif
-	progname = argv[0];
+	progname = argv[0U];
 	syslogit = 0;
 
 	/*
@@ -710,7 +710,7 @@ transmit(
 	if (sys_authenticate) {
 		size_t len;
 
-		xpkt.exten[0] = htonl(sys_authkey);
+		xpkt.exten[0U] = htonl(sys_authkey);
 		get_systime(&server->xmt);
 		L_ADDUF(&server->xmt, sys_authdelay);
 		HTONL_FP(&server->xmt, &xpkt.xmt);
@@ -818,11 +818,11 @@ receive(
 
 		if (debug > 3)
 			printf("receive: rpkt keyid=%ld sys_authkey=%ld decrypt=%ld\n",
-			   (long int)ntohl(rpkt->exten[0]), (long int)sys_authkey,
+			   (long int)ntohl(rpkt->exten[0U]), (long int)sys_authkey,
 			   (long int)authdecrypt(sys_authkey, (u_int32 *)rpkt,
 				LEN_PKT_NOMAC, (size_t)(rbufp->recv_length - LEN_PKT_NOMAC)));
 
-		if (has_mac && ntohl(rpkt->exten[0]) == sys_authkey &&
+		if (has_mac && ntohl(rpkt->exten[0U]) == sys_authkey &&
 			authdecrypt(sys_authkey, (u_int32 *)rpkt, LEN_PKT_NOMAC,
 			(size_t)(rbufp->recv_length - LEN_PKT_NOMAC)))
 			is_authentic = 1;
@@ -996,7 +996,7 @@ clock_filter(
 	 * offset.	If there are no samples in the register, delay and
 	 * offset go to zero and dispersion is set to the maximum.
 	 */
-	if (server->filter_delay[ord[0]] == 0) {
+	if (server->filter_delay[ord[0U]] == 0) {
 		server->delay = 0;
 		L_CLR(&server->offset);
 		server->soffset = 0;
@@ -1004,8 +1004,8 @@ clock_filter(
 	} else {
 		register s_fp d;
 
-		server->delay = server->filter_delay[ord[0]];
-		server->offset = server->filter_offset[ord[0]];
+		server->delay = server->filter_delay[ord[0U]];
+		server->offset = server->filter_offset[ord[0U]];
 		server->soffset = LFPTOFP(&server->offset);
 		server->dispersion = 0;
 		for (i = 1; i < sys_samples; i++) {
@@ -1013,7 +1013,7 @@ clock_filter(
 				d = PEER_MAXDISP;
 			else {
 				d = server->filter_soffset[ord[i]]
-					- server->filter_soffset[ord[0]];
+					- server->filter_soffset[ord[0U]];
 				if (d < 0)
 					d = -d;
 				if (d > PEER_MAXDISP)
@@ -1161,7 +1161,7 @@ clock_select(void)
 	if (0 == nlist)
 		sys_server = NULL;
 	else if (1 == nlist) {
-		sys_server = server_list[0];
+		sys_server = server_list[0U];
 	} else {
 		/*
 		 * Re-sort by stratum, bdelay estimate quality and
@@ -1217,7 +1217,7 @@ clock_select(void)
 			 * it.
 			 */
 			i = 0;
-			n = server_list[0]->precision;;
+			n = server_list[0U]->precision;;
 			for (j = 1; j < nlist; j++) {
 				if (server_badness[j] >= server_badness[i])
 					i = j;
@@ -1243,7 +1243,7 @@ clock_select(void)
 		 * What remains is a list of less than 5 servers.  Take
 		 * the best.
 		 */
-		sys_server = server_list[0];
+		sys_server = server_list[0U];
 	}
 
 	/*
@@ -1620,9 +1620,9 @@ init_alarm(void)
 			exit(1);
 		}
 		/* get the LUID for system-time privilege. */
-		LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tkp.Privileges[0].Luid);
+		LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tkp.Privileges[0U].Luid);
 		tkp.PrivilegeCount = 1;		/* one privilege to set */
-		tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+		tkp.Privileges[0U].Attributes = SE_PRIVILEGE_ENABLED;
 		/* get set-time privilege for this process. */
 		AdjustTokenPrivileges(hToken, FALSE, &tkp, 0,(PTOKEN_PRIVILEGES) NULL, 0);
 		/* cannot test return value of AdjustTokenPrivileges. */

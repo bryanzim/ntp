@@ -192,7 +192,7 @@ static unsigned long randtbl[DEG_3 + 1] = {
  * to point to randtbl[1] (as explained below).
  */
 static unsigned long *fptr = &randtbl[SEP_3 + 1];
-static unsigned long *rptr = &randtbl[1];
+static unsigned long *rptr = &randtbl[1U];
 
 /*
  * The following things are the pointer to the state information table, the
@@ -204,7 +204,7 @@ static unsigned long *rptr = &randtbl[1];
  * this is more efficient than indexing every time to find the address of
  * the last element to see if the front and rear pointers have wrapped.
  */
-static unsigned long *state = &randtbl[1];
+static unsigned long *state = &randtbl[1U];
 static long rand_type = TYPE_3;
 static long rand_deg = DEG_3;
 static long rand_sep = SEP_3;
@@ -264,13 +264,13 @@ ntp_srandom(
 	long i;
 
 	if (rand_type == TYPE_0) {
-		state[0] = x;
+		state[0U] = x;
 	} else {
-		state[0] = x;
+		state[0U] = x;
 		for (i = 1; i < rand_deg; i++)
 			state[i] = good_rand(state[i - 1]);
 		fptr = &state[rand_sep];
-		rptr = &state[0];
+		rptr = &state[0U];
 		for (i = 0; i < 10 * rand_deg; i++)
 			x = ntp_random();
 	}
@@ -388,9 +388,9 @@ ntp_initstate(
 	end_ptr = &state[rand_deg];	/* must set end_ptr before srandom */
 	ntp_srandom(seed);
 	if (rand_type == TYPE_0)
-		long_arg_state[0] = rand_type;
+		long_arg_state[0U] = rand_type;
 	else
-		long_arg_state[0] = MAX_TYPES * (rptr - state) + rand_type;
+		long_arg_state[0U] = MAX_TYPES * (rptr - state) + rand_type;
 	return(ostate);
 }
 
@@ -419,8 +419,8 @@ ntp_setstate(
 	)
 {
 	register unsigned long *new_state = (unsigned long *) arg_state;
-	register long type = new_state[0] % MAX_TYPES;
-	register long rear = new_state[0] / MAX_TYPES;
+	register long type = new_state[0U] % MAX_TYPES;
+	register long rear = new_state[0U] / MAX_TYPES;
 	char *ostate = (char *)(&state[-1]);
 
 	if (rand_type == TYPE_0)
@@ -476,8 +476,8 @@ ntp_random( void )
 	register unsigned long *f, *r;
 
 	if (rand_type == TYPE_0) {
-		i = state[0];
-		state[0] = i = (good_rand(i)) & 0x7fffffff;
+		i = state[0U];
+		state[0U] = i = (good_rand(i)) & 0x7fffffff;
 	} else {
 		/*
 		 * Use local variables rather than static variables for speed.

@@ -554,22 +554,22 @@ datum_pts_receive(
 	** of microseconds.
 	*/
 
-	datum_pts->day =	100*(datum_pts->retbuf[0] & 0x0f) +
-		10*((datum_pts->retbuf[1] & 0xf0)>>4) +
-		(datum_pts->retbuf[1] & 0x0f);
+	datum_pts->day =	100*(datum_pts->retbuf[0U] & 0x0f) +
+		10*((datum_pts->retbuf[1U] & 0xf0)>>4) +
+		(datum_pts->retbuf[1U] & 0x0f);
 
-	datum_pts->hour =	10*((datum_pts->retbuf[2] & 0x30)>>4) +
-		(datum_pts->retbuf[2] & 0x0f);
+	datum_pts->hour =	10*((datum_pts->retbuf[2U] & 0x30)>>4) +
+		(datum_pts->retbuf[2U] & 0x0f);
 
-	datum_pts->minute =	10*((datum_pts->retbuf[3] & 0x70)>>4) +
-		(datum_pts->retbuf[3] & 0x0f);
+	datum_pts->minute =	10*((datum_pts->retbuf[3U] & 0x70)>>4) +
+		(datum_pts->retbuf[3U] & 0x0f);
 
-	datum_pts->second =	10*((datum_pts->retbuf[4] & 0x70)>>4) +
-		(datum_pts->retbuf[4] & 0x0f);
+	datum_pts->second =	10*((datum_pts->retbuf[4U] & 0x70)>>4) +
+		(datum_pts->retbuf[4U] & 0x0f);
 
-	datum_pts->msec =	100*((datum_pts->retbuf[5] & 0xf0) >> 4) + 
-		10*(datum_pts->retbuf[5] & 0x0f) +
-		((datum_pts->retbuf[6] & 0xf0)>>4);
+	datum_pts->msec =	100*((datum_pts->retbuf[5U] & 0xf0) >> 4) + 
+		10*(datum_pts->retbuf[5U] & 0x0f) +
+		((datum_pts->retbuf[6U] & 0xf0)>>4);
 
 	datum_pts->usec =	1000*datum_pts->msec;
 

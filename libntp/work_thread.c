@@ -193,7 +193,7 @@ ensure_workitems_empty_slot(
 	*/
 	
 	static const size_t each =
-	    sizeof(blocking_children[0]->workitems[0]);
+	    sizeof(blocking_children[0U]->workitems[0U]);
 
 	size_t	new_alloc;
 	size_t  slots_used;
@@ -229,7 +229,7 @@ ensure_workresp_empty_slot(
 	*/
 	
 	static const size_t each =
-	    sizeof(blocking_children[0]->responses[0]);
+	    sizeof(blocking_children[0U]->responses[0U]);
 
 	size_t	new_alloc;
 	size_t  slots_used;
@@ -512,7 +512,7 @@ start_blocking_thread_internal(
 
 	c->thread_ref = NULL;
 	(*addremove_io_semaphore)(c->responses_pending, FALSE);
-	c->thr_table[0].thnd =
+	c->thr_table[0U].thnd =
 		(HANDLE)_beginthreadex(
 			NULL,
 			0,
@@ -521,22 +521,22 @@ start_blocking_thread_internal(
 			CREATE_SUSPENDED,
 			NULL);
 
-	if (NULL == c->thr_table[0].thnd) {
+	if (NULL == c->thr_table[0U].thnd) {
 		msyslog(LOG_ERR, "start blocking thread failed: %m");
 		exit(-1);
 	}
 	/* remember the thread priority is only within the process class */
-	if (!SetThreadPriority(c->thr_table[0].thnd,
+	if (!SetThreadPriority(c->thr_table[0U].thnd,
 			       THREAD_PRIORITY_BELOW_NORMAL)) {
 		msyslog(LOG_ERR, "Error lowering blocking thread priority: %m");
 	}
 	if (NULL != pSetThreadDescription) {
-		(*pSetThreadDescription)(c->thr_table[0].thnd, L"ntp_worker");
+		(*pSetThreadDescription)(c->thr_table[0U].thnd, L"ntp_worker");
 	}
-	resumed = ResumeThread(c->thr_table[0].thnd);
+	resumed = ResumeThread(c->thr_table[0U].thnd);
 	DEBUG_INSIST(resumed);
 	(void)resumed;
-	c->thread_ref = &c->thr_table[0];
+	c->thread_ref = &c->thr_table[0U];
 }
 #else	/* pthreads start_blocking_thread_internal() follows */
 {
@@ -565,13 +565,13 @@ start_blocking_thread_internal(
 	}
 # endif
 
-	rc = pipe_socketpair(&pipe_ends[0], &is_pipe);
+	rc = pipe_socketpair(&pipe_ends[0U], &is_pipe);
 	if (0 != rc) {
 		msyslog(LOG_ERR, "start_blocking_thread: pipe_socketpair() %m");
 		exit(1);
 	}
-	c->resp_read_pipe = move_fd(pipe_ends[0]);
-	c->resp_write_pipe = move_fd(pipe_ends[1]);
+	c->resp_read_pipe = move_fd(pipe_ends[0U]);
+	c->resp_write_pipe = move_fd(pipe_ends[1U]);
 	c->ispipe = is_pipe;
 	flags = fcntl(c->resp_read_pipe, F_GETFL, 0);
 	if (-1 == flags) {
@@ -631,7 +631,7 @@ start_blocking_thread_internal(
 #endif
 	c->thread_ref = emalloc_zero(sizeof(*c->thread_ref));
 	block_thread_signals(&saved_sig_mask);
-	rc = pthread_create(&c->thr_table[0], &thr_attr,
+	rc = pthread_create(&c->thr_table[0U], &thr_attr,
 			    &blocking_thread, c);
 	pthread_sigmask(SIG_SETMASK, &saved_sig_mask, NULL);
 	pthread_attr_destroy(&thr_attr);
@@ -640,7 +640,7 @@ start_blocking_thread_internal(
 			strerror(rc));
 		exit(1);
 	}
-	c->thread_ref = &c->thr_table[0];
+	c->thread_ref = &c->thr_table[0U];
 }
 #endif
 
@@ -774,11 +774,11 @@ prepare_child_sems(
 	if (NULL == worker_memlock)
 		worker_memlock = create_sema(&worker_mmutex, 1, 1);
 	
-	c->accesslock           = create_sema(&c->sem_table[0], 1, 1);
-	c->workitems_pending    = create_sema(&c->sem_table[1], 0, 0);
-	c->wake_scheduled_sleep = create_sema(&c->sem_table[2], 0, 1);
+	c->accesslock           = create_sema(&c->sem_table[0U], 1, 1);
+	c->workitems_pending    = create_sema(&c->sem_table[1U], 0, 0);
+	c->wake_scheduled_sleep = create_sema(&c->sem_table[2U], 0, 1);
 #   ifndef WORK_PIPE
-	c->responses_pending    = create_sema(&c->sem_table[3], 0, 0);
+	c->responses_pending    = create_sema(&c->sem_table[3U], 0, 0);
 #   endif
 }
 

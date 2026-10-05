@@ -463,7 +463,7 @@ static inline uint8_t
 get_u8(
 	const char *cp)
 {
-	return ((const u_char*)cp)[0];
+	return ((const u_char*)cp)[0U];
 }
 
 static inline uint16_t
@@ -564,11 +564,11 @@ TSIP_decode (
 	    (up->type != CLK_ACE        ) &&
 	    (up->type != CLK_COPERNICUS )   )
 	{
-		if ((up->rpt_buf[0] == (char) 0x41) ||
-		    (up->rpt_buf[0] == (char) 0x46) ||
-		    (up->rpt_buf[0] == (char) 0x54) ||
-		    (up->rpt_buf[0] == (char) 0x4B) ||
-		    (up->rpt_buf[0] == (char) 0x6D)) {
+		if ((up->rpt_buf[0U] == (char) 0x41) ||
+		    (up->rpt_buf[0U] == (char) 0x46) ||
+		    (up->rpt_buf[0U] == (char) 0x54) ||
+		    (up->rpt_buf[0U] == (char) 0x4B) ||
+		    (up->rpt_buf[0U] == (char) 0x6D)) {
 
 			/* standard time packet - GPS time and GPS week number */
 #ifdef DEBUG
@@ -582,7 +582,7 @@ TSIP_decode (
 	/*
 	 * We cast both to u_char as 0x8f uses the sign bit on a char
 	 */
-	if ((u_char) up->rpt_buf[0] == (u_char) 0x8f) {
+	if ((u_char) up->rpt_buf[0U] == (u_char) 0x8f) {
 		/* 
 		 * Superpackets
 		 */
@@ -888,19 +888,19 @@ TSIP_decode (
 		} /* switch */
 	} /* if 8F packets */
 
-	else if (up->rpt_buf[0] == (u_char)0x42) {
+	else if (up->rpt_buf[0U] == (u_char)0x42) {
 		printf("0x42\n");
 		return 0;
 	}
-	else if (up->rpt_buf[0] == (u_char)0x43) {
+	else if (up->rpt_buf[0U] == (u_char)0x43) {
 		printf("0x43\n");
 		return 0;
 	}
-	else if ((up->rpt_buf[0] == PACKET_41) & (up->type == CLK_THUNDERBOLT)){
+	else if ((up->rpt_buf[0U] == PACKET_41) & (up->type == CLK_THUNDERBOLT)){
 		printf("Undocumented 0x41 packet on Thunderbolt\n");
 		return 0;
 	}
-	else if ((up->rpt_buf[0] == PACKET_41A) & (up->type == CLK_ACUTIME)) {
+	else if ((up->rpt_buf[0U] == PACKET_41A) & (up->type == CLK_ACUTIME)) {
 #ifdef DEBUG
 		printf("GPS TOW: %ld\n", (long)getlong((u_char *) &mb(0)));
 		printf("GPS WN: %d\n", getint((u_char *) &mb(4)));
@@ -910,7 +910,7 @@ TSIP_decode (
 	}
 
 	/* GPS time packet for ACE III or Copernicus II receiver */
-	else if ((up->rpt_buf[0] == PACKET_41) &&
+	else if ((up->rpt_buf[0U] == PACKET_41) &&
 	         ((up->type == CLK_ACE) || (up->type == CLK_COPERNICUS))) {
 #ifdef DEBUG
 		if ((debug > 1) && (up->type == CLK_ACE))
@@ -923,7 +923,7 @@ TSIP_decode (
 			up->polled = -1;
 #ifdef DEBUG
 			printf("TSIP_decode: unit %d: bad packet %02x len %d\n", 
-				up->unit, up->rpt_buf[0] & 0xff, up->rpt_cnt);
+				up->unit, up->rpt_buf[0U] & 0xff, up->rpt_cnt);
 #endif
 			return 0;
 		}
@@ -971,7 +971,7 @@ TSIP_decode (
 	}
 
 	/* Health Status for Acutime Receiver */
-	else if ((up->rpt_buf[0] == PACKET_46) & (up->type == CLK_ACUTIME)) {
+	else if ((up->rpt_buf[0U] == PACKET_46) & (up->type == CLK_ACUTIME)) {
 #ifdef DEBUG
 		if (debug > 1)
 		/* Status Codes */
@@ -1027,7 +1027,7 @@ TSIP_decode (
 	}
 
 	/* Health Status for Copernicus II Receiver */
-	else if ((up->rpt_buf[0] == PACKET_46) && (up->type == CLK_COPERNICUS)) {
+	else if ((up->rpt_buf[0U] == PACKET_46) && (up->type == CLK_COPERNICUS)) {
 #ifdef DEBUG
 		if (debug > 1)
 		/* Status Codes */
@@ -1075,27 +1075,27 @@ TSIP_decode (
 	}
 
 	/* Other packets output by ACE III & Copernicus II Receivers, dropped silently */
-	else if (((up->rpt_buf[0] == (char) 0x4A) ||
-		  (up->rpt_buf[0] == (char) 0x4B) ||
-		  (up->rpt_buf[0] == (char) 0x56) ||
-		  (up->rpt_buf[0] == (char) 0x5F) ||
-		  (up->rpt_buf[0] == (char) 0x6D) ||
-		  (up->rpt_buf[0] == (char) 0x82) ||
-		  (up->rpt_buf[0] == (char) 0x84)) &&
+	else if (((up->rpt_buf[0U] == (char) 0x4A) ||
+		  (up->rpt_buf[0U] == (char) 0x4B) ||
+		  (up->rpt_buf[0U] == (char) 0x56) ||
+		  (up->rpt_buf[0U] == (char) 0x5F) ||
+		  (up->rpt_buf[0U] == (char) 0x6D) ||
+		  (up->rpt_buf[0U] == (char) 0x82) ||
+		  (up->rpt_buf[0U] == (char) 0x84)) &&
 		 ((up->type == CLK_ACE) || (up->type == CLK_COPERNICUS))) {
 #ifdef DEBUG
 		if ((debug > 1) && (up->type == CLK_ACE))
-			printf("TSIP_decode: Packet 0x%2x seen in ACE III mode\n", (up->rpt_buf[0] & 0XFF));
+			printf("TSIP_decode: Packet 0x%2x seen in ACE III mode\n", (up->rpt_buf[0U] & 0XFF));
 		if ((debug > 1) && (up->type == CLK_COPERNICUS))
-			printf("TSIP_decode: Packet 0x%2x seen in Copernicus II mode\n", (up->rpt_buf[0] & 0XFF));
+			printf("TSIP_decode: Packet 0x%2x seen in Copernicus II mode\n", (up->rpt_buf[0U] & 0XFF));
 #endif
 		return 0;
 	}
 
-	else if (up->rpt_buf[0] == 0x54)
+	else if (up->rpt_buf[0U] == 0x54)
 		return 0;
 
-	else if (up->rpt_buf[0] == PACKET_6D) {
+	else if (up->rpt_buf[0U] == PACKET_6D) {
 #ifdef DEBUG
 		int sats;
 
@@ -1119,7 +1119,7 @@ TSIP_decode (
 	up->polled = -1;
 #ifdef DEBUG
 	printf("TSIP_decode: unit %d: bad packet %02x-%02x event %d len %d\n", 
-	       up->unit, up->rpt_buf[0] & 0xff, mb(0) & 0xff, 
+	       up->unit, up->rpt_buf[0U] & 0xff, mb(0) & 0xff, 
 	       event, up->rpt_cnt);
 #endif
 	return 0;
@@ -1343,7 +1343,7 @@ palisade_io (
 			    default:
 				up->rpt_status = TSIP_PARSED_DATA;
 				/* save packet ID */
-				up->rpt_buf[0] = *c;
+				up->rpt_buf[0U] = *c;
 				break;
 			}
 			break;
@@ -1366,7 +1366,7 @@ palisade_io (
 			else 	{
 				/* error: start new report packet */
 				up->rpt_status = TSIP_PARSED_DLE_1;
-				up->rpt_buf[0] = *c;
+				up->rpt_buf[0U] = *c;
 			}
 			break;
 
@@ -1505,9 +1505,9 @@ getdbl (
 
 	memcpy(ui.ch, bp, sizeof(ui.ch));
 	/* least-significant 32 bits of double from swapped bp[4] to bp[7] */
-	uo.u32[0] = ntohl(ui.u32[1]);
+	uo.u32[0U] = ntohl(ui.u32[1U]);
 	/* most-significant 32 bits from swapped bp[0] to bp[3] */
-	uo.u32[1] = ntohl(ui.u32[0]);
+	uo.u32[1U] = ntohl(ui.u32[0U]);
 
 	return uo.out;
 #endif
@@ -1556,9 +1556,9 @@ getsingle(
 
 	memcpy(&mantissa, bp, sizeof(mantissa));
 	mantissa = ((u_int32)ntohl(mantissa) & 0x7FFFFF) | 0x800000;
-	exp_field = ((uint8_t)bp[0] << 1) + ((uint8_t)bp[1] >> 7);
+	exp_field = ((uint8_t)bp[0U] << 1) + ((uint8_t)bp[1U] >> 7);
 	exponent = (int8_t)exp_field - 127;
-	sign = ((uint8_t)bp[0] >> 7);
+	sign = ((uint8_t)bp[0U] >> 7);
 	if (exponent > 23)
 		res = (int32)(mantissa << (exponent - 23));
 	else

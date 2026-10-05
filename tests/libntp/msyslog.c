@@ -154,8 +154,8 @@ test_msnprintfTruncate(void) {
 	errno = ENOENT;
 	act_cnt = msnprintf(act_buf, 3, "%m");
 
-	TEST_ASSERT_EQUAL('\0', exp_buf[2]);
-	TEST_ASSERT_EQUAL('\0', act_buf[2]);
+	TEST_ASSERT_EQUAL('\0', exp_buf[2U]);
+	TEST_ASSERT_EQUAL('\0', act_buf[2U]);
 	TEST_ASSERT_TRUE(act_cnt > 0);
 	TEST_ASSERT_EQUAL(exp_cnt, act_cnt);
 	TEST_ASSERT_EQUAL_STRING(exp_buf, act_buf);

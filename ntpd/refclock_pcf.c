@@ -139,21 +139,21 @@ pcf_poll(
 	
 	pp = peer->procptr;
 
-	buf[0] = 0;
-	if (read(pp->io.fd, buf, sizeof(buf)) < (ssize_t)sizeof(buf) || buf[0] != 9) {
+	buf[0U] = 0;
+	if (read(pp->io.fd, buf, sizeof(buf)) < (ssize_t)sizeof(buf) || buf[0U] != 9) {
 		refclock_report(peer, CEVNT_FAULT);
 		return;
 	}
 
 	ZERO(tm);
 
-	tm.tm_mday = buf[11] * 10 + buf[10];
-	tm.tm_mon = buf[13] * 10 + buf[12] - 1;
-	tm.tm_year = buf[15] * 10 + buf[14];
-	tm.tm_hour = buf[7] * 10 + buf[6];
-	tm.tm_min = buf[5] * 10 + buf[4];
-	tm.tm_sec = buf[3] * 10 + buf[2];
-	tm.tm_isdst = (buf[8] & 1) ? 1 : (buf[8] & 2) ? 0 : -1;
+	tm.tm_mday = buf[11U] * 10 + buf[10U];
+	tm.tm_mon = buf[13U] * 10 + buf[12U] - 1;
+	tm.tm_year = buf[15U] * 10 + buf[14U];
+	tm.tm_hour = buf[7U] * 10 + buf[6U];
+	tm.tm_min = buf[5U] * 10 + buf[4U];
+	tm.tm_sec = buf[3U] * 10 + buf[2U];
+	tm.tm_isdst = (buf[8U] & 1) ? 1 : (buf[8U] & 2) ? 0 : -1;
 
 	/*
 	 * Y2K convert the 2-digit year
@@ -199,8 +199,8 @@ pcf_poll(
 	pp->hour = tp->tm_hour;
 	pp->minute = tp->tm_min;
 	pp->second = tp->tm_sec;
-	pp->nsec = buf[16] * 31250000;
-	if (buf[17] & 1)
+	pp->nsec = buf[16U] * 31250000;
+	if (buf[17U] & 1)
 		pp->nsec += 500000000;
 
 #ifdef DEBUG
@@ -215,7 +215,7 @@ pcf_poll(
 		return;
 	}
 	record_clock_stats(&peer->srcadr, pp->a_lastcode);
-	if ((buf[1] & 1) && !(pp->sloppyclockflag & CLK_FLAG2))
+	if ((buf[1U] & 1) && !(pp->sloppyclockflag & CLK_FLAG2))
 		pp->leap = LEAP_NOTINSYNC;
 	else
 		pp->leap = LEAP_NOWARNING;

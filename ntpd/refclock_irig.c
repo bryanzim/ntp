@@ -360,9 +360,9 @@ irig_start(
 	 * The companded samples are encoded sign-magnitude. The table
 	 * contains all the 256 values in the interest of speed.
 	 */
-	up->comp[0] = up->comp[OFFSET] = 0.;
-	up->comp[1] = 1; up->comp[OFFSET + 1] = -1.;
-	up->comp[2] = 3; up->comp[OFFSET + 2] = -3.;
+	up->comp[0U] = up->comp[OFFSET] = 0.;
+	up->comp[1U] = 1; up->comp[OFFSET + 1] = -1.;
+	up->comp[2U] = 3; up->comp[OFFSET + 2] = -3.;
 	step = 2.;
 	for (i = 3; i < OFFSET; i++) {
 		up->comp[i] = up->comp[i - 1] + step;
@@ -524,24 +524,24 @@ irig_rf(
 	 * bandpass, 0.3 dB passband ripple, -50 dB stopband ripple,
 	 * phase delay 1.03 ms.
 	 */
-	irig_b = (up->bpf[8] = up->bpf[7]) * 6.505491e-001;
-	irig_b += (up->bpf[7] = up->bpf[6]) * -3.875180e+000;
-	irig_b += (up->bpf[6] = up->bpf[5]) * 1.151180e+001;
-	irig_b += (up->bpf[5] = up->bpf[4]) * -2.141264e+001;
-	irig_b += (up->bpf[4] = up->bpf[3]) * 2.712837e+001;
-	irig_b += (up->bpf[3] = up->bpf[2]) * -2.384486e+001;
-	irig_b += (up->bpf[2] = up->bpf[1]) * 1.427663e+001;
-	irig_b += (up->bpf[1] = up->bpf[0]) * -5.352734e+000;
-	up->bpf[0] = sample - irig_b;
-	irig_b = up->bpf[0] * 4.952157e-003
-	    + up->bpf[1] * -2.055878e-002
-	    + up->bpf[2] * 4.401413e-002
-	    + up->bpf[3] * -6.558851e-002
-	    + up->bpf[4] * 7.462108e-002
-	    + up->bpf[5] * -6.558851e-002
-	    + up->bpf[6] * 4.401413e-002
-	    + up->bpf[7] * -2.055878e-002
-	    + up->bpf[8] * 4.952157e-003;
+	irig_b = (up->bpf[8U] = up->bpf[7U]) * 6.505491e-001;
+	irig_b += (up->bpf[7U] = up->bpf[6U]) * -3.875180e+000;
+	irig_b += (up->bpf[6U] = up->bpf[5U]) * 1.151180e+001;
+	irig_b += (up->bpf[5U] = up->bpf[4U]) * -2.141264e+001;
+	irig_b += (up->bpf[4U] = up->bpf[3U]) * 2.712837e+001;
+	irig_b += (up->bpf[3U] = up->bpf[2U]) * -2.384486e+001;
+	irig_b += (up->bpf[2U] = up->bpf[1U]) * 1.427663e+001;
+	irig_b += (up->bpf[1U] = up->bpf[0U]) * -5.352734e+000;
+	up->bpf[0U] = sample - irig_b;
+	irig_b = up->bpf[0U] * 4.952157e-003
+	    + up->bpf[1U] * -2.055878e-002
+	    + up->bpf[2U] * 4.401413e-002
+	    + up->bpf[3U] * -6.558851e-002
+	    + up->bpf[4U] * 7.462108e-002
+	    + up->bpf[5U] * -6.558851e-002
+	    + up->bpf[6U] * 4.401413e-002
+	    + up->bpf[7U] * -2.055878e-002
+	    + up->bpf[8U] * 4.952157e-003;
 	up->irig_b += irig_b * irig_b;
 
 	/*
@@ -549,16 +549,16 @@ irig_rf(
 	 * 0.3 dB passband ripple, -50 dB stopband ripple, phase delay
 	 * 3.47 ms.
 	 */
-	irig_e = (up->lpf[4] = up->lpf[3]) * 8.694604e-001;
-	irig_e += (up->lpf[3] = up->lpf[2]) * -3.589893e+000;
-	irig_e += (up->lpf[2] = up->lpf[1]) * 5.570154e+000;
-	irig_e += (up->lpf[1] = up->lpf[0]) * -3.849667e+000;
-	up->lpf[0] = sample - irig_e;
-	irig_e = up->lpf[0] * 3.215696e-003
-	    + up->lpf[1] * -1.174951e-002
-	    + up->lpf[2] * 1.712074e-002
-	    + up->lpf[3] * -1.174951e-002
-	    + up->lpf[4] * 3.215696e-003;
+	irig_e = (up->lpf[4U] = up->lpf[3U]) * 8.694604e-001;
+	irig_e += (up->lpf[3U] = up->lpf[2U]) * -3.589893e+000;
+	irig_e += (up->lpf[2U] = up->lpf[1U]) * 5.570154e+000;
+	irig_e += (up->lpf[1U] = up->lpf[0U]) * -3.849667e+000;
+	up->lpf[0U] = sample - irig_e;
+	irig_e = up->lpf[0U] * 3.215696e-003
+	    + up->lpf[1U] * -1.174951e-002
+	    + up->lpf[2U] * 1.712074e-002
+	    + up->lpf[3U] * -1.174951e-002
+	    + up->lpf[4U] * 3.215696e-003;
 	up->irig_e += irig_e * irig_e;
 
 	/*
@@ -680,7 +680,7 @@ irig_base(
 	if (carphase != 7)
 		return;
 
-	lope = (up->lastint[2] - up->lastint[6]) / 2.;
+	lope = (up->lastint[2U] - up->lastint[6U]) / 2.;
 	if (lope > up->intmax)
 		up->intmax = lope;
 	if (lope < up->intmin)
@@ -708,7 +708,7 @@ irig_base(
 	 * first two bits and the minimum over the last two bits, with
 	 * the slice level halfway between the maximum and minimum.
 	 */
-	env = (up->lastenv[2] - up->lastenv[6]) / 2.;
+	env = (up->lastenv[2U] - up->lastenv[6U]) / 2.;
 	up->dcycles <<= 1;
 	if (env >= up->slice)
 		up->dcycles |= 1;

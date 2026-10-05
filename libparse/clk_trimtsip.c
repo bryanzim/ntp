@@ -234,7 +234,7 @@ cvt_trimtsip(
 	}
 
 	if ((size < 4) ||
-	    (buffer[0]      != DLE) ||
+	    (buffer[0U]      != DLE) ||
 	    (buffer[size-1] != ETX) ||
 	    (buffer[size-2] != DLE))
 	{
@@ -244,7 +244,7 @@ cvt_trimtsip(
 	else
 	{
 		unsigned char *bp;
-		cmd = buffer[1];
+		cmd = buffer[1U];
 
 		    switch(cmd)
 		    {

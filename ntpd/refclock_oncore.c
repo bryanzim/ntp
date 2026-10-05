@@ -570,19 +570,19 @@ static u_char oncore_cmd_Ia[]  = { 'I', 'a' };					    /* 12	Self Test				*/
 	/* to buffer, int w, u_char *buf */
 #define w32_buf(buf,w)	{ u_int i_tmp;			   \
 			  i_tmp = (w<0) ? (~(-w)+1) : (w); \
-			  (buf)[0] = (i_tmp >> 24) & 0xff; \
-			  (buf)[1] = (i_tmp >> 16) & 0xff; \
-			  (buf)[2] = (i_tmp >>	8) & 0xff; \
-			  (buf)[3] = (i_tmp	 ) & 0xff; \
+			  (buf)[0U] = (i_tmp >> 24) & 0xff; \
+			  (buf)[1U] = (i_tmp >> 16) & 0xff; \
+			  (buf)[2U] = (i_tmp >>	8) & 0xff; \
+			  (buf)[3U] = (i_tmp	 ) & 0xff; \
 			}
 
-#define w32(buf)      (((buf)[0]&0xff) << 24 | \
-		       ((buf)[1]&0xff) << 16 | \
-		       ((buf)[2]&0xff) <<  8 | \
-		       ((buf)[3]&0xff) )
+#define w32(buf)      (((buf)[0U]&0xff) << 24 | \
+		       ((buf)[1U]&0xff) << 16 | \
+		       ((buf)[2U]&0xff) <<  8 | \
+		       ((buf)[3U]&0xff) )
 
 	/* from buffer, char *buf, result to an int */
-#define buf_w32(buf) (((buf)[0]&0200) ? (-(~w32(buf)+1)) : w32(buf))
+#define buf_w32(buf) (((buf)[0U]&0200) ? (-(~w32(buf)+1)) : w32(buf))
 
 
 /*
@@ -977,7 +977,7 @@ oncore_init_shmem(
 	/* see how big it needs to be */
 
 	n = 1;
-	for (mp=oncore_messages; mp->flag[0]; mp++) {
+	for (mp=oncore_messages; mp->flag[0U]; mp++) {
 		mp->shmem = n;
 		/* Allocate space for multiplexed almanac, and 0D/2D/3D @@Ea records */
 		if (!strcmp(mp->flag, "Cb")) {
@@ -1005,15 +1005,15 @@ oncore_init_shmem(
 
 	/* next build the new SHMEM buffer in memory */
 
-	for (mp=oncore_messages; mp->flag[0]; mp++) {
+	for (mp=oncore_messages; mp->flag[0U]; mp++) {
 		l = mp->shmem;
 		buf[l + 0] = mp->len >> 8;
 		buf[l + 1] = mp->len & 0xff;
 		buf[l + 2] = 0;
 		buf[l + 3] = '@';
 		buf[l + 4] = '@';
-		buf[l + 5] = mp->flag[0];
-		buf[l + 6] = mp->flag[1];
+		buf[l + 5] = mp->flag[0U];
+		buf[l + 6] = mp->flag[1U];
 		if (!strcmp(mp->flag, "Cb") || !strcmp(mp->flag, "Ba") || !strcmp(mp->flag, "Ea") || !strcmp(mp->flag, "Ha")) {
 			if (!strcmp(mp->flag, "Cb"))
 				n = 35;
@@ -1025,8 +1025,8 @@ oncore_init_shmem(
 				buf[l + i * (mp->len+3) + 2] = 0;
 				buf[l + i * (mp->len+3) + 3] = '@';
 				buf[l + i * (mp->len+3) + 4] = '@';
-				buf[l + i * (mp->len+3) + 5] = mp->flag[0];
-				buf[l + i * (mp->len+3) + 6] = mp->flag[1];
+				buf[l + i * (mp->len+3) + 5] = mp->flag[0U];
+				buf[l + i * (mp->len+3) + 6] = mp->flag[1U];
 			}
 		}
 	}
@@ -1312,21 +1312,21 @@ oncore_read_config(
 			long_flg++;
 		} else if (!strncmp(cc, "HT", (size_t) 2)) {
 			f1 = 0;
-			units[0] = '\0';
+			units[0U] = '\0';
 			sscanf(ca, "%lf %1s", &f1, units);
-			if (units[0] == 'F')
+			if (units[0U] == 'F')
 				f1 = 0.3048 * f1;
 			instance->ss_ht = 100 * f1;    /* cm */
 			ht_flg++;
 		} else if (!strncmp(cc, "DELAY", (size_t) 5)) {
 			f1 = 0;
-			units[0] = '\0';
+			units[0U] = '\0';
 			sscanf(ca, "%lf %1s", &f1, units);
-			if (units[0] == 'N')
+			if (units[0U] == 'N')
 				;
-			else if (units[0] == 'U')
+			else if (units[0U] == 'U')
 				f1 = 1000 * f1;
-			else if (units[0] == 'M')
+			else if (units[0U] == 'M')
 				f1 = 1000000 * f1;
 			else
 				f1 = 1000000000 * f1;
@@ -1340,13 +1340,13 @@ oncore_read_config(
 				instance->delay = f1;		/* delay in ns */
 		} else if (!strncmp(cc, "OFFSET", (size_t) 6)) {
 			f1 = 0;
-			units[0] = '\0';
+			units[0U] = '\0';
 			sscanf(ca, "%lf %1s", &f1, units);
-			if (units[0] == 'N')
+			if (units[0U] == 'N')
 				;
-			else if (units[0] == 'U')
+			else if (units[0U] == 'U')
 				f1 = 1000 * f1;
-			else if (units[0] == 'M')
+			else if (units[0U] == 'M')
 				f1 = 1000000 * f1;
 			else
 				f1 = 1000000000 * f1;
@@ -1488,7 +1488,7 @@ oncore_consume(
 	unsigned i, m, l;
 
 	while (rcvptr >= 7) {
-		if (rcvbuf[0] != '@' || rcvbuf[1] != '@') {
+		if (rcvbuf[0U] != '@' || rcvbuf[1U] != '@') {
 			/* We're not in sync, lets try to get there */
 			for (i=1; i < rcvptr-1; i++)
 				if (rcvbuf[i] == '@' && rcvbuf[i+1] == '@')
@@ -1506,7 +1506,7 @@ oncore_consume(
 		}
 
 		/* Ok, we have a header now */
-		l = sizeof(oncore_messages)/sizeof(oncore_messages[0]) -1;
+		l = sizeof(oncore_messages)/sizeof(oncore_messages[0U]) -1;
 		for(m=0; m<l; m++)
 			if (!strncmp(oncore_messages[m].flag, (char *)(rcvbuf+2), (size_t) 2))
 				break;
@@ -1515,7 +1515,7 @@ oncore_consume(
 			if (debug > 4)
 				oncore_log_f(instance, LOG_DEBUG,
 					     ">>> Unknown MSG, skipping 4 (%c%c)",
-					     rcvbuf[2], rcvbuf[3]);
+					     rcvbuf[2U], rcvbuf[3]);
 #endif
 			memcpy(rcvbuf, rcvbuf+4, (size_t) 4);
 			rcvptr -= 4;
@@ -1527,8 +1527,8 @@ oncore_consume(
 		if (debug > 3)
 			oncore_log_f(instance, LOG_DEBUG,
 				     "GOT: %c%c  %d of %d entry %d",
-				     instance->unit, rcvbuf[2],
-				     rcvbuf[3], rcvptr, l, m);
+				     instance->unit, rcvbuf[2U],
+				     rcvbuf[3U], rcvptr, l, m);
 #endif
 		/* Got the entire message ? */
 
@@ -1558,7 +1558,7 @@ oncore_consume(
 				char	Msg[120], Msg2[10];
 
 				oncore_log(instance, LOG_ERR, "Checksum mismatch!");
-				snprintf(Msg, sizeof(Msg), "@@%c%c ", rcvbuf[2], rcvbuf[3]);
+				snprintf(Msg, sizeof(Msg), "@@%c%c ", rcvbuf[2U], rcvbuf[3U]);
 				for (i = 4; i < l; i++) {
 					snprintf(Msg2, sizeof(Msg2),
 						 "%03o ", rcvbuf[i]);
@@ -1801,24 +1801,24 @@ oncore_get_timestamp(
 
 	Rsm = 0;
 	if (instance->chan == 6)
-		Rsm = instance->BEHa[64];
+		Rsm = instance->BEHa[64U];
 	else if (instance->chan == 8)
-		Rsm = instance->BEHa[72];
+		Rsm = instance->BEHa[72U];
 	else if (instance->chan == 12)
-		Rsm = ((instance->BEHa[129]<<8) | instance->BEHa[130]);
+		Rsm = ((instance->BEHa[129U]<<8) | instance->BEHa[130U]);
 
 	if (instance->chan == 6 || instance->chan == 8) {
 		char	f1[5], f2[5], f3[5], f4[5];
 		if (instance->traim) {
 			snprintf(f1, sizeof(f1), "%d",
-				 instance->BEHn[21]);
+				 instance->BEHn[21U]);
 			snprintf(f2, sizeof(f2), "%d",
-				 instance->BEHn[22]);
+				 instance->BEHn[22U]);
 			snprintf(f3, sizeof(f3), "%2d",
-				 instance->BEHn[23] * 256 +
-				     instance->BEHn[24]);
+				 instance->BEHn[23U] * 256 +
+				     instance->BEHn[24U]);
 			snprintf(f4, sizeof(f4), "%3d",
-				 (s_char)instance->BEHn[25]);
+				 (s_char)instance->BEHn[25U]);
 		} else {
 			strlcpy(f1, "x", sizeof(f1));
 			strlcpy(f2, "x", sizeof(f2));
@@ -1831,27 +1831,27 @@ oncore_get_timestamp(
 		    instance->pp->year, instance->pp->day,
 		    instance->pp->hour, instance->pp->minute, instance->pp->second,
 		    (long) tsp->tv_sec % 60,
-		    Rsm, 0.1*(256*instance->BEHa[35]+instance->BEHa[36]),
+		    Rsm, 0.1*(256*instance->BEHa[35U]+instance->BEHa[36U]),
 		    /*rsat	dop */
-		    instance->BEHa[38], instance->BEHa[39], instance->traim, f1, f2,
+		    instance->BEHa[38U], instance->BEHa[39U], instance->traim, f1, f2,
 		    /*	nsat visible,	  nsat tracked,     traim,traim,traim */
 		    f3, f4,
 		    /* sigma neg-sawtooth */
-	  /*sat*/   instance->BEHa[41], instance->BEHa[45], instance->BEHa[49], instance->BEHa[53],
-		    instance->BEHa[57], instance->BEHa[61], instance->BEHa[65], instance->BEHa[69]
+	  /*sat*/   instance->BEHa[41U], instance->BEHa[45U], instance->BEHa[49U], instance->BEHa[53U],
+		    instance->BEHa[57U], instance->BEHa[61U], instance->BEHa[65U], instance->BEHa[69U]
 		    );					/* will be 0 for 6 chan */
 	} else if (instance->chan == 12) {
 		char	f1[5], f2[5], f3[5], f4[5];
 		if (instance->traim) {
 			snprintf(f1, sizeof(f1), "%d",
-				 instance->BEHn[6]);
+				 instance->BEHn[6U]);
 			snprintf(f2, sizeof(f2), "%d",
-				 instance->BEHn[7]);
+				 instance->BEHn[7U]);
 			snprintf(f3, sizeof(f3), "%d",
-				 instance->BEHn[12] * 256 +
-				     instance->BEHn[13]);
+				 instance->BEHn[12U] * 256 +
+				     instance->BEHn[13U]);
 			snprintf(f4, sizeof(f4), "%3d",
-				 (s_char)instance->BEHn[14]);
+				 (s_char)instance->BEHn[14U]);
 		} else {
 			strlcpy(f1, "x", sizeof(f1));
 			strlcpy(f2, "x", sizeof(f2));
@@ -1864,15 +1864,15 @@ oncore_get_timestamp(
 		    instance->pp->year, instance->pp->day,
 		    instance->pp->hour, instance->pp->minute, instance->pp->second,
 		    (long) tsp->tv_sec % 60,
-		    Rsm, 0.1*(256*instance->BEHa[53]+instance->BEHa[54]),
+		    Rsm, 0.1*(256*instance->BEHa[53U]+instance->BEHa[54U]),
 		    /*rsat	dop */
-		    instance->BEHa[55], instance->BEHa[56], instance->traim, f1, f2,
+		    instance->BEHa[55U], instance->BEHa[56U], instance->traim, f1, f2,
 		    /*	nsat visible,	  nsat tracked	 traim,traim,traim */
 		    f3, f4,
 		    /* sigma neg-sawtooth */
-	  /*sat*/   instance->BEHa[58], instance->BEHa[64], instance->BEHa[70], instance->BEHa[76],
-		    instance->BEHa[82], instance->BEHa[88], instance->BEHa[94], instance->BEHa[100],
-		    instance->BEHa[106], instance->BEHa[112], instance->BEHa[118], instance->BEHa[124]
+	  /*sat*/   instance->BEHa[58U], instance->BEHa[64U], instance->BEHa[70U], instance->BEHa[76U],
+		    instance->BEHa[82U], instance->BEHa[88U], instance->BEHa[94U], instance->BEHa[100U],
+		    instance->BEHa[106U], instance->BEHa[112U], instance->BEHa[118U], instance->BEHa[124U]
 		    );
 	}
 
@@ -1940,8 +1940,8 @@ oncore_msg_any(
 			   (long)tv.tv_sec, (long)tv.tv_usec);
 
 		if (!*fmt) {
-			snprintf(Msg, sizeof(Msg), ">>@@%c%c ", buf[2],
-				 buf[3]);
+			snprintf(Msg, sizeof(Msg), ">>@@%c%c ", buf[2U],
+				 buf[3U]);
 			for(i = 2; i < len && i < 2400 ; i++) {
 				snprintf(Msg2, sizeof(Msg2), "%02x",
 					 buf[i]);
@@ -1958,8 +1958,8 @@ oncore_msg_any(
 			}
 			*q = '\0';
 			oncore_log(instance, LOG_DEBUG, Msg);
-			snprintf(Msg, sizeof(Msg), "%c%c", buf[2],
-				 buf[3]);
+			snprintf(Msg, sizeof(Msg), "%c%c", buf[2U],
+				 buf[3U]);
 			i = 4;
 			for (p = fmt; *p; p++) {
 				snprintf(Msg2, "%02x", buf[i++]);
@@ -2001,7 +2001,7 @@ oncore_msg_Ag(
 	if (instance->o_state == ONCORE_RUN)
 		cp = "is";
 
-	instance->Ag = buf[4];
+	instance->Ag = buf[4U];
 	oncore_log_f(instance, LOG_INFO,
 		     "Satellite mask angle %s %d degrees", cp,
 		     (int)instance->Ag);
@@ -2020,9 +2020,9 @@ oncore_msg_As(
 	size_t len
 	)
 {
-	instance->ss_lat  = buf_w32(&buf[4]);
-	instance->ss_long = buf_w32(&buf[8]);
-	instance->ss_ht   = buf_w32(&buf[12]);
+	instance->ss_lat  = buf_w32(&buf[4U]);
+	instance->ss_long = buf_w32(&buf[8U]);
+	instance->ss_ht   = buf_w32(&buf[12U]);
 
 	/* Print out Position */
 	oncore_print_posn(instance);
@@ -2044,7 +2044,7 @@ oncore_msg_At(
 {
 	instance->saw_At = 1;
 	if (instance->site_survey == ONCORE_SS_TESTING) {
-		if (buf[4] == 2) {
+		if (buf[4U] == 2) {
 			oncore_log(instance, LOG_NOTICE,
 					"Initiating hardware 3D site survey");
 
@@ -2073,7 +2073,7 @@ oncore_msg_Ay(
 
 	instance->saw_Ay = 1;
 
-	instance->offset = buf_w32(&buf[4]);
+	instance->offset = buf_w32(&buf[4U]);
 
 	oncore_log_f(instance, LOG_INFO, "PPS Offset is set to %ld ns",
 		     instance->offset);
@@ -2097,7 +2097,7 @@ oncore_msg_Az(
 
 	instance->saw_Az = 1;
 
-	instance->delay = buf_w32(&buf[4]);
+	instance->delay = buf_w32(&buf[4U]);
 
 	oncore_log_f(instance, LOG_INFO, "Cable delay is set to %ld ns",
 		     instance->delay);
@@ -2127,11 +2127,11 @@ oncore_msg_BaEaHa(
 	 */
 
 	if (instance->o_state == ONCORE_CHECK_CHAN) {	/* here while checking for the # chan */
-		if (buf[2] == 'B') {		/* 6chan */
+		if (buf[2U] == 'B') {		/* 6chan */
 			if (instance->chan_ck < 6) instance->chan_ck = 6;
-		} else if (buf[2] == 'E') {	/* 8chan */
+		} else if (buf[2U] == 'E') {	/* 8chan */
 			if (instance->chan_ck < 8) instance->chan_ck = 8;
-		} else if (buf[2] == 'H') {	/* 12chan */
+		} else if (buf[2U] == 'H') {	/* 12chan */
 			if (instance->chan_ck < 12) instance->chan_ck = 12;
 		}
 
@@ -2262,9 +2262,9 @@ oncore_msg_BaEaHa(
 	if (instance->site_survey == ONCORE_SS_TESTING) {
 		if (instance->chan == 12) {
 			if (instance->count1) {
-				if (instance->count1++ > 5 || instance->BEHa[130]&0x10) {
+				if (instance->count1++ > 5 || instance->BEHa[130U]&0x10) {
 					instance->count1 = 0;
-					if (instance->BEHa[130]&0x10) {
+					if (instance->BEHa[130U]&0x10) {
 						oncore_log(instance, LOG_NOTICE,
 								"Initiating hardware 3D site survey");
 
@@ -2320,23 +2320,23 @@ oncore_msg_BaEaHa(
 	/* check the mode we are in 0/2/3D */
 
 	if (instance->chan == 6) {
-		if (instance->BEHa[64]&0x8)
+		if (instance->BEHa[64U]&0x8)
 			instance->mode = MODE_0D;
-		else if (instance->BEHa[64]&0x10)
+		else if (instance->BEHa[64U]&0x10)
 			instance->mode = MODE_2D;
-		else if (instance->BEHa[64]&0x20)
+		else if (instance->BEHa[64U]&0x20)
 			instance->mode = MODE_3D;
 	} else if (instance->chan == 8) {
-		if (instance->BEHa[72]&0x8)
+		if (instance->BEHa[72U]&0x8)
 			instance->mode = MODE_0D;
-		else if (instance->BEHa[72]&0x10)
+		else if (instance->BEHa[72U]&0x10)
 			instance->mode = MODE_2D;
-		else if (instance->BEHa[72]&0x20)
+		else if (instance->BEHa[72U]&0x20)
 			instance->mode = MODE_3D;
 	} else if (instance->chan == 12) {
 		int bits;
 
-		bits = (instance->BEHa[129]>>5) & 0x7;	/* actually Ha */
+		bits = (instance->BEHa[129U]>>5) & 0x7;	/* actually Ha */
 		if (bits == 0x4)
 			instance->mode = MODE_0D;
 		else if (bits == 0x6)
@@ -2400,11 +2400,11 @@ oncore_msg_BaEaHa(
 	 * Have # chan and TRAIM by now.
 	 */
 
-	instance->pp->year   = buf[6]*256+buf[7];
-	instance->pp->day    = ymd2yd(buf[6]*256+buf[7], buf[4], buf[5]);
-	instance->pp->hour   = buf[8];
-	instance->pp->minute = buf[9];
-	instance->pp->second = buf[10];
+	instance->pp->year   = buf[6U]*256+buf[7U];
+	instance->pp->day    = ymd2yd(buf[6U]*256+buf[7U], buf[4U], buf[5U]);
+	instance->pp->hour   = buf[8U];
+	instance->pp->minute = buf[9U];
+	instance->pp->second = buf[10U];
 
 	/*
 	 * Are we doing a Hardware or Software Site Survey?
@@ -2459,8 +2459,8 @@ oncore_msg_Bd(
 {
 	oncore_log_f(instance, LOG_NOTICE,
 		     "Bd: Almanac %s, week = %d, t = %d, %d SVs: %x",
-		     ((buf[4]) ? "LOADED" : "(NONE)"), buf[5], buf[6],
-		     buf[7], w32(&buf[8]));
+		     ((buf[4U]) ? "LOADED" : "(NONE)"), buf[5U], buf[6U],
+		     buf[7U], w32(&buf[8U]));
 }
 
 
@@ -2487,7 +2487,7 @@ oncore_msg_Bj(
 
 	instance->saw_Bj = 1;
 
-	switch(buf[4]) {
+	switch(buf[4U]) {
 	case 1:
 		instance->pp->leap = LEAP_ADDSECOND;
 		cp = "Set pp.leap to LEAP_ADDSECOND";
@@ -2525,15 +2525,15 @@ oncore_msg_Bl(
 	} warn;
 
 
-	subframe = buf[6] & 017;
-	valid = (buf[6] >> 4) & 017;
-	page = buf[7];
+	subframe = buf[6U] & 017;
+	valid = (buf[6U] >> 4) & 017;
+	page = buf[7U];
 
 	if ((!instance->Bl.lsf_flg && !instance->Bl.wn_flg) && (subframe == 4 && page == 18 && valid == 10)) {
-		instance->Bl.dt_ls  = buf[32];
-		instance->Bl.WN_lsf = buf[33];
-		instance->Bl.DN_lsf = buf[34];
-		instance->Bl.dt_lsf = buf[35];
+		instance->Bl.dt_ls  = buf[32U];
+		instance->Bl.WN_lsf = buf[33U];
+		instance->Bl.DN_lsf = buf[34U];
+		instance->Bl.dt_lsf = buf[35U];
 		instance->Bl.lsf_flg++;
 	}
 	if ((instance->Bl.lsf_flg && !instance->Bl.wn_flg) && (subframe == 1 && valid == 10)) {
@@ -2548,9 +2548,9 @@ oncore_msg_Bl(
 	}
 	if (instance->Bl.wn_flg && instance->Bl.lsf_flg)  {
 		instance->Bl.wn_flg = instance->Bl.lsf_flg = 0;
-		oncore_cmd_Bl[2] = 0;
+		oncore_cmd_Bl[2U] = 0;
 		oncore_sendmsg(instance, oncore_cmd_Bl, sizeof oncore_cmd_Bl);
-		oncore_cmd_Bl[2] = 1;
+		oncore_cmd_Bl[2U] = 1;
 
 		i = instance->Bl.WN&01400;
 		instance->Bl.WN_lsf |= i;
@@ -2568,7 +2568,7 @@ oncore_msg_Bl(
 		warn = WARN_NOT_YET;
 		if (day_lsf >= day_now && day_lsf - day_now < 32) {
 			/* if < 28d, doit, if 28-31, ck day-of-month < 20 (not at end of prev month) */
-			if (day_lsf - day_now < 28 ||  instance->BEHa[5] < 20) {
+			if (day_lsf - day_now < 28 ||  instance->BEHa[5U] < 20) {
 				i = instance->Bl.dt_lsf - instance->Bl.dt_ls;
 				switch (i) {
 				case -1:
@@ -2657,21 +2657,21 @@ oncore_msg_BnEnHn(
 
 	/* If Time RAIM doesn't like it, don't trust it */
 
-	if (buf[2] == 'H') {
-		if (instance->BEHn[6]) {    /* bad TRAIM */
+	if (buf[2U] == 'H') {
+		if (instance->BEHn[6U]) {    /* bad TRAIM */
 			oncore_log(instance, LOG_WARNING, "BAD TRAIM");
 			return;
 		}
 
 		dt1 = instance->saw_tooth + instance->offset;	 /* dt this time step */
-		instance->saw_tooth = (s_char) instance->BEHn[14]; /* update for next time Hn[14] */
+		instance->saw_tooth = (s_char) instance->BEHn[14U]; /* update for next time Hn[14] */
 		dt2 = instance->saw_tooth + instance->offset;	 /* dt next time step */
 	} else {
-		if (instance->BEHn[21]) /* bad TRAIM */
+		if (instance->BEHn[21U]) /* bad TRAIM */
 			return;
 
 		dt1 = instance->saw_tooth + instance->offset;	 /* dt this time step */
-		instance->saw_tooth = (s_char) instance->BEHn[25]; /* update for next time Bn[25], En[25] */
+		instance->saw_tooth = (s_char) instance->BEHn[25U]; /* update for next time Bn[25], En[25] */
 		dt2 = instance->saw_tooth + instance->offset;	 /* dt next time step */
 	}
 
@@ -2712,31 +2712,31 @@ oncore_msg_CaFaIa(
 
 #if ONCORE_VERBOSE_SELF_TEST
 		if (debug > 2) {
-			if (buf[2] == 'I')
+			if (buf[2U] == 'I')
 				oncore_log_f(instance, LOG_DEBUG,
 					     ">>@@%ca %x %x %x", buf[2],
-					     buf[4], buf[5], buf[6]);
+					     buf[4U], buf[5], buf[6]);
 			else
 				oncore_log_f(instance, LOG_DEBUG,
 					     ">>@@%ca %x %x", buf[2],
-					     buf[4], buf[5]);
+					     buf[4U], buf[5]);
 		}
 #endif
 
-		antenna = (buf[4] & 0xc0) >> 6;
-		buf[4] &= ~0xc0;
+		antenna = (buf[4U] & 0xc0) >> 6;
+		buf[4U] &= ~0xc0;
 
-		i = buf[4] || buf[5];
-		if (buf[2] == 'I') i = i || buf[6];
+		i = buf[4U] || buf[5U];
+		if (buf[2U] == 'I') i = i || buf[6U];
 		if (i) {
-			if (buf[2] == 'I')
+			if (buf[2U] == 'I')
 				oncore_log_f(instance, LOG_ERR, 
 					     "self test failed: result %02x %02x %02x",
-					     buf[4], buf[5], buf[6]);
+					     buf[4U], buf[5], buf[6]);
 			else
 				oncore_log_f(instance, LOG_ERR, 
 					     "self test failed: result %02x %02x",
-					     buf[4], buf[5]);
+					     buf[4U], buf[5]);
 
 			oncore_log(instance, LOG_ERR,
 				   "ONCORE: self test failed, shutting down driver");
@@ -2776,13 +2776,13 @@ oncore_msg_Cb(
 	if (instance->shmem == NULL)
 		return;
 
-	if (buf[4] == 5 && buf[5] > 0 && buf[5] < 26)
-		i = buf[5];
-	else if (buf[4] == 4 && buf[5] <= 5)
-		i = buf[5] + 24;
-	else if (buf[4] == 4 && buf[5] <= 10)
-		i = buf[5] + 23;
-	else if (buf[4] == 4 && buf[5] == 25)
+	if (buf[4U] == 5 && buf[5U] > 0 && buf[5U] < 26)
+		i = buf[5U];
+	else if (buf[4U] == 4 && buf[5U] <= 5)
+		i = buf[5U] + 24;
+	else if (buf[4U] == 4 && buf[5U] <= 10)
+		i = buf[5U] + 23;
+	else if (buf[4U] == 4 && buf[5U] == 25)
 		i = 34;
 	else {
 		oncore_log(instance, LOG_NOTICE, "Cb: Response is NO ALMANAC");
@@ -2794,8 +2794,8 @@ oncore_msg_Cb(
 	memcpy(instance->shmem + instance->shmem_Cb + i + 3, buf, (size_t) (len + 3));
 
 #ifdef ONCORE_VERBOSE_MSG_CB
-	oncore_log_f(instance, LOG_DEBUG, "See Cb [%d,%d]", buf[4],
-		     buf[5]);
+	oncore_log_f(instance, LOG_DEBUG, "See Cb [%d,%d]", buf[4U],
+		     buf[5U]);
 #endif
 }
 
@@ -2904,11 +2904,11 @@ oncore_msg_Cj_id(
 
 	/* Write Receiver ID message to clockstats file */
 
-	instance->Cj[294] = '\0';
-	for (cp= (char *)instance->Cj; cp< (char *) &instance->Cj[294]; ) {
+	instance->Cj[294U] = '\0';
+	for (cp= (char *)instance->Cj; cp< (char *) &instance->Cj[294U]; ) {
 		char *cpw = strchr(cp, '\r');
 		if (!cpw)
-			cpw = (char *)&instance->Cj[294];
+			cpw = (char *)&instance->Cj[294U];
 		*cpw = '\0';
 		oncore_log(instance, LOG_NOTICE, cp);
 		*cpw = '\r';
@@ -2917,13 +2917,13 @@ oncore_msg_Cj_id(
 
 	/* next, the Firmware Version and Revision numbers */
 
-	instance->version  = atoi((char *) &instance->Cj[83]);
-	instance->revision = atoi((char *) &instance->Cj[111]);
+	instance->version  = atoi((char *) &instance->Cj[83U]);
+	instance->revision = atoi((char *) &instance->Cj[111U]);
 
 	/* from model number decide which Oncore this is,
 		and then the number of channels */
 
-	for (cp= (char *) &instance->Cj[160]; *cp == ' '; cp++)   /* start right after 'Model #' */
+	for (cp= (char *) &instance->Cj[160U]; *cp == ' '; cp++)   /* start right after 'Model #' */
 		;
 	cp1 = cp;
 	cp2 = Model;
@@ -2935,29 +2935,29 @@ oncore_msg_Cj_id(
 	if (!strncmp(Model, "PVT6", (size_t) 4)) {
 		cp = "PVT6";
 		instance->model = ONCORE_PVT6;
-	} else if (Model[0] == 'A') {
+	} else if (Model[0U] == 'A') {
 		cp = "Basic";
 		instance->model = ONCORE_BASIC;
-	} else if (Model[0] == 'B' || !strncmp(Model, "T8", (size_t) 2)) {
+	} else if (Model[0U] == 'B' || !strncmp(Model, "T8", (size_t) 2)) {
 		cp = "VP";
 		instance->model = ONCORE_VP;
-	} else if (Model[0] == 'P') {
+	} else if (Model[0U] == 'P') {
 		cp = "M12";
 		instance->model = ONCORE_M12;
-	} else if (Model[0] == 'R' || Model[0] == 'D' || Model[0] == 'S') {
-		if (Model[5] == 'N') {
+	} else if (Model[0U] == 'R' || Model[0U] == 'D' || Model[0U] == 'S') {
+		if (Model[5U] == 'N') {
 			cp = "GT";
 			instance->model = ONCORE_GT;
-		} else if ((Model[1] == '3' || Model[1] == '4') && Model[5] == 'G') {
+		} else if ((Model[1U] == '3' || Model[1U] == '4') && Model[5U] == 'G') {
 			cp = "GT+";
 			instance->model = ONCORE_GTPLUS;
-		} else if ((Model[1] == '5' && Model[5] == 'U') || (Model[1] == '1' && Model[5] == 'A')) {
+		} else if ((Model[1U] == '5' && Model[5U] == 'U') || (Model[1U] == '1' && Model[5U] == 'A')) {
 				cp = "UT";
 				instance->model = ONCORE_UT;
-		} else if (Model[1] == '5' && Model[5] == 'G') {
+		} else if (Model[1U] == '5' && Model[5U] == 'G') {
 			cp = "UT+";
 			instance->model = ONCORE_UTPLUS;
-		} else if (Model[1] == '6' && Model[5] == 'G') {
+		} else if (Model[1U] == '6' && Model[5U] == 'G') {
 			cp = "SL";
 			instance->model = ONCORE_SL;
 		} else {
@@ -3099,7 +3099,7 @@ oncore_msg_Cj_init(
 		oncore_sendmsg(instance, oncore_cmd_Ea0, sizeof(oncore_cmd_Ea0));
 		oncore_sendmsg(instance, oncore_cmd_En0, sizeof(oncore_cmd_En0));
 		oncore_sendmsg(instance, oncore_cmd_Ha, sizeof(oncore_cmd_Ha ));
-		oncore_cmd_Gc[2] = (instance->pps_control < 0) ? 1 : instance->pps_control;
+		oncore_cmd_Gc[2U] = (instance->pps_control < 0) ? 1 : instance->pps_control;
 		oncore_sendmsg(instance, oncore_cmd_Gc, sizeof(oncore_cmd_Gc)); /* PPS off/continuous/Tracking 1+sat/TRAIM */
 	}
 
@@ -3123,9 +3123,9 @@ oncore_msg_Ga(
 	double Lat, Lon, Ht;
 
 
-	lat = buf_w32(&buf[4]);
-	lon = buf_w32(&buf[8]);
-	ht  = buf_w32(&buf[12]);  /* GPS ellipsoid */
+	lat = buf_w32(&buf[4U]);
+	lon = buf_w32(&buf[8U]);
+	ht  = buf_w32(&buf[12U]);  /* GPS ellipsoid */
 
 	Lat = lat;
 	Lon = lon;
@@ -3160,17 +3160,17 @@ oncore_msg_Gb(
 	const char *	gmts;
 	int	mo, d, y, h, m, s, gmth, gmtm;
 
-	mo = buf[4];
-	d  = buf[5];
-	y  = 256*buf[6]+buf[7];
+	mo = buf[4U];
+	d  = buf[5U];
+	y  = 256*buf[6U]+buf[7U];
 
-	h  = buf[8];
-	m  = buf[9];
-	s  = buf[10];
+	h  = buf[8U];
+	m  = buf[9U];
+	s  = buf[10U];
 
-	gmts = ((buf[11] == 0) ? "+" : "-");
-	gmth = buf[12];
-	gmtm = buf[13];
+	gmts = ((buf[11U] == 0) ? "+" : "-");
+	gmth = buf[12U];
+	gmtm = buf[13U];
 
 	oncore_log_f(instance, LOG_NOTICE,
 		     "Date/Time set to: %d%s%d %2d:%02d:%02d GMT (GMT offset is %s%02d:%02d)",
@@ -3192,7 +3192,7 @@ oncore_msg_Gc(
 
 	instance->pps_control_msg_seen = 1;
 	oncore_log_f(instance, LOG_INFO, "PPS Control set to %s",
-		     tbl[buf[4]]);
+		     tbl[buf[4U]]);
 }
 
 
@@ -3219,15 +3219,15 @@ oncore_msg_Gj(
 
 	/* print the message to verify whats there */
 
-	dt = buf[5] - buf[4];
+	dt = buf[5U] - buf[4U];
 
 	oncore_log_f(instance, LOG_INFO,
 		     "Leap Sec Msg: %d %d %d %d %d %d %d %d %d %d",
-		     buf[4], buf[5], 256 * buf[6] + buf[7], buf[8],
-		     buf[9], buf[10],
-		     (buf[14] + 256 *
-		         (buf[13] + 256 * (buf[12] + 256 * buf[11]))),
-		     buf[15], buf[16], buf[17]);
+		     buf[4U], buf[5], 256 * buf[6U] + buf[7U], buf[8U],
+		     buf[9U], buf[10],
+		     (buf[14U] + 256 *
+		         (buf[13U] + 256 * (buf[12U] + 256 * buf[11U]))),
+		     buf[15U], buf[16], buf[17]);
 
 	/* There seems to be eternal confusion about when a leap second
 	 * takes place. It's the second *before* the new TAI offset
@@ -3245,16 +3245,16 @@ oncore_msg_Gj(
 		oncore_log_f(instance, LOG_NOTICE,
 			     "Leap second %s (%d) before %04u-%02u-%02u/%02u:%02u:%02u",
 			     insrem[(dt > 0)], dt,
-			     256u * buf[6] + buf[7], buf[8], buf[9],
-			     buf[15], buf[16], buf[17]);
+			     256u * buf[6] + buf[7U], buf[8U], buf[9U],
+			     buf[15U], buf[16], buf[17]);
 
 	/* Only raise warning within a month of the leap second */
 
 	instance->pp->leap = LEAP_NOWARNING;
 	cp = "Set pp.leap to LEAP_NOWARNING";
 
-	if (buf[6] == instance->BEHa[6] && buf[7] == instance->BEHa[7] && /* year */
-	    buf[8] == instance->BEHa[4]) {	/* month */
+	if (buf[6U] == instance->BEHa[6U] && buf[7U] == instance->BEHa[7U] && /* year */
+	    buf[8U] == instance->BEHa[4U]) {	/* month */
 		if (dt) {
 			if (dt < 0) {
 				instance->pp->leap = LEAP_DELSECOND;
@@ -3345,21 +3345,21 @@ oncore_check_almanac(
 	)
 {
 	if (instance->chan == 6) {
-		instance->rsm.bad_almanac = instance->BEHa[64]&0x1;
-		instance->rsm.bad_fix	  = instance->BEHa[64]&0x52;
+		instance->rsm.bad_almanac = instance->BEHa[64U]&0x1;
+		instance->rsm.bad_fix	  = instance->BEHa[64U]&0x52;
 	} else if (instance->chan == 8) {
-		instance->rsm.bad_almanac = instance->BEHa[72]&0x1;
-		instance->rsm.bad_fix	  = instance->BEHa[72]&0x52;
+		instance->rsm.bad_almanac = instance->BEHa[72U]&0x1;
+		instance->rsm.bad_fix	  = instance->BEHa[72U]&0x52;
 	} else if (instance->chan == 12) {
 		int bits1, bits2, bits3;
 
-		bits1 = (instance->BEHa[129]>>5) & 0x7; 	/* actually Ha */
-		bits2 = instance->BEHa[130];
+		bits1 = (instance->BEHa[129U]>>5) & 0x7; 	/* actually Ha */
+		bits2 = instance->BEHa[130U];
 		instance->rsm.bad_almanac = (bits2 & 0x80);
 		instance->rsm.bad_fix	  = (bits2 & 0x8) || (bits1 == 0x2);
 					  /* too few sat     Bad Geom	  */
 
-		bits3 = instance->BEHa[141];	/* UTC parameters */
+		bits3 = instance->BEHa[141U];	/* UTC parameters */
 		if (!instance->count5_set && (bits3 & 0xC0)) {
 			instance->count5 = 4;	/* was 2 [Bug 1766] */
 			instance->count5_set = 1;
@@ -3367,7 +3367,7 @@ oncore_check_almanac(
 #ifdef ONCORE_VERBOSE_CHECK_ALMANAC
 		oncore_log_f(instance, LOG_DEBUG, 
 			     "DEBUG BITS: (%x %x), (%x %x %x),  %x %x %x %x %x",
-			     instance->BEHa[129], instance->BEHa[130],
+			     instance->BEHa[129U], instance->BEHa[130U],
 			     bits1, bits2, bits3,
 			     instance->mode == MODE_0D,
 			     instance->mode == MODE_2D,
@@ -3391,9 +3391,9 @@ oncore_check_antenna(
 	enum antenna_state antenna;		/* antenna state */
 
 	if (instance->chan == 12)
-		antenna = (instance->BEHa[130] & 0x6 ) >> 1;
+		antenna = (instance->BEHa[130U] & 0x6 ) >> 1;
 	else
-		antenna = (instance->BEHa[37] & 0xc0) >> 6;  /* prob unset 6, set GT, UT unset VP */
+		antenna = (instance->BEHa[37U] & 0xc0) >> 6;  /* prob unset 6, set GT, UT unset VP */
 
 	oncore_antenna_report (instance, antenna);
 }
@@ -3428,12 +3428,12 @@ oncore_check_leap_sec(
 	struct instance *instance
 	)
 {
-	oncore_cmd_Bl[2] = 1;				/* just to be sure */
-	if (instance->Bj_day != instance->BEHa[5]) {	/* do this 1/day */
-		instance->Bj_day = instance->BEHa[5];
+	oncore_cmd_Bl[2U] = 1;				/* just to be sure */
+	if (instance->Bj_day != instance->BEHa[5U]) {	/* do this 1/day */
+		instance->Bj_day = instance->BEHa[5U];
 
 		if (instance->saw_Gj < 0) {	/* -1 DONT have Gj use Bj */
-			if ((instance->BEHa[4] == 6) || (instance->BEHa[4] == 12))
+			if ((instance->BEHa[4U] == 6) || (instance->BEHa[4U] == 12))
 				oncore_sendmsg(instance, oncore_cmd_Bj, sizeof(oncore_cmd_Bj));
 			oncore_sendmsg(instance, oncore_cmd_Bl, sizeof(oncore_cmd_Bl));
 			return;
@@ -3456,7 +3456,7 @@ oncore_check_leap_sec(
 		else if (instance->count4++ > 5) {	/* delay, waiting for Gj response */
 			instance->saw_Gj = -1;		/* didnt see it, will use Bj */
 			instance->count4 = 0;
-			if ((instance->BEHa[4] == 6) || (instance->BEHa[4] == 12)) {
+			if ((instance->BEHa[4U] == 6) || (instance->BEHa[4U] == 12)) {
 				oncore_sendmsg(instance, oncore_cmd_Bj, sizeof(oncore_cmd_Bj));
 				oncore_sendmsg(instance, oncore_cmd_Bl, sizeof(oncore_cmd_Bl));
 			}
@@ -3500,11 +3500,11 @@ oncore_compute_dH(
 
 	instance->have_dH = 1;
 	if (instance->chan == 12) {
-		GPS = buf_w32(&instance->BEHa[39]);
-		MSL = buf_w32(&instance->BEHa[43]);
+		GPS = buf_w32(&instance->BEHa[39U]);
+		MSL = buf_w32(&instance->BEHa[43U]);
 	} else {
-		GPS = buf_w32(&instance->BEHa[23]);
-		MSL = buf_w32(&instance->BEHa[27]);
+		GPS = buf_w32(&instance->BEHa[23U]);
+		MSL = buf_w32(&instance->BEHa[27U]);
 	}
 	instance->dH = GPS - MSL;
 	instance->dH /= 100.;
@@ -3772,7 +3772,7 @@ oncore_sendmsg(
 #ifdef ONCORE_VERBOSE_SENDMSG
 	if (debug > 4) {
 		oncore_log_f(instance, LOG_DEBUG, "ONCORE: Send @@%c%c %d",
-			     ptr[0], ptr[1], (int)len);
+			     ptr[0U], ptr[1], (int)len);
 	}
 #endif
 	refclock_fdwrite(peer, fd, "@@", (size_t)2, "data");
@@ -3948,8 +3948,8 @@ oncore_ss(
 		 * Check to see if Hardware SiteSurvey has Finished.
 		 */
 
-		if ((instance->chan == 8  && !(instance->BEHa[37]  & 0x20)) ||
-		    (instance->chan == 12 && !(instance->BEHa[130] & 0x10))) {
+		if ((instance->chan == 8  && !(instance->BEHa[37U]  & 0x20)) ||
+		    (instance->chan == 12 && !(instance->BEHa[130U] & 0x10))) {
 			oncore_log(instance, LOG_INFO, "Now in 0D mode");
 
 			if (instance->chan == 12)
@@ -3971,9 +3971,9 @@ oncore_ss(
 		if (instance->mode != MODE_3D)	/* Use only 3D Fixes */
 			return;
 
-		instance->ss_lat  += buf_w32(&instance->BEHa[15]);
-		instance->ss_long += buf_w32(&instance->BEHa[19]);
-		instance->ss_ht   += buf_w32(&instance->BEHa[23]);  /* GPS ellipsoid */
+		instance->ss_lat  += buf_w32(&instance->BEHa[15U]);
+		instance->ss_long += buf_w32(&instance->BEHa[19U]);
+		instance->ss_ht   += buf_w32(&instance->BEHa[23U]);  /* GPS ellipsoid */
 		instance->ss_count++;
 
 		if (instance->ss_count != POS_HOLD_AVERAGE)

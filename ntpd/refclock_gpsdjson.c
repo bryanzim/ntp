@@ -406,7 +406,7 @@ static const char * const s_svctab[][2] = {
 /* list of address resolution errors and index of service entry that
  * finally worked.
  */
-static int s_svcerr[sizeof(s_svctab)/sizeof(s_svctab[0])];
+static int s_svcerr[sizeof(s_svctab)/sizeof(s_svctab[0U])];
 static int s_svcidx;
 
 /* =====================================================================
@@ -444,8 +444,8 @@ gpsd_init(void)
 	hints.ai_protocol = IPPROTO_TCP;
 	hints.ai_socktype = SOCK_STREAM;
 
-	for (idx = 0; s_svctab[idx][0] && !s_gpsd_addr; idx++) {
-		rc = getaddrinfo(s_svctab[idx][0], s_svctab[idx][1],
+	for (idx = 0; s_svctab[idx][0U] && !s_gpsd_addr; idx++) {
+		rc = getaddrinfo(s_svctab[idx][0U], s_svctab[idx][1U],
 				 &hints, &s_gpsd_addr);
 		s_svcerr[idx] = rc;
 		if (0 == rc)
@@ -471,7 +471,7 @@ gpsd_init_check(void)
 	for (idx = 0; idx < s_svcidx; ++idx) {
 		msyslog(LOG_WARNING,
 			"GPSD_JSON: failed to resolve '%s:%s', rc=%d (%s)",
-			s_svctab[idx][0], s_svctab[idx][1],
+			s_svctab[idx][0U], s_svctab[idx][1U],
 			s_svcerr[idx], gai_strerror(s_svcerr[idx]));
 	}
 
@@ -482,8 +482,8 @@ gpsd_init_check(void)
 	else if (idx != 0)
 		msyslog(LOG_WARNING,
 			"GPSD_JSON: using '%s:%s' instead of '%s:%s'",
-			s_svctab[idx][0], s_svctab[idx][1],
-			s_svctab[0][0], s_svctab[0][1]);
+			s_svctab[idx][0U], s_svctab[idx][1U],
+			s_svctab[0U][0U], s_svctab[0][1]);
 
 	/* make sure this gets logged only once and tell if we can
 	 * proceed or not
@@ -572,7 +572,7 @@ gpsd_start(
 	pp->io.clock_recv = gpsd_receive;
 	pp->io.srcclock   = peer;
 	pp->io.datalen    = 0;
-	pp->a_lastcode[0] = '\0';
+	pp->a_lastcode[0U] = '\0';
 	pp->lencode       = 0;
 	pp->clockdesc     = DESCRIPTION;
 	memcpy(&pp->refid, REFID, 4);
@@ -1388,7 +1388,7 @@ json_parse_record(
 	ctx->buf  = buf;
 	ctx->ntok = rc;
 
-	if (JSMN_OBJECT != ctx->tok[0].type)
+	if (JSMN_OBJECT != ctx->tok[0U].type)
 		return FALSE; /* not object!?! */
 
 	/* Make all tokens NUL terminated by overwriting the
@@ -2108,7 +2108,7 @@ convert_ascii_time(
 			dw /= 10u;
 		}
 	}
-	if (ep[0] != 'Z' || ep[1] != '\0')
+	if (ep[0U] != 'Z' || ep[1U] != '\0')
 		return FALSE; /* trailing garbage */
 
 	/* Now convert the whole thing into a 'l_fp'. We do not use

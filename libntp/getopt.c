@@ -59,7 +59,7 @@ ntp_getopt(
 	register char c;
 	register const char *place;
 
-	prog = argv[0];
+	prog = argv[0U];
 	ntp_optarg = NULL;
 
 	if (ntp_optind == 0) {
@@ -69,12 +69,12 @@ ntp_getopt(
 	
 	if (scan == NULL || *scan == '\0') {
 		if (ntp_optind >= argc
-		    || argv[ntp_optind][0] != '-'
-		    || argv[ntp_optind][1] == '\0') {
+		    || argv[ntp_optind][0U] != '-'
+		    || argv[ntp_optind][1U] == '\0') {
 			return (EOF);
 		}
-		if (argv[ntp_optind][1] == '-'
-		    && argv[ntp_optind][2] == '\0') {
+		if (argv[ntp_optind][1U] == '-'
+		    && argv[ntp_optind][2U] == '\0') {
 			ntp_optind++;
 			return (EOF);
 		}

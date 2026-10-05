@@ -51,7 +51,7 @@ char *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   UnityBegin("ntp_util.c");
   RUN_TEST(test_mprintf_clock_stats, 13);
   RUN_TEST(test_fstostr, 27);
