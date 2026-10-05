@@ -11,7 +11,7 @@
       <!-- /GL whole-program opts are MSVC-specific; disable for clang-cl -->
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <!-- Soften clang diagnostics that are errors/noise vs historical NTP/MSVC code -->
-      <AdditionalOptions>-Wno-incompatible-function-pointer-types -Wno-format -Wno-bitwise-conditional-parentheses -Wno-unused-function -Wno-deprecated-declarations %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>-Wno-format -Wno-unused-function -Wno-deprecated-declarations %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
