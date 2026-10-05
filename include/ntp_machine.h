@@ -182,17 +182,17 @@ struct servent *getservbyname (char *name, char *type);
 	  int i; \
 	  for (i=0;i<11;i++) \
 	   x[i] = NULL; \
-	  x[0] = a0; \
-	  x[1] = a1; \
-	  x[2] = a2; \
-	  x[3] = a3; \
-	  x[4] = a4; \
-	  x[5] = a5; \
-	  x[6] = a6; \
-	  x[7] = a7; \
-	  x[8] = a8; \
-	  x[9] = a9; \
-	  x[10] = a10; \
+	  x[0U] = a0; \
+	  x[1U] = a1; \
+	  x[2U] = a2; \
+	  x[3U] = a3; \
+	  x[4U] = a4; \
+	  x[5U] = a5; \
+	  x[6U] = a6; \
+	  x[7U] = a7; \
+	  x[8U] = a8; \
+	  x[9U] = a9; \
+	  x[10U] = a10; \
 	  argc=1; \
 	  for (i=0; i<11;i++) \
 		if (x[i]) \

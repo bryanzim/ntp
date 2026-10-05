@@ -223,8 +223,8 @@ init_timer(void)
 	itimer.it_interval.itv_frac = itimer.it_value.itv_frac = 0;
 	set_timer_or_die(&itimer);
 # else	/* VMS follows */
-	vmsinc[0] = 10000000;		/* 1 sec */
-	vmsinc[1] = 0;
+	vmsinc[0U] = 10000000;		/* 1 sec */
+	vmsinc[1U] = 0;
 	lib$emul(&(1<<EVENT_TIMEOUT), &vmsinc, &0, &vmsinc);
 
 	sys$gettim(&vmstimer);	/* that's "now" as abstime */

@@ -49,13 +49,13 @@ pipe_socketpair(
 	int	called_pipe;
 
 #ifdef HAVE_SOCKETPAIR
-	rc = socketpair(AF_UNIX, SOCK_STREAM, 0, &fds[0]);
+	rc = socketpair(AF_UNIX, SOCK_STREAM, 0, &fds[0U]);
 #else
 	rc = -1;
 #endif
 
 	if (-1 == rc) {
-		rc = pipe(&fds[0]);
+		rc = pipe(&fds[0U]);
 		called_pipe = TRUE;
 	} else {
 		called_pipe = FALSE;
@@ -64,8 +64,8 @@ pipe_socketpair(
 	if (-1 == rc)
 		return rc;
 
-	caller_fds[0] = fds[0];
-	caller_fds[1] = fds[1];
+	caller_fds[0U] = fds[0U];
+	caller_fds[1U] = fds[1U];
 	if (is_pipe != NULL)
 		*is_pipe = called_pipe;
 
@@ -128,7 +128,7 @@ close_all_beyond(
 u_int
 available_blocking_child_slot(void)
 {
-	const size_t	each = sizeof(blocking_children[0]);
+	const size_t	each = sizeof(blocking_children[0U]);
 	u_int		slot;
 	size_t		prev_alloc;
 	size_t		new_alloc;

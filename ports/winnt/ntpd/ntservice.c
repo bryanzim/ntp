@@ -135,7 +135,7 @@ int main(
 				"Use -d, -q, -n, -?, --help or "
 				"--saveconfigquit to run "
 				"interactive.\n",
-				argv[0], ntp_strerror(rc));
+				argv[0U], ntp_strerror(rc));
 		}
 	}
 	return rc;

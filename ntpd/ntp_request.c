@@ -238,7 +238,7 @@ init_request (void)
 	auth_timereset = 0;
 	info_auth_keyid = 0;	/* by default, can't do this */
 
-	for (i = 0; i < sizeof(errorcounter)/sizeof(errorcounter[0]); i++)
+	for (i = 0; i < sizeof(errorcounter)/sizeof(errorcounter[0U]); i++)
 	    errorcounter[i] = 0;
 }
 
@@ -333,7 +333,7 @@ more_pkt(void)
 		/*
 		 * Copy data out of exbuf into the packet.
 		 */
-		memcpy(&rpkt.u.data[0], exbuf, (unsigned)itemsize);
+		memcpy(&rpkt.u.data[0U], exbuf, (unsigned)itemsize);
 		seqno++;
 		databytes = 0;
 		nitems = 0;
@@ -1585,7 +1585,7 @@ getStackSheetSize(
 	)
 {
 	if (sp)
-		return sizeof(sp->pres)/sizeof(sp->pres[0]);
+		return sizeof(sp->pres)/sizeof(sp->pres[0U]);
 	return 0u;
 }
 
@@ -2519,7 +2519,7 @@ get_clock_info(
 #endif
 	SET_PORT(&addr, NTP_PORT);
 	items = INFO_NITEMS(inpkt->err_nitems);
-	clkaddr = &inpkt->u.u32[0];
+	clkaddr = &inpkt->u.u32[0U];
 
 	ic = (struct info_clock *)prepare_pkt(srcadr, inter, inpkt,
 					      sizeof(struct info_clock));

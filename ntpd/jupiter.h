@@ -130,7 +130,7 @@ struct jchan {
 		u_short flags;		/* flags */
 		u_short prn;		/* satellite PRN */
 		u_short chan;		/* channel number */
-	} sat[12];
+	} sat[12U];
 	u_short dsum;
 };
 
@@ -148,7 +148,7 @@ struct jvis {
 		u_short prn;		/* satellite PRN */
 		u_short azi;		/* satellite azimuth (radians) */
 		u_short elev;		/* satellite elevation (radians) */
-	} sat[12];
+	} sat[12U];
 	u_short dsum;			/* checksum */
 };
 

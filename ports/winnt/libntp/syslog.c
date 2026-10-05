@@ -45,7 +45,7 @@ syslog(int level, const char *fmt, ...) {
 	char buf[1024];
 	char *str[1];
 
-	str[0] = buf;
+	str[0U] = buf;
 
 	va_start(ap, fmt);
 	vsnprintf(buf, sizeof(buf), fmt, ap);
@@ -132,7 +132,7 @@ NTReportError(const char *name, const char *str) {
 	HANDLE hNTAppLog = NULL;
 	const char *buf[1];
 
-	buf[0] = str;
+	buf[0U] = str;
 
 	hNTAppLog = RegisterEventSource(NULL, name);
 

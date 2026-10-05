@@ -600,7 +600,7 @@ arc_event_handler(
 	if(debug > 2) { printf("arc: arc_event_handler() called.\n"); }
 #endif
 
-	c = up->cmdqueue[0];       /* Next char to be sent. */
+	c = up->cmdqueue[0U];       /* Next char to be sent. */
 	/* Shift down characters, shifting trailing \0 in at end. */
 	for(i = 0; i < CMDQUEUELEN; ++i)
 	{ up->cmdqueue[i] = up->cmdqueue[i+1]; }
@@ -843,16 +843,16 @@ send_slow(
 static int
 get2(char *p, int *val)
 {
-  if (!isdigit((unsigned char)p[0]) || !isdigit((unsigned char)p[1])) return 0;
-  *val = (p[0] - '0') * 10 + p[1] - '0';
+  if (!isdigit((unsigned char)p[0U]) || !isdigit((unsigned char)p[1U])) return 0;
+  *val = (p[0U] - '0') * 10 + p[1U] - '0';
   return 1;
 }
 
 static int
 get1(char *p, int *val)
 {
-  if (!isdigit((unsigned char)p[0])) return 0;
-  *val = p[0] - '0';
+  if (!isdigit((unsigned char)p[0U])) return 0;
+  *val = p[0U] - '0';
   return 1;
 }
 
@@ -933,8 +933,8 @@ arc_receive(
 	  * We have received at least one character (I cannot imagine
 	  how it could be otherwise, but anyway...).
 	*/
-	c = rbufp->recv_buffer[0];
-	if((pp->a_lastcode[0] == 'o') &&
+	c = rbufp->recv_buffer[0U];
+	if((pp->a_lastcode[0U] == 'o') &&
 #ifndef ARCRON_MULTIPLE_SAMPLES
 	   (pp->lencode == 1) &&
 #endif
@@ -1027,7 +1027,7 @@ arc_receive(
 	/* timecode.						       */
 	if(pp->lencode >= LENARC) {
 #ifdef DEBUG
-		if(debug && (rbufp->recv_buffer[0] != '\r'))
+		if(debug && (rbufp->recv_buffer[0U] != '\r'))
 		{ printf("arc: rubbish in pp->a_lastcode[].\n"); }
 #endif
 		pp->lencode = 0;
@@ -1059,12 +1059,12 @@ arc_receive(
 	if (pp->lencode == 0) return;
 
 	/* Handle a quality message. */
-	if(pp->a_lastcode[0] == 'g') {
+	if(pp->a_lastcode[0U] == 'g') {
 		int r, q;
 
 		if(pp->lencode < 3) { return; } /* Need more data... */
-		r = (pp->a_lastcode[1] & 0x7f); /* Strip parity. */
-		q = (pp->a_lastcode[2] & 0x7f); /* Strip parity. */
+		r = (pp->a_lastcode[1U] & 0x7f); /* Strip parity. */
+		q = (pp->a_lastcode[2U] & 0x7f); /* Strip parity. */
 		if(((q & 0x70) != 0x30) || ((q & 0xf) > MAX_CLOCK_QUALITY) ||
 		   ((r & 0x70) != 0x30)) {
 			/* Badly formatted response. */
@@ -1122,7 +1122,7 @@ arc_receive(
 	}
 
 	/* Stop now if this is not a timecode message. */
-	if(pp->a_lastcode[0] != 'o') {
+	if(pp->a_lastcode[0U] != 'o') {
 		pp->lencode = 0;
 		refclock_report(peer, CEVNT_BADREPLY);
 		return;
@@ -1165,7 +1165,7 @@ arc_receive(
 	pp->nsec = 0;
 #endif	
 	/* Validate format and numbers. */
-	if (pp->a_lastcode[0] != 'o'
+	if (pp->a_lastcode[0U] != 'o'
 		|| !get2(pp->a_lastcode + 1, &pp->hour)
 		|| !get2(pp->a_lastcode + 3, &pp->minute)
 		|| !get2(pp->a_lastcode + 5, &pp->second)
@@ -1181,8 +1181,8 @@ arc_receive(
 		refclock_report(peer, CEVNT_BADREPLY);
 		return;
 	}
-	flags = pp->a_lastcode[14];
-	status = pp->a_lastcode[15];
+	flags = pp->a_lastcode[14U];
+	status = pp->a_lastcode[15U];
 #ifdef DEBUG
 	if(debug) { printf("arc: status 0x%.2x flags 0x%.2x\n", flags, status); }
 	n = 9;

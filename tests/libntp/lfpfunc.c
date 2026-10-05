@@ -73,11 +73,11 @@ l_fp_scmp(const l_fp first, const l_fp second)
 	const l_fp op1 = first;
 	const l_fp op2 = second;
 
-	a[0] = op1.l_uf; a[1] = op1.l_ui; a[2] = 0;
-	b[0] = op2.l_uf; b[1] = op2.l_ui; b[2] = 0;
+	a[0U] = op1.l_uf; a[1U] = op1.l_ui; a[2U] = 0;
+	b[0U] = op2.l_uf; b[1U] = op2.l_ui; b[2U] = 0;
 
-	a[2] -= (op1.l_i < 0);
-	b[2] -= (op2.l_i < 0);
+	a[2U] -= (op1.l_i < 0);
+	b[2U] -= (op2.l_i < 0);
 
 	return cmp_work(a,b);
 }
@@ -89,8 +89,8 @@ l_fp_ucmp(const l_fp first, l_fp second)
 	const l_fp op1 = first; 
 	const l_fp op2 = second;
 
-	a[0] = op1.l_uf; a[1] = op1.l_ui; a[2] = 0;
-	b[0] = op2.l_uf; b[1] = op2.l_ui; b[2] = 0;
+	a[0U] = op1.l_uf; a[1U] = op1.l_ui; a[2U] = 0;
+	b[0U] = op2.l_uf; b[1U] = op2.l_ui; b[2U] = 0;
 
 	return cmp_work(a,b);
 }
@@ -104,9 +104,9 @@ cmp_work(u_int32 a[3], u_int32 b[3])
 		tmp = a[idx]; cy  = (a[idx] -=   cy  ) > tmp;
 		tmp = a[idx]; cy |= (a[idx] -= b[idx]) > tmp;
 	}
-	if (a[2])
+	if (a[2U])
 		return -1;
-	return a[0] || a[1];
+	return a[0] || a[1U];
 }
 
 
@@ -261,8 +261,8 @@ static const lfp_hl addsub_tab[][3] = {
 	// wide-range test, triggers compare trouble
 	{{0x80000000,0x00000001}, {0xFFFFFFFF,0xFFFFFFFE}, {0x7FFFFFFF,0xFFFFFFFF}}
 };
-static const size_t addsub_cnt = (sizeof(addsub_tab)/sizeof(addsub_tab[0]));
-static const size_t addsub_tot = (sizeof(addsub_tab)/sizeof(addsub_tab[0][0]));
+static const size_t addsub_cnt = (sizeof(addsub_tab)/sizeof(addsub_tab[0U]));
+static const size_t addsub_tot = (sizeof(addsub_tab)/sizeof(addsub_tab[0U][0U]));
 
 
 
@@ -298,9 +298,9 @@ test_AdditionLR(void)
 	size_t idx = 0;
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
-		l_fp op2 = l_fp_init(addsub_tab[idx][1].h, addsub_tab[idx][1].l);
-		l_fp e_res = l_fp_init(addsub_tab[idx][2].h, addsub_tab[idx][2].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+		l_fp op2 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+		l_fp e_res = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
 		l_fp res = l_fp_add(op1, op2);
 
 		TEST_ASSERT_EQUAL_l_fp(e_res, res);
@@ -314,9 +314,9 @@ test_AdditionRL(void)
 	size_t idx = 0;
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op2 = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
-		l_fp op1 = l_fp_init(addsub_tab[idx][1].h, addsub_tab[idx][1].l);
-		l_fp e_res = l_fp_init(addsub_tab[idx][2].h, addsub_tab[idx][2].l);
+		l_fp op2 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+		l_fp e_res = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
 		l_fp res = l_fp_add(op1, op2);
 
 		TEST_ASSERT_EQUAL_l_fp(e_res, res);
@@ -334,9 +334,9 @@ test_SubtractionLR(void)
 	size_t idx = 0;
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op2 = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
-		l_fp e_res = l_fp_init(addsub_tab[idx][1].h, addsub_tab[idx][1].l);
-		l_fp op1 = l_fp_init(addsub_tab[idx][2].h, addsub_tab[idx][2].l);
+		l_fp op2 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+		l_fp e_res = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
 		l_fp res = l_fp_subtract(op1, op2);
 
 		TEST_ASSERT_EQUAL_l_fp(e_res, res);
@@ -350,9 +350,9 @@ test_SubtractionRL(void)
 	size_t idx = 0;
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp e_res = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
-		l_fp op2 = l_fp_init(addsub_tab[idx][1].h, addsub_tab[idx][1].l);
-		l_fp op1 = l_fp_init(addsub_tab[idx][2].h, addsub_tab[idx][2].l);
+		l_fp e_res = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+		l_fp op2 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
 		l_fp res = l_fp_subtract(op1, op2);
 
 		TEST_ASSERT_EQUAL_l_fp(e_res, res);
@@ -370,7 +370,7 @@ test_Negation(void)
 	size_t idx = 0;
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
 		l_fp op2 = l_fp_negate(op1);
 		l_fp sum = l_fp_add(op1, op2);
 
@@ -392,7 +392,7 @@ test_Absolute(void)
 	size_t idx = 0;
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
 		l_fp op2 = l_fp_abs(op1);
 
 		TEST_ASSERT_TRUE(l_fp_signum(op2) >= 0);
@@ -436,7 +436,7 @@ test_FDF_RoundTrip(void)
 	// that limit.
 
 	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0].h, addsub_tab[idx][0].l);
+		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
 		double op2 = l_fp_convert_to_double(op1);
 		l_fp op3 = l_fp_init_from_double(op2); 
 
@@ -458,12 +458,12 @@ test_FDF_RoundTrip(void)
 void
 test_SignedRelOps(void)
 {
-	const lfp_hl * tv = (&addsub_tab[0][0]);
+	const lfp_hl * tv = (&addsub_tab[0U][0U]);
 	size_t lc ;
 
 	for (lc = addsub_tot - 1; lc; --lc, ++tv) {
-		l_fp op1 = l_fp_init(tv[0].h, tv[0].l);
-		l_fp op2 = l_fp_init(tv[1].h, tv[1].l);
+		l_fp op1 = l_fp_init(tv[0U].h, tv[0U].l);
+		l_fp op2 = l_fp_init(tv[1U].h, tv[1U].l);
 		int cmp = l_fp_scmp(op1, op2);
 
 		switch (cmp) {
@@ -502,12 +502,12 @@ test_SignedRelOps(void)
 void
 test_UnsignedRelOps(void)
 {
-	const lfp_hl * tv =(&addsub_tab[0][0]);
+	const lfp_hl * tv =(&addsub_tab[0U][0U]);
 	size_t lc;
 
 	for (lc = addsub_tot - 1; lc; --lc, ++tv) {
-		l_fp op1 = l_fp_init(tv[0].h, tv[0].l);
-		l_fp op2 = l_fp_init(tv[1].h, tv[1].l);
+		l_fp op1 = l_fp_init(tv[0U].h, tv[0U].l);
+		l_fp op2 = l_fp_init(tv[1U].h, tv[1U].l);
 		int cmp = l_fp_ucmp(op1, op2);
 
 		switch (cmp) {

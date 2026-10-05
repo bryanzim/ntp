@@ -56,7 +56,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("t-log.c");
   RUN_TEST(testChangePrognameInMysyslog, 10);

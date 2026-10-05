@@ -37,7 +37,7 @@ dofptoa(
 	 * Set the pointers to point at the first
 	 * decimal place.  Get a local copy of the value.
 	 */
-	cp = cpend = &cbuf[5];
+	cp = cpend = &cbuf[5U];
 	val = fpv;
 
 	/*
@@ -64,7 +64,7 @@ dofptoa(
 		dec = (short)(ndec + 3);
 		if (dec < 3)
 		    dec = 3;
-		cpdec = &cbuf[8];
+		cpdec = &cbuf[8U];
 	} else {
 		dec = ndec;
 		cpdec = cpend;

@@ -93,7 +93,7 @@ main(
 	int errflg = 0;
 	extern int ntp_optind;
 
-	progname = argv[0];
+	progname = argv[0U];
 	while ((c = ntp_getopt(argc, argv, "cdfpt")) != EOF)
 	    switch (c) {
 		case 'c':

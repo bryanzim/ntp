@@ -282,7 +282,7 @@ init_auth(void)
 	/*
 	 * Initialize hash table and free list
 	 */
-	newalloc = authhashbuckets * sizeof(key_hash[0]);
+	newalloc = authhashbuckets * sizeof(key_hash[0U]);
 
 	key_hash = emalloc_zero(newalloc);
 
@@ -454,7 +454,7 @@ auth_resize_hashtable(void)
 
 	authhashbuckets = 1 << hashbits;
 	authhashmask = authhashbuckets - 1;
-	newalloc = authhashbuckets * sizeof(key_hash[0]);
+	newalloc = authhashbuckets * sizeof(key_hash[0U]);
 
 	key_hash = erealloc(key_hash, newalloc);
 	zero_mem(key_hash, newalloc);

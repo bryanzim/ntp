@@ -12,7 +12,7 @@ test_DateGivenMonthDay(void) {
 	// 2010-06-24 12:50:00
 	struct calendar input = {2010, 0, 6, 24, 12, 50, 0};
 
-	u_long expected = 3486372600UL; // This is the timestamp above.
+	u_long expected = 3486372600U; // This is the timestamp above.
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&input));
 }
@@ -23,7 +23,7 @@ test_DateGivenYearDay(void) {
 	// This is the 175th day of 2010.
 	struct calendar input = {2010, 175, 0, 0, 12, 50, 0};
 
-	u_long expected = 3486372600UL; // This is the timestamp above.
+	u_long expected = 3486372600U; // This is the timestamp above.
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&input));
 }
@@ -35,7 +35,7 @@ test_DateLeapYear(void) {
 	struct calendar inputYd = {2012, 176, 0, 0, 12, 00, 00};
 	struct calendar inputMd = {2012, 0, 6, 24, 12, 00, 00};
 
-	u_long expected = 3549528000UL;
+	u_long expected = 3549528000U;
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&inputYd));
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&inputMd));
@@ -47,7 +47,7 @@ test_WraparoundDateIn2036(void) {
 	// This is (one) wrapping boundary where we go from ULONG_MAX to 0.
 	struct calendar input = {2036, 0, 2, 7, 6, 28, 16};
 
-	u_long expected = 0UL;
+	u_long expected = 0U;
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&input));
 }

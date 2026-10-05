@@ -34,7 +34,7 @@ void test_MaxUnsigned(void) {
         u_long actual;
 
         TEST_ASSERT_TRUE(hextoint(str, &actual));
-        TEST_ASSERT_EQUAL(4294967295UL, actual);
+        TEST_ASSERT_EQUAL(4294967295U, actual);
 }
 
 void test_Overflow(void) {

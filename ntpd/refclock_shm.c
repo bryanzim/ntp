@@ -199,18 +199,18 @@ getShmTime(
 			return NULL;
 		}
 		ZERO(ea);
-		ea[0].grfAccessPermissions = FILE_MAP_ALL_ACCESS;
-		ea[0].grfAccessMode = SET_ACCESS;
-		ea[0].grfInheritance = NO_INHERITANCE;
-		ea[0].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-		ea[0].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
-		ea[0].Trustee.ptstrName = (LPTSTR)sidAdmin;
-		ea[1].grfAccessPermissions = FILE_MAP_ALL_ACCESS;
-		ea[1].grfAccessMode = SET_ACCESS;
-		ea[1].grfInheritance = NO_INHERITANCE;
-		ea[1].Trustee.TrusteeForm = TRUSTEE_IS_SID;
-		ea[1].Trustee.TrusteeType = TRUSTEE_IS_USER;
-		ea[1].Trustee.ptstrName = (LPTSTR)sidSystem;
+		ea[0U].grfAccessPermissions = FILE_MAP_ALL_ACCESS;
+		ea[0U].grfAccessMode = SET_ACCESS;
+		ea[0U].grfInheritance = NO_INHERITANCE;
+		ea[0U].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		ea[0U].Trustee.TrusteeType = TRUSTEE_IS_GROUP;
+		ea[0U].Trustee.ptstrName = (LPTSTR)sidAdmin;
+		ea[1U].grfAccessPermissions = FILE_MAP_ALL_ACCESS;
+		ea[1U].grfAccessMode = SET_ACCESS;
+		ea[1U].grfInheritance = NO_INHERITANCE;
+		ea[1U].Trustee.TrusteeForm = TRUSTEE_IS_SID;
+		ea[1U].Trustee.TrusteeType = TRUSTEE_IS_USER;
+		ea[1U].Trustee.ptstrName = (LPTSTR)sidSystem;
 		if (SetEntriesInAcl(2, ea, NULL, &pacl) != ERROR_SUCCESS) {
 			msyslog(LOG_ERR, "SHM SetEntriesInAcl (unit %d): %m", unit);
 			FreeSid(sidAdmin);

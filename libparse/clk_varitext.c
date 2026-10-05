@@ -207,7 +207,7 @@ inp_varitext(
     {
       parseprintf(DD_PARSE, ("inp_varitext: START seen\n"));
 
-      parseio->parse_data[0] = 'T';
+      parseio->parse_data[0U] = 'T';
       parseio->parse_index=1;
       parseio->parse_dtime.parse_stime = t->tstamp; /* Time stamp at packet start */
       t->start_found = 1;

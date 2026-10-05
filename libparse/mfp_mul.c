@@ -84,17 +84,17 @@ mfp_mul(
       M_NEG(b_i, b_f);
     }
   
-  a[0] = a_f & LOW_MASK;	/* prepare a operand */
-  a[1] = (a_f & HIGH_MASK) >> (FRACTION_PREC/2);
-  a[2] = a_i & LOW_MASK;
-  a[3] = (a_i & HIGH_MASK) >> (FRACTION_PREC/2);
+  a[0U] = a_f & LOW_MASK;	/* prepare a operand */
+  a[1U] = (a_f & HIGH_MASK) >> (FRACTION_PREC/2);
+  a[2U] = a_i & LOW_MASK;
+  a[3U] = (a_i & HIGH_MASK) >> (FRACTION_PREC/2);
   
-  b[0] = b_f & LOW_MASK;	/* prepare b operand */
-  b[1] = (b_f & HIGH_MASK) >> (FRACTION_PREC/2);
-  b[2] = b_i & LOW_MASK;
-  b[3] = (b_i & HIGH_MASK) >> (FRACTION_PREC/2);
+  b[0U] = b_f & LOW_MASK;	/* prepare b operand */
+  b[1U] = (b_f & HIGH_MASK) >> (FRACTION_PREC/2);
+  b[2U] = b_i & LOW_MASK;
+  b[3U] = (b_i & HIGH_MASK) >> (FRACTION_PREC/2);
 
-  c[0] = c[1] = c[2] = c[3] = c[4] = 0;
+  c[0U] = c[1U] = c[2U] = c[3U] = c[4U] = 0;
 
   for (i = 0; i < 4; i++)	/* we do assume 32 * 32 = 64 bit multiplication */
     for (j = 0; j < 4; j++)
@@ -139,18 +139,18 @@ mfp_mul(
 #ifdef DEBUG
   if (debug > 6)
     printf("mfp_mul: 0x%04lx%04lx%04lx%04lx * 0x%04lx%04lx%04lx%04lx = 0x%08lx%08lx%08lx%08lx\n",
-	 a[3], a[2], a[1], a[0], b[3], b[2], b[1], b[0], c[3], c[2], c[1], c[0]);
+	 a[3U], a[2], a[1], a[0], b[3], b[2], b[1], b[0], c[3], c[2], c[1], c[0]);
 #endif
 
-  if (c[3])			/* overflow */
+  if (c[3U])			/* overflow */
     {
       i = ((unsigned)1 << (FRACTION_PREC-1)) - 1;
       f = ~(unsigned)0;
     }
   else
     {				/* take produkt - discarding extra precision */
-      i = c[2];
-      f = c[1];
+      i = c[2U];
+      f = c[1U];
     }
   
   if (neg)			/* recover sign */

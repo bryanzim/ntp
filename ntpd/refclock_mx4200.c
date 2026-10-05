@@ -729,7 +729,7 @@ mx4200_receive(
 	 * Reject if any important landmarks are missing.
 	 */
 	cp = pp->a_lastcode + pp->lencode - 3;
-	if (cp < pp->a_lastcode || *pp->a_lastcode != '$' || cp[0] != '*' ) {
+	if (cp < pp->a_lastcode || *pp->a_lastcode != '$' || cp[0U] != '*' ) {
 		mx4200_debug(peer, "mx4200_receive: bad format\n");
 		refclock_report(peer, CEVNT_BADREPLY);
 		return;
@@ -738,8 +738,8 @@ mx4200_receive(
 	/*
 	 * Check and discard the checksum
 	 */
-	ck = mx4200_cksum(&pp->a_lastcode[1], pp->lencode - 4);
-	if (char2hex[ck >> 4] != cp[1] || char2hex[ck & 0xf] != cp[2]) {
+	ck = mx4200_cksum(&pp->a_lastcode[1U], pp->lencode - 4);
+	if (char2hex[ck >> 4] != cp[1U] || char2hex[ck & 0xf] != cp[2U]) {
 		mx4200_debug(peer, "mx4200_receive: bad checksum\n");
 		refclock_report(peer, CEVNT_BADREPLY);
 		return;
@@ -1533,7 +1533,7 @@ mx4200_pps(
 			mx4200_debug(peer, "mx4200_pps: no new pps event\n");
 		} else {
 			mx4200_debug(peer, "mx4200_pps: missed %lu pps events\n",
-			    up->pps_i.assert_sequence - up->lastserial - 1UL);
+			    up->pps_i.assert_sequence - up->lastserial - 1U);
 		}
 		refclock_report(peer, CEVNT_FAULT);
 	}

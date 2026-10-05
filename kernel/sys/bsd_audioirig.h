@@ -43,9 +43,9 @@
 #define AUIB_INIT(ib)	((ib)->ib_head = (ib)->ib_tail = (ib)->ib_lock = \
 			 (ib)->phase = (ib)->shi = (ib)->slo = (ib)->high = \
 			 (ib)->level0 = (ib)->level1 = \
-			 (ib)->shift[0] = (ib)->shift[1] = (ib)->shift[2] = \
-			 (ib)->shift[3] = (ib)->sdata[0] = (ib)->sdata[1] = \
-			 (ib)->sdata[2] = (ib)->sdata[3] = (ib)->err = 0)
+			 (ib)->shift[0U] = (ib)->shift[1U] = (ib)->shift[2U] = \
+			 (ib)->shift[3U] = (ib)->sdata[0U] = (ib)->sdata[1U] = \
+			 (ib)->sdata[2U] = (ib)->sdata[3U] = (ib)->err = 0)
 #define AUIB_EMPTY(ib)	((ib)->ib_head == (ib)->ib_tail)
 #define AUIB_LEN(ib)	(AUIB_MOD((ib)->ib_tail - (ib)->ib_head))
 #define AUIB_LEFT(ib)	(AUIB_MOD((ib)->ib_head - (ib)->ib_tail - 1))

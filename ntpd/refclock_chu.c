@@ -542,9 +542,9 @@ chu_start(
 	 */
 	up->fd_audio = fd_audio;
 	up->gain = 127;
-	up->comp[0] = up->comp[OFFSET] = 0.;
-	up->comp[1] = 1; up->comp[OFFSET + 1] = -1.;
-	up->comp[2] = 3; up->comp[OFFSET + 2] = -3.;
+	up->comp[0U] = up->comp[OFFSET] = 0.;
+	up->comp[1U] = 1; up->comp[OFFSET + 1] = -1.;
+	up->comp[2U] = 3; up->comp[OFFSET + 2] = -3.;
 	step = 2.;
 	for (i = 3; i < OFFSET; i++) {
 		up->comp[i] = up->comp[i - 1] + step;
@@ -755,24 +755,24 @@ chu_rf(
 	 * at 2125 Hz. Passband ripple 0.3 dB, stopband ripple 50 dB,
 	 * phase delay 0.24 ms.
 	 */
-	signal = (up->bpf[8] = up->bpf[7]) * 5.844676e-01;
-	signal += (up->bpf[7] = up->bpf[6]) * 4.884860e-01;
-	signal += (up->bpf[6] = up->bpf[5]) * 2.704384e+00;
-	signal += (up->bpf[5] = up->bpf[4]) * 1.645032e+00;
-	signal += (up->bpf[4] = up->bpf[3]) * 4.644557e+00;
-	signal += (up->bpf[3] = up->bpf[2]) * 1.879165e+00;
-	signal += (up->bpf[2] = up->bpf[1]) * 3.522634e+00;
-	signal += (up->bpf[1] = up->bpf[0]) * 7.315738e-01;
-	up->bpf[0] = sample - signal;
-	signal = up->bpf[0] * 6.176213e-03
-	    + up->bpf[1] * 3.156599e-03
-	    + up->bpf[2] * 7.567487e-03
-	    + up->bpf[3] * 4.344580e-03
-	    + up->bpf[4] * 1.190128e-02
-	    + up->bpf[5] * 4.344580e-03
-	    + up->bpf[6] * 7.567487e-03
-	    + up->bpf[7] * 3.156599e-03
-	    + up->bpf[8] * 6.176213e-03;
+	signal = (up->bpf[8U] = up->bpf[7U]) * 5.844676e-01;
+	signal += (up->bpf[7U] = up->bpf[6U]) * 4.884860e-01;
+	signal += (up->bpf[6U] = up->bpf[5U]) * 2.704384e+00;
+	signal += (up->bpf[5U] = up->bpf[4U]) * 1.645032e+00;
+	signal += (up->bpf[4U] = up->bpf[3U]) * 4.644557e+00;
+	signal += (up->bpf[3U] = up->bpf[2U]) * 1.879165e+00;
+	signal += (up->bpf[2U] = up->bpf[1U]) * 3.522634e+00;
+	signal += (up->bpf[1U] = up->bpf[0U]) * 7.315738e-01;
+	up->bpf[0U] = sample - signal;
+	signal = up->bpf[0U] * 6.176213e-03
+	    + up->bpf[1U] * 3.156599e-03
+	    + up->bpf[2U] * 7.567487e-03
+	    + up->bpf[3U] * 4.344580e-03
+	    + up->bpf[4U] * 1.190128e-02
+	    + up->bpf[5U] * 4.344580e-03
+	    + up->bpf[6U] * 7.567487e-03
+	    + up->bpf[7U] * 3.156599e-03
+	    + up->bpf[8U] * 6.176213e-03;
 
 	up->monitor = signal / 4.;	/* note monitor after filter */
 
@@ -801,33 +801,33 @@ chu_rf(
 	/*
 	 * Lowpass filter. Raised cosine FIR, Ts = 1 / 300, beta = 0.1.
 	 */
-	lpf = (up->lpf[26] = up->lpf[25]) * 2.538771e-02;
-	lpf += (up->lpf[25] = up->lpf[24]) * 1.084671e-01;
-	lpf += (up->lpf[24] = up->lpf[23]) * 2.003159e-01;
-	lpf += (up->lpf[23] = up->lpf[22]) * 2.985303e-01;
-	lpf += (up->lpf[22] = up->lpf[21]) * 4.003697e-01;
-	lpf += (up->lpf[21] = up->lpf[20]) * 5.028552e-01;
-	lpf += (up->lpf[20] = up->lpf[19]) * 6.028795e-01;
-	lpf += (up->lpf[19] = up->lpf[18]) * 6.973249e-01;
-	lpf += (up->lpf[18] = up->lpf[17]) * 7.831828e-01;
-	lpf += (up->lpf[17] = up->lpf[16]) * 8.576717e-01;
-	lpf += (up->lpf[16] = up->lpf[15]) * 9.183463e-01;
-	lpf += (up->lpf[15] = up->lpf[14]) * 9.631951e-01;
-	lpf += (up->lpf[14] = up->lpf[13]) * 9.907208e-01;
-	lpf += (up->lpf[13] = up->lpf[12]) * 1.000000e+00;
-	lpf += (up->lpf[12] = up->lpf[11]) * 9.907208e-01;
-	lpf += (up->lpf[11] = up->lpf[10]) * 9.631951e-01;
-	lpf += (up->lpf[10] = up->lpf[9]) * 9.183463e-01;
-	lpf += (up->lpf[9] = up->lpf[8]) * 8.576717e-01;
-	lpf += (up->lpf[8] = up->lpf[7]) * 7.831828e-01;
-	lpf += (up->lpf[7] = up->lpf[6]) * 6.973249e-01;
-	lpf += (up->lpf[6] = up->lpf[5]) * 6.028795e-01;
-	lpf += (up->lpf[5] = up->lpf[4]) * 5.028552e-01;
-	lpf += (up->lpf[4] = up->lpf[3]) * 4.003697e-01;
-	lpf += (up->lpf[3] = up->lpf[2]) * 2.985303e-01;
-	lpf += (up->lpf[2] = up->lpf[1]) * 2.003159e-01;
-	lpf += (up->lpf[1] = up->lpf[0]) * 1.084671e-01;
-	lpf += up->lpf[0] = disc * 2.538771e-02;
+	lpf = (up->lpf[26U] = up->lpf[25U]) * 2.538771e-02;
+	lpf += (up->lpf[25U] = up->lpf[24U]) * 1.084671e-01;
+	lpf += (up->lpf[24U] = up->lpf[23U]) * 2.003159e-01;
+	lpf += (up->lpf[23U] = up->lpf[22U]) * 2.985303e-01;
+	lpf += (up->lpf[22U] = up->lpf[21U]) * 4.003697e-01;
+	lpf += (up->lpf[21U] = up->lpf[20U]) * 5.028552e-01;
+	lpf += (up->lpf[20U] = up->lpf[19U]) * 6.028795e-01;
+	lpf += (up->lpf[19U] = up->lpf[18U]) * 6.973249e-01;
+	lpf += (up->lpf[18U] = up->lpf[17U]) * 7.831828e-01;
+	lpf += (up->lpf[17U] = up->lpf[16U]) * 8.576717e-01;
+	lpf += (up->lpf[16U] = up->lpf[15U]) * 9.183463e-01;
+	lpf += (up->lpf[15U] = up->lpf[14U]) * 9.631951e-01;
+	lpf += (up->lpf[14U] = up->lpf[13U]) * 9.907208e-01;
+	lpf += (up->lpf[13U] = up->lpf[12U]) * 1.000000e+00;
+	lpf += (up->lpf[12U] = up->lpf[11U]) * 9.907208e-01;
+	lpf += (up->lpf[11U] = up->lpf[10U]) * 9.631951e-01;
+	lpf += (up->lpf[10U] = up->lpf[9U]) * 9.183463e-01;
+	lpf += (up->lpf[9U] = up->lpf[8U]) * 8.576717e-01;
+	lpf += (up->lpf[8U] = up->lpf[7U]) * 7.831828e-01;
+	lpf += (up->lpf[7U] = up->lpf[6U]) * 6.973249e-01;
+	lpf += (up->lpf[6U] = up->lpf[5U]) * 6.028795e-01;
+	lpf += (up->lpf[5U] = up->lpf[4U]) * 5.028552e-01;
+	lpf += (up->lpf[4U] = up->lpf[3U]) * 4.003697e-01;
+	lpf += (up->lpf[3U] = up->lpf[2U]) * 2.985303e-01;
+	lpf += (up->lpf[2U] = up->lpf[1U]) * 2.003159e-01;
+	lpf += (up->lpf[1U] = up->lpf[0U]) * 1.084671e-01;
+	lpf += up->lpf[0U] = disc * 2.538771e-02;
 
 	/*
 	 * Maximum-likelihood decoder. The UART updates each of the
@@ -917,7 +917,7 @@ chu_uart(
 	 */
 	es_max = -1e6;
 	es_min = 1e6;
-	sp->shift[0] = sample;
+	sp->shift[0U] = sample;
 	for (i = 11; i > 0; i--) {
 		sp->shift[i] = sp->shift[i - 1];
 		if (sp->shift[i] > es_max)
@@ -1273,11 +1273,11 @@ chu_a(
 		}
 		while (temp > up->prevsec) {
 			for (j = 15; j > 0; j--) {
-				up->decode[9][j] = up->decode[9][j - 1];
-				up->decode[19][j] =
-				    up->decode[19][j - 1];
+				up->decode[9U][j] = up->decode[9U][j - 1];
+				up->decode[19U][j] =
+				    up->decode[19U][j - 1];
 			}
-			up->decode[9][j] = up->decode[19][j] = 0;
+			up->decode[9U][j] = up->decode[19U][j] = 0;
 			up->prevsec++;
 		}
 	}
@@ -1392,7 +1392,7 @@ chu_second(
 	if (up->status & INSYNC && !(up->status & (DECODE | STAMP)) &&
 	    dtemp > MINMETRIC) {
 		if (!clocktime(pp->day, pp->hour, pp->minute, 0, GMT,
-		    up->tstamp[0].l_ui, &pp->yearstart, &offset.l_ui)) {
+		    up->tstamp[0U].l_ui, &pp->yearstart, &offset.l_ui)) {
 			up->errflg = CEVNT_BADTIME;
 		} else {
 			offset.l_uf = 0;

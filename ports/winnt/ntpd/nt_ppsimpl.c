@@ -120,7 +120,7 @@ myRegReadMultiString(
 	while (endp != retv && endp[-1])
 		--endp;
 	if (endp != retv) {
-		endp[0] = endp[1] = '\0';
+		endp[0U] = endp[1U] = '\0';
 		if (NULL != pSize)
 			*pSize = (DWORD)(endp - retv);
 		return retv;
@@ -400,7 +400,7 @@ again:
 	/* Inspect the next section of input string. It must be
 	 * either an absolute path or just a name.
 	 */
-	if (isalpha(phead[0]) && phead[1] == ':' && phead[2] == '\\') {
+	if (isalpha(phead[0U]) && phead[1U] == ':' && phead[2U] == '\\') {
 		nodir = FALSE;
 	} else {
 		nodir = TRUE;

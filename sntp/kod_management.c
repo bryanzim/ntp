@@ -78,10 +78,10 @@ add_entry(
 	}
 
 	kod_db_cnt++;
-	kod_db = erealloc(kod_db, kod_db_cnt * sizeof(kod_db[0]));
+	kod_db = erealloc(kod_db, kod_db_cnt * sizeof(kod_db[0U]));
 	if (n != kod_db_cnt - 1)
 		memmove(&kod_db[n + 1], &kod_db[n],
-			sizeof(kod_db[0]) * ((kod_db_cnt - 1) - n));
+			sizeof(kod_db[0U]) * ((kod_db_cnt - 1) - n));
 	kod_db[n] = pke;
 }
 
@@ -107,7 +107,7 @@ delete_entry(
 
 	if (a < kod_db_cnt)
 		memmove(&kod_db[a], &kod_db[a + 1],
-			(kod_db_cnt - a) * sizeof(kod_db[0]));
+			(kod_db_cnt - a) * sizeof(kod_db[0U]));
 }
 
 
@@ -212,7 +212,7 @@ kod_init_kod_db(
 	while (!feof(db_s) && NULL != fgets(fbuf, sizeof(fbuf), db_s)) {
 
 		/* ignore blank lines */
-		if ('\n' == fbuf[0])
+		if ('\n' == fbuf[0U])
 			continue;
 
 		sepc = 0;
@@ -247,7 +247,7 @@ kod_init_kod_db(
 	rewind(db_s);
 
 	/* Allocate the array of pointers to the struct kod_entry items */
-	kod_db = eallocarray(kod_db_cnt, sizeof(kod_db[0]));
+	kod_db = eallocarray(kod_db_cnt, sizeof(kod_db[0U]));
 
 	/* Read contents of file */
 	for (b = 0; 
@@ -261,13 +261,13 @@ kod_init_kod_db(
 		}
 
 		/* ignore blank lines */
-		if ('\n' == fbuf[0]) {
+		if ('\n' == fbuf[0U]) {
 			b--;
 			continue;
 		}
 
 		/* Allocate this struct kod_entry item */
-		kod_db[b] = emalloc(sizeof(*kod_db[0]));
+		kod_db[b] = emalloc(sizeof(*kod_db[0U]));
 
 		if (3 != sscanf(fbuf, "%llx %4s %254s", &ull,
 		    kod_db[b]->type, kod_db[b]->hostname)) {

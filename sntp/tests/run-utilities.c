@@ -64,7 +64,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("utilities.c");
   RUN_TEST(test_IPv4Address, 16);

@@ -293,10 +293,10 @@ ulink_receive(
                           &pp->hour, &syncchar, &pp->minute, &pp->second, 
                           &leapchar) == 8) { 
    		
-   			  if (char_quality[0] == '0') {
+   			  if (char_quality[0U] == '0') {
    				quality = 0;
-   			  } else if (char_quality[0] == '0') {
-   				quality = (char_quality[1] & 0x0f);
+   			  } else if (char_quality[0U] == '0') {
+   				quality = (char_quality[1U] & 0x0f);
    			  } else  {
    				quality = 99;
    			  }
@@ -365,10 +365,10 @@ ulink_receive(
                            &pp->hour, &syncchar, &pp->minute, &pp->second, 
                            &leapchar) == 8) { 
 		
-			   if (char_quality[0] == 'L') {
+			   if (char_quality[0U] == 'L') {
 				quality = 0;
-			   } else if (char_quality[0] == '0') {
-				quality = (char_quality[1] & 0x0f);
+			   } else if (char_quality[0U] == '0') {
+				quality = (char_quality[1U] & 0x0f);
 			   } else  {
 				quality = 99;
 		           }

@@ -113,35 +113,35 @@ cvt_schmid(
 	   void          *local
 	)
 {
-	if ((size != 11) || (buffer[10] != (unsigned char)'\375'))
+	if ((size != 11) || (buffer[10U] != (unsigned char)'\375'))
 	{
 		return CVT_NONE;
 	}
 	else
 	{
-		if (buffer[0] > 23 || buffer[1] > 59 || buffer[2] > 59 || buffer[3] >  9) /* Time */
+		if (buffer[0U] > 23 || buffer[1U] > 59 || buffer[2U] > 59 || buffer[3U] >  9) /* Time */
 		{
 			return CVT_FAIL|CVT_BADTIME;
 		}
 		else
-		    if (buffer[4] <  1 || buffer[4] > 31 || buffer[5] <  1 || buffer[5] > 12
-			||  buffer[6] > 99)
+		    if (buffer[4U] <  1 || buffer[4U] > 31 || buffer[5U] <  1 || buffer[5U] > 12
+			||  buffer[6U] > 99)
 		    {
 			    return CVT_FAIL|CVT_BADDATE;
 		    }
 		    else
 		    {
-			    clock_time->hour    = buffer[0];
-			    clock_time->minute  = buffer[1];
-			    clock_time->second  = buffer[2];
-			    clock_time->usecond = buffer[3] * 100000;
-			    clock_time->day     = buffer[4];
-			    clock_time->month   = buffer[5];
-			    clock_time->year    = buffer[6];
+			    clock_time->hour    = buffer[0U];
+			    clock_time->minute  = buffer[1U];
+			    clock_time->second  = buffer[2U];
+			    clock_time->usecond = buffer[3U] * 100000;
+			    clock_time->day     = buffer[4U];
+			    clock_time->month   = buffer[5U];
+			    clock_time->year    = buffer[6U];
 
 			    clock_time->flags   = 0;
 
-			    switch (buffer[8] & WS_TZ)
+			    switch (buffer[8U] & WS_TZ)
 			    {
 				case WS_MET:
 				    clock_time->utcoffset = -1*60*60;
@@ -156,29 +156,29 @@ cvt_schmid(
 				    return CVT_FAIL|CVT_BADFMT;
 			    }
 
-			    if (!(buffer[7] & WS_TIME))
+			    if (!(buffer[7U] & WS_TIME))
 			    {
 				    clock_time->flags |= PARSEB_POWERUP;
 			    }
 
-			    if (!(buffer[7] & WS_SIGNAL))
+			    if (!(buffer[7U] & WS_SIGNAL))
 			    {
 				    clock_time->flags |= PARSEB_NOSYNC;
 			    }
 
-			    if (buffer[7] & WS_SIGNAL)
+			    if (buffer[7U] & WS_SIGNAL)
 			    {
-				    if (buffer[8] & WS_CALLBIT)
+				    if (buffer[8U] & WS_CALLBIT)
 				    {
 					    clock_time->flags |= PARSEB_CALLBIT;
 				    }
 
-				    if (buffer[8] & WS_ANNOUNCE)
+				    if (buffer[8U] & WS_ANNOUNCE)
 				    {
 					    clock_time->flags |= PARSEB_ANNOUNCE;
 				    }
 
-				    if (buffer[8] & WS_LEAP)
+				    if (buffer[8U] & WS_LEAP)
 				    {
 					    clock_time->flags |= PARSEB_LEAPADD; /* default: DCF77 data format deficiency */
 				    }

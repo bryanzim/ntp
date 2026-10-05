@@ -677,7 +677,7 @@ main(
 	float	RatioError;
 
 
-	CommandName = argv[0];
+	CommandName = argv[0U];
 
 	if	(argc < 1)
 		{
@@ -1538,7 +1538,7 @@ main(
 		 */
 		case IRIG:
 			/* Initialize the output string */
-			OutputDataString[0] = '\0';
+			OutputDataString[0U] = '\0';
 
 			for (BitNumber = 0; BitNumber < 100; BitNumber++) {
 				FrameNumber = (BitNumber/10) + 1;

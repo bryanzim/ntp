@@ -497,7 +497,7 @@ valid_fileref(
 	/*
 	 * Just to catch, dumb errors opening up the world...
 	 */
-	if (NULL == dir || '\0' == dir[0])
+	if (NULL == dir || '\0' == dir[0U])
 		return FALSE;
 
 	if (NULL == fname)
@@ -517,8 +517,8 @@ valid_fileref(
 #endif
 
 	for (p = fname; p != NULL; p = strchr(p, DIR_SEP)) {
-		if ('.' == p[0] && '.' == p[1] 
-		    && ('\0' == p[2] || DIR_SEP == p[2]))
+		if ('.' == p[0U] && '.' == p[1U] 
+		    && ('\0' == p[2U] || DIR_SEP == p[2U]))
 			return FALSE;
 	}
 

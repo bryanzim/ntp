@@ -2695,7 +2695,7 @@ l_mktime(
 	static char buffer[40];
 	char *t;
 
-	buffer[0] = '\0';
+	buffer[0U] = '\0';
 	t = buffer;
 
 	if ((tmp = delta / (60*60*24)) != 0)
@@ -3545,7 +3545,7 @@ parse_control(
 		char *tt, *start;
 		int i;
 
-		outstatus[0] = '\0';
+		outstatus[0U] = '\0';
 
 		out->type       = REFCLK_PARSE;
 
@@ -4320,7 +4320,7 @@ gps16x_message(
 	       parsetime_t      *parsetime
 	       )
 {
-	if (parse->timedata.parse_msglen && parsetime->parse_msg[0] == SOH)
+	if (parse->timedata.parse_msglen && parsetime->parse_msg[0U] == SOH)
 	{
 		GPS_MSG_HDR header;
 		unsigned char *bufp = (unsigned char *)parsetime->parse_msg + 1;
@@ -4357,7 +4357,7 @@ gps16x_message(
 					snprintf(buffer, sizeof(buffer), "meinberg_gps_version=\"%x.%02x%s%s\"",
 						(gps_sw_rev.code >> 8) & 0xFF,
 						gps_sw_rev.code & 0xFF,
-						gps_sw_rev.name[0] ? " " : "",
+						gps_sw_rev.name[0U] ? " " : "",
 						gps_sw_rev.name);
 					set_var(&parse->kv, buffer, strlen(buffer)+1, RO|DEF);
 				}
@@ -5067,8 +5067,8 @@ sendcmd(
 	int c
 	)
 {
-	buf->txt[0] = DLE;
-	buf->txt[1] = (u_char)c;
+	buf->txt[0U] = DLE;
+	buf->txt[1U] = (u_char)c;
 	buf->idx = 2;
 }
 
@@ -5387,15 +5387,15 @@ getflt(
 	union uval uval;
 
 #ifdef WORDS_BIGENDIAN
-	uval.bd[0] = *bp++;
-	uval.bd[1] = *bp++;
-	uval.bd[2] = *bp++;
-	uval.bd[3] = *bp;
+	uval.bd[0U] = *bp++;
+	uval.bd[1U] = *bp++;
+	uval.bd[2U] = *bp++;
+	uval.bd[3U] = *bp;
 #else  /* ! WORDS_BIGENDIAN */
-	uval.bd[3] = *bp++;
-	uval.bd[2] = *bp++;
-	uval.bd[1] = *bp++;
-	uval.bd[0] = *bp;
+	uval.bd[3U] = *bp++;
+	uval.bd[2U] = *bp++;
+	uval.bd[1U] = *bp++;
+	uval.bd[0U] = *bp;
 #endif /* ! WORDS_BIGENDIAN */
 	return uval.fv;
 }
@@ -5408,23 +5408,23 @@ getdbl(
 	union uval uval;
 
 #ifdef WORDS_BIGENDIAN
-	uval.bd[0] = *bp++;
-	uval.bd[1] = *bp++;
-	uval.bd[2] = *bp++;
-	uval.bd[3] = *bp++;
-	uval.bd[4] = *bp++;
-	uval.bd[5] = *bp++;
-	uval.bd[6] = *bp++;
-	uval.bd[7] = *bp;
+	uval.bd[0U] = *bp++;
+	uval.bd[1U] = *bp++;
+	uval.bd[2U] = *bp++;
+	uval.bd[3U] = *bp++;
+	uval.bd[4U] = *bp++;
+	uval.bd[5U] = *bp++;
+	uval.bd[6U] = *bp++;
+	uval.bd[7U] = *bp;
 #else  /* ! WORDS_BIGENDIAN */
-	uval.bd[7] = *bp++;
-	uval.bd[6] = *bp++;
-	uval.bd[5] = *bp++;
-	uval.bd[4] = *bp++;
-	uval.bd[3] = *bp++;
-	uval.bd[2] = *bp++;
-	uval.bd[1] = *bp++;
-	uval.bd[0] = *bp;
+	uval.bd[7U] = *bp++;
+	uval.bd[6U] = *bp++;
+	uval.bd[5U] = *bp++;
+	uval.bd[4U] = *bp++;
+	uval.bd[3U] = *bp++;
+	uval.bd[2U] = *bp++;
+	uval.bd[1U] = *bp++;
+	uval.bd[0U] = *bp;
 #endif /* ! WORDS_BIGENDIAN */
 	return uval.dv;
 }
@@ -5453,7 +5453,7 @@ trimbletsip_message(
 	unsigned int   size   = parsetime->parse_msglen;
 
 	if ((size < 4) ||
-	    (buffer[0]      != DLE) ||
+	    (buffer[0U]      != DLE) ||
 	    (buffer[size-1] != ETX) ||
 	    (buffer[size-2] != DLE))
 	{
@@ -5475,7 +5475,7 @@ trimbletsip_message(
 	{
 		u_short var_flag;
 		trimble_t *tr = parse->localdata;
-		unsigned int cmd = buffer[1];
+		unsigned int cmd = buffer[1U];
 		char pbuffer[200];
 		char *t = pbuffer;
 		cmd_info_t *s;

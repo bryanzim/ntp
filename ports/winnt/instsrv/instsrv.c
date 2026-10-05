@@ -44,7 +44,7 @@ getServicePath(
     static const char * const s_chars_to_quote = " []()";
     size_t      minsize = argc * 3; /* may need separator/NUL + quotes */
     int         i;
-    const char *execPath = argv[0];
+    const char *execPath = argv[0U];
     char       *cbuf, *cpos;
     
     /* if just the executable and no dangerous chars, return the exe path. */
@@ -92,7 +92,7 @@ validateExeName(
     char rootPath[] = "?:\\";
     
     /* check for absolute path */
-    if ((':' != exePath[1]) || ('\\' != exePath[2])) {
+    if ((':' != exePath[1U]) || ('\\' != exePath[2U])) {
         printf("\n%s", MSG_1_FOR_BAD_PATH);
         printf("\n%s\n", MSG_2_FOR_BAD_PATH);
         return 1;
@@ -102,7 +102,7 @@ validateExeName(
 #define ROOT_DIR_DOESNT_EXIST    1
     
     /* check drive type -- must be local HDD! */
-    rootPath[0] = exePath[0];
+    rootPath[0U] = exePath[0U];
     switch (GetDriveTypeA(rootPath))
     {
     case DRIVE_FIXED:
@@ -404,7 +404,7 @@ int main(int argc, char *argv[])
     }
 
     if (argc >= 2)
-            bRemovingService = (!_stricmp(argv[1], "remove"));
+            bRemovingService = (!_stricmp(argv[1U], "remove"));
 
     if ((bRemovingService && argc != 2) || (!bRemovingService && argc < 2)) {
         DisplayHelp();
@@ -412,7 +412,7 @@ int main(int argc, char *argv[])
     }
 
     if(!bRemovingService) {
-        p = argv[1];
+        p = argv[1U];
         if (('/' == *p) || ('-' == *p) || validateExeName(p)) {
             DisplayHelp();
             return 1;
@@ -420,7 +420,7 @@ int main(int argc, char *argv[])
     }
 
 
-    if (strlen(argv[1]) > 256) {
+    if (strlen(argv[1U]) > 256) {
         printf("\nThe service name cannot be longer than 256 characters\n");
         return 1;
     }
@@ -456,7 +456,7 @@ int main(int argc, char *argv[])
 
     if (!bRemovingService) {
         if (ok == 0)
-            ok = addSourceToRegistry("NTP", argv[1]);/* Set the Event-ID message-file name. */
+            ok = addSourceToRegistry("NTP", argv[1U]);/* Set the Event-ID message-file name. */
         if (ok == 0)
             ok = addKeysToRegistry(); /* add other stuff */
 

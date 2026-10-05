@@ -94,14 +94,14 @@ void generate_subkey(unsigned char *key, unsigned char *K1, unsigned
 
     AES_128(key,Z,L);
 
-    if ( (L[0] & 0x80) == 0 ) { /* If MSB(L) = 0, then K1 = L << 1 */
+    if ( (L[0U] & 0x80) == 0 ) { /* If MSB(L) = 0, then K1 = L << 1 */
         leftshift_onebit(L,K1);
     } else {    /* Else K1 = ( L << 1 ) (+) Rb */
         leftshift_onebit(L,tmp);
         xor_128(tmp,const_Rb,K1);
     }
 
-    if ( (K1[0] & 0x80) == 0 ) {
+    if ( (K1[0U] & 0x80) == 0 ) {
         leftshift_onebit(K1,K2);
     } else {
         leftshift_onebit(K1,tmp);

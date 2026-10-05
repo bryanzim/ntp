@@ -51,8 +51,8 @@ main(
 	long timetrim;
 	double value;
 	
-	while (--argc && **++argv == '-' && isalpha((int)argv[0][1])) {
-		switch (argv[0][1]) {
+	while (--argc && **++argv == '-' && isalpha((int)argv[0U][1U])) {
+		switch (argv[0U][1U]) {
 		    case 'i':
 			incremental++;
 			break;
@@ -87,7 +87,7 @@ main(
 		fprintf(stderr, USAGE);
 		exit(1);
 	} else {
-		value = strtod(argv[0], &rem);
+		value = strtod(argv[0U], &rem);
 		if (*rem != '\0') {
 			fprintf(stderr, USAGE);
 			exit(1);

@@ -51,11 +51,11 @@ main(
 	char *ep;
 	struct calendar cal = {0};
 
-	progname = argv[0];
+	progname = argv[0U];
 
 	switch(argc) {
 	 case 2:	/* 1 arg, must be a string of digits */
-		expires = strtouv64(argv[1], &ep, 10);
+		expires = strtouv64(argv[1U], &ep, 10);
 
 		if (0 == *ep) {
 			ntpcal_ntp64_to_date(&cal, &expires);
@@ -72,22 +72,22 @@ main(
 			exit(0);
 		} else {
 			printf("1 arg, but not a string of digits: <%s>\n",
-				argv[1]);
+				argv[1U]);
 			err = 1;
 		}
 		break;
 		;;
 	 case 3:	/* 2 args, must be YY MM, where MM is 6 or 12 */
 		dom = 28;
-		scount = sscanf(argv[1], "%u", &year);
+		scount = sscanf(argv[1U], "%u", &year);
 		if (1 == scount) {
 			// printf("2 args: year %u\n", year);
 		} else {
-			printf("2 args, but #1 is not a string of digits: <%s>\n", argv[1]);
+			printf("2 args, but #1 is not a string of digits: <%s>\n", argv[1U]);
 			err = 1;
 		}
 
-		scount = sscanf(argv[2], "%u", &mon);
+		scount = sscanf(argv[2U], "%u", &mon);
 		if (1 == scount) {
 			if (6 == mon || 12 == mon) {
 				// printf("2 args: month %u\n", mon);
@@ -96,22 +96,22 @@ main(
 				err = 1;
 			}
 		} else {
-			printf("2 arg, but #2 is not a string of digits: <%s>\n", argv[2]);
+			printf("2 arg, but #2 is not a string of digits: <%s>\n", argv[2U]);
 			err = 1;
 		}
 
 		break;
 		;;
 	 case 4:	/* 3 args, YY MM DD, where MM is 6 or 12, DD is 28 */
-		scount = sscanf(argv[1], "%u", &year);
+		scount = sscanf(argv[1U], "%u", &year);
 		if (1 == scount) {
 			// printf("3 args: year %u\n", year);
 		} else {
-			printf("3 args, but #1 is not a string of digits: <%s>\n", argv[1]);
+			printf("3 args, but #1 is not a string of digits: <%s>\n", argv[1U]);
 			err = 1;
 		}
 
-		scount = sscanf(argv[2], "%u", &mon);
+		scount = sscanf(argv[2U], "%u", &mon);
 		if (1 == scount) {
 			if (6 == mon || 12 == mon) {
 				// printf("3 args: month %u\n", mon);
@@ -120,11 +120,11 @@ main(
 				err = 1;
 			}
 		} else {
-			printf("3 arg, but #2 is not a string of digits: <%s>\n", argv[2]);
+			printf("3 arg, but #2 is not a string of digits: <%s>\n", argv[2U]);
 			err = 1;
 		}
 
-		scount = sscanf(argv[3], "%u", &dom);
+		scount = sscanf(argv[3U], "%u", &dom);
 		if (1 == scount) {
 			if (28 == dom) {
 				// printf("3 args: dom %u\n", dom);
@@ -133,7 +133,7 @@ main(
 				err = 1;
 			}
 		} else {
-			printf("3 arg, but #3 is not a string of digits: <%s>\n", argv[2]);
+			printf("3 arg, but #3 is not a string of digits: <%s>\n", argv[2U]);
 			err = 1;
 		}
 
@@ -177,7 +177,7 @@ test_DateGivenMonthDay(void) {
 	// 2010-06-24 12:50:00
 	struct calendar input = {2010, 0, 6, 24, 12, 50, 0};
 
-	u_long expected = 3486372600UL; // This is the timestamp above.
+	u_long expected = 3486372600U; // This is the timestamp above.
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&input));
 }
@@ -188,7 +188,7 @@ test_DateGivenYearDay(void) {
 	// This is the 175th day of 2010.
 	struct calendar input = {2010, 175, 0, 0, 12, 50, 0};
 
-	u_long expected = 3486372600UL; // This is the timestamp above.
+	u_long expected = 3486372600U; // This is the timestamp above.
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&input));
 }
@@ -200,7 +200,7 @@ test_DateLeapYear(void) {
 	struct calendar inputYd = {2012, 176, 0, 0, 12, 00, 00};
 	struct calendar inputMd = {2012, 0, 6, 24, 12, 00, 00};
 
-	u_long expected = 3549528000UL;
+	u_long expected = 3549528000U;
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&inputYd));
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&inputMd));
@@ -212,7 +212,7 @@ test_WraparoundDateIn2036(void) {
 	// This is (one) wrapping boundary where we go from ULONG_MAX to 0.
 	struct calendar input = {2036, 0, 2, 7, 6, 28, 16};
 
-	u_long expected = 0UL;
+	u_long expected = 0U;
 
 	TEST_ASSERT_EQUAL_UINT(expected, caltontp(&input));
 }

@@ -2169,7 +2169,7 @@ iflags_str(
 	char *		ifs;
 
 	LIB_GETBUF(ifs);
-	ifs[0] = '\0';
+	ifs[0U] = '\0';
 
 	if (iflags & INT_UP) {
 		CLEAR_BIT_IF_DEBUG(INT_UP, iflags);

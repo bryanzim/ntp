@@ -105,13 +105,13 @@ ntpsnmpd_parse_string(
 	field[j] = '\0';
 
 	/* Now parsing the value */
-	value[0] = '\0';
+	value[0U] = '\0';
 	j = 0; 
 	for (val_cnt = 0; i < str_cnt; i++) {
 		if (string[i] > 0x0D && string[i] != ' ')
 			val_cnt = min(j + 1, valuesize - 1);
 		
-		if (value[0] != '\0' ||
+		if (value[0U] != '\0' ||
 		    (string[i] > 0x0D && string[i] != ' ')) {
 			if (j < valuesize)
 				value[j++] = string[i];
@@ -119,9 +119,9 @@ ntpsnmpd_parse_string(
 	}
 	value[val_cnt] = '\0';
 
-	if (value[0] == '"') {
+	if (value[0U] == '"') {
 		val_cnt--;
-		strlcpy(value, &value[1], valuesize);
+		strlcpy(value, &value[1U], valuesize);
 		if (val_cnt > 0 && value[val_cnt - 1] == '"') {
 			val_cnt--;
 			value[val_cnt] = '\0';

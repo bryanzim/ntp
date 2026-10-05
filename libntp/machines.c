@@ -44,8 +44,8 @@ struct hostent *gethostbyname(char *name)
 	host1->h_addrtype = AF_INET;
 	host1->h_aliases = name;
 	host1->h_length = 4;
-	host1->h_addr_list[0] = (char *)hostGetByName (name);
-	host1->h_addr_list[1] = NULL;
+	host1->h_addr_list[0U] = (char *)hostGetByName (name);
+	host1->h_addr_list[1U] = NULL;
 	return host1;
 	}
 
@@ -563,12 +563,12 @@ int  symBaud2numBaud(int symBaud)
 {
 	int i;
 
-	for (i = 0; baudTable[i][1] >= 0; ++i) {
-		if (baudTable[i][0] == symBaud) {
+	for (i = 0; baudTable[i][1U] >= 0; ++i) {
+		if (baudTable[i][0U] == symBaud) {
 			break;
 		}
 	}
-	return baudTable[i][1];
+	return baudTable[i][1U];
 }
 
 
@@ -577,11 +577,11 @@ int  numBaud2symBaud(int numBaud)
 {
 	int i;
 
-	for (i = 0; baudTable[i][1] >= 0; ++i) {
-		if (baudTable[i][1] == numBaud) {
+	for (i = 0; baudTable[i][1U] >= 0; ++i) {
+		if (baudTable[i][1U] == numBaud) {
 			break;
 		}
 	}
-	return baudTable[i][0];
+	return baudTable[i][0U];
 }
 #endif	/* unused fn */

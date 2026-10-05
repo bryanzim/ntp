@@ -106,9 +106,9 @@ extern clockformat_t clock_sel240x;
 clockformat_t *clockformats[] =
 {
 #ifdef CLOCK_MEINBERG
-	&clock_meinberg[0],
-	&clock_meinberg[1],
-	&clock_meinberg[2],
+	&clock_meinberg[0U],
+	&clock_meinberg[1U],
+	&clock_meinberg[2U],
 #endif
 #ifdef CLOCK_DCF7000
 	&clock_dcf7000,
@@ -145,7 +145,7 @@ clockformat_t *clockformats[] =
 #endif
 	0};
 
-unsigned short nformats = sizeof(clockformats) / sizeof(clockformats[0]) - 1;
+unsigned short nformats = sizeof(clockformats) / sizeof(clockformats[0U]) - 1;
 
 #else /* not (REFCLOCK && CLOCK_PARSE) */
 NONEMPTY_TRANSLATION_UNIT

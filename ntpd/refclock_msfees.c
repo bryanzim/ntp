@@ -289,7 +289,7 @@ int dbg = 0;
 #define	this_uisec	((ees->arrvtime).l_ui)
 #define	this_sfsec	((ees->arrvtime).l_f)
 #define	msec(x)		((x) / (1<<22))
-#define	LAST_STEPS	(sizeof ees->last_steps / sizeof ees->last_steps[0])
+#define	LAST_STEPS	(sizeof ees->last_steps / sizeof ees->last_steps[0U])
 #define	subms(x)	((((((x < 0) ? (-(x)) : (x)) % (1<<22))/2) * 625) / (1<<(22 -5)))
 
 /* Bitmask for what methods to try to use -- currently only PPS enabled */
@@ -581,7 +581,7 @@ msfees_start(
 	if (stratumtouse[unit] <= 1) {
 		memcpy((char *)&pp->refid, EESREFID, 4);
 		if (unit > 0 && unit < 10)
-		    ((char *)&pp->refid)[3] = '0' + unit;
+		    ((char *)&pp->refid)[3U] = '0' + unit;
 	} else {
 		peer->refid = htonl(EESHSREFID);
 	}
@@ -1279,7 +1279,7 @@ ees_process(
 		dump_buf(coffs, 0, samples, "Raw  data  is:");
 
 	/* Sort the offsets, trim off the extremes, then choose one. */
-	qsort(coffs, (size_t)samples, sizeof(coffs[0]), offcompare);
+	qsort(coffs, (size_t)samples, sizeof(coffs[0U]), offcompare);
 
 	noff = samples;
 	i = 0;
@@ -1331,7 +1331,7 @@ ees_process(
 		(dispersion * 1526) / 100,
 		(sloppyclockflag[ees->unit]) ? " by averaging" : "",
 		FRACT_SEC(10) / 4295,
-		(coffs[0].l_f) / 4295,
+		(coffs[0U].l_f) / 4295,
 		i,
 		(coffs[i].l_f) / 4295,
 		(coffs[samples/2].l_f) / 4295,

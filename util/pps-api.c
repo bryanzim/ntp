@@ -57,11 +57,11 @@ main(int argc, char **argv)
 	struct timespec to;
 
 	if (argc < 2)
-		argv[1] = "/dev/cuaa1";
+		argv[1U] = "/dev/cuaa1";
 	setbuf(stdout, 0);
-	fd = open(argv[1], O_RDONLY);
+	fd = open(argv[1U], O_RDONLY);
 	if (fd < 0) 
-		err(1, argv[1]);
+		err(1, argv[1U]);
 	i = time_pps_create(fd, &ph);
 	if (i < 0)
 		err(1, "time_pps_create");

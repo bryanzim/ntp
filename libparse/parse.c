@@ -206,7 +206,7 @@ parse_restart(
 	}
 
 	parseio->parse_index = 1;
-	parseio->parse_data[0] = ch;
+	parseio->parse_data[0U] = ch;
 	parseprintf(DD_PARSE, ("parse: parse_restart: buffer start (updated = %x)\n", updated));
 	return updated;
 }

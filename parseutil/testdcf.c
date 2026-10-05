@@ -322,7 +322,7 @@ main(
 {
 	if ((argc != 2) && (argc != 3))
 	{
-		fprintf(stderr, "usage: %s [-f|-t|-ft|-tf] <device>\n", argv[0]);
+		fprintf(stderr, "usage: %s [-f|-t|-ft|-tf] <device>\n", argv[0U]);
 		exit(1);
 	}
 	else
@@ -339,21 +339,21 @@ main(
 		 */
 		if (argc == 3)
 		{
-			if (strcmp(argv[1], "-f") == 0)
+			if (strcmp(argv[1U], "-f") == 0)
 			    offset = 0;
-			if (strcmp(argv[1], "-t") == 0)
+			if (strcmp(argv[1U], "-t") == 0)
 			    trace = 1;
-			if ((strcmp(argv[1], "-ft") == 0) ||
-			    (strcmp(argv[1], "-tf") == 0))
+			if ((strcmp(argv[1U], "-ft") == 0) ||
+			    (strcmp(argv[1U], "-tf") == 0))
 			{
 				offset = 0;
 				trace = 1;
 			}
-			file = argv[2];
+			file = argv[2U];
 		}
 		else
 		{
-			file = argv[1];
+			file = argv[1U];
 		}
 
 		fd = open(file, O_RDONLY);
@@ -421,7 +421,7 @@ main(
 			clock_time.month = 0;
 			clock_time.year = 0;
 			clock_time.flags = 0;
-			buf[60] = '\0';
+			buf[60U] = '\0';
 			for ( i = 0; i < 60; i++)
 			    buf[i] = '.';
 
@@ -466,9 +466,9 @@ main(
 					}
 
 					if (((c^0xFF)+1) & (c^0xFF))
-					    buf[0] = '?';
+					    buf[0U] = '?';
 					else
-					    buf[0] = type(c) ? '#' : '-';
+					    buf[0U] = type(c) ? '#' : '-';
 
 					for ( i = 1; i < 60; i++)
 					    buf[i] = '.';

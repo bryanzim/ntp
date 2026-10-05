@@ -21,10 +21,10 @@ ActivateOption(const char* option, const char* argument) {
 
 	char* opts[ARGV_SIZE];
 	
-	opts[0] = estrdup("sntpopts");
-	opts[1] = estrdup(option);
-	opts[2] = estrdup(argument);
-	opts[3] = estrdup("127.0.0.1");
+	opts[0U] = estrdup("sntpopts");
+	opts[1U] = estrdup(option);
+	opts[2U] = estrdup(argument);
+	opts[3U] = estrdup("127.0.0.1");
 
 	optionProcess(&sntpOptions, COUNTOF(opts), opts);
 }

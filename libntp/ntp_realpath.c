@@ -106,17 +106,17 @@ realpath1(const char *path, char *resolved)
 	char left[NTP_PATH_MAX], next_token[NTP_PATH_MAX], link_tgt[NTP_PATH_MAX];
 
 	symlinks = 0;
-	if (path[0] == '/') {
-		resolved[0] = '/';
-		resolved[1] = '\0';
-		if (path[1] == '\0')
+	if (path[0U] == '/') {
+		resolved[0U] = '/';
+		resolved[1U] = '\0';
+		if (path[1U] == '\0')
 			return (resolved);
 		resolved_len = 1;
 		left_len = strlcpy(left, path + 1, sizeof(left));
 	} else {
 		if (getcwd(resolved, NTP_PATH_MAX) == NULL) {
-			resolved[0] = '.';
-			resolved[1] = '\0';
+			resolved[0U] = '.';
+			resolved[1U] = '\0';
 			return (NULL);
 		}
 		resolved_len = strlen(resolved);
@@ -145,7 +145,7 @@ realpath1(const char *path, char *resolved)
 			left_len -= next_token_len + 1;
 			memmove(left, p + 1, left_len + 1);
 		} else {
-			left[0] = '\0';
+			left[0U] = '\0';
 			left_len = 0;
 		}
 
@@ -157,7 +157,7 @@ realpath1(const char *path, char *resolved)
 			resolved[resolved_len++] = '/';
 			resolved[resolved_len] = '\0';
 		}
-		if ('\0' == next_token[0]) {
+		if ('\0' == next_token[0U]) {
 			/* Handle consequential slashes. */
 			continue;
 		} else if (strcmp(next_token, ".") == 0) {
@@ -203,8 +203,8 @@ realpath1(const char *path, char *resolved)
 				return (NULL);
 			}
 			link_tgt[slen] = '\0';
-			if (link_tgt[0] == '/') {
-				resolved[1] = '\0';
+			if (link_tgt[0U] == '/') {
+				resolved[1U] = '\0';
 				resolved_len = 1;
 			} else {
 				/* Strip the last path component. */
@@ -266,7 +266,7 @@ ntp_realpath(const char * path)
 	char *res = NULL, *m = NULL;
 	if (path == NULL)
 		errno = EINVAL;
-	else if (path[0] == '\0')
+	else if (path[0U] == '\0')
 		errno = ENOENT;
 	else if ((m = malloc(NTP_PATH_MAX)) == NULL)
 		errno = ENOMEM;	/* MSVCRT malloc does not set this... */

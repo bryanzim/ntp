@@ -305,7 +305,7 @@ ntpdcmain(
 	if (!ipv6_works)
 		ai_fam_default = AF_INET;
 
-	progname = argv[0];
+	progname = argv[0U];
 
 	{
 		int optct = ntpOptionProcess(&ntpdcOptions, argc, argv);
@@ -375,7 +375,7 @@ ntpdcmain(
 	pktdata = emalloc(INITDATASIZE);
 
 	if (numcmds == 0) {
-		(void) openhost(chosts[0]);
+		(void) openhost(chosts[0U]);
 		getcmds();
 	} else {
 		int ihost;
@@ -938,7 +938,7 @@ sendrequest(
 	}
 	if (!authistrusted(info_auth_keyid)) {
 		pass = getpass_keytype(info_auth_keytype);
-		if ('\0' == pass[0]) {
+		if ('\0' == pass[0U]) {
 			fprintf(stderr, "Invalid password\n");
 			return 1;
 		}
@@ -1188,14 +1188,14 @@ docmd(
 	/*
 	 * Find the appropriate command description.
 	 */
-	i = findcmd(tokens[0], builtins, opcmds, &xcmd);
+	i = findcmd(tokens[0U], builtins, opcmds, &xcmd);
 	if (i == 0) {
 		(void) fprintf(stderr, "***Command `%s' unknown\n",
-			       tokens[0]);
+			       tokens[0U]);
 		return;
 	} else if (i >= 2) {
 		(void) fprintf(stderr, "***Command `%s' ambiguous\n",
-			       tokens[0]);
+			       tokens[0U]);
 		return;
 	}
 	
@@ -1203,7 +1203,7 @@ docmd(
 	 * Save the keyword, then walk through the arguments, interpreting
 	 * as we go.
 	 */
-	pcmd.keyword = tokens[0];
+	pcmd.keyword = tokens[0U];
 	pcmd.nargs = 0;
 	ti = 1;
 	for (i = 0; i < MAXARGS && xcmd->arg[i] != NO;) {
@@ -1550,7 +1550,7 @@ help(
 		for (xcp = opcmds; xcp->keyword != 0; xcp++)
 			list[words++] = xcp->keyword;
 
-		qsort((void *)list, words, sizeof(list[0]), helpsort);
+		qsort((void *)list, words, sizeof(list[0U]), helpsort);
 		col = 0;
 		for (word = 0; word < words; word++) {
 			length = strlen(list[word]);
@@ -1569,7 +1569,7 @@ help(
 			fprintf(fp, "\n");
 		}
 	} else {
-		cmd = pcmd->argval[0].string;
+		cmd = pcmd->argval[0U].string;
 		words = findcmd(cmd, builtins, opcmds, &xcp);
 		if (words == 0) {
 			fprintf(stderr,
@@ -1644,8 +1644,8 @@ timeout(
 		val = tvout.tv_sec * 1000 + tvout.tv_usec / 1000;
 		(void) fprintf(fp, "primary timeout %d ms\n", val);
 	} else {
-		tvout.tv_sec = pcmd->argval[0].uval / 1000;
-		tvout.tv_usec = (pcmd->argval[0].uval - (tvout.tv_sec * 1000))
+		tvout.tv_sec = pcmd->argval[0U].uval / 1000;
+		tvout.tv_usec = (pcmd->argval[0U].uval - (tvout.tv_sec * 1000))
 			* 1000;
 	}
 }
@@ -1667,12 +1667,12 @@ my_delay(
 		val = delay_time.l_ui * 1000 + delay_time.l_uf / 4294967;
 		(void) fprintf(fp, "delay %lu ms\n", val);
 	} else {
-		if (pcmd->argval[0].ival < 0) {
+		if (pcmd->argval[0U].ival < 0) {
 			isneg = 1;
-			val = ~(u_long)(pcmd->argval[0].ival) + 1UL;
+			val = ~(u_long)(pcmd->argval[0U].ival) + 1U;
 		} else {
 			isneg = 0;
-			val = (u_long)pcmd->argval[0].ival;
+			val = (u_long)pcmd->argval[0U].ival;
 		}
 
 		delay_time.l_ui = val / 1000;
@@ -1749,7 +1749,7 @@ keyid(
 		else
 		    (void) fprintf(fp, "keyid is %lu\n", (u_long)info_auth_keyid);
 	} else {
-		info_auth_keyid = pcmd->argval[0].uval;
+		info_auth_keyid = pcmd->argval[0U].uval;
 		keyid_entered = 1;
 	}
 }
@@ -1775,7 +1775,7 @@ keytype(
 		return;
 	}
 
-	digest_name = pcmd->argval[0].string;
+	digest_name = pcmd->argval[0U].string;
 	digest_len = 0;
 	key_type = keytype_from_text(digest_name, &digest_len);
 
@@ -1814,7 +1814,7 @@ passwd(
 		}
 	}
 	if (pcmd->nargs >= 1)
-		pass = pcmd->argval[0].string;
+		pass = pcmd->argval[0U].string;
 	else {
 		pass = getpass_keytype(info_auth_keytype);
 		if ('\0' == *pass) {
@@ -1842,9 +1842,9 @@ hostnames(
 		else
 		    (void) fprintf(fp, "hostnames not being shown\n");
 	} else {
-		if (STREQ(pcmd->argval[0].string, "yes"))
+		if (STREQ(pcmd->argval[0U].string, "yes"))
 		    showhostnames = 1;
-		else if (STREQ(pcmd->argval[0].string, "no"))
+		else if (STREQ(pcmd->argval[0U].string, "no"))
 		    showhostnames = 0;
 		else
 		    (void)fprintf(stderr, "What?\n");
@@ -1864,11 +1864,11 @@ setdebug(
 	if (pcmd->nargs == 0) {
 		(void) fprintf(fp, "debug level is %d\n", debug);
 		return;
-	} else if (STREQ(pcmd->argval[0].string, "no")) {
+	} else if (STREQ(pcmd->argval[0U].string, "no")) {
 		debug = 0;
-	} else if (STREQ(pcmd->argval[0].string, "more")) {
+	} else if (STREQ(pcmd->argval[0U].string, "more")) {
 		debug++;
-	} else if (STREQ(pcmd->argval[0].string, "less")) {
+	} else if (STREQ(pcmd->argval[0U].string, "less")) {
 		debug--;
 	} else {
 		(void) fprintf(fp, "What?\n");

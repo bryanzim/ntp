@@ -633,7 +633,7 @@ quote_if_needed(char *str)
 	len = strlen(str);
 	octets = len + 2 + 1;
 	ret = emalloc(octets);
-	if ('"' != str[0] 
+	if ('"' != str[0U] 
 	    && (strcspn(str, special_chars) < len 
 		|| strchr(str, ' ') != NULL)) {
 		snprintf(ret, octets, "\"%s\"", str);
@@ -721,8 +721,8 @@ yylex(void)
 			 */
 			if ('=' == ch && old_config_style)
 				followedby = FOLLBY_STRING;
-			yytext[0] = (char)ch;
-			yytext[1] = '\0';
+			yytext[0U] = (char)ch;
+			yytext[1U] = '\0';
 			goto normal_return;
 		} else
 			lex_ungetch(ch, lex_stack);
@@ -829,9 +829,9 @@ yylex(void)
 			goto normal_return;
 		} else if (is_u_int(yytext)) {
 			yylval_was_set = TRUE;
-			if ('0' == yytext[0] &&
-			    'x' == tolower((unsigned long)yytext[1]))
-				converted = sscanf(&yytext[2], "%x",
+			if ('0' == yytext[0U] &&
+			    'x' == tolower((unsigned long)yytext[1U]))
+				converted = sscanf(&yytext[2U], "%x",
 						   &yylval.U_int);
 			else
 				converted = sscanf(yytext, "%u",
@@ -892,11 +892,11 @@ yylex(void)
 	 * restrict -4 and restrict -6 parsing works correctly without
 	 * this hack, as restrict uses FOLLBY_TOKEN.  [DH]
 	 */
-	if ('-' == yytext[0]) {
-		if ('4' == yytext[1]) {
+	if ('-' == yytext[0U]) {
+		if ('4' == yytext[1U]) {
 			token = T_Ipv4_flag;
 			goto normal_return;
-		} else if ('6' == yytext[1]) {
+		} else if ('6' == yytext[1U]) {
 			token = T_Ipv6_flag;
 			goto normal_return;
 		}

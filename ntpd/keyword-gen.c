@@ -305,12 +305,12 @@ const char *	symbname		(u_short);
 int main(int argc, char **argv)
 {
 	if (argc < 2) {
-		fprintf(stderr, "Usage:\n%s t_header.h\n", argv[0]);
+		fprintf(stderr, "Usage:\n%s t_header.h\n", argv[0U]);
 		exit(1);
 	}
 	debug = 1;
 
-	populate_symb(argv[1]);
+	populate_symb(argv[1U]);
 
 	generate_preamble();
 	generate_token_text();
@@ -340,7 +340,7 @@ generate_preamble(void)
 	time(&now);
 	if (!strftime(timestamp, sizeof(timestamp),
 		      "%Y-%m-%d %H:%M:%S", gmtime(&now)))
-		timestamp[0] = '\0';
+		timestamp[0U] = '\0';
 
 	printf(preamble, timestamp);
 }
@@ -367,7 +367,7 @@ generate_fsm(void)
 	 * generated finite state machine when keywords are modified.
 	 */
 	qsort(ntp_keywords, COUNTOF(ntp_keywords),
-	      sizeof(ntp_keywords[0]), compare_key_tok_text);
+	      sizeof(ntp_keywords[0U]), compare_key_tok_text);
 
 	/*
 	 * To save space, reserve the state array entry matching each
@@ -537,7 +537,7 @@ create_scan_states(
 	/* Find the correct position to insert the state.
 	 * All states should be in alphabetical order
 	 */
-	while (curr_char_s && (text[0] < sst[curr_char_s].ch)) {
+	while (curr_char_s && (text[0U] < sst[curr_char_s].ch)) {
 		prev_char_s = curr_char_s;
 		curr_char_s = sst[curr_char_s].other_next_s;
 	}
@@ -547,9 +547,9 @@ create_scan_states(
 	 * the current keyword.  If so, simply use the state for that
 	 * keyword as my_state, otherwise, allocate a new state.
 	 */
-	if (curr_char_s && (text[0] == sst[curr_char_s].ch)) {
+	if (curr_char_s && (text[0U] == sst[curr_char_s].ch)) {
 		my_state = curr_char_s;
-		if ('\0' == text[1]) {
+		if ('\0' == text[1U]) {
 			fprintf(stderr,
 				"Duplicate entries for keyword '%s' in"
 				" keyword_gen.c ntp_keywords[].\n",
@@ -570,7 +570,7 @@ create_scan_states(
 			exit(3);
 		}
 		/* Store the next character of the keyword */
-		sst[my_state].ch = text[0];
+		sst[my_state].ch = text[0U];
 		sst[my_state].other_next_s = curr_char_s;
 		sst[my_state].followedby = FOLLBY_NON_ACCEPTING;
 
@@ -585,7 +585,7 @@ create_scan_states(
 	 * state.
 	 * If not, we need to continue scanning
 	 */
-	if ('\0' == text[1]) {
+	if ('\0' == text[1U]) {
 		sst[my_state].finishes_token = (u_short)token;
 		sst[my_state].followedby = (char)followedby;
 
@@ -611,7 +611,7 @@ create_scan_states(
 	} else
 		sst[my_state].match_next_s =
 		    create_scan_states(
-			&text[1],
+			&text[1U],
 			token,
 			followedby,
 			sst[my_state].match_next_s);
@@ -658,9 +658,9 @@ generate_token_text(void)
 
 	/* sort ntp_keywords in token ID order */
 	qsort(ntp_keywords, COUNTOF(ntp_keywords),
-	      sizeof(ntp_keywords[0]), compare_key_tok_id);
+	      sizeof(ntp_keywords[0U]), compare_key_tok_id);
 
-	lowest_id = ntp_keywords[0].token;
+	lowest_id = ntp_keywords[0U].token;
 	highest_id = ntp_keywords[COUNTOF(ntp_keywords) - 1].token;
 	id_count = highest_id - lowest_id + 1;
 
@@ -743,7 +743,7 @@ populate_symb(
 
 	while (NULL != fgets(line, sizeof(line), yh))
 		if (2 == sscanf(line, "#define %s %d", name, &token)
-		    && 'T' == name[0] && '_' == name[1] && token >= 0
+		    && 'T' == name[0U] && '_' == name[1U] && token >= 0
 		    && token < COUNTOF(symb)) {
 
 			symb[token] = estrdup(name);

@@ -17,7 +17,7 @@ static void gf_mulx(u8 *pad)
 {
 	int i, carry;
 
-	carry = pad[0] & 0x80;
+	carry = pad[0U] & 0x80;
 	for (i = 0; i < AES_BLOCK_SIZE - 1; i++)
 		pad[i] = (pad[i] << 1) | (pad[i + 1] >> 7);
 	pad[AES_BLOCK_SIZE - 1] <<= 1;
@@ -58,8 +58,8 @@ int omac1_aes_128_vector(const u8 *key, size_t num_elem,
 	left = total_len;
 
 	e = 0;
-	pos = addr[0];
-	end = pos + len[0];
+	pos = addr[0U];
+	end = pos + len[0U];
 
 	while (left >= AES_BLOCK_SIZE) {
 		for (i = 0; i < AES_BLOCK_SIZE; i++) {

@@ -596,7 +596,7 @@ refclock_sample(
 		return (0);
 
 	if (n > 1)
-		qsort(off, n, sizeof(off[0]), refclock_cmpl_fp);
+		qsort(off, n, sizeof(off[0U]), refclock_cmpl_fp);
 
 	/*
 	 * Reject the furthest from the median of the samples until
@@ -1396,17 +1396,17 @@ refclock_buginfo(
 	 */
 	bug->nvalues = 8;
 	bug->svalues = 0x0000003f;
-	bug->values[0] = pp->year;
-	bug->values[1] = pp->day;
-	bug->values[2] = pp->hour;
-	bug->values[3] = pp->minute;
-	bug->values[4] = pp->second;
-	bug->values[5] = pp->nsec;
-	bug->values[6] = pp->yearstart;
-	bug->values[7] = pp->coderecv;
+	bug->values[0U] = pp->year;
+	bug->values[1U] = pp->day;
+	bug->values[2U] = pp->hour;
+	bug->values[3U] = pp->minute;
+	bug->values[4U] = pp->second;
+	bug->values[5U] = pp->nsec;
+	bug->values[6U] = pp->yearstart;
+	bug->values[7U] = pp->coderecv;
 	bug->stimes = 0xfffffffc;
-	bug->times[0] = pp->lastref;
-	bug->times[1] = pp->lastrec;
+	bug->times[0U] = pp->lastref;
+	bug->times[1U] = pp->lastrec;
 	for (u = 2; u < bug->ntimes; u++)
 		DTOLFP(pp->filter[u - 2], &bug->times[u]);
 

@@ -63,7 +63,7 @@
  */
 
 #define PPS_API_VERS_1	1		/* API version number */
-#define PPS_JAN_1970	2208988800UL	/* 1970 - 1900 in seconds */
+#define PPS_JAN_1970	2208988800U	/* 1970 - 1900 in seconds */
 #define PPS_NANOSECOND	1000000000L	/* one nanosecond in decimal */
 #define PPS_FRAC	4294967296.	/* 2^32 as a double */
 

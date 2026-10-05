@@ -1035,12 +1035,12 @@ rstclock(
 		 * If our parent process is waiting for the
 		 * first clock sync, send them home satisfied.
 		 */
-		if (daemon_pipe[1] != -1) {
-			if (2 != write(daemon_pipe[1], "S\n", 2)) {
+		if (daemon_pipe[1U] != -1) {
+			if (2 != write(daemon_pipe[1U], "S\n", 2)) {
 				msyslog(LOG_ERR, "daemon failed to notify parent ntpd (--wait-sync)");
 			}
-			close(daemon_pipe[1]);
-			daemon_pipe[1] = -1;
+			close(daemon_pipe[1U]);
+			daemon_pipe[1U] = -1;
 		}
 	}
 #endif /* HAVE_WORKING_FORK */
@@ -1346,7 +1346,7 @@ loop_config(
 		if (freq < HUFFPUFF)
 			freq = HUFFPUFF;
 		sys_hufflen = (int)(freq / HUFFPUFF);
-		sys_huffpuff = eallocarray(sys_hufflen, sizeof(sys_huffpuff[0]));
+		sys_huffpuff = eallocarray(sys_hufflen, sizeof(sys_huffpuff[0U]));
 		for (i = 0; i < sys_hufflen; i++)
 			sys_huffpuff[i] = 1e9;
 		sys_mindly = 1e9;

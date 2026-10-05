@@ -247,9 +247,9 @@ process_pkt (
 			  func_name, rpkt->stratum));
 		ref_char = (char *) &rpkt->refid;
 		TRACE(1, ("%s: Packet refid: %c%c%c%c\n", func_name,
-			  ref_char[0], ref_char[1], ref_char[2], ref_char[3]));
+			  ref_char[0U], ref_char[1], ref_char[2], ref_char[3]));
 		/* If it's a KOD packet we'll just use the KOD information */
-		if (ref_char[0] != 'X') {
+		if (ref_char[0U] != 'X') {
 			if (strncmp(ref_char, "DENY", 4) == 0)
 				return KOD_DEMOBILIZE;
 			if (strncmp(ref_char, "RSTR", 4) == 0)

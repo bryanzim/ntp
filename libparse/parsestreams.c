@@ -240,7 +240,7 @@ xxxinit(
 			}
 			else
 			    if ((ifm == (struct fmodsw *)0) &&
-				(fm->f_name[0] == '\0') &&
+				(fm->f_name[0U] == '\0') &&
 				(fm->f_str == (struct streamtab *)0))
 			    {
 				    /*
@@ -325,7 +325,7 @@ xxxinit(
 					/*
 					 * got it - kill entry
 					 */
-					fm->f_name[0] = '\0';
+					fm->f_name[0U] = '\0';
 					fm->f_str = (struct streamtab *)0;
 					fm++;
 

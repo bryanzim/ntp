@@ -227,7 +227,7 @@ typedef struct {
 
 #ifdef TRIMBLE_OUTPUT_FUNC
 static char
-        *dayname[7] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"},
+        *dayname[7U] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"},
 	old_baudnum[] = {0, 1, 4, 5, 6, 8, 9, 11, 28, 12},
         *st_baud_text_app [] = {"", "", "  300", "  600", " 1200", " 2400", 
 				" 4800", " 9600", "19200", "38400"},
@@ -945,7 +945,7 @@ ripencc_receive(struct recvbuf *rbufp)
 
 		    case 0x8F:	/* superpacket */
 
-			switch (rpt.buf[0]) {
+			switch (rpt.buf[0U]) {
 
 			    case 0xAD:	/* UTC Time */
 				/*
@@ -1110,10 +1110,10 @@ cmd_0x35s(
 	 unsigned char opts_code
 	 )
 {
-	cmd->buf[0] = pos_code;
-	cmd->buf[1] = vel_code;
-	cmd->buf[2] = time_code;
-	cmd->buf[3] = opts_code;
+	cmd->buf[0U] = pos_code;
+	cmd->buf[1U] = vel_code;
+	cmd->buf[2U] = time_code;
+	cmd->buf[3U] = opts_code;
 	cmd->len = 4;
 	cmd->code = 0x35;
 }
@@ -1125,7 +1125,7 @@ cmd_0x3C(
 	 unsigned char sv_prn
 	 )
 {
-	cmd->buf[0] = sv_prn;
+	cmd->buf[0U] = sv_prn;
 	cmd->len = 1;
 	cmd->code = 0x3C;
 }
@@ -1142,12 +1142,12 @@ cmd_0x3Ds(
 	  unsigned char input_mode
 	  )
 {
-	cmd->buf[0] = baud_out;		/* XMT baud rate */
-	cmd->buf[1] = baud_inp;		/* RCV baud rate */
-	cmd->buf[2] = char_code;	/* parity and #bits per byte */
-	cmd->buf[3] = stopbitcode;	/* number of stop bits code */
-	cmd->buf[4] = output_mode;	/* Ch. A transmission mode */
-	cmd->buf[5] = input_mode;	/* Ch. A reception mode */
+	cmd->buf[0U] = baud_out;		/* XMT baud rate */
+	cmd->buf[1U] = baud_inp;		/* RCV baud rate */
+	cmd->buf[2U] = char_code;	/* parity and #bits per byte */
+	cmd->buf[3U] = stopbitcode;	/* number of stop bits code */
+	cmd->buf[4U] = output_mode;	/* Ch. A transmission mode */
+	cmd->buf[5U] = input_mode;	/* Ch. A reception mode */
 	cmd->len = 6;
 	cmd->code = 0x3D;
 }
@@ -1162,7 +1162,7 @@ cmd_0xBBq(
 {
 	cmd->len = 1;
 	cmd->code = 0xBB;
-	cmd->buf[0] = subcode;
+	cmd->buf[0U] = subcode;
 }
 
 
@@ -1175,7 +1175,7 @@ cmd_0x8E0Bq(
 {
 	cmd->len = 1;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x0B;
+	cmd->buf[0U] = 0x0B;
 }
 
 
@@ -1187,7 +1187,7 @@ cmd_0x8E41q(
 {
 	cmd->len = 1;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x41;
+	cmd->buf[0U] = 0x41;
 }
 
 
@@ -1199,7 +1199,7 @@ cmd_0x8E42q(
 {
 	cmd->len = 1;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x42;
+	cmd->buf[0U] = 0x42;
 }
 
 
@@ -1211,7 +1211,7 @@ cmd_0x8E4Aq(
 {
 	cmd->len = 1;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x4A;
+	cmd->buf[0U] = 0x4A;
 }
 
 
@@ -1228,12 +1228,12 @@ cmd_0x8E4As(
 {
 	cmd->len = 16;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x4A;
-	cmd->buf[1] = PPSOnOff;
-	cmd->buf[2] = TimeBase;
-	cmd->buf[3] = Polarity;
-	bPutDouble (&PPSOffset, &cmd->buf[4]);
-	bPutFloat (&Uncertainty, &cmd->buf[12]);
+	cmd->buf[0U] = 0x4A;
+	cmd->buf[1U] = PPSOnOff;
+	cmd->buf[2U] = TimeBase;
+	cmd->buf[3U] = Polarity;
+	bPutDouble (&PPSOffset, &cmd->buf[4U]);
+	bPutFloat (&Uncertainty, &cmd->buf[12U]);
 }
 
 /* 8F-4B query survey limit */
@@ -1244,7 +1244,7 @@ cmd_0x8E4Bq(
 {
 	cmd->len = 1;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x4B;
+	cmd->buf[0U] = 0x4B;
 }
 
 /* poll for UTC superpacket */
@@ -1256,7 +1256,7 @@ cmd_0x8EADq(
 {
 	cmd->len = 1;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0xAD;
+	cmd->buf[0U] = 0xAD;
 }
 
 /* all outomatic packet output off */
@@ -1268,8 +1268,8 @@ cmd_0x8E4Ds(
 {
 	cmd->len = 5;
 	cmd->code = 0x8E;
-	cmd->buf[0] = 0x4D;
-	bPutULong (&AutoOutputMask, &cmd->buf[1]);
+	cmd->buf[0U] = 0x4D;
+	bPutULong (&AutoOutputMask, &cmd->buf[1U]);
 }
 
 
@@ -1481,7 +1481,7 @@ parse0x8FAD(
 	if (rpt->len != 22) 
 		return (-1);
 	
-	if (bGetShort(&buf[1]) != 0) {
+	if (bGetShort(&buf[1U]) != 0) {
 #ifdef DEBUG_NCC
 		if (debug) 
 			printf("parse0x8FAD: event count != 0\n");
@@ -1489,7 +1489,7 @@ parse0x8FAD(
 		return(-1);
 	}
 
-	if (bGetDouble(&buf[3]) != 0.0) {
+	if (bGetDouble(&buf[3U]) != 0.0) {
 #ifdef DEBUG_NCC
 		if (debug) 
 			printf("parse0x8FAD: fracsecs != 0\n");
@@ -1497,14 +1497,14 @@ parse0x8FAD(
 		return(-1);
 	}
 
-	hour =		(unsigned int) buf[11];
-	minute =	(unsigned int) buf[12];
-	second =	(unsigned int) buf[13];
-	day =		(unsigned int) buf[14];
-	month =		(unsigned int) buf[15];
-	year =		bGetShort(&buf[16]);
-	trackstat =	buf[18];
-	utcflags =	buf[19];
+	hour =		(unsigned int) buf[11U];
+	minute =	(unsigned int) buf[12U];
+	second =	(unsigned int) buf[13U];
+	day =		(unsigned int) buf[14U];
+	month =		(unsigned int) buf[15U];
+	year =		bGetShort(&buf[16U]);
+	trackstat =	buf[18U];
+	utcflags =	buf[19U];
 
 
 	sprintf(logbuf, "U1 %d.%d.%d %02d:%02d:%02d %d %02x",
@@ -1609,10 +1609,10 @@ parse0x8F0B(
 	if (rpt->len != 74) 
 		return (-1);
 	
-	if (bGetShort(&buf[1]) != 0)
+	if (bGetShort(&buf[1U]) != 0)
 		return(-1);;
 
-	tow =  bGetDouble(&buf[3]);
+	tow =  bGetDouble(&buf[3U]);
 
 	if (tow == -1.0) {
 		return(-1);
@@ -1628,18 +1628,18 @@ parse0x8F0B(
 		hour = (unsigned int )fmod(tow / 3600., 24.);
 	} 
 
-	day =		(unsigned int) buf[11];
-	month =		(unsigned int) buf[12];
-	year =		bGetShort(&buf[13]);
-	mode =		buf[15];
-	utcoff =	bGetShort(&buf[16]);
-	bias = 		bGetDouble(&buf[18]) / GPS_C * 1e9;	/* ns */
-	rate = 		bGetDouble(&buf[26]) / GPS_C * 1e9;	/* ppb */ 
-	biasunc = 	bGetSingle(&buf[34]) / GPS_C * 1e9;	/* ns */
-	rateunc = 	bGetSingle(&buf[38]) / GPS_C * 1e9;	/* ppb */
-	lat = 		bGetDouble(&buf[42]) * R2D;
-	lon = 		bGetDouble(&buf[50]) * R2D;
-	alt = 		bGetDouble(&buf[58]);
+	day =		(unsigned int) buf[11U];
+	month =		(unsigned int) buf[12U];
+	year =		bGetShort(&buf[13U]);
+	mode =		buf[15U];
+	utcoff =	bGetShort(&buf[16U]);
+	bias = 		bGetDouble(&buf[18U]) / GPS_C * 1e9;	/* ns */
+	rate = 		bGetDouble(&buf[26U]) / GPS_C * 1e9;	/* ppb */ 
+	biasunc = 	bGetSingle(&buf[34U]) / GPS_C * 1e9;	/* ns */
+	rateunc = 	bGetSingle(&buf[38U]) / GPS_C * 1e9;	/* ppb */
+	lat = 		bGetDouble(&buf[42U]) * R2D;
+	lon = 		bGetDouble(&buf[50U]) * R2D;
+	alt = 		bGetDouble(&buf[58U]);
 
 	if (lat < 0.0) {
 		north_south = 'S';
@@ -1678,7 +1678,7 @@ parse0x8F0B(
 		day, month, year, hour, minute, second, mode, bias, biasunc,
 		rate, rateunc, utcoff, lat_deg, lat_min, north_south, lon_deg,
 		lon_min, east_west, alt, sv[0], sv[1], sv[2], sv[3], sv[4],
-		sv[5], sv[6], sv[7]);
+		sv[5U], sv[6], sv[7]);
 
 #ifdef DEBUG_NCC
 	if (debug) 
@@ -1705,9 +1705,9 @@ parseany(
    	TranslateTSIPReportToText (rpt, logbuf);	/* anything else */
 #ifdef DEBUG_NCC
 	if (debug) 
-   		puts(&logbuf[1]);
+   		puts(&logbuf[1U]);
 #endif /* DEBUG_NCC */
-	record_clock_stats(&peer->srcadr, &logbuf[1]);
+	record_clock_stats(&peer->srcadr, &logbuf[1U]);
 	return(0);
 }
 #endif /* TRIMBLE_OUTPUT_FUNC */
@@ -1742,13 +1742,13 @@ parse0x4F(
 	if (rpt->len != 26) 
 		return (-1);
 	a0 = bGetDouble (buf);
-	a1 = bGetSingle (&buf[8]);
-	dt_ls = bGetShort (&buf[12]);
-	tot = bGetSingle (&buf[14]);
-	wn_t = bGetShort (&buf[18]);
-	wn_lsf = bGetShort (&buf[20]);
-	dn = bGetShort (&buf[22]);
-	dt_lsf = bGetShort (&buf[24]);
+	a1 = bGetSingle (&buf[8U]);
+	dt_ls = bGetShort (&buf[12U]);
+	tot = bGetSingle (&buf[14U]);
+	wn_t = bGetShort (&buf[18U]);
+	wn_lsf = bGetShort (&buf[20U]);
+	dn = bGetShort (&buf[22U]);
+	dt_lsf = bGetShort (&buf[24U]);
 
 	sprintf(logbuf, "L1 %d %d %d %g %g %g %d %d %d",
 		dt_lsf - dt_ls, dt_ls, dt_lsf, a0, a1, tot, wn_t, wn_lsf, dn); 
@@ -1790,17 +1790,17 @@ parse0x5C(
 	if (rpt->len != 24) 
 		return(-1);
 
-	prn = buf[0];
-	channel = (unsigned char)(buf[1] >> 3);
+	prn = buf[0U];
+	channel = (unsigned char)(buf[1U] >> 3);
 	if (channel == 0x10) 
 		channel = 2;
 	else 
 		channel++;
-	aqflag = buf[2];
-	ephstat = buf[3];
-	snr = bGetSingle(&buf[4]);
-	elevation = bGetSingle(&buf[12]) * R2D;
-	azinuth = bGetSingle(&buf[16]) * R2D;
+	aqflag = buf[2U];
+	ephstat = buf[3U];
+	snr = bGetSingle(&buf[4U]);
+	elevation = bGetSingle(&buf[12U]) * R2D;
+	azinuth = bGetSingle(&buf[16U]) * R2D;
 
 	sprintf(logbuf, "S1 %02d %d %d %02x %4.1f %5.1f %4.1f",
 		prn, channel, aqflag, ephstat, snr, azinuth, elevation);
@@ -1993,12 +1993,12 @@ rpt_0x3D(
 	buf = rpt->buf;
 
 	if (rpt->len != 6) return TRUE;
-	*tx_baud_index = buf[0];
-	*rx_baud_index = buf[1];
-	*char_format_index = buf[2];
-	*stop_bits = (unsigned char)((buf[3] == 0x07) ? 1 : 2);
-	*tx_mode_index = buf[4];
-	*rx_mode_index = buf[5];
+	*tx_baud_index = buf[0U];
+	*rx_baud_index = buf[1U];
+	*char_format_index = buf[2U];
+	*stop_bits = (unsigned char)((buf[3U] == 0x07) ? 1 : 2);
+	*tx_mode_index = buf[4U];
+	*rx_mode_index = buf[5U];
 	return FALSE;
 }
 
@@ -2024,17 +2024,17 @@ rpt_0x40(
 	buf = rpt->buf;
 
 	if (rpt->len != 39) return TRUE;
-	*sv_prn = buf[0];
-	*t_zc = bGetSingle (&buf[1]);
-	*week_num = bGetShort (&buf[5]);
-	*eccentricity = bGetSingle (&buf[7]);
-	*t_oa = bGetSingle (&buf[11]);
-	*i_0 = bGetSingle (&buf[15]);
-	*OMEGA_dot = bGetSingle (&buf[19]);
-	*sqrt_A = bGetSingle (&buf[23]);
-	*OMEGA_0 = bGetSingle (&buf[27]);
-	*omega = bGetSingle (&buf[31]);
-	*M_0 = bGetSingle (&buf[35]);
+	*sv_prn = buf[0U];
+	*t_zc = bGetSingle (&buf[1U]);
+	*week_num = bGetShort (&buf[5U]);
+	*eccentricity = bGetSingle (&buf[7U]);
+	*t_oa = bGetSingle (&buf[11U]);
+	*i_0 = bGetSingle (&buf[15U]);
+	*OMEGA_dot = bGetSingle (&buf[19U]);
+	*sqrt_A = bGetSingle (&buf[23U]);
+	*OMEGA_0 = bGetSingle (&buf[27U]);
+	*omega = bGetSingle (&buf[31U]);
+	*M_0 = bGetSingle (&buf[35U]);
 	return FALSE;
 }
 
@@ -2052,8 +2052,8 @@ rpt_0x41(
 	
 	if (rpt->len != 10) return TRUE;
 	*time_of_week = bGetSingle (buf);
-	*week_num = bGetShort (&buf[4]);
-	*UTC_offset = bGetSingle (&buf[6]);
+	*week_num = bGetShort (&buf[4U]);
+	*UTC_offset = bGetSingle (&buf[6U]);
 	return FALSE;
 }
 
@@ -2069,10 +2069,10 @@ rpt_0x42(
 	buf = rpt->buf;
 	
 	if (rpt->len != 16) return TRUE;
-	pos_ECEF[0] = bGetSingle (buf);
-	pos_ECEF[1]= bGetSingle (&buf[4]);
-	pos_ECEF[2]= bGetSingle (&buf[8]);
-	*time_of_fix = bGetSingle (&buf[12]);
+	pos_ECEF[0U] = bGetSingle (buf);
+	pos_ECEF[1U]= bGetSingle (&buf[4U]);
+	pos_ECEF[2U]= bGetSingle (&buf[8U]);
+	*time_of_fix = bGetSingle (&buf[12U]);
 	return FALSE;
 }
 
@@ -2089,11 +2089,11 @@ rpt_0x43(
 	buf = rpt->buf;
 
 	if (rpt->len != 20) return TRUE;
-	ECEF_vel[0] = bGetSingle (buf);
-	ECEF_vel[1] = bGetSingle (&buf[4]);
-	ECEF_vel[2] = bGetSingle (&buf[8]);
-	*freq_offset = bGetSingle (&buf[12]);
-	*time_of_fix = bGetSingle (&buf[16]);
+	ECEF_vel[0U] = bGetSingle (buf);
+	ECEF_vel[1U] = bGetSingle (&buf[4U]);
+	ECEF_vel[2U] = bGetSingle (&buf[8U]);
+	*freq_offset = bGetSingle (&buf[12U]);
+	*time_of_fix = bGetSingle (&buf[16U]);
 	return FALSE;
 }
 
@@ -2117,16 +2117,16 @@ rpt_0x45(
 	buf = rpt->buf;
 
 	if (rpt->len != 10) return TRUE;
-	*major_nav_version = buf[0];
-	*minor_nav_version = buf[1];
-	*nav_day = buf[2];
-	*nav_month = buf[3];
-	*nav_year = buf[4];
-	*major_dsp_version = buf[5];
-	*minor_dsp_version = buf[6];
-	*dsp_day = buf[7];
-	*dsp_month = buf[8];
-	*dsp_year = buf[9];
+	*major_nav_version = buf[0U];
+	*minor_nav_version = buf[1U];
+	*nav_day = buf[2U];
+	*nav_month = buf[3U];
+	*nav_year = buf[4U];
+	*major_dsp_version = buf[5U];
+	*minor_dsp_version = buf[6U];
+	*dsp_day = buf[7U];
+	*dsp_month = buf[8U];
+	*dsp_year = buf[9U];
 	return FALSE;
 }
 
@@ -2142,8 +2142,8 @@ rpt_0x46(
 	buf = rpt->buf;
 
 	if (rpt->len != 2) return TRUE;
-	*status1 = buf[0];
-	*status2 = buf[1];
+	*status1 = buf[0U];
+	*status2 = buf[1U];
 	return FALSE;
 }
 
@@ -2160,8 +2160,8 @@ rpt_0x47(
 	unsigned char *buf;
 	buf = rpt->buf;
 
-	if (rpt->len != 1 + 5*buf[0]) return TRUE;
-	*nsvs = buf[0];
+	if (rpt->len != 1 + 5*buf[0U]) return TRUE;
+	*nsvs = buf[0U];
 	for (isv = 0; isv < (*nsvs); isv++) {
 		sv_prn[isv] = buf[5*isv + 1];
 		snr[isv] = bGetSingle (&buf[5*isv + 2]);
@@ -2181,7 +2181,7 @@ rpt_0x48(
 
 	if (rpt->len != 22) return TRUE;
 	memcpy (message, buf, 22);
-	message[22] = 0;
+	message[22U] = 0;
 	return FALSE;
 }
 
@@ -2217,10 +2217,10 @@ rpt_0x4A(
 
 	if (rpt->len != 20) return TRUE;
 	*lat = bGetSingle (buf);
-	*lon = bGetSingle (&buf[4]);
-	*alt = bGetSingle (&buf[8]);
-	*clock_bias = bGetSingle (&buf[12]);
-	*time_of_fix = bGetSingle (&buf[16]);
+	*lon = bGetSingle (&buf[4U]);
+	*alt = bGetSingle (&buf[8U]);
+	*clock_bias = bGetSingle (&buf[12U]);
+	*time_of_fix = bGetSingle (&buf[16U]);
 	return FALSE;
 }
 
@@ -2239,8 +2239,8 @@ rpt_0x4A_2(
 
 	if (rpt->len != 9) return TRUE;
 	*alt = bGetSingle (buf);
-	*dummy = bGetSingle (&buf[4]);
-	*alt_flag = buf[8];
+	*dummy = bGetSingle (&buf[4U]);
+	*alt_flag = buf[8U];
 	return FALSE;
 }
 
@@ -2257,9 +2257,9 @@ rpt_0x4B(
 	buf = rpt->buf;
 
 	if (rpt->len != 3) return TRUE;
-	*machine_id = buf[0];
-	*status3 = buf[1];
-	*status4 = buf[2];
+	*machine_id = buf[0U];
+	*status3 = buf[1U];
+	*status4 = buf[2U];
 	return FALSE;
 }
 
@@ -2278,11 +2278,11 @@ rpt_0x4C(
 	buf = rpt->buf;
 
 	if (rpt->len != 17) return TRUE;
-	*dyn_code = buf[0];
-	*el_mask = bGetSingle (&buf[1]);
-	*snr_mask = bGetSingle (&buf[5]);
-	*dop_mask = bGetSingle (&buf[9]);
-	*dop_switch = bGetSingle (&buf[13]);
+	*dyn_code = buf[0U];
+	*el_mask = bGetSingle (&buf[1U]);
+	*snr_mask = bGetSingle (&buf[5U]);
+	*dop_mask = bGetSingle (&buf[9U]);
+	*dop_switch = bGetSingle (&buf[13U]);
 	return FALSE;
 }
 
@@ -2312,7 +2312,7 @@ rpt_0x4E(
 	buf = rpt->buf;
 
 	if (rpt->len != 1) return TRUE;
-	*response = buf[0];
+	*response = buf[0U];
 	return FALSE;
 }
 
@@ -2335,13 +2335,13 @@ rpt_0x4F(
 
 	if (rpt->len != 26) return TRUE;
 	*a0 = bGetDouble (buf);
-	*a1 = bGetSingle (&buf[8]);
-	*dt_ls = bGetShort (&buf[12]);
-	*time_of_data = bGetSingle (&buf[14]);
-	*wn_t = bGetShort (&buf[18]);
-	*wn_lsf = bGetShort (&buf[20]);
-	*dn = bGetShort (&buf[22]);
-	*dt_lsf = bGetShort (&buf[24]);
+	*a1 = bGetSingle (&buf[8U]);
+	*dt_ls = bGetShort (&buf[12U]);
+	*time_of_data = bGetSingle (&buf[14U]);
+	*wn_t = bGetShort (&buf[18U]);
+	*wn_lsf = bGetShort (&buf[20U]);
+	*dn = bGetShort (&buf[22U]);
+	*dt_lsf = bGetShort (&buf[24U]);
 	return FALSE;
 }
 
@@ -2360,8 +2360,8 @@ rpt_0x54(
 
 	if (rpt->len != 12) return TRUE;
 	*clock_bias = bGetSingle (buf);
-	*freq_offset = bGetSingle (&buf[4]);
-	*time_of_fix = bGetSingle (&buf[8]);
+	*freq_offset = bGetSingle (&buf[4U]);
+	*time_of_fix = bGetSingle (&buf[8U]);
 	return FALSE;
 }
 
@@ -2379,10 +2379,10 @@ rpt_0x55(
 	buf = rpt->buf;
 	
 	if (rpt->len != 4) return TRUE;
-	*pos_code = buf[0];
-	*vel_code = buf[1];
-	*time_code = buf[2];
-	*aux_code = buf[3];
+	*pos_code = buf[0U];
+	*vel_code = buf[1U];
+	*time_code = buf[2U];
+	*aux_code = buf[3U];
 	return FALSE;
 }
 
@@ -2400,13 +2400,13 @@ rpt_0x56(
 	
 	if (rpt->len != 20) return TRUE;
 	/* east */
-	vel_ENU[0] = bGetSingle (buf);
+	vel_ENU[0U] = bGetSingle (buf);
 	/* north */
-	vel_ENU[1] = bGetSingle (&buf[4]);
+	vel_ENU[1U] = bGetSingle (&buf[4U]);
 	/* up */
-	vel_ENU[2] = bGetSingle (&buf[8]);
-	*freq_offset = bGetSingle (&buf[12]);
-	*time_of_fix = bGetSingle (&buf[16]);
+	vel_ENU[2U] = bGetSingle (&buf[8U]);
+	*freq_offset = bGetSingle (&buf[12U]);
+	*time_of_fix = bGetSingle (&buf[16U]);
 	return FALSE;
 }
 
@@ -2424,10 +2424,10 @@ rpt_0x57(
 	buf = rpt->buf;
 	
 	if (rpt->len != 8) return TRUE;
-	*source_code = buf[0];
-	*diag_code = buf[1];
-	*time_of_fix = bGetSingle (&buf[2]);
-	*week_num = bGetShort (&buf[6]);
+	*source_code = buf[0U];
+	*diag_code = buf[1U];
+	*time_of_fix = bGetSingle (&buf[2U]);
+	*week_num = bGetShort (&buf[6U]);
 	return FALSE;
 }
 
@@ -2451,44 +2451,44 @@ rpt_0x58(
 
 	buf = rpt->buf;
 
-	if (buf[0] == 2) {
+	if (buf[0U] == 2) {
 		if (rpt->len < 4) return TRUE;
-		if (rpt->len != 4+buf[3]) return TRUE;
+		if (rpt->len != 4+buf[3U]) return TRUE;
 	}
 	else if (rpt->len != 3) {
 		return TRUE;
 	}
-	*op_code = buf[0];
-	*data_type = buf[1];
-	*sv_prn = buf[2];
+	*op_code = buf[0U];
+	*data_type = buf[1U];
+	*sv_prn = buf[2U];
 	if (*op_code == 2) {
-		dl = buf[3];
+		dl = buf[3U];
 		*data_length = (unsigned char)dl;
-		buf4 = &buf[4];
+		buf4 = &buf[4U];
 		switch (*data_type) {
 		    case 2:
 			/* Almanac */
 			if (*data_length != sizeof (ALM_INFO)) return TRUE;
 			alminfo = (ALM_INFO*)data_packet;
-			alminfo->t_oa_raw  = buf4[0];
-			alminfo->SV_health = buf4[1];
-			alminfo->e         = bGetSingle(&buf4[2]);
-			alminfo->t_oa      = bGetSingle(&buf4[6]);
-			alminfo->i_0       = bGetSingle(&buf4[10]);
-			alminfo->OMEGADOT  = bGetSingle(&buf4[14]);
-			alminfo->sqrt_A    = bGetSingle(&buf4[18]);
-			alminfo->OMEGA_0   = bGetSingle(&buf4[22]);
-			alminfo->omega     = bGetSingle(&buf4[26]);
-			alminfo->M_0       = bGetSingle(&buf4[30]);
-			alminfo->a_f0      = bGetSingle(&buf4[34]);
-			alminfo->a_f1      = bGetSingle(&buf4[38]);
-			alminfo->Axis      = bGetSingle(&buf4[42]);
-			alminfo->n         = bGetSingle(&buf4[46]);
-			alminfo->OMEGA_n   = bGetSingle(&buf4[50]);
-			alminfo->ODOT_n    = bGetSingle(&buf4[54]);
-			alminfo->t_zc      = bGetSingle(&buf4[58]);
-			alminfo->weeknum   = bGetShort(&buf4[62]);
-			alminfo->wn_oa     = bGetShort(&buf4[64]);
+			alminfo->t_oa_raw  = buf4[0U];
+			alminfo->SV_health = buf4[1U];
+			alminfo->e         = bGetSingle(&buf4[2U]);
+			alminfo->t_oa      = bGetSingle(&buf4[6U]);
+			alminfo->i_0       = bGetSingle(&buf4[10U]);
+			alminfo->OMEGADOT  = bGetSingle(&buf4[14U]);
+			alminfo->sqrt_A    = bGetSingle(&buf4[18U]);
+			alminfo->OMEGA_0   = bGetSingle(&buf4[22U]);
+			alminfo->omega     = bGetSingle(&buf4[26U]);
+			alminfo->M_0       = bGetSingle(&buf4[30U]);
+			alminfo->a_f0      = bGetSingle(&buf4[34U]);
+			alminfo->a_f1      = bGetSingle(&buf4[38U]);
+			alminfo->Axis      = bGetSingle(&buf4[42U]);
+			alminfo->n         = bGetSingle(&buf4[46U]);
+			alminfo->OMEGA_n   = bGetSingle(&buf4[50U]);
+			alminfo->ODOT_n    = bGetSingle(&buf4[54U]);
+			alminfo->t_zc      = bGetSingle(&buf4[58U]);
+			alminfo->weeknum   = bGetShort(&buf4[62U]);
+			alminfo->wn_oa     = bGetShort(&buf4[64U]);
 			break;
 
 		    case 3:
@@ -2503,28 +2503,28 @@ rpt_0x58(
 			/* Ionosphere */
 			if (*data_length != sizeof (ION_INFO) + 8) return TRUE;
 			ioninfo = (ION_INFO*)data_packet;
-			ioninfo->alpha_0   = bGetSingle (&buf4[8]);
-			ioninfo->alpha_1   = bGetSingle (&buf4[12]);
-			ioninfo->alpha_2   = bGetSingle (&buf4[16]);
-			ioninfo->alpha_3   = bGetSingle (&buf4[20]);
-			ioninfo->beta_0    = bGetSingle (&buf4[24]);
-			ioninfo->beta_1    = bGetSingle (&buf4[28]);
-			ioninfo->beta_2    = bGetSingle (&buf4[32]);
-			ioninfo->beta_3    = bGetSingle (&buf4[36]);
+			ioninfo->alpha_0   = bGetSingle (&buf4[8U]);
+			ioninfo->alpha_1   = bGetSingle (&buf4[12U]);
+			ioninfo->alpha_2   = bGetSingle (&buf4[16U]);
+			ioninfo->alpha_3   = bGetSingle (&buf4[20U]);
+			ioninfo->beta_0    = bGetSingle (&buf4[24U]);
+			ioninfo->beta_1    = bGetSingle (&buf4[28U]);
+			ioninfo->beta_2    = bGetSingle (&buf4[32U]);
+			ioninfo->beta_3    = bGetSingle (&buf4[36U]);
 			break;
 
 		    case 5:
 			/* UTC */
 			if (*data_length != sizeof (UTC_INFO) + 13) return TRUE;
 			utcinfo = (UTC_INFO*)data_packet;
-			utcinfo->A_0       = bGetDouble (&buf4[13]);
-			utcinfo->A_1       = bGetSingle (&buf4[21]);
-			utcinfo->delta_t_LS = bGetShort (&buf4[25]);
-			utcinfo->t_ot      = bGetSingle(&buf4[27]);
-			utcinfo->WN_t      = bGetShort (&buf4[31]);
-			utcinfo->WN_LSF    = bGetShort (&buf4[33]);
-			utcinfo->DN        = bGetShort (&buf4[35]);
-			utcinfo->delta_t_LSF = bGetShort (&buf4[37]);
+			utcinfo->A_0       = bGetDouble (&buf4[13U]);
+			utcinfo->A_1       = bGetSingle (&buf4[21U]);
+			utcinfo->delta_t_LS = bGetShort (&buf4[25U]);
+			utcinfo->t_ot      = bGetSingle(&buf4[27U]);
+			utcinfo->WN_t      = bGetShort (&buf4[31U]);
+			utcinfo->WN_LSF    = bGetShort (&buf4[33U]);
+			utcinfo->DN        = bGetShort (&buf4[35U]);
+			utcinfo->delta_t_LSF = bGetShort (&buf4[37U]);
 			break;
 
 		    case 6:
@@ -2533,45 +2533,45 @@ rpt_0x58(
 
 			navinfo = (NAV_INFO*)data_packet;
 
-			navinfo->sv_number = buf4[0];
-			navinfo->t_ephem = bGetSingle (&buf4[1]);
-			navinfo->ephclk.weeknum = bGetShort (&buf4[5]);
+			navinfo->sv_number = buf4[0U];
+			navinfo->t_ephem = bGetSingle (&buf4[1U]);
+			navinfo->ephclk.weeknum = bGetShort (&buf4[5U]);
 
-			navinfo->ephclk.codeL2 = buf4[7];
-			navinfo->ephclk.L2Pdata = buf4[8];
-			navinfo->ephclk.SVacc_raw = buf4[9];
-			navinfo->ephclk.SV_health = buf4[10];
-			navinfo->ephclk.IODC = bGetShort (&buf4[11]);
-			navinfo->ephclk.T_GD = bGetSingle (&buf4[13]);
-			navinfo->ephclk.t_oc = bGetSingle (&buf4[17]);
-			navinfo->ephclk.a_f2 = bGetSingle (&buf4[21]);
-			navinfo->ephclk.a_f1 = bGetSingle (&buf4[25]);
-			navinfo->ephclk.a_f0 = bGetSingle (&buf4[29]);
-			navinfo->ephclk.SVacc = bGetSingle (&buf4[33]);
+			navinfo->ephclk.codeL2 = buf4[7U];
+			navinfo->ephclk.L2Pdata = buf4[8U];
+			navinfo->ephclk.SVacc_raw = buf4[9U];
+			navinfo->ephclk.SV_health = buf4[10U];
+			navinfo->ephclk.IODC = bGetShort (&buf4[11U]);
+			navinfo->ephclk.T_GD = bGetSingle (&buf4[13U]);
+			navinfo->ephclk.t_oc = bGetSingle (&buf4[17U]);
+			navinfo->ephclk.a_f2 = bGetSingle (&buf4[21U]);
+			navinfo->ephclk.a_f1 = bGetSingle (&buf4[25U]);
+			navinfo->ephclk.a_f0 = bGetSingle (&buf4[29U]);
+			navinfo->ephclk.SVacc = bGetSingle (&buf4[33U]);
 
-			navinfo->ephorb.IODE = buf4[37];
-			navinfo->ephorb.fit_interval = buf4[38];
-			navinfo->ephorb.C_rs = bGetSingle (&buf4[39]);
-			navinfo->ephorb.delta_n = bGetSingle (&buf4[43]);
-			navinfo->ephorb.M_0 = bGetDouble (&buf4[47]);
-			navinfo->ephorb.C_uc = bGetSingle (&buf4[55]);
-			navinfo->ephorb.e = bGetDouble (&buf4[59]);
-			navinfo->ephorb.C_us = bGetSingle (&buf4[67]);
-			navinfo->ephorb.sqrt_A = bGetDouble (&buf4[71]);
-			navinfo->ephorb.t_oe = bGetSingle (&buf4[79]);
-			navinfo->ephorb.C_ic = bGetSingle (&buf4[83]);
-			navinfo->ephorb.OMEGA_0 = bGetDouble (&buf4[87]);
-			navinfo->ephorb.C_is = bGetSingle (&buf4[95]);
-			navinfo->ephorb.i_0 = bGetDouble (&buf4[99]);
-			navinfo->ephorb.C_rc = bGetSingle (&buf4[107]);
-			navinfo->ephorb.omega = bGetDouble (&buf4[111]);
-			navinfo->ephorb.OMEGADOT=bGetSingle (&buf4[119]);
-			navinfo->ephorb.IDOT = bGetSingle (&buf4[123]);
-			navinfo->ephorb.Axis = bGetDouble (&buf4[127]);
-			navinfo->ephorb.n = bGetDouble (&buf4[135]);
-			navinfo->ephorb.r1me2 = bGetDouble (&buf4[143]);
-			navinfo->ephorb.OMEGA_n=bGetDouble (&buf4[151]);
-			navinfo->ephorb.ODOT_n = bGetDouble (&buf4[159]);
+			navinfo->ephorb.IODE = buf4[37U];
+			navinfo->ephorb.fit_interval = buf4[38U];
+			navinfo->ephorb.C_rs = bGetSingle (&buf4[39U]);
+			navinfo->ephorb.delta_n = bGetSingle (&buf4[43U]);
+			navinfo->ephorb.M_0 = bGetDouble (&buf4[47U]);
+			navinfo->ephorb.C_uc = bGetSingle (&buf4[55U]);
+			navinfo->ephorb.e = bGetDouble (&buf4[59U]);
+			navinfo->ephorb.C_us = bGetSingle (&buf4[67U]);
+			navinfo->ephorb.sqrt_A = bGetDouble (&buf4[71U]);
+			navinfo->ephorb.t_oe = bGetSingle (&buf4[79U]);
+			navinfo->ephorb.C_ic = bGetSingle (&buf4[83U]);
+			navinfo->ephorb.OMEGA_0 = bGetDouble (&buf4[87U]);
+			navinfo->ephorb.C_is = bGetSingle (&buf4[95U]);
+			navinfo->ephorb.i_0 = bGetDouble (&buf4[99U]);
+			navinfo->ephorb.C_rc = bGetSingle (&buf4[107U]);
+			navinfo->ephorb.omega = bGetDouble (&buf4[111U]);
+			navinfo->ephorb.OMEGADOT=bGetSingle (&buf4[119U]);
+			navinfo->ephorb.IDOT = bGetSingle (&buf4[123U]);
+			navinfo->ephorb.Axis = bGetDouble (&buf4[127U]);
+			navinfo->ephorb.n = bGetDouble (&buf4[135U]);
+			navinfo->ephorb.r1me2 = bGetDouble (&buf4[143U]);
+			navinfo->ephorb.OMEGA_n=bGetDouble (&buf4[151U]);
+			navinfo->ephorb.ODOT_n = bGetDouble (&buf4[159U]);
 			break;
 		}
 	}
@@ -2591,7 +2591,7 @@ rpt_0x59(
 	buf = rpt->buf;
 	
 	if (rpt->len != 33) return TRUE;
-	*code_type = buf[0];
+	*code_type = buf[0U];
 	for (iprn = 0; iprn < 32; iprn++)
 		status_code[iprn] = buf[iprn + 1];
 	return FALSE;
@@ -2613,12 +2613,12 @@ rpt_0x5A(
 	buf = rpt->buf;
 
 	if (rpt->len != 25) return TRUE;
-	*sv_prn = buf[0];
-	*sample_length = bGetSingle (&buf[1]);
-	*signal_level = bGetSingle (&buf[5]);
-	*code_phase = bGetSingle (&buf[9]);
-	*Doppler = bGetSingle (&buf[13]);
-	*time_of_fix = bGetDouble (&buf[17]);
+	*sv_prn = buf[0U];
+	*sample_length = bGetSingle (&buf[1U]);
+	*signal_level = bGetSingle (&buf[5U]);
+	*code_phase = bGetSingle (&buf[9U]);
+	*Doppler = bGetSingle (&buf[13U]);
+	*time_of_fix = bGetDouble (&buf[17U]);
 	return FALSE;
 }
 
@@ -2639,13 +2639,13 @@ rpt_0x5B(
 	buf = rpt->buf;
 	
 	if (rpt->len != 16) return TRUE;
-	*sv_prn = buf[0];
-	*time_of_collection = bGetSingle (&buf[1]);
-	*sv_health = buf[5];
-	*sv_iode = buf[6];
-	*time_of_eph = bGetSingle (&buf[7]);
-	*fit_interval_flag = buf[11];
-	*sv_accy = bGetSingle (&buf[12]);
+	*sv_prn = buf[0U];
+	*time_of_collection = bGetSingle (&buf[1U]);
+	*sv_health = buf[5U];
+	*sv_iode = buf[6U];
+	*time_of_eph = bGetSingle (&buf[7U]);
+	*fit_interval_flag = buf[11U];
+	*sv_accy = bGetSingle (&buf[12U]);
 	return FALSE;
 }
 
@@ -2672,21 +2672,21 @@ rpt_0x5C(
 	buf = rpt->buf;
 	
 	if (rpt->len != 24) return TRUE;
-	*sv_prn = buf[0];
-	*slot = (unsigned char)((buf[1] & 0x07) + 1);
-	*chan = (unsigned char)(buf[1] >> 3);
+	*sv_prn = buf[0U];
+	*slot = (unsigned char)((buf[1U] & 0x07) + 1);
+	*chan = (unsigned char)(buf[1U] >> 3);
 	if (*chan == 0x10) *chan = 2;
 	else (*chan)++;
-	*acq_flag = buf[2];
-	*eph_flag = buf[3];
-	*signal_level = bGetSingle (&buf[4]);
-	*time_of_last_msmt = bGetSingle (&buf[8]);
-	*elev = bGetSingle (&buf[12]);
-	*azim = bGetSingle (&buf[16]);
-	*old_msmt_flag = buf[20];
-	*integer_msec_flag = buf[21];
-	*bad_data_flag = buf[22];
-	*data_collect_flag = buf[23];
+	*acq_flag = buf[2U];
+	*eph_flag = buf[3U];
+	*signal_level = bGetSingle (&buf[4U]);
+	*time_of_last_msmt = bGetSingle (&buf[8U]);
+	*elev = bGetSingle (&buf[12U]);
+	*azim = bGetSingle (&buf[16U]);
+	*old_msmt_flag = buf[20U];
+	*integer_msec_flag = buf[21U];
+	*bad_data_flag = buf[22U];
+	*data_collect_flag = buf[23U];
 	return FALSE;
 }
 
@@ -2709,16 +2709,16 @@ rpt_0x6D(
 	unsigned char *buf;
 	buf = rpt->buf;
 
-	*nsvs = (unsigned char)((buf[0] & 0xF0) >> 4);
+	*nsvs = (unsigned char)((buf[0U] & 0xF0) >> 4);
 	if ((*nsvs)>8) return TRUE;
 	if (rpt->len != 17 + (*nsvs) ) return TRUE;
 
-	*manual_mode = (unsigned char)(buf[0] & 0x08);
-	*ndim  = (unsigned char)((buf[0] & 0x07));
-	*pdop = bGetSingle (&buf[1]);
-	*hdop = bGetSingle (&buf[5]);
-	*vdop = bGetSingle (&buf[9]);
-	*tdop = bGetSingle (&buf[13]);
+	*manual_mode = (unsigned char)(buf[0U] & 0x08);
+	*ndim  = (unsigned char)((buf[0U] & 0x07));
+	*pdop = bGetSingle (&buf[1U]);
+	*hdop = bGetSingle (&buf[5U]);
+	*vdop = bGetSingle (&buf[9U]);
+	*tdop = bGetSingle (&buf[13U]);
 	for (islot = 0; islot < (*nsvs); islot++)
 		sv_prn[islot] = buf[islot + 17];
 	return FALSE;
@@ -2736,7 +2736,7 @@ rpt_0x82(
 	buf = rpt->buf;
 
 	if (rpt->len != 1) return TRUE;
-	*diff_mode = buf[0];
+	*diff_mode = buf[0U];
 	return FALSE;
 }
 
@@ -2753,11 +2753,11 @@ rpt_0x83(
 	buf = rpt->buf;
 
 	if (rpt->len != 36) return TRUE;
-	ECEF_pos[0] = bGetDouble (buf);
-	ECEF_pos[1] = bGetDouble (&buf[8]);
-	ECEF_pos[2] = bGetDouble (&buf[16]);
-	*clock_bias  = bGetDouble (&buf[24]);
-	*time_of_fix = bGetSingle (&buf[32]);
+	ECEF_pos[0U] = bGetDouble (buf);
+	ECEF_pos[1U] = bGetDouble (&buf[8U]);
+	ECEF_pos[2U] = bGetDouble (&buf[16U]);
+	*clock_bias  = bGetDouble (&buf[24U]);
+	*time_of_fix = bGetSingle (&buf[32U]);
 	return FALSE;
 }
 
@@ -2777,10 +2777,10 @@ rpt_0x84(
 
 	if (rpt->len != 36) return TRUE;
 	*lat = bGetDouble (buf);
-	*lon = bGetDouble (&buf[8]);
-	*alt = bGetDouble (&buf[16]);
-	*clock_bias = bGetDouble (&buf[24]);
-	*time_of_fix = bGetSingle (&buf[32]);
+	*lon = bGetDouble (&buf[8U]);
+	*alt = bGetDouble (&buf[16U]);
+	*clock_bias = bGetDouble (&buf[24U]);
+	*time_of_fix = bGetSingle (&buf[32U]);
 	return FALSE;
 }
 
@@ -2797,13 +2797,13 @@ rpt_Paly0xBB(
 	/* if (rpt->len != 40) return TRUE; */
 	if (rpt->len != 43) return TRUE;
 
-	TsipxBB->bSubcode	=  buf[0];
-	TsipxBB->operating_mode	=  buf[1];
-	TsipxBB->dyn_code	=  buf[3];
-	TsipxBB->elev_mask	=  bGetSingle (&buf[5]);
-	TsipxBB->cno_mask	=  bGetSingle (&buf[9]);
-	TsipxBB->dop_mask 	=  bGetSingle (&buf[13]);
-	TsipxBB->dop_switch 	=  bGetSingle (&buf[17]);
+	TsipxBB->bSubcode	=  buf[0U];
+	TsipxBB->operating_mode	=  buf[1U];
+	TsipxBB->dyn_code	=  buf[3U];
+	TsipxBB->elev_mask	=  bGetSingle (&buf[5U]);
+	TsipxBB->cno_mask	=  bGetSingle (&buf[9U]);
+	TsipxBB->dop_mask 	=  bGetSingle (&buf[13U]);
+	TsipxBB->dop_switch 	=  bGetSingle (&buf[17U]);
 	return FALSE;
 }
 
@@ -2827,16 +2827,16 @@ rpt_0xBC(
 	buf = rpt->buf;
 
 	if (rpt->len != 10) return TRUE;
-	*port_num = buf[0];
-	*in_baud = buf[1];
-	*out_baud = buf[2];
-	*data_bits = buf[3];
-	*parity = buf[4];
-	*stop_bits = buf[5];
-	*flow_control = buf[6];
-	*protocols_in = buf[7];
-	*protocols_out = buf[8];
-	*reserved = buf[9];
+	*port_num = buf[0U];
+	*in_baud = buf[1U];
+	*out_baud = buf[2U];
+	*data_bits = buf[3U];
+	*parity = buf[4U];
+	*stop_bits = buf[5U];
+	*flow_control = buf[6U];
+	*protocols_in = buf[7U];
+	*protocols_out = buf[8U];
+	*reserved = buf[9U];
 
 	return FALSE;
 }
@@ -2868,20 +2868,20 @@ rpt_0x8F0B(
 
 	buf = rpt->buf;
 	if (rpt->len != 74) return TRUE;
-	*event = bGetShort(&buf[1]);
-	*tow = bGetDouble(&buf[3]);
-	*date = buf[11];
-	*month = buf[12];
-	*year = bGetShort(&buf[13]);
-	*dim_mode = buf[15];
-	*utc_offset = bGetShort(&buf[16]);
-	*bias = bGetDouble(&buf[18]);
-	*drift = bGetDouble(&buf[26]);
-	*bias_unc = bGetSingle(&buf[34]);
-	*dr_unc = bGetSingle(&buf[38]);
-	*lat = bGetDouble(&buf[42]);
-	*lon = bGetDouble(&buf[50]);
-	*alt = bGetDouble(&buf[58]);
+	*event = bGetShort(&buf[1U]);
+	*tow = bGetDouble(&buf[3U]);
+	*date = buf[11U];
+	*month = buf[12U];
+	*year = bGetShort(&buf[13U]);
+	*dim_mode = buf[15U];
+	*utc_offset = bGetShort(&buf[16U]);
+	*bias = bGetDouble(&buf[18U]);
+	*drift = bGetDouble(&buf[26U]);
+	*bias_unc = bGetSingle(&buf[34U]);
+	*dr_unc = bGetSingle(&buf[38U]);
+	*lat = bGetDouble(&buf[42U]);
+	*lon = bGetDouble(&buf[50U]);
+	*alt = bGetDouble(&buf[58U]);
 
 	for (local_index=0; local_index<8; local_index++) sv_id[local_index] = buf[local_index + 66];
 	return FALSE;
@@ -2899,12 +2899,12 @@ rpt_0x8F14(
 	buf = rpt->buf;
 
 	if (rpt->len != 43) return TRUE;
-	*datum_idx = bGetShort(&buf[1]);
-	datum_coeffs[0] = bGetDouble (&buf[3]);
-	datum_coeffs[1] = bGetDouble (&buf[11]);
-	datum_coeffs[2] = bGetDouble (&buf[19]);
-	datum_coeffs[3] = bGetDouble (&buf[27]);
-	datum_coeffs[4] = bGetDouble (&buf[35]);
+	*datum_idx = bGetShort(&buf[1U]);
+	datum_coeffs[0U] = bGetDouble (&buf[3U]);
+	datum_coeffs[1U] = bGetDouble (&buf[11U]);
+	datum_coeffs[2U] = bGetDouble (&buf[19U]);
+	datum_coeffs[3U] = bGetDouble (&buf[27U]);
+	datum_coeffs[4U] = bGetDouble (&buf[35U]);
 	return FALSE;
 }
 
@@ -2921,12 +2921,12 @@ rpt_0x8F15(
 	buf = rpt->buf;
 
 	if (rpt->len != 43) return TRUE;
-	*datum_idx = bGetShort(&buf[1]);
-	datum_coeffs[0] = bGetDouble (&buf[3]);
-	datum_coeffs[1] = bGetDouble (&buf[11]);
-	datum_coeffs[2] = bGetDouble (&buf[19]);
-	datum_coeffs[3] = bGetDouble (&buf[27]);
-	datum_coeffs[4] = bGetDouble (&buf[35]);
+	*datum_idx = bGetShort(&buf[1U]);
+	datum_coeffs[0U] = bGetDouble (&buf[3U]);
+	datum_coeffs[1U] = bGetDouble (&buf[11U]);
+	datum_coeffs[2U] = bGetDouble (&buf[19U]);
+	datum_coeffs[3U] = bGetDouble (&buf[27U]);
+	datum_coeffs[4U] = bGetDouble (&buf[35U]);
 	return FALSE;
 }
 
@@ -2964,10 +2964,10 @@ rpt_0x8F20(
 
 	if (rpt->len != 56) return TRUE;
 
-	vel_scale = (buf[24]&1)? 0.020 : 0.005;
-	vel_enu[0] = bGetShort (buf+2)*vel_scale;
-	vel_enu[1] = bGetShort (buf+4)*vel_scale;
-	vel_enu[2] = bGetShort (buf+6)*vel_scale;
+	vel_scale = (buf[24U]&1)? 0.020 : 0.005;
+	vel_enu[0U] = bGetShort (buf+2)*vel_scale;
+	vel_enu[1U] = bGetShort (buf+4)*vel_scale;
+	vel_enu[2U] = bGetShort (buf+6)*vel_scale;
 
 	*time_of_fix = bGetULong (buf+8)*.001;
 
@@ -2980,10 +2980,10 @@ rpt_0x8F20(
 
 	*alt = bGetLong (buf+20)*.001;
 	/* 25 blank; 29 = UTC */
-	(*datum_index) = (short)((short)buf[26]-1);
-	*info = buf[27];
-	*nsvs = buf[28];
-	*week_num = bGetShort (&buf[30]);
+	(*datum_index) = (short)((short)buf[26U]-1);
+	*info = buf[27U];
+	*nsvs = buf[28U];
+	*week_num = bGetShort (&buf[30U]);
 	for (isv = 0; isv < 8; isv++) {
 		prnx = buf[32+2*isv];
 		sv_prn[isv] = (unsigned char)(prnx&0x3F);
@@ -3008,15 +3008,15 @@ rpt_0x8F41(
 	   )
 {
 	if (rpt->len != 17) return FALSE;
-	*bSearchRange = rpt->buf[1];
-	*bBoardOptions = rpt->buf[2];
-	*iiSerialNumber = bGetLong(&rpt->buf[3]);
-	*bBuildYear = rpt->buf[7];
-	*bBuildMonth = rpt->buf[8];
-	*bBuildDay = rpt->buf[9];
-	*bBuildHour =	rpt->buf[10];
-	*fOscOffset = bGetSingle(&rpt->buf[11]);
-	*iTestCodeId = bGetShort(&rpt->buf[15]);
+	*bSearchRange = rpt->buf[1U];
+	*bBoardOptions = rpt->buf[2U];
+	*iiSerialNumber = bGetLong(&rpt->buf[3U]);
+	*bBuildYear = rpt->buf[7U];
+	*bBuildMonth = rpt->buf[8U];
+	*bBuildDay = rpt->buf[9U];
+	*bBuildHour =	rpt->buf[10U];
+	*fOscOffset = bGetSingle(&rpt->buf[11U]);
+	*iTestCodeId = bGetShort(&rpt->buf[15U]);
 /*	Tsipx8E41Data = *Tsipx8E41; */
 	return TRUE;
 }
@@ -3035,14 +3035,14 @@ rpt_0x8F42(
 	   )
 {
 	if (rpt->len != 19) return FALSE;
-	*bProdOptionsPre = rpt->buf[1];
-	*bProdNumberExt = rpt->buf[2];
-	*iCaseSerialNumberPre = bGetShort(&rpt->buf[3]);
-	*iiCaseSerialNumber = bGetLong(&rpt->buf[5]);
-	*iiProdNumber = bGetLong(&rpt->buf[9]);
-	*iPremiumOptions = bGetShort(&rpt->buf[13]);
-	*iMachineID = bGetShort(&rpt->buf[15]);
-	*iKey = bGetShort(&rpt->buf[17]);
+	*bProdOptionsPre = rpt->buf[1U];
+	*bProdNumberExt = rpt->buf[2U];
+	*iCaseSerialNumberPre = bGetShort(&rpt->buf[3U]);
+	*iiCaseSerialNumber = bGetLong(&rpt->buf[5U]);
+	*iiProdNumber = bGetLong(&rpt->buf[9U]);
+	*iPremiumOptions = bGetShort(&rpt->buf[13U]);
+	*iMachineID = bGetShort(&rpt->buf[15U]);
+	*iKey = bGetShort(&rpt->buf[17U]);
 	return TRUE;
 }
 
@@ -3053,7 +3053,7 @@ rpt_0x8F45(
 	   )
 {
 	if (rpt->len != 2) return FALSE;
-	*bSegMask = rpt->buf[1];
+	*bSegMask = rpt->buf[1U];
 	return TRUE;
 }
 
@@ -3073,11 +3073,11 @@ rpt_0x8F4A_16(
 
 	buf = rpt->buf;
 	if (rpt->len != 16) return TRUE;
-	*pps_enabled = buf[1];
-	*pps_timebase = buf[2];
-	*pos_polarity = buf[3];
-	*pps_offset = bGetDouble(&buf[4]);
-	*bias_unc_threshold = bGetSingle(&buf[12]);
+	*pps_enabled = buf[1U];
+	*pps_timebase = buf[2U];
+	*pos_polarity = buf[3U];
+	*pps_offset = bGetDouble(&buf[4U]);
+	*bias_unc_threshold = bGetSingle(&buf[12U]);
 	return FALSE;
 }
 
@@ -3092,7 +3092,7 @@ rpt_0x8F4B(
 
 	buf = rpt->buf;
 	if (rpt->len != 5) return TRUE;
-	*decorr_max = bGetLong(&buf[1]);
+	*decorr_max = bGetLong(&buf[1U]);
 	return FALSE;
 }
 
@@ -3107,7 +3107,7 @@ rpt_0x8F4D(
 
 	buf = rpt->buf;
 	if (rpt->len != 5) return TRUE;
-	*event_mask = bGetULong (&buf[1]);
+	*event_mask = bGetULong (&buf[1U]);
 	return FALSE;
 }
 
@@ -3122,10 +3122,10 @@ rpt_0x8FA5(
 
 	buf = rpt->buf;
 	if (rpt->len != 5) return TRUE;
-	spktmask[0] = buf[1];
-	spktmask[1] = buf[2];
-	spktmask[2] = buf[3];
-	spktmask[3] = buf[4];
+	spktmask[0U] = buf[1U];
+	spktmask[1U] = buf[2U];
+	spktmask[2U] = buf[3U];
+	spktmask[3U] = buf[4U];
 	return FALSE;
 }
 
@@ -3146,16 +3146,16 @@ rpt_0x8FAD(
 {
 	if (rpt->len != 22) return TRUE;
 
-	*COUNT = bGetUShort(&rpt->buf[1]);
-	*FracSec = bGetDouble(&rpt->buf[3]);
-	*Hour = rpt->buf[11];
-	*Minute = rpt->buf[12];
-	*Second = rpt->buf[13];
-	*Day = rpt->buf[14];
-	*Month = rpt->buf[15];
-	*Year = bGetUShort(&rpt->buf[16]);
-	*Status = rpt->buf[18];
-	*Flags = rpt->buf[19];
+	*COUNT = bGetUShort(&rpt->buf[1U]);
+	*FracSec = bGetDouble(&rpt->buf[3U]);
+	*Hour = rpt->buf[11U];
+	*Minute = rpt->buf[12U];
+	*Second = rpt->buf[13U];
+	*Day = rpt->buf[14U];
+	*Month = rpt->buf[15U];
+	*Year = bGetUShort(&rpt->buf[16U]);
+	*Status = rpt->buf[18U];
+	*Flags = rpt->buf[19U];
 	return FALSE;
 }
 
@@ -3370,7 +3370,7 @@ rpt_single_ECEF_position(
 			 )
 {
 	float
-	    ECEF_pos[3], time_of_fix;
+	    ECEF_pos[3U], time_of_fix;
 
 	/* unload rptbuf */
 	if (rpt_0x42 (rpt, ECEF_pos, &time_of_fix)) {
@@ -3379,7 +3379,7 @@ rpt_single_ECEF_position(
 	}
 
 	pbuf += sprintf(pbuf, "\nSXYZ:  %15.0f  %15.0f  %15.0f    %s",
-			ECEF_pos[0], ECEF_pos[1], ECEF_pos[2],
+			ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2],
 			show_time(time_of_fix));
 }
 
@@ -3391,7 +3391,7 @@ rpt_single_ECEF_velocity(
 {
 
 	float
-	    ECEF_vel[3], freq_offset, time_of_fix;
+	    ECEF_vel[3U], freq_offset, time_of_fix;
 
 	/* unload rptbuf */
 	if (rpt_0x43 (rpt, ECEF_vel, &freq_offset, &time_of_fix)) {
@@ -3400,7 +3400,7 @@ rpt_single_ECEF_velocity(
 	}
 
 	pbuf += sprintf(pbuf, "\nVelECEF: %11.3f  %11.3f  %11.3f  %12.3f%s",
-			ECEF_vel[0], ECEF_vel[1], ECEF_vel[2], freq_offset,
+			ECEF_vel[0U], ECEF_vel[1], ECEF_vel[2], freq_offset,
 			show_time(time_of_fix));
 }
 
@@ -3489,7 +3489,7 @@ rpt_SNR_all_SVs(
 	short
 	    isv;
 	float
-	    snr[12];
+	    snr[12U];
 
 	/* unload rptbuf */
 	if (rpt_0x47 (rpt, &nsvs, sv_prn, snr))
@@ -3513,7 +3513,7 @@ rpt_GPS_system_message(
 		       )
 {
 	unsigned char
-	    message[23];
+	    message[23U];
 
 	/* unload rptbuf */
 	if (rpt_0x48 (rpt, message))
@@ -3534,7 +3534,7 @@ rpt_almanac_health_page(
 	short
 	    iprn;
 	unsigned char
-	    sv_health [32];
+	    sv_health [32U];
 
 	/* unload rptbuf */
 	if (rpt_0x49 (rpt, sv_health))
@@ -3877,7 +3877,7 @@ rpt_ENU_velocity(
 		 )
 {
 	float
-	    vel_ENU[3], freq_offset, time_of_fix;
+	    vel_ENU[3U], freq_offset, time_of_fix;
 
 	/* unload rptbuf */
 	if (rpt_0x56 (rpt, vel_ENU, &freq_offset, &time_of_fix)) {
@@ -3886,7 +3886,7 @@ rpt_ENU_velocity(
 	}
 
 	pbuf += sprintf(pbuf, "\nVel ENU: %11.3f  %11.3f  %11.3f  %12.3f%s",
-			vel_ENU[0], vel_ENU[1], vel_ENU[2], freq_offset,
+			vel_ENU[0U], vel_ENU[1], vel_ENU[2], freq_offset,
 			show_time (time_of_fix));
 }
 
@@ -4006,8 +4006,8 @@ rpt_GPS_system_data(
 				pbuf += sprintf(pbuf, "    SV%02d  %2X",
 						(iprn+1) , almh->SV_health[iprn]);
 			}
-			curr_t_oa = data_packet[34];
-			curr_wn_oa = (unsigned short)((data_packet[35]<<8) + data_packet[36]);
+			curr_t_oa = data_packet[34U];
+			curr_wn_oa = (unsigned short)((data_packet[35U]<<8) + data_packet[36U]);
 			pbuf += sprintf(pbuf, "\n   current t_oa = %d, wn_oa = %d  ",
 					curr_t_oa, curr_wn_oa);
 			break;
@@ -4100,7 +4100,7 @@ rpt_SVs_enabled(
 	unsigned char
 	    numsvs,
 	    code_type,
-	    status_code[32];
+	    status_code[32U];
 	short
 	    iprn;
 
@@ -4297,7 +4297,7 @@ rpt_double_ECEF_position(
 			 )
 {
 	double
-	    ECEF_pos[3], clock_bias;
+	    ECEF_pos[3U], clock_bias;
 	float
 	    time_of_fix;
 
@@ -4309,7 +4309,7 @@ rpt_double_ECEF_position(
 	}
 
 	pbuf += sprintf(pbuf, "\nDXYZ:%12.2f  %13.2f  %13.2f %12.2f%s",
-			ECEF_pos[0], ECEF_pos[1], ECEF_pos[2], clock_bias,
+			ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2], clock_bias,
 			show_time(time_of_fix));
 }
 
@@ -4424,7 +4424,7 @@ rpt_rcvr_serial_port_config(
 	known = FALSE;
 	if (protocols_in&B_TSIP)
 	{
-		pbuf += sprintf(pbuf, "%s ", protocols_in_text[1]);
+		pbuf += sprintf(pbuf, "%s ", protocols_in_text[1U]);
 		known = TRUE;
 	}
 	if (known == FALSE) pbuf += sprintf(pbuf, "No known");
@@ -4433,12 +4433,12 @@ rpt_rcvr_serial_port_config(
 	known = FALSE;
 	if (protocols_out&B_TSIP)
 	{
-		pbuf += sprintf(pbuf, "%s ", protocols_out_text[1]);
+		pbuf += sprintf(pbuf, "%s ", protocols_out_text[1U]);
 		known = TRUE;
 	}
 	if (protocols_out&B_NMEA)
 	{
-		pbuf += sprintf(pbuf, "%s ", protocols_out_text[2]);
+		pbuf += sprintf(pbuf, "%s ", protocols_out_text[2U]);
 		known = TRUE;
 	}
 	if (known == FALSE) pbuf += sprintf(pbuf, "No known");
@@ -4454,7 +4454,7 @@ rpt_8F0B(
 	 )
 {
 	const char
-	    *oprtng_dim[7] = {
+	    *oprtng_dim[7U] = {
 		"horizontal (2-D)",
 		"full position (3-D)",
 		"single satellite (0-D)",
@@ -4463,7 +4463,7 @@ rpt_8F0B(
 		"N/A",
 		"overdetermined clock"};
 	char
-	    sv_id[8];
+	    sv_id[8U];
 	unsigned char
 	    month,
 	    date,
@@ -4603,7 +4603,7 @@ rpt_8F14(
 	 )
 {
 	double
-	    datum_coeffs[5];
+	    datum_coeffs[5U];
 	short
 	    datum_idx;
 
@@ -4617,11 +4617,11 @@ rpt_8F14(
 	if (datum_idx == -1)
 	{
 		pbuf += sprintf(pbuf, "\nUser-Entered Datum:");
-		pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0]);
-		pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1]);
-		pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2]);
-		pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3]);
-		pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4]);
+		pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0U]);
+		pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1U]);
+		pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2U]);
+		pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3U]);
+		pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4U]);
 	}
 	else if (datum_idx == 0)
 	{
@@ -4641,7 +4641,7 @@ rpt_8F15(
 	 )
 {
 	double
-	    datum_coeffs[5];
+	    datum_coeffs[5U];
 	short
 	    datum_idx;
 
@@ -4654,11 +4654,11 @@ rpt_8F15(
 	if (datum_idx == -1)
 	{
 		pbuf += sprintf(pbuf, "\nUser-Entered Datum:");
-		pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0]);
-		pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1]);
-		pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2]);
-		pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3]);
-		pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4]);
+		pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0U]);
+		pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1U]);
+		pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2U]);
+		pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3U]);
+		pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4U]);
 	}
 	else if (datum_idx == 0)
 	{
@@ -4691,7 +4691,7 @@ rpt_8F20(
 	short
 	    isv;
 	char
-	    datum_string[20];
+	    datum_string[20U];
 
 	/* unload rptbuf */
 	if (rpt_0x8F20 (rpt,
@@ -4709,7 +4709,7 @@ rpt_8F20(
 			(short)fmod(time_of_fix/3600., 24.),
 			(short)fmod(time_of_fix/60., 60.),
 			fmod(time_of_fix, 60.),
-			(char)rpt->buf[29],		/* UTC offset */
+			(char)rpt->buf[29U],		/* UTC offset */
 			(info & INFO_DGPS)?"Diff":"",
 			(info & INFO_2D)?"2D":"3D",
 			(info & INFO_FILTERED)?"-Filtrd":"");
@@ -4740,7 +4740,7 @@ rpt_8F20(
 			datum_string);
 	pbuf += sprintf(pbuf,
 			"\n   Vel:    %9.3f E       %9.3f N      %9.3f U   (m/sec)",
-			vel[0], vel[1], vel[2]);
+			vel[0U], vel[1], vel[2]);
 
 	pbuf += sprintf(pbuf,
 			"\n   SVs: ");
@@ -4978,7 +4978,7 @@ rpt_8FA5(
 	 )
 {
 	unsigned char
-	    spktmask[4];
+	    spktmask[4U];
 
 	if (rpt_0x8FA5(rpt, spktmask))
 	{
@@ -4987,13 +4987,13 @@ rpt_8FA5(
 	}
 
 	pbuf += sprintf(pbuf, "\nSuperpacket auto-output mask: %02X %02X %02X %02X",
-			spktmask[0], spktmask[1], spktmask[2], spktmask[3]);
+			spktmask[0U], spktmask[1], spktmask[2], spktmask[3]);
 
-	if (spktmask[0]&0x01) pbuf+= sprintf (pbuf, "\n    PPS   8F-0B");
-	if (spktmask[0]&0x02) pbuf+= sprintf (pbuf, "\n    Event 8F-0B");
-	if (spktmask[0]&0x10) pbuf+= sprintf (pbuf, "\n    PPS   8F-AD");
-	if (spktmask[0]&0x20) pbuf+= sprintf (pbuf, "\n    Event 8F-AD");
-	if (spktmask[2]&0x01) pbuf+= sprintf (pbuf, "\n    ppos Fix 8F-20");
+	if (spktmask[0U]&0x01) pbuf+= sprintf (pbuf, "\n    PPS   8F-0B");
+	if (spktmask[0U]&0x02) pbuf+= sprintf (pbuf, "\n    Event 8F-0B");
+	if (spktmask[0U]&0x10) pbuf+= sprintf (pbuf, "\n    PPS   8F-AD");
+	if (spktmask[0U]&0x20) pbuf+= sprintf (pbuf, "\n    Event 8F-AD");
+	if (spktmask[2U]&0x01) pbuf+= sprintf (pbuf, "\n    ppos Fix 8F-20");
 }
 
 static void
@@ -5212,7 +5212,7 @@ TranslateTSIPReportToText(
 	    case 0xBB: rpt_complete_rcvr_config (rpt); break;
 	    case 0xBC: rpt_rcvr_serial_port_config (rpt); break;
 
-	    case 0x8F: switch (rpt->buf[0])
+	    case 0x8F: switch (rpt->buf[0U])
 		{
 			/* superpackets; parsed according to subcodes */
 		    case 0x0B: rpt_8F0B(rpt); break;

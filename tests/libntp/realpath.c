@@ -26,7 +26,7 @@ static int/*BOOL*/ isValidAbsPath(const char * path)
 {
 	int retv = FALSE;
 	/* this needs some elaboration: */
-	if (path && path[0] == '/') {
+	if (path && path[0U] == '/') {
 		struct stat sb;
 		if (0 == lstat(path, &sb)) {
 			retv = (sb.st_mode & S_IFMT) != S_IFLNK;

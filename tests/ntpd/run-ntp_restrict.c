@@ -62,7 +62,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("ntp_restrict.c");
   RUN_TEST(test_RestrictionsAreEmptyAfterInit, 63);

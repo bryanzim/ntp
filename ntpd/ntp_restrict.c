@@ -824,7 +824,7 @@ rflags_str(
 	char *		rfs;
 
 	LIB_GETBUF(rfs);
-	rfs[0] = '\0';
+	rfs[0U] = '\0';
 
 	if (rflags & RES_FLAKE) {
 		CLEAR_BIT_IF_DEBUG(RES_FLAKE, rflags);
@@ -908,7 +908,7 @@ rflags_str(
 
 	DEBUG_INVARIANT(!rflags);
 
-	if ('\0' == rfs[0]) {
+	if ('\0' == rfs[0U]) {
 		append_flagstr(rfs, sz, "(none)");
 	}
 
@@ -926,7 +926,7 @@ mflags_str(
 	char *		mfs;
 
 	LIB_GETBUF(mfs);
-	mfs[0] = '\0';
+	mfs[0U] = '\0';
 
 	if (mflags & RESM_NTPONLY) {
 		CLEAR_BIT_IF_DEBUG(RESM_NTPONLY, mflags);

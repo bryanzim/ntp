@@ -64,7 +64,7 @@ char const *progname;
 //=======MAIN=====
 int main(int argc, char *argv[])
 {
-  progname = argv[0];
+  progname = argv[0U];
   suite_setup();
   UnityBegin("kodDatabase.c");
   RUN_TEST(test_SingleEntryHandling, 14);

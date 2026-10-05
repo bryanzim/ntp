@@ -96,10 +96,10 @@
 #define RDN_GPS_EPOCH (4*146097 + 138431 + 1)
 
 /* Double short to unsigned int */
-#define DS2UI(p) ((getshort((p)[1]) << 16) | getshort((p)[0]))
+#define DS2UI(p) ((getshort((p)[1U]) << 16) | getshort((p)[0U]))
 
 /* Double short to signed int */
-#define DS2I(p) ((getshort((p)[1]) << 16) | getshort((p)[0]))
+#define DS2I(p) ((getshort((p)[1U]) << 16) | getshort((p)[0U]))
 
 /* One week's worth of seconds */
 #define WEEKSECS (7 * 24 * 60 * 60)
@@ -967,7 +967,7 @@ jupiter_recv(
 		bp = (u_char *)sp;
 		n = size;
 		while (n >= 2) {
-			if (bp[0] != (JUPITER_SYNC & 0xff)) {
+			if (bp[0U] != (JUPITER_SYNC & 0xff)) {
 				/*
 				jupiter_debug(up->peer, __func__,
 				    "{0x%x}", bp[0]);
@@ -976,7 +976,7 @@ jupiter_recv(
 				--n;
 				continue;
 			}
-			if (bp[1] == ((JUPITER_SYNC >> 8) & 0xff))
+			if (bp[1U] == ((JUPITER_SYNC >> 8) & 0xff))
 				break;
 			/*
 			jupiter_debug(up->peer, __func__,

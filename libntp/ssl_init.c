@@ -134,7 +134,7 @@ keytype_from_text(
 	key_type = 0;
 #endif
 
-	if (!key_type && 'm' == tolower((unsigned char)text[0])) {
+	if (!key_type && 'm' == tolower((unsigned char)text[0U])) {
 		key_type = NID_md5;
 	}
 

@@ -669,7 +669,7 @@ addvars(
 	FILE *fp
 	)
 {
-	doaddvlist(g_varlist, pcmd->argval[0].string);
+	doaddvlist(g_varlist, pcmd->argval[0U].string);
 }
 
 
@@ -683,7 +683,7 @@ rmvars(
 	FILE *fp
 	)
 {
-	dormvlist(g_varlist, pcmd->argval[0].string);
+	dormvlist(g_varlist, pcmd->argval[0U].string);
 }
 
 
@@ -784,9 +784,9 @@ readlist(
 		associd = 0;
 	} else {
 	  /* HMS: I think we want the u_int32 target here, not the u_long */
-		if (pcmd->argval[0].uval == 0)
+		if (pcmd->argval[0U].uval == 0)
 			associd = 0;
-		else if ((associd = checkassocid(pcmd->argval[0].uval)) == 0)
+		else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
 			return;
 	}
 
@@ -816,9 +816,9 @@ writelist(
 		associd = 0;
 	} else {
 		/* HMS: Do we really want uval here? */
-		if (pcmd->argval[0].uval == 0)
+		if (pcmd->argval[0U].uval == 0)
 			associd = 0;
-		else if ((associd = checkassocid(pcmd->argval[0].uval)) == 0)
+		else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
 			return;
 	}
 
@@ -858,9 +858,9 @@ readvar(
 
 
 	/* HMS: uval? */
-	if (pcmd->nargs == 0 || pcmd->argval[0].uval == 0)
+	if (pcmd->nargs == 0 || pcmd->argval[0U].uval == 0)
 		associd = 0;
-	else if ((associd = checkassocid(pcmd->argval[0].uval)) == 0)
+	else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
 		return;
 
 	ZERO(tmplist);
@@ -897,13 +897,13 @@ writevar(
 	struct varlist tmplist[MAXLIST];
 
 	/* HMS: uval? */
-	if (pcmd->argval[0].uval == 0)
+	if (pcmd->argval[0U].uval == 0)
 		associd = 0;
-	else if ((associd = checkassocid(pcmd->argval[0].uval)) == 0)
+	else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
 		return;
 
 	ZERO(tmplist);
-	doaddvlist(tmplist, pcmd->argval[1].string);
+	doaddvlist(tmplist, pcmd->argval[1U].string);
 
 	res = doquerylist(tmplist, CTL_OP_WRITEVAR, associd, 1, &rstatus,
 			  &dsize, &datap);
@@ -943,9 +943,9 @@ clocklist(
 	if (pcmd->nargs == 0) {
 		associd = 0;
 	} else {
-		if (pcmd->argval[0].uval == 0)
+		if (pcmd->argval[0U].uval == 0)
 			associd = 0;
-		else if ((associd = checkassocid(pcmd->argval[0].uval)) == 0)
+		else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
 			return;
 	}
 
@@ -966,14 +966,14 @@ clockvar(
 	struct varlist tmplist[MAXLIST];
 
 	/* HMS: uval? */
-	if (pcmd->nargs == 0 || pcmd->argval[0].uval == 0)
+	if (pcmd->nargs == 0 || pcmd->argval[0U].uval == 0)
 		associd = 0;
-	else if ((associd = checkassocid(pcmd->argval[0].uval)) == 0)
+	else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
 		return;
 
 	ZERO(tmplist);
 	if (pcmd->nargs >= 2)
-		doaddvlist(tmplist, pcmd->argval[1].string);
+		doaddvlist(tmplist, pcmd->argval[1U].string);
 
 	dolist(tmplist, associd, CTL_OP_READCLOCK, TYPE_CLOCK, fp);
 
@@ -1002,11 +1002,11 @@ findassidrange(
 	if (0 == numassoc)
 		dogetassoc(fp);
 
-	assids[0] = checkassocid(assid1);
-	if (0 == assids[0])
+	assids[0U] = checkassocid(assid1);
+	if (0 == assids[0U])
 		return 0;
-	assids[1] = checkassocid(assid2);
-	if (0 == assids[1])
+	assids[1U] = checkassocid(assid2);
+	if (0 == assids[1U])
 		return 0;
 
 	for (a = 0; a < COUNTOF(assids); a++) {
@@ -1023,12 +1023,12 @@ findassidrange(
 			return 0;
 		}
 
-	if (ind[0] < ind[1]) {
-		*from = ind[0];
-		*to = ind[1];
+	if (ind[0U] < ind[1U]) {
+		*from = ind[0U];
+		*to = ind[1U];
 	} else {
-		*to = ind[0];
-		*from = ind[1];
+		*to = ind[0U];
+		*from = ind[1U];
 	}
 	return 1;
 }
@@ -1048,7 +1048,7 @@ mreadlist(
 	int from;
 	int to;
 
-	if (!findassidrange(pcmd->argval[0].uval, pcmd->argval[1].uval,
+	if (!findassidrange(pcmd->argval[0U].uval, pcmd->argval[1U].uval,
 			    &from, &to, fp))
 		return;
 
@@ -1078,13 +1078,13 @@ mreadvar(
 	struct varlist tmplist[MAXLIST];
 	struct varlist *pvars;
 
-	if (!findassidrange(pcmd->argval[0].uval, pcmd->argval[1].uval,
+	if (!findassidrange(pcmd->argval[0U].uval, pcmd->argval[1U].uval,
 				&from, &to, fp))
 		return;
 
 	ZERO(tmplist);
 	if (pcmd->nargs >= 3) {
-		doaddvlist(tmplist, pcmd->argval[2].string);
+		doaddvlist(tmplist, pcmd->argval[2U].string);
 		pvars = tmplist;
 	} else {
 		pvars = g_varlist;
@@ -1365,7 +1365,7 @@ printassoc(
 		bp = buf + strlen(buf);
 		while (bp > buf && ' ' == bp[-1])
 			--bp;
-		bp[0] = '\0';
+		bp[0U] = '\0';
 		xprintf(fp, "%s\n", buf);
 	}
 }
@@ -1447,8 +1447,8 @@ saveconfig(
 		return;
 
 	res = doquery(CTL_OP_SAVECONFIG, 0, 1,
-		      strlen(pcmd->argval[0].string),
-		      pcmd->argval[0].string, &rstatus, &dsize,
+		      strlen(pcmd->argval[0U].string),
+		      pcmd->argval[0U].string, &rstatus, &dsize,
 		      &datap);
 
 	if (res != 0)
@@ -1530,8 +1530,8 @@ prettyinterval(
 	)
 {
 	if (diff <= 0) {
-		buf[0] = '-';
-		buf[1] = 0;
+		buf[0U] = '-';
+		buf[1U] = 0;
 		return buf;
 	}
 
@@ -1721,7 +1721,7 @@ doprintpeers(
 	have_jitter = FALSE;
 	ZERO_SOCK(&srcadr);
 	ZERO_SOCK(&dstadr);
-	clock_name[0] = '\0';
+	clock_name[0U] = '\0';
 	ZERO(estoffset);
 	ZERO(estdelay);
 	ZERO(estjitter);
@@ -2300,7 +2300,7 @@ config (
 	int col;
 	int i;
 
-	cfgcmd = pcmd->argval[0].string;
+	cfgcmd = pcmd->argval[0U].string;
 
 	if (debug > 2)
 		xprintf(stderr,
@@ -2377,12 +2377,12 @@ config_from_file (
 			"In Config\n"
 			"Keyword = %s\n"
 			"Filename = %s\n", pcmd->keyword,
-			pcmd->argval[0].string);
+			pcmd->argval[0U].string);
 
-	config_fd = fopen(pcmd->argval[0].string, "r");
+	config_fd = fopen(pcmd->argval[0U].string, "r");
 	if (NULL == config_fd) {
 		printf("ERROR!! Couldn't open file: %s\n",
-		       pcmd->argval[0].string);
+		       pcmd->argval[0U].string);
 		return;
 	}
 
@@ -2738,7 +2738,7 @@ collect_mru_list(
 			if (debug > 1)
 				xprintf(stderr, "nextvar gave: %s = %s\n",
 					tag, val);
-			switch(tag[0]) {
+			switch(tag[0U]) {
 
 			case 'a':
 				if (!strcmp(tag, "addr.older")) {
@@ -2788,8 +2788,8 @@ collect_mru_list(
 
 			case 'l':
 				if (!strcmp(tag, "last.older")) {
-					if ('0' != val[0] ||
-					    'x' != val[1] ||
+					if ('0' != val[0U] ||
+					    'x' != val[1U] ||
 					    !hextolfp(val + 2, &last_older)) {
 						xprintf(stderr,
 							"last.older %s garbled\n",
@@ -2812,8 +2812,8 @@ collect_mru_list(
 					}
 					head = HEAD_DLIST(mru_list, mlink);
 					if (NULL != head) {
-						if ('0' != val[0] ||
-						    'x' != val[1] ||
+						if ('0' != val[0U] ||
+						    'x' != val[1U] ||
 						    !hextolfp(val + 2, &newest) ||
 						    !L_ISEQU(&newest,
 							     &head->last)) {
@@ -2827,8 +2827,8 @@ collect_mru_list(
 					}
 					list_complete = TRUE;
 				} else if (1 != sscanf(tag, "last.%d", &si) ||
-					   si != ci || '0' != val[0] ||
-					   'x' != val[1] ||
+					   si != ci || '0' != val[0U] ||
+					   'x' != val[1U] ||
 					   !hextolfp(val + 2, &mon->last)) {
 					goto nomatch;
 				} else {
@@ -2845,8 +2845,8 @@ collect_mru_list(
 
 			case 'f':
 				if (1 != sscanf(tag, "first.%d", &si) ||
-				    si != ci || '0' != val[0] ||
-				    'x' != val[1] ||
+				    si != ci || '0' != val[0U] ||
+				    'x' != val[1U] ||
 				    !hextolfp(val + 2, &mon->first))
 					goto nomatch;
 				MGOT(MRU_GOT_FIRST);
@@ -2858,8 +2858,8 @@ collect_mru_list(
 					nonce_uses = 0;
 					break; /* case */
 				} else if (strcmp(tag, "now") ||
-					   '0' != val[0] ||
-					   'x' != val[1] ||
+					   '0' != val[0U] ||
+					   'x' != val[1U] ||
 					    !hextolfp(val + 2, pnow))
 					goto nomatch;
 				have_now = TRUE;
@@ -3210,7 +3210,7 @@ mrulist(
 	fflush(stderr);
 
 	order = MRUSORT_DEF;
-	parms_buf[0] = '\0';
+	parms_buf[0U] = '\0';
 	parms = parms_buf;
 	for (i = 0; i < pcmd->nargs; i++) {
 		arg = pcmd->argval[i].string;
@@ -3245,7 +3245,7 @@ mrulist(
 				/* transform to resany=... */
 				snprintf(buf, sizeof(buf),
 					 ", resany=0x%x",
-					 ('k' == arg[0])
+					 ('k' == arg[0U])
 					     ? RES_KOD
 					     : RES_LIMITED);
 				cb = 1 + strlen(buf);
@@ -3296,7 +3296,7 @@ mrulist(
 
 	/* re-sort sorted[] if not default or reverse default */
 	if (MRUSORT_R_DEF < order)
-		qsort(sorted, mru_count, sizeof(sorted[0]),
+		qsort(sorted, mru_count, sizeof(sorted[0U]),
 		      mru_qcmp_table[order]);
 
 	mrulist_interrupted = FALSE;
@@ -3483,7 +3483,7 @@ ifstats(
 		if (debug > 1)
 		    xprintf(stderr, "nextvar gave: %s = %s\n", tag, val);
 		comprende = FALSE;
-		switch(tag[0]) {
+		switch(tag[0U]) {
 
 		case 'a':
 			if (1 == sscanf(tag, addr_fmt, &ui) &&
@@ -3696,7 +3696,7 @@ reslist(
 		if (debug > 1)
 			xprintf(stderr, "nextvar gave: %s = %s\n", tag, val);
 		comprende = FALSE;
-		switch(tag[0]) {
+		switch(tag[0U]) {
 
 		case 'a':
 			if (1 == sscanf(tag, addr_fmtu, &ui) &&
@@ -3707,7 +3707,7 @@ reslist(
 		case 'f':
 			if (1 == sscanf(tag, flags_fmt, &ui)) {
 				if (NULL == val) {
-					row.flagstr[0] = '\0';
+					row.flagstr[0U] = '\0';
 					comprende = TRUE;
 				} else if ((len = strlen(val)) < sizeof(row.flagstr)) {
 					memcpy(row.flagstr, val, len);
@@ -3715,7 +3715,7 @@ reslist(
 					comprende = TRUE;
 				} else {
 					 /* no flags, and still !comprende */
-					row.flagstr[0] = '\0';
+					row.flagstr[0U] = '\0';
 				}
 			}
 			break;
@@ -3829,7 +3829,7 @@ collect_display_vdc(
 
 		case NTP_STR:
 			/* strip surrounding double quotes */
-			if ('"' == val[0]) {
+			if ('"' == val[0U]) {
 				len = strlen(val);
 				if (len > 0 && '"' == val[len - 1]) {
 					val[len - 1] = '\0';
@@ -4164,7 +4164,7 @@ pstats(
     };
 	associd_t associd;
 
-	associd = checkassocid(pcmd->argval[0].uval);
+	associd = checkassocid(pcmd->argval[0U].uval);
 	if (0 == associd)
 		return;
 

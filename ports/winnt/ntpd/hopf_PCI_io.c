@@ -131,7 +131,7 @@ GetHardwareData(
 	io_params.offset = Ofs;
 	io_params.count = 1;
 	ReadHopfDevice();
-	*Data32 = iobuffer[0];
+	*Data32 = iobuffer[0U];
 }
 #endif	/* NOTUSED */
 
@@ -151,23 +151,23 @@ GetHopfTime(
 	Data->wHour = 0;
 	Data->wMinute = 0;
 	Data->wSecond = 0;
-	while (iobuffer[0] >= 60 * 60 * 1000) {
-		iobuffer[0] = iobuffer[0] - 60 * 60 * 1000;
+	while (iobuffer[0U] >= 60 * 60 * 1000) {
+		iobuffer[0U] = iobuffer[0U] - 60 * 60 * 1000;
 		Data->wHour++;
 	}
-	while (iobuffer[0] >= 60 * 1000) {
-		iobuffer[0] = iobuffer[0] - 60 * 1000;
+	while (iobuffer[0U] >= 60 * 1000) {
+		iobuffer[0U] = iobuffer[0U] - 60 * 1000;
 		Data->wMinute++;
 	}
-	while (iobuffer[0] >= 1000) {
-		iobuffer[0] = iobuffer[0] - 1000;
+	while (iobuffer[0U] >= 1000) {
+		iobuffer[0U] = iobuffer[0U] - 1000;
 		Data->wSecond++;
 	}
-	Data->wMilliseconds = LOWORD(iobuffer[0]);
-	Data->wDay = HIBYTE(HIWORD(iobuffer[1]));
-	Data->wMonth = LOBYTE(HIWORD(iobuffer[1]));
-	Data->wYear = LOWORD(iobuffer[1]);
-	Data->wDayOfWeek = HIBYTE(HIWORD(iobuffer[2]));
+	Data->wMilliseconds = LOWORD(iobuffer[0U]);
+	Data->wDay = HIBYTE(HIWORD(iobuffer[1U]));
+	Data->wMonth = LOBYTE(HIWORD(iobuffer[1U]));
+	Data->wYear = LOWORD(iobuffer[1U]);
+	Data->wDayOfWeek = HIBYTE(HIWORD(iobuffer[2U]));
 	if (Data->wDayOfWeek == 7) // Dow Korrektur
 		Data->wDayOfWeek = 0;
 	
@@ -177,7 +177,7 @@ GetHopfTime(
 
 	ReadHopfDevice();
 
-	Data->wStatus = LOBYTE(HIWORD(iobuffer[0]));
+	Data->wStatus = LOBYTE(HIWORD(iobuffer[0U]));
 }
 
 
@@ -217,24 +217,24 @@ GetSatData(
 
 	ReadHopfDevice();
 				
-	Data->wVisible	= HIBYTE(HIWORD(iobuffer[0]));
-	Data->wMode	= LOBYTE(LOWORD(iobuffer[0]));
-	Data->wSat0	= HIBYTE(HIWORD(iobuffer[1]));
-	Data->wRat0	= LOBYTE(HIWORD(iobuffer[1]));
-	Data->wSat1	= HIBYTE(LOWORD(iobuffer[1]));
-	Data->wRat1	= LOBYTE(LOWORD(iobuffer[1]));
-	Data->wSat2	= HIBYTE(HIWORD(iobuffer[2]));
-	Data->wRat2	= LOBYTE(HIWORD(iobuffer[2]));
-	Data->wSat3	= HIBYTE(LOWORD(iobuffer[2]));
-	Data->wRat3	= LOBYTE(LOWORD(iobuffer[2]));
-	Data->wSat4	= HIBYTE(HIWORD(iobuffer[3]));
-	Data->wRat4	= LOBYTE(HIWORD(iobuffer[3]));
-	Data->wSat5	= HIBYTE(LOWORD(iobuffer[3]));
-	Data->wRat5	= LOBYTE(LOWORD(iobuffer[3]));
-	Data->wSat6	= HIBYTE(HIWORD(iobuffer[4]));
-	Data->wRat6	= LOBYTE(HIWORD(iobuffer[4]));
-	Data->wSat7	= HIBYTE(LOWORD(iobuffer[4]));
-	Data->wRat7	= LOBYTE(LOWORD(iobuffer[4]));
+	Data->wVisible	= HIBYTE(HIWORD(iobuffer[0U]));
+	Data->wMode	= LOBYTE(LOWORD(iobuffer[0U]));
+	Data->wSat0	= HIBYTE(HIWORD(iobuffer[1U]));
+	Data->wRat0	= LOBYTE(HIWORD(iobuffer[1U]));
+	Data->wSat1	= HIBYTE(LOWORD(iobuffer[1U]));
+	Data->wRat1	= LOBYTE(LOWORD(iobuffer[1U]));
+	Data->wSat2	= HIBYTE(HIWORD(iobuffer[2U]));
+	Data->wRat2	= LOBYTE(HIWORD(iobuffer[2U]));
+	Data->wSat3	= HIBYTE(LOWORD(iobuffer[2U]));
+	Data->wRat3	= LOBYTE(LOWORD(iobuffer[2U]));
+	Data->wSat4	= HIBYTE(HIWORD(iobuffer[3U]));
+	Data->wRat4	= LOBYTE(HIWORD(iobuffer[3U]));
+	Data->wSat5	= HIBYTE(LOWORD(iobuffer[3U]));
+	Data->wRat5	= LOBYTE(LOWORD(iobuffer[3U]));
+	Data->wSat6	= HIBYTE(HIWORD(iobuffer[4U]));
+	Data->wRat6	= LOBYTE(HIWORD(iobuffer[4U]));
+	Data->wSat7	= HIBYTE(LOWORD(iobuffer[4U]));
+	Data->wRat7	= LOBYTE(LOWORD(iobuffer[4U]));
 }
 
 
@@ -249,7 +249,7 @@ GetDiffTime(
 
 	ReadHopfDevice();
 
-	*Data = iobuffer[0];
+	*Data = iobuffer[0U];
 }
 
 
@@ -264,14 +264,14 @@ GetPosition(
 
 	ReadHopfDevice();
 
-	Data->wLongitude = iobuffer[0]; //in Millisekunden
+	Data->wLongitude = iobuffer[0U]; //in Millisekunden
 	io_params.region = 1;
 	io_params.offset = 0xa0; // Positionsdaten Breite
 	io_params.count  = 1;
 
 	ReadHopfDevice();
 
-	Data->wLatitude	= iobuffer[0];
+	Data->wLatitude	= iobuffer[0U];
 	Data->wAltitude	= 0;
 }
 
@@ -289,8 +289,8 @@ GetHardwareVersion(
 
 	ReadHopfDevice();
 				
-	Data->cVersion[0] = '\0';
-	iobuffer[13] = 0;
+	Data->cVersion[0U] = '\0';
+	iobuffer[13U] = 0;
 	for (i = 0; i < 13; i++) {
 		Data->cVersion[i * 4    ] = HIBYTE(HIWORD(iobuffer[i]));
 		Data->cVersion[i * 4 + 1] = LOBYTE(HIWORD(iobuffer[i]));
@@ -310,9 +310,9 @@ GetDCFAntenne(
 	io_params.count = 1;
 
 	ReadHopfDevice();
-	Data->bStatus1	= HIBYTE(HIWORD(iobuffer[0]));
-	Data->bStatus	= LOBYTE(HIWORD(iobuffer[0]));
-	Data->wAntValue	= LOWORD(iobuffer[0]);
+	Data->bStatus1	= HIBYTE(HIWORD(iobuffer[0U]));
+	Data->bStatus	= LOBYTE(HIWORD(iobuffer[0U]));
+	Data->wAntValue	= LOWORD(iobuffer[0U]);
 }
 #endif	/* NOTUSED */
 

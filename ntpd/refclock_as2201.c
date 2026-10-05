@@ -309,7 +309,7 @@ as2201_receive(
 	/*
 	 * Test for synchronization (this is a temporary crock).
 	 */
-	if (pp->a_lastcode[2] != ':')
+	if (pp->a_lastcode[2U] != ':')
 		pp->leap = LEAP_NOTINSYNC;
 	else
 		pp->leap = LEAP_NOWARNING;

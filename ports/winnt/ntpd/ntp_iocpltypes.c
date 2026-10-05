@@ -40,8 +40,8 @@ iohpCreate(
 	if (retv != NULL) {
 		retv->refc_count = 1;
 		retv->rsrc.any   = src;
-		retv->handles[0] = INVALID_HANDLE_VALUE;
-		retv->handles[1] = INVALID_HANDLE_VALUE;
+		retv->handles[0U] = INVALID_HANDLE_VALUE;
+		retv->handles[1U] = INVALID_HANDLE_VALUE;
 		retv->riofd	 = -1;
 	}
 	return retv;
@@ -285,8 +285,8 @@ IoCtxStartChecked(
 	BOOL		done  = FALSE;
 	IoHndPad_T *	iopad = lpo->iopad;
 	if (iopad != NULL) {
-		if ((lpo->io.hnd == iopad->handles[0]) ||
-		    (lpo->io.hnd == iopad->handles[1])  )
+		if ((lpo->io.hnd == iopad->handles[0U]) ||
+		    (lpo->io.hnd == iopad->handles[1U])  )
 		{
 			done = (func)(lpo, buf);
 			lpo  = NULL; /* consumed by 'func' */

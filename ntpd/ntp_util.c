@@ -40,7 +40,7 @@
  * Defines used by the leapseconds stuff
  */
 #define	MAX_TAI	100			/* max TAI offset (s) */
-#define	L_DAY	86400UL			/* seconds per day */
+#define	L_DAY	86400U			/* seconds per day */
 #define	L_YEAR	(L_DAY * 365)		/* days per year */
 #define	L_LYEAR	(L_YEAR + L_DAY)	/* days per leap year */
 #define	L_4YEAR	(L_LYEAR + 3 * L_YEAR)	/* days per leap cycle */
@@ -1109,7 +1109,7 @@ append_flagstr(
 	const char *	text
 )
 {
-	if ('\0' != flagstr[0]) {
+	if ('\0' != flagstr[0U]) {
 		strlcat(flagstr, ",", sz);
 	}
 	/* bail if we ran out of room */

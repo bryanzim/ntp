@@ -67,8 +67,8 @@ BOOL init_randfile();
 static long last_Adj = 0;
 
 #define LS_CORR_INTV_SECS  2   /* seconds to apply leap second correction */
-#define LS_CORR_INTV   ( 1000ul * LS_CORR_INTV_SECS )  
-#define LS_CORR_LIMIT  ( 250ul )  // quarter second
+#define LS_CORR_INTV   ( 1000U * LS_CORR_INTV_SECS )  
+#define LS_CORR_LIMIT  ( 250U )  // quarter second
 
 typedef union ft_ull {
 	FILETIME ft;
@@ -675,9 +675,9 @@ init_winnt_time(void)
 		exit(-1);
 	}
 	/* get the LUID for system-time privilege. */
-	LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tkp.Privileges[0].Luid);
+	LookupPrivilegeValue(NULL, SE_SYSTEMTIME_NAME, &tkp.Privileges[0U].Luid);
 	tkp.PrivilegeCount = 1;  /* one privilege to set */
-	tkp.Privileges[0].Attributes = SE_PRIVILEGE_ENABLED;
+	tkp.Privileges[0U].Attributes = SE_PRIVILEGE_ENABLED;
 
 	/* get set-time privilege for this process. */
 	AdjustTokenPrivileges(hToken, FALSE, &tkp, 0,
@@ -1050,8 +1050,8 @@ StartClockThread(void)
 
 	/* init variables with the time now */
 	GetSystemTimeAsFileTime(&StartTime.ft);
-	baseline_times[0] = StartTime.ull;
-	baseline_counts[0] = perf_ctr();
+	baseline_times[0U] = StartTime.ull;
+	baseline_counts[0U] = perf_ctr();
 
 	/* init sync objects */
 	TimerThreadExitRequest = CreateEvent(NULL, FALSE, FALSE, NULL);

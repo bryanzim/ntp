@@ -57,7 +57,7 @@ test_MaximumUnsigned32bit(void)
 	u_long actual;
 
 	TEST_ASSERT_TRUE(octtoint(str, &actual));
-	TEST_ASSERT_EQUAL(4294967295UL, actual);
+	TEST_ASSERT_EQUAL(4294967295U, actual);
 
 	return;
 }

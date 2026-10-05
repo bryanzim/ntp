@@ -1446,7 +1446,7 @@ main(
 				}
 				else
 				{
-					fprintf(stderr, "%s: -D requires integer argument\n", argv[0]);
+					fprintf(stderr, "%s: -D requires integer argument\n", argv[0U]);
 					errs=1;
 				}
 				break;
@@ -1459,7 +1459,7 @@ main(
 				}
 				else
 				{
-					fprintf(stderr, "%s: -d requires file name argument\n", argv[0]);
+					fprintf(stderr, "%s: -d requires file name argument\n", argv[0U]);
 					errs=1;
 				}
 				break;
@@ -1469,7 +1469,7 @@ main(
 				exit( errs ? 1 : 0 );
 
 			    default:
-				fprintf(stderr, "%s: unknown option -%c\n", argv[0], c);
+				fprintf(stderr, "%s: unknown option -%c\n", argv[0U], c);
 				errs=1;
 				break;
 			}
@@ -1478,21 +1478,21 @@ main(
 			file = arg;
 		    else
 		    {
-			    fprintf(stderr, "%s: device specified twice\n", argv[0]);
+			    fprintf(stderr, "%s: device specified twice\n", argv[0U]);
 			    errs=1;
 		    }
 	}
 
 	if (errs)
 	{
-		usage(argv[0]);
+		usage(argv[0U]);
 		exit(1);
 	}
 	else
 	    if (file == NULL)
 	    {
-		    fprintf(stderr, "%s: device not specified\n", argv[0]);
-		    usage(argv[0]);
+		    fprintf(stderr, "%s: device not specified\n", argv[0U]);
+		    usage(argv[0U]);
 		    exit(1);
 	    }
 
@@ -1643,7 +1643,7 @@ main(
 
 		PRINTF("  DCF77 monitor %s - Copyright (C) 1993-2005 by Frank Kardel\n\n", revision);
 
-		pbuf[60] = '\0';
+		pbuf[60U] = '\0';
 		for ( i = 0; i < 60; i++)
 		    pbuf[i] = '.';
 
@@ -1702,15 +1702,15 @@ main(
 					    }
 
 
-					buf[0] = c;
+					buf[0U] = c;
 
 					/*
 					 * collect first character
 					 */
 					if (((c^0xFF)+1) & (c^0xFF))
-					    pbuf[0] = '?';
+					    pbuf[0U] = '?';
 					else
-					    pbuf[0] = type(c) ? '#' : '-';
+					    pbuf[0U] = type(c) ? '#' : '-';
 
 					for ( i = 1; i < 60; i++)
 					    pbuf[i] = '.';

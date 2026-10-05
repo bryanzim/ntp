@@ -920,7 +920,7 @@ is_safe_filename(const char * name)
 	while (0 != (widx = (u_char)*name++)) {
 		bidx = (widx & 15) << 1;
 		widx = widx >> 4;
-		if (widx >= sizeof(chclass)/sizeof(chclass[0]))
+		if (widx >= sizeof(chclass)/sizeof(chclass[0U]))
 			return FALSE;
 		if (0 == ((chclass[widx] >> bidx) & mask))
 			return FALSE;
@@ -1582,8 +1582,8 @@ ctl_putdata(
 {
 	CtlMemBufT args[1];
 
-	args[0].buf = dp;
-	args[0].len = dlen;
+	args[0U].buf = dp;
+	args[0U].len = dlen;
 	ctl_putdata_ex(args, 1, bin);
 }
 
@@ -1605,19 +1605,19 @@ ctl_putstr(
 {
 	CtlMemBufT args[4];
 
-	args[0].buf = tag;
-	args[0].len = strlen(tag);
+	args[0U].buf = tag;
+	args[0U].len = strlen(tag);
 	if (data && len) {
-	    args[1].buf = "=\"";
-	    args[1].len = 2;
-	    args[2].buf = data;
-	    args[2].len = len;
-	    args[3].buf = "\"";
-	    args[3].len = 1;
+	    args[1U].buf = "=\"";
+	    args[1U].len = 2;
+	    args[2U].buf = data;
+	    args[2U].len = len;
+	    args[3U].buf = "\"";
+	    args[3U].len = 1;
 	    ctl_putdata_ex(args, 4, FALSE);
 	} else {
-	    args[1].buf = "=\"\"";
-	    args[1].len = 3;
+	    args[1U].buf = "=\"\"";
+	    args[1U].len = 3;
 	    ctl_putdata_ex(args, 2, FALSE);
 	}
 }
@@ -1641,13 +1641,13 @@ ctl_putunqstr(
 {
 	CtlMemBufT args[3];
 
-	args[0].buf = tag;
-	args[0].len = strlen(tag);
-	args[1].buf = "=";
-	args[1].len = 1;
+	args[0U].buf = tag;
+	args[0U].len = strlen(tag);
+	args[1U].buf = "=";
+	args[1U].len = 1;
 	if (data && len) {
-		args[2].buf = data;
-		args[2].len = len;
+		args[2U].buf = data;
+		args[2U].len = len;
 		ctl_putdata_ex(args, 3, FALSE);
 	} else {
 		ctl_putdata_ex(args, 2, FALSE);
@@ -3110,7 +3110,7 @@ ctl_getitem(
 		const char *pltail = cp;
 		size_t      plsize;
 
-		while (plhead != pltail && isspace((u_char)plhead[0]))
+		while (plhead != pltail && isspace((u_char)plhead[0U]))
 			++plhead;
 		while (plhead != pltail && isspace((u_char)pltail[-1]))
 			--pltail;
@@ -3271,13 +3271,13 @@ read_status(
 		a_st[n++] = htons(ctlpeerstatus(peer));
 		/* two entries each loop iteration, so n + 1 */
 		if (n + 1 >= COUNTOF(a_st)) {
-			ctl_putdata((void *)a_st, n * sizeof(a_st[0]),
+			ctl_putdata((void *)a_st, n * sizeof(a_st[0U]),
 				    1);
 			n = 0;
 		}
 	}
 	if (n)
-		ctl_putdata((void *)a_st, n * sizeof(a_st[0]), 1);
+		ctl_putdata((void *)a_st, n * sizeof(a_st[0U]), 1);
 	ctl_flushpkt(0);
 }
 
@@ -3659,11 +3659,11 @@ static u_int32 derive_nonce(
 		u_int32 extract;
 	}		d;
 
-	while (!salt[0] || current_time - last_salt_update >= 3600) {
-		salt[0] = ntp_random();
-		salt[1] = ntp_random();
-		salt[2] = ntp_random();
-		salt[3] = ntp_random();
+	while (!salt[0U] || current_time - last_salt_update >= 3600) {
+		salt[0U] = ntp_random();
+		salt[1U] = ntp_random();
+		salt[2U] = ntp_random();
+		salt[3U] = ntp_random();
 		last_salt_update = current_time;
 	}
 
@@ -3755,14 +3755,14 @@ send_random_tag_value(
 	char	buf[32];
 
 	noise = rand() ^ (rand() << 16);
-	buf[0] = 'a' + noise % 26;
+	buf[0U] = 'a' + noise % 26;
 	noise >>= 5;
-	buf[1] = 'a' + noise % 26;
+	buf[1U] = 'a' + noise % 26;
 	noise >>= 5;
-	buf[2] = 'a' + noise % 26;
+	buf[2U] = 'a' + noise % 26;
 	noise >>= 5;
-	buf[3] = '.';
-	snprintf(&buf[4], sizeof(buf) - 4, "%d", indx);
+	buf[3U] = '.';
+	snprintf(&buf[4U], sizeof(buf) - 4, "%d", indx);
 	ctl_putuint(buf, noise);
 }
 
@@ -4468,7 +4468,7 @@ send_restrict_entry(
 			snprintf(tag, sizeof(tag), flags_fmt, idx);
 			match_str = res_match_flags(pres->mflags);
 			access_str = res_access_flags(pres->rflags);
-			if ('\0' == match_str[0]) {
+			if ('\0' == match_str[0U]) {
 				pch = access_str;
 			} else {
 				LIB_GETBUF(buf);

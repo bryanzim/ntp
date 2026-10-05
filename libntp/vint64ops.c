@@ -54,7 +54,7 @@ strtouv64(
 			}
 		}
 	} else if (base == 16) { /* remove optional leading '0x' or '0X' */
-		if (src[0] == '0' && toupper(src[1]) == 'X')
+		if (src[0U] == '0' && toupper(src[1U]) == 'X')
 			src += 2;
 	} else if (base <= 2 || base > 36) {
 		memset(&res, 0xFF, sizeof(res));

@@ -545,12 +545,12 @@ ntpqmain(
 	    INSIST(icmd < sizeof(builtins)/sizeof(*builtins));
 
 #ifdef OPENSSL
-	    builtins[icmd].desc[0] = "digest-name";
+	    builtins[icmd].desc[0U] = "digest-name";
 	    my_easprintf(&msg,
 			 "set key type to use for authenticated requests, one of:%s",
 			 list);
 #else
-	    builtins[icmd].desc[0] = "md5";
+	    builtins[icmd].desc[0U] = "md5";
 	    my_easprintf(&msg,
 			 "set key type to use for authenticated requests (%s)",
 			 list);
@@ -559,7 +559,7 @@ ntpqmain(
 	    free(list);
 	}
 
-	progname = argv[0];
+	progname = argv[0U];
 
 	{
 		int optct = ntpOptionProcess(&ntpqOptions, argc, argv);
@@ -605,10 +605,10 @@ ntpqmain(
 				//
 				// and there are other cases as well...
 				//
-				if ('4' == argv[ihost][1]) {
+				if ('4' == argv[ihost][1U]) {
 					ai_fam_templ = AF_INET;
 					continue;
-				} else if ('6' == argv[ihost][1]) {
+				} else if ('6' == argv[ihost][1U]) {
 					ai_fam_templ = AF_INET6;
 					continue;
 				} else {
@@ -648,7 +648,7 @@ ntpqmain(
 	}
 
 	if (defcmds == 0) {        /* No command line commands, so go interactive */
-		(void) openhost(chosts[0].name, chosts[0].fam);
+		(void) openhost(chosts[0U].name, chosts[0U].fam);
 		getcmds();
 	}
 #ifdef SYS_WINNT
@@ -1295,7 +1295,7 @@ getresponse(
 		maybe_final:
 #endif
 
-		if (seenlastfrag && offsets[0] == 0) {
+		if (seenlastfrag && offsets[0U] == 0) {
 			for (f = 1; f < numfrags; f++)
 				if (offsets[f-1] + counts[f-1] !=
 				    offsets[f])
@@ -1395,7 +1395,7 @@ sendrequest(
 	}
 	if (!authistrusted(info_auth_keyid)) {
 		pass = getpass_keytype(info_auth_keytype);
-		if ('\0' == pass[0]) {
+		if ('\0' == pass[0U]) {
 			fprintf(stderr, "Invalid password\n");
 			return 1;
 		}
@@ -1650,22 +1650,22 @@ docmd(
 	/*
 	 * If command prefixed by '~', then quiet output
 	 */
-	if (*tokens[0] == '~') {
+	if (*tokens[0U] == '~') {
 		executeonly++;
-		tokens[0]++;
+		tokens[0U]++;
 	}
 
 	/*
 	 * Find the appropriate command description.
 	 */
-	i = findcmd(tokens[0], builtins, opcmds, &xcmd);
+	i = findcmd(tokens[0U], builtins, opcmds, &xcmd);
 	if (i == 0) {
 		(void) fprintf(stderr, "***Command `%s' unknown\n",
-			       tokens[0]);
+			       tokens[0U]);
 		return;
 	} else if (i >= 2) {
 		(void) fprintf(stderr, "***Command `%s' ambiguous\n",
-			       tokens[0]);
+			       tokens[0U]);
 		return;
 	}
 
@@ -1678,7 +1678,7 @@ docmd(
 	 * Save the keyword, then walk through the arguments, interpreting
 	 * as we go.
 	 */
-	pcmd.keyword = tokens[0];
+	pcmd.keyword = tokens[0U];
 	pcmd.nargs = 0;
 	for (i = 0; i < MAXARGS && xcmd->arg[i] != NO; i++) {
 		if ((i+1) >= ntok) {
@@ -1784,7 +1784,7 @@ tokenize(
 		 * with a ':', then just grab to EOL.
 		 */
 
-		if (*ntok == 1 && tokens[0][0] == ':') {
+		if (*ntok == 1 && tokens[0U][0U] == ':') {
 			do {
 				if (sp - tspace >= MAXLINE)
 					goto toobig;
@@ -1851,8 +1851,8 @@ getarg(
 		break;
 
 	case NTP_UINT:
-		if ('&' == str[0]) {
-			if (!atouint(&str[1], &ul)) {
+		if ('&' == str[0U]) {
+			if (!atouint(&str[1U], &ul)) {
 				fprintf(stderr,
 					"***Association index `%s' invalid/undecodable\n",
 					str);
@@ -2136,7 +2136,7 @@ rtdatetolfp(
 
 	for (i = 0; i < 3; i++)
 	    buf[i] = *cp++;
-	buf[3] = '\0';
+	buf[3U] = '\0';
 
 	for (i = 0; i < 12; i++)
 	    if (STREQ(buf, months[i]))
@@ -2384,7 +2384,7 @@ help(
 			if (words < COUNTOF(list))
 				list[words++] = xcp->keyword;
 
-		qsort((void *)list, words, sizeof(list[0]), helpsort);
+		qsort((void *)list, words, sizeof(list[0U]), helpsort);
 		col = 0;
 		for (word = 0; word < words; word++) {
 			length = strlen(list[word]);
@@ -2403,7 +2403,7 @@ help(
 			fprintf(fp, "\n");
 		}
 	} else {
-		cmd = pcmd->argval[0].string;
+		cmd = pcmd->argval[0U].string;
 		words = findcmd(cmd, builtins, opcmds, &xcp);
 		if (words == 0) {
 			fprintf(stderr,
@@ -2475,8 +2475,8 @@ timeout(
 		val = (int)tvout.tv_sec * 1000 + tvout.tv_usec / 1000;
 		(void) fprintf(fp, "primary timeout %d ms\n", val);
 	} else {
-		tvout.tv_sec = pcmd->argval[0].uval / 1000;
-		tvout.tv_usec = (pcmd->argval[0].uval - ((long)tvout.tv_sec * 1000))
+		tvout.tv_sec = pcmd->argval[0U].uval / 1000;
+		tvout.tv_usec = (pcmd->argval[0U].uval - ((long)tvout.tv_sec * 1000))
 			* 1000;
 	}
 }
@@ -2498,12 +2498,12 @@ auth_delay(
 		val = delay_time.l_ui * 1000 + delay_time.l_uf / 4294967;
 		(void) fprintf(fp, "delay %lu ms\n", val);
 	} else {
-		if (pcmd->argval[0].ival < 0) {
+		if (pcmd->argval[0U].ival < 0) {
 			isneg = 1;
-			val = (u_long)(-pcmd->argval[0].ival);
+			val = (u_long)(-pcmd->argval[0U].ival);
 		} else {
 			isneg = 0;
-			val = (u_long)pcmd->argval[0].ival;
+			val = (u_long)pcmd->argval[0U].ival;
 		}
 
 		delay_time.l_ui = val / 1000;
@@ -2603,9 +2603,9 @@ showdrefid(
 	if (pcmd->nargs == 0) {
 		(void) fprintf(fp, "drefid value is %s\n", showdrefid2str());
 		return;
-	} else if (STREQ(pcmd->argval[0].string, "hash")) {
+	} else if (STREQ(pcmd->argval[0U].string, "hash")) {
 		drefid = REFID_HASH;
-	} else if (STREQ(pcmd->argval[0].string, "ipv4")) {
+	} else if (STREQ(pcmd->argval[0U].string, "ipv4")) {
 		drefid = REFID_IPV4;
 	} else {
 		(void) fprintf(fp, "What?\n");
@@ -2631,9 +2631,9 @@ keyid(
 		    (void) fprintf(fp, "keyid is %lu\n", (u_long)info_auth_keyid);
 	} else {
 		/* allow zero so that keyid can be cleared. */
-		if(pcmd->argval[0].uval > NTP_MAXKEY)
+		if(pcmd->argval[0U].uval > NTP_MAXKEY)
 		    (void) fprintf(fp, "Invalid key identifier\n");
-		info_auth_keyid = pcmd->argval[0].uval;
+		info_auth_keyid = pcmd->argval[0U].uval;
 	}
 }
 
@@ -2657,7 +2657,7 @@ keytype(
 		return;
 	}
 
-	digest_name = pcmd->argval[0].string;
+	digest_name = pcmd->argval[0U].string;
 	digest_len = 0;
 	key_type = keytype_from_text(digest_name, &digest_len);
 
@@ -2696,10 +2696,10 @@ passwd(
 		}
 	}
 	if (pcmd->nargs >= 1)
-		pass = pcmd->argval[0].string;
+		pass = pcmd->argval[0U].string;
 	else {
 		pass = getpass_keytype(info_auth_keytype);
-		if ('\0' == pass[0]) {
+		if ('\0' == pass[0U]) {
 			fprintf(fp, "Password unchanged\n");
 			return;
 		}
@@ -2725,9 +2725,9 @@ hostnames(
 		else
 		    (void) fprintf(fp, "hostnames not being shown\n");
 	} else {
-		if (STREQ(pcmd->argval[0].string, "yes"))
+		if (STREQ(pcmd->argval[0U].string, "yes"))
 		    showhostnames = 1;
-		else if (STREQ(pcmd->argval[0].string, "no"))
+		else if (STREQ(pcmd->argval[0U].string, "no"))
 		    showhostnames = 0;
 		else
 		    (void)fprintf(stderr, "What?\n");
@@ -2748,11 +2748,11 @@ setdebug(
 	if (pcmd->nargs == 0) {
 		(void) fprintf(fp, "debug level is %d\n", debug);
 		return;
-	} else if (STREQ(pcmd->argval[0].string, "no")) {
+	} else if (STREQ(pcmd->argval[0U].string, "no")) {
 		debug = 0;
-	} else if (STREQ(pcmd->argval[0].string, "more")) {
+	} else if (STREQ(pcmd->argval[0U].string, "more")) {
 		debug++;
-	} else if (STREQ(pcmd->argval[0].string, "less")) {
+	} else if (STREQ(pcmd->argval[0U].string, "less")) {
 		debug--;
 	} else {
 		(void) fprintf(fp, "What?\n");
@@ -2842,9 +2842,9 @@ authenticate(
 		    (void) fprintf(fp,
 				   "unauthenticated requests being sent\n");
 	} else {
-		if (STREQ(pcmd->argval[0].string, "yes")) {
+		if (STREQ(pcmd->argval[0U].string, "yes")) {
 			always_auth = 1;
-		} else if (STREQ(pcmd->argval[0].string, "no")) {
+		} else if (STREQ(pcmd->argval[0U].string, "no")) {
 			always_auth = 0;
 		} else
 		    (void)fprintf(stderr, "What?\n");
@@ -2865,12 +2865,12 @@ ntpversion(
 		(void) fprintf(fp,
 			       "NTP version being claimed is %d\n", pktversion);
 	} else {
-		if (pcmd->argval[0].uval < NTP_OLDVERSION
-		    || pcmd->argval[0].uval > NTP_VERSION) {
+		if (pcmd->argval[0U].uval < NTP_OLDVERSION
+		    || pcmd->argval[0U].uval > NTP_VERSION) {
 			(void) fprintf(stderr, "versions %d to %d, please\n",
 				       NTP_OLDVERSION, NTP_VERSION);
 		} else {
-			pktversion = (u_char) pcmd->argval[0].uval;
+			pktversion = (u_char) pcmd->argval[0U].uval;
 		}
 	}
 }
@@ -3109,8 +3109,8 @@ trunc_left(
 	sl = strlen(src);
 	if (sl > width && LIB_BUFLENGTH - 1 > width && width > 1) {
 		LIB_GETBUF(out);
-		out[0] = '_';
-		memcpy(&out[1], &src[sl + 1 - width], width);
+		out[0U] = '_';
+		memcpy(&out[1U], &src[sl + 1 - width], width);
 
 		return out;
 	}
@@ -3567,7 +3567,7 @@ outputarr(
 		cp = (issigned ? lfptoms(lfp, 2) : ulfptoms(lfp, 2));
 		len = strlen(cp);
 		if (len > 7) {
-			cp[7] = '\0';
+			cp[7U] = '\0';
 			len = 7;
 		}
 		while (len < 7) {
@@ -3598,7 +3598,7 @@ tstflags(
 	s = cp = circ_buf[nextcb];
 	if (++nextcb >= NUMCB)
 		nextcb = 0;
-	cb = sizeof(circ_buf[0]);
+	cb = sizeof(circ_buf[0U]);
 
 	l = snprintf(cp, cb, "%02lx", val);
 	if (l < 0 || (size_t)l >= cb)
@@ -3745,13 +3745,13 @@ cookedprint(
 			if (!value || !decodeuint(value, &uval) || uval > 3) {
 				output_raw = '?';
 			} else {
-				b[0] = (0x2 & uval)
+				b[0U] = (0x2 & uval)
 					   ? '1'
 					   : '0';
-				b[1] = (0x1 & uval)
+				b[1U] = (0x1 & uval)
 					   ? '1'
 					   : '0';
-				b[2] = '\0';
+				b[2U] = '\0';
 				output(fp, name, b);
 			}
 			break;
@@ -3784,7 +3784,7 @@ cookedprint(
 			if (!value)
 				output_raw = '?';
 			else if (isdigit(*value)) {	/* number without sign */
-				bv[0] = '+';
+				bv[0U] = '+';
 				atoascii (value, MAXVALLEN, bv+1, sizeof(bv)-1);
 				output(fp, name, bv);
 			} else
@@ -3826,7 +3826,7 @@ sortassoc(void)
 {
 	if (numassoc > 1)
 		qsort(assoc_cache, (size_t)numassoc,
-		      sizeof(assoc_cache[0]), &assoccmp);
+		      sizeof(assoc_cache[0U]), &assoccmp);
 }
 
 
@@ -3868,7 +3868,7 @@ grow_assoc_cache(void)
 	}
 	assoc_cache = erealloc_zero(assoc_cache, new_sz, prior_sz);
 	prior_sz = new_sz;
-	assoc_cache_slots = (u_int)(new_sz / sizeof(assoc_cache[0]));
+	assoc_cache_slots = (u_int)(new_sz / sizeof(assoc_cache[0U]));
 }
 
 
@@ -3972,7 +3972,7 @@ list_md_fn(const EVP_MD *m, const char *from, const char *to, void *arg)
 
 	if (hstate->list == NULL) {
 		hstate->list = (char *)emalloc(len);
-		hstate->list[0] = '\0';
+		hstate->list[0U] = '\0';
 	} else {
 		hstate->list = (char *)erealloc(hstate->list, len);
 	}

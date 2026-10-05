@@ -330,7 +330,7 @@ audio_init(
 	    printf("SOUND_MIXER_READ_RECMASK: %s\n", strerror(errno));
 
 	/* validate and set any specified config file stuff */
-	if (cf_agc[0] != '\0') {
+	if (cf_agc[0U] != '\0') {
 		int i;
 
 		/* recmask */
@@ -342,7 +342,7 @@ audio_init(
 			       cf_agc, recmask);
 	}
 
-	if (cf_monitor[0] != '\0') {
+	if (cf_monitor[0U] != '\0') {
 		int i;
 
 		/* devmask */
@@ -405,7 +405,7 @@ audio_gain(
 	r = 0 ; /* setting to zero nicely mutes the channel */
 #endif
 	l |= r << 8;
-	if (cf_agc[0] != '\0')
+	if (cf_agc[0U] != '\0')
 		rval = ioctl(ctl_fd, agc, &l);
 	else
 		rval = ioctl(ctl_fd
@@ -425,7 +425,7 @@ audio_gain(
 			printf("audio_gain: mongain %d/%d\n", mongain, l);
 # endif
 		l |= r << 8;
-		if (cf_monitor[0] != '\0')
+		if (cf_monitor[0U] != '\0')
                        rval = ioctl(ctl_fd, audiomonitor, &l );
 		else 
 			rval = ioctl(ctl_fd, SOUND_MIXER_WRITE_VOLUME,

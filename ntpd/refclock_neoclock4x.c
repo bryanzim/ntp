@@ -563,9 +563,9 @@ neoclock4x_receive(struct recvbuf *rbufp)
 #endif
 
   memcpy(up->radiosignal, &pp->a_lastcode[NEOCLOCK4X_OFFSET_RADIOSIGNAL], 3);
-  up->radiosignal[3] = 0;
+  up->radiosignal[3U] = 0;
   memcpy(up->serial, &pp->a_lastcode[NEOCLOCK4X_OFFSET_SERIAL], 6);
-  up->serial[6] = 0;
+  up->serial[6U] = 0;
   up->dststatus = pp->a_lastcode[NEOCLOCK4X_OFFSET_DSTSTATUS];
   neol_hexatoi_len(&pp->a_lastcode[NEOCLOCK4X_OFFSET_ANTENNA1], &up->antenna1, 2);
   neol_hexatoi_len(&pp->a_lastcode[NEOCLOCK4X_OFFSET_ANTENNA2], &up->antenna2, 2);
@@ -874,19 +874,19 @@ neol_jdn_to_ymd(unsigned long jdn,
 		int *dd)
 {
   unsigned long x, z, m, d, y;
-  unsigned long daysPer400Years = 146097UL;
-  unsigned long fudgedDaysPer4000Years = 1460970UL + 31UL;
+  unsigned long daysPer400Years = 146097U;
+  unsigned long fudgedDaysPer4000Years = 1460970U + 31U;
 
-  x = jdn + 68569UL;
-  z = 4UL * x / daysPer400Years;
-  x = x - (daysPer400Years * z + 3UL) / 4UL;
-  y = 4000UL * (x + 1) / fudgedDaysPer4000Years;
-  x = x - 1461UL * y / 4UL + 31UL;
-  m = 80UL * x / 2447UL;
-  d = x - 2447UL * m / 80UL;
-  x = m / 11UL;
-  m = m + 2UL - 12UL * x;
-  y = 100UL * (z - 49UL) + y + x;
+  x = jdn + 68569U;
+  z = 4U * x / daysPer400Years;
+  x = x - (daysPer400Years * z + 3U) / 4U;
+  y = 4000U * (x + 1) / fudgedDaysPer4000Years;
+  x = x - 1461U * y / 4U + 31U;
+  m = 80U * x / 2447U;
+  d = x - 2447U * m / 80U;
+  x = m / 11U;
+  m = m + 2U - 12U * x;
+  y = 100U * (z - 49U) + y + x;
 
   *yy = (int)y;
   *mm = (int)m;

@@ -108,7 +108,7 @@ test_WriteFileWithSingleEntry(void) {
 	// Here we must manipulate the timestamps, so they match the one in
 	// the expected file.
 
-	kod_db[0]->timestamp = 1;
+	kod_db[0U]->timestamp = 1;
 
 	write_kod_db();
 
@@ -136,9 +136,9 @@ test_WriteFileWithMultipleEntries(void) {
 	// Manipulate timestamps. This is a bit of a hack, ideally these
 	// tests should not care about the internal representation.
 	//
-	kod_db[0]->timestamp = 0xabcd;
-	kod_db[1]->timestamp = 0xabcd;
-	kod_db[2]->timestamp = 0xabcd;
+	kod_db[0U]->timestamp = 0xabcd;
+	kod_db[1U]->timestamp = 0xabcd;
+	kod_db[2U]->timestamp = 0xabcd;
 
 	write_kod_db();
 
