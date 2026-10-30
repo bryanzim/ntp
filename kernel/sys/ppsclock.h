@@ -35,30 +35,31 @@
  */
 
 #ifndef TIOCGPPSEV
-#define PPSCLOCKSTR	"ppsclock"
+#define PPSCLOCKSTR "ppsclock"
 
 #ifndef HAVE_STRUCT_PPSCLOCKEV
-struct ppsclockev {
-	struct timeval tv;
-	u_int serial;
+struct ppsclockev
+{
+    struct timeval tv;
+    u_int serial;
 };
 #endif
 
 #if defined(__STDC__) || defined(SYS_HPUX)
-#ifdef	_IOR
-#define CIOGETEV        _IOR('C', 0, struct ppsclockev)	/* get last pps event */
-#else	/* XXX SOLARIS is different */
-#define	CIO	('C'<<8)
-#define CIOGETEV        (CIO|0)		/* get last pps event */
-#endif	/* _IOR */
-#else	/* __STDC__ */
-#ifdef	_IOR
-#define CIOGETEV        _IOR(C, 0, struct ppsclockev)	/* get last pps event */
-#else	/* XXX SOLARIS is different */
-#define	CIO	('C'<<8)
-#define CIOGETEV        (CIO|0)		/* get last pps event */
-#endif	/* _IOR */
-#endif	/* __STDC__ */
+#ifdef _IOR
+#define CIOGETEV _IOR('C', 0, struct ppsclockev) /* get last pps event */
+#else                                            /* XXX SOLARIS is different */
+#define CIO ('C' << 8)
+#define CIOGETEV (CIO | 0) /* get last pps event */
+#endif                     /* _IOR */
+#else                      /* __STDC__ */
+#ifdef _IOR
+#define CIOGETEV _IOR(C, 0, struct ppsclockev) /* get last pps event */
+#else                                          /* XXX SOLARIS is different */
+#define CIO ('C' << 8)
+#define CIOGETEV (CIO | 0) /* get last pps event */
+#endif                     /* _IOR */
+#endif                     /* __STDC__ */
 #else
 #define CIOGETEV TIOCGPPSEV
 #endif

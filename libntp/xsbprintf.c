@@ -6,9 +6,10 @@
  */
 
 #include <config.h>
-#include <sys/types.h>
 
 #include "ntp_stdlib.h"
+
+#include <sys/types.h>
 
 /* eXtended Varlist String Buffer printf
  *
@@ -28,48 +29,50 @@
  *   current buffer position.)
  * - If '(*ppbuf - pend) <= 0' (or ppbuf is NULL), fail with EINVAL.
  */
-int
-xvsbprintf(
-	char       **ppbuf,	/* pointer to buffer pointer (I/O) */
-	char * const pend,	/* buffer end (I)		   */
-	char const  *pfmt,	/* printf-like format string       */
-	va_list      va		/* formatting args for above       */
-	)
+int xvsbprintf(
+    char** ppbuf,     /* pointer to buffer pointer (I/O) */
+    char* const pend, /* buffer end (I)		   */
+    char const* pfmt, /* printf-like format string       */
+    va_list va        /* formatting args for above       */
+)
 {
-	char *pbuf = (ppbuf) ? *ppbuf : NULL;
-	int   rc   = -1;
-	if (pbuf && (pend - pbuf > 0)) {
-		size_t blen = (size_t)(pend - pbuf);
-		rc = vsnprintf(pbuf, blen, pfmt, va);
-		if (rc > 0) {
-			if ((size_t)rc >= blen)
-				rc = 0;
-			pbuf += rc;
-		}
-		*pbuf = '\0'; /* fear of bad vsnprintf */
-		*ppbuf = pbuf;
-	} else {
-		errno = EINVAL;
-	}
-	return rc;
+    char* pbuf = (ppbuf) ? *ppbuf : NULL;
+    int rc = -1;
+    if (pbuf && (pend - pbuf > 0))
+    {
+        size_t blen = (size_t)(pend - pbuf);
+        rc = vsnprintf(pbuf, blen, pfmt, va);
+        if (rc > 0)
+        {
+            if ((size_t)rc >= blen)
+                rc = 0;
+            pbuf += rc;
+        }
+        *pbuf = '\0'; /* fear of bad vsnprintf */
+        *ppbuf = pbuf;
+    }
+    else
+    {
+        errno = EINVAL;
+    }
+    return rc;
 }
 
 /* variadic wrapper around the buffer string formatter */
-int
-xsbprintf(
-	char       **ppbuf,	/* pointer to buffer pointer (I/O) */
-	char * const pend,	/* buffer end (I)		   */
-	char const  *pfmt,	/* printf-like format string       */
-	...			/* formatting args for above       */
-	)
+int xsbprintf(
+    char** ppbuf,     /* pointer to buffer pointer (I/O) */
+    char* const pend, /* buffer end (I)		   */
+    char const* pfmt, /* printf-like format string       */
+    ...               /* formatting args for above       */
+)
 {
-	va_list va;
-	int     rc;
-	
-	va_start(va, pfmt);
-	rc = xvsbprintf(ppbuf, pend, pfmt, va);
-	va_end(va);
-	return rc;
+    va_list va;
+    int rc;
+
+    va_start(va, pfmt);
+    rc = xvsbprintf(ppbuf, pend, pfmt, va);
+    va_end(va);
+    return rc;
 }
 
 /* that's all folks! */

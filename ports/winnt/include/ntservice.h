@@ -28,4 +28,4 @@ void WINAPI ServiceControl(DWORD dwCtrlCode);
 BOOL ntservice_systemisshuttingdown(void);
 BOOL WINAPI OnConsoleEvent(DWORD dwCtrlType);
 
-#endif	/* NTSERVICE_H */
+#endif /* NTSERVICE_H */

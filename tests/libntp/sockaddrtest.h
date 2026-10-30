@@ -2,6 +2,7 @@
 #define TESTS_SOCKADDRTEST_H
 
 #include "config.h"
+
 #include "ntp.h"
 #include "ntp_stdlib.h"
 

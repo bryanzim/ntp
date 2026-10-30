@@ -35,25 +35,27 @@
 #ifndef IEEE754IO_H
 #define IEEE754IO_H
 
+#include "ntp_fp.h"
+
 #define IEEE_SINGLE 1
 #define IEEE_DOUBLE 2
 
 #define IEEE_MSB 1
 #define IEEE_LSB 2
 
-#define IEEE_OK          0	/* conversion ok */
-#define IEEE_BADCALL     1	/* bad call parameters */
-#define IEEE_NAN         2	/* found an NaN */
-#define IEEE_POSINFINITY 3	/* positive infinity */
-#define IEEE_NEGINFINITY 4	/* negative infinity */
-#define IEEE_POSOVERFLOW 5	/* positive overflow */
-#define IEEE_NEGOVERFLOW 6	/* negative overflow */
+#define IEEE_OK 0          /* conversion ok */
+#define IEEE_BADCALL 1     /* bad call parameters */
+#define IEEE_NAN 2         /* found an NaN */
+#define IEEE_POSINFINITY 3 /* positive infinity */
+#define IEEE_NEGINFINITY 4 /* negative infinity */
+#define IEEE_POSOVERFLOW 5 /* positive overflow */
+#define IEEE_NEGOVERFLOW 6 /* negative overflow */
 
-#define IEEE_OFFSETS     8	/* number of byte positions */
+#define IEEE_OFFSETS 8 /* number of byte positions */
 typedef unsigned char offsets_t[IEEE_OFFSETS];
 
-int fetch_ieee754 (unsigned char **bufp, int size, l_fp *lfpp, offsets_t offsets);
-int put_ieee754 (unsigned char **bufpp, int size, l_fp *lfpp, offsets_t offsets);
+int fetch_ieee754(unsigned char** bufp, int size, l_fp* lfpp, offsets_t offsets);
+int put_ieee754(unsigned char** bufpp, int size, l_fp* lfpp, offsets_t offsets);
 
 #endif
 /*

@@ -1,8 +1,7 @@
 #include "config.h"
 
-#include "ntp_stdlib.h"
 #include "ntp_fp.h"
-
+#include "ntp_stdlib.h"
 #include "unity.h"
 
 #include <float.h>
@@ -15,34 +14,36 @@
    It's safer this way, because structs can be compared even if they
    aren't initiated with memset (due to padding bytes).
 */
-#define TEST_ASSERT_EQUAL_l_fp(a, b) {					\
-	TEST_ASSERT_EQUAL_MESSAGE(a.l_i, b.l_i, "Field l_i");		\
-	TEST_ASSERT_EQUAL_UINT_MESSAGE(a.l_uf, b.l_uf, "Field l_uf");	\
-}
+#define TEST_ASSERT_EQUAL_l_fp(a, b)                                  \
+    {                                                                 \
+        TEST_ASSERT_EQUAL_MESSAGE(a.l_i, b.l_i, "Field l_i");         \
+        TEST_ASSERT_EQUAL_UINT_MESSAGE(a.l_uf, b.l_uf, "Field l_uf"); \
+    }
 
 
-typedef struct  {
-	uint32_t h, l;
+typedef struct
+{
+    uint32_t h, l;
 } lfp_hl;
 
 
-int	l_fp_scmp(const l_fp first, const l_fp second);
-int	l_fp_ucmp(const l_fp first, l_fp second);
-l_fp	l_fp_init(int32 i, u_int32 f);
-l_fp	l_fp_add(const l_fp first, const l_fp second);
-l_fp	l_fp_subtract(const l_fp first, const l_fp second);
-l_fp	l_fp_negate(const l_fp first);
-l_fp	l_fp_abs(const l_fp first);
-int	l_fp_signum(const l_fp first);
-double	l_fp_convert_to_double(const l_fp first);
-l_fp	l_fp_init_from_double( double rhs);
-void	l_fp_swap(l_fp * first, l_fp *second);
-bool	l_isgt(const l_fp first, const l_fp second);
-bool	l_isgtu(const l_fp first, const l_fp second);
-bool	l_ishis(const l_fp first, const l_fp second);
-bool	l_isgeq(const l_fp first, const l_fp second);
-bool	l_isequ(const l_fp first, const l_fp second);
-double	eps(double d);
+int l_fp_scmp(const l_fp first, const l_fp second);
+int l_fp_ucmp(const l_fp first, l_fp second);
+l_fp l_fp_init(int32 i, u_int32 f);
+l_fp l_fp_add(const l_fp first, const l_fp second);
+l_fp l_fp_subtract(const l_fp first, const l_fp second);
+l_fp l_fp_negate(const l_fp first);
+l_fp l_fp_abs(const l_fp first);
+int l_fp_signum(const l_fp first);
+double l_fp_convert_to_double(const l_fp first);
+l_fp l_fp_init_from_double(double rhs);
+void l_fp_swap(l_fp* first, l_fp* second);
+bool l_isgt(const l_fp first, const l_fp second);
+bool l_isgtu(const l_fp first, const l_fp second);
+bool l_ishis(const l_fp first, const l_fp second);
+bool l_isgeq(const l_fp first, const l_fp second);
+bool l_isequ(const l_fp first, const l_fp second);
+double eps(double d);
 
 
 void test_AdditionLR(void);
@@ -65,48 +66,56 @@ static int cmp_work(u_int32 a[3], u_int32 b[3]);
 // executed.
 //----------------------------------------------------------------------
 
-int
-l_fp_scmp(const l_fp first, const l_fp second)
+int l_fp_scmp(const l_fp first, const l_fp second)
 {
-	u_int32 a[3], b[3];
+    u_int32 a[3], b[3];
 
-	const l_fp op1 = first;
-	const l_fp op2 = second;
+    const l_fp op1 = first;
+    const l_fp op2 = second;
 
-	a[0U] = op1.l_uf; a[1U] = op1.l_ui; a[2U] = 0;
-	b[0U] = op2.l_uf; b[1U] = op2.l_ui; b[2U] = 0;
+    a[0U] = op1.l_uf;
+    a[1U] = op1.l_ui;
+    a[2U] = 0;
+    b[0U] = op2.l_uf;
+    b[1U] = op2.l_ui;
+    b[2U] = 0;
 
-	a[2U] -= (op1.l_i < 0);
-	b[2U] -= (op2.l_i < 0);
+    a[2U] -= (op1.l_i < 0);
+    b[2U] -= (op2.l_i < 0);
 
-	return cmp_work(a,b);
+    return cmp_work(a, b);
 }
 
-int
-l_fp_ucmp(const l_fp first, l_fp second)
+int l_fp_ucmp(const l_fp first, l_fp second)
 {
-	u_int32 a[3], b[3];
-	const l_fp op1 = first; 
-	const l_fp op2 = second;
+    u_int32 a[3], b[3];
+    const l_fp op1 = first;
+    const l_fp op2 = second;
 
-	a[0U] = op1.l_uf; a[1U] = op1.l_ui; a[2U] = 0;
-	b[0U] = op2.l_uf; b[1U] = op2.l_ui; b[2U] = 0;
+    a[0U] = op1.l_uf;
+    a[1U] = op1.l_ui;
+    a[2U] = 0;
+    b[0U] = op2.l_uf;
+    b[1U] = op2.l_ui;
+    b[2U] = 0;
 
-	return cmp_work(a,b);
+    return cmp_work(a, b);
 }
 
 // maybe rename it to lf_cmp_work
-int
-cmp_work(u_int32 a[3], u_int32 b[3])
+int cmp_work(u_int32 a[3], u_int32 b[3])
 {
-	u_int32 cy, idx, tmp;
-	for (cy = idx = 0; idx < 3; ++idx) {
-		tmp = a[idx]; cy  = (a[idx] -=   cy  ) > tmp;
-		tmp = a[idx]; cy |= (a[idx] -= b[idx]) > tmp;
-	}
-	if (a[2U])
-		return -1;
-	return a[0] || a[1U];
+    u_int32 cy, idx, tmp;
+    for (cy = idx = 0; idx < 3; ++idx)
+    {
+        tmp = a[idx];
+        cy = (a[idx] -= cy) > tmp;
+        tmp = a[idx];
+        cy |= (a[idx] -= b[idx]) > tmp;
+    }
+    if (a[2U])
+        return -1;
+    return a[0] || a[1U];
 }
 
 
@@ -115,85 +124,77 @@ cmp_work(u_int32 a[3], u_int32 b[3])
 // This should be easy enough...
 //----------------------------------------------------------------------
 
-l_fp
-l_fp_init(int32 i, u_int32 f)
+l_fp l_fp_init(int32 i, u_int32 f)
 {
-	l_fp temp;
-	temp.l_i  = i;
-	temp.l_uf = f;
+    l_fp temp;
+    temp.l_i = i;
+    temp.l_uf = f;
 
-	return temp;
+    return temp;
 }
 
-l_fp
-l_fp_add(const l_fp first, const l_fp second)
+l_fp l_fp_add(const l_fp first, const l_fp second)
 {
-	l_fp temp = first;
-	L_ADD(&temp, &second);
+    l_fp temp = first;
+    L_ADD(&temp, &second);
 
-	return temp;
+    return temp;
 }
 
-l_fp
-l_fp_subtract(const l_fp first, const l_fp second)
+l_fp l_fp_subtract(const l_fp first, const l_fp second)
 {
-	l_fp temp = first;
-	L_SUB(&temp, &second);
+    l_fp temp = first;
+    L_SUB(&temp, &second);
 
-	return temp;
+    return temp;
 }
 
-l_fp
-l_fp_negate(const l_fp first)
+l_fp l_fp_negate(const l_fp first)
 {
-	l_fp temp = first;
-	L_NEG(&temp);
+    l_fp temp = first;
+    L_NEG(&temp);
 
-	return temp;
+    return temp;
 }
 
-l_fp
-l_fp_abs(const l_fp first)
+l_fp l_fp_abs(const l_fp first)
 {
-	l_fp temp = first;
-	if (L_ISNEG(&temp))
-		L_NEG(&temp);
-	return temp;
+    l_fp temp = first;
+    if (L_ISNEG(&temp))
+        L_NEG(&temp);
+    return temp;
 }
 
-int
-l_fp_signum(const l_fp first)
+int l_fp_signum(const l_fp first)
 {
-	if (first.l_ui & 0x80000000u)
-		return -1;
-	return (first.l_ui || first.l_uf);
+    if (first.l_ui & 0x80000000u)
+        return -1;
+    return (first.l_ui || first.l_uf);
 }
 
 double
 l_fp_convert_to_double(const l_fp first)
 {
-	double res;
-	LFPTOD(&first, res);
-	return res;
+    double res;
+    LFPTOD(&first, res);
+    return res;
 }
 
-l_fp
-l_fp_init_from_double( double rhs)
+l_fp l_fp_init_from_double(double rhs)
 {
-	l_fp temp;
-	DTOLFP(rhs, &temp);
-	return temp;
+    l_fp temp;
+    DTOLFP(rhs, &temp);
+    return temp;
 }
 
-void
-l_fp_swap(l_fp * first, l_fp *second)
+void l_fp_swap(l_fp* first, l_fp* second)
 {
-	l_fp temp = *second;
+    l_fp temp = *second;
 
-	*second = *first;
-	*first = temp;
+    *second = *first;
+    *first = temp;
 
-	return;
+    return;
 }
 
 //----------------------------------------------------------------------
@@ -203,39 +204,34 @@ l_fp_swap(l_fp * first, l_fp *second)
 //----------------------------------------------------------------------
 
 
-bool
-l_isgt (const l_fp first, const l_fp second)
+bool l_isgt(const l_fp first, const l_fp second)
 {
 
-	return L_ISGT(&first, &second);
+    return L_ISGT(&first, &second);
 }
 
-bool
-l_isgtu(const l_fp first, const l_fp second)
+bool l_isgtu(const l_fp first, const l_fp second)
 {
 
-	return L_ISGTU(&first, &second);
+    return L_ISGTU(&first, &second);
 }
 
-bool
-l_ishis(const l_fp first, const l_fp second)
+bool l_ishis(const l_fp first, const l_fp second)
 {
 
-	return L_ISHIS(&first, &second);
+    return L_ISHIS(&first, &second);
 }
 
-bool
-l_isgeq(const l_fp first, const l_fp second)
+bool l_isgeq(const l_fp first, const l_fp second)
 {
 
-	return L_ISGEQ(&first, &second);
+    return L_ISGEQ(&first, &second);
 }
 
-bool
-l_isequ(const l_fp first, const l_fp second)
+bool l_isequ(const l_fp first, const l_fp second)
 {
 
-	return L_ISEQU(&first, &second);
+    return L_ISEQU(&first, &second);
 }
 
 
@@ -245,24 +241,24 @@ l_isequ(const l_fp first, const l_fp second)
 
 
 static const lfp_hl addsub_tab[][3] = {
-	// trivial idendity:
-	{{0 ,0         }, { 0,0         }, { 0,0}},
-	// with carry from fraction and sign change:
-	{{-1,0x80000000}, { 0,0x80000000}, { 0,0}},
-	// without carry from fraction
-	{{ 1,0x40000000}, { 1,0x40000000}, { 2,0x80000000}},
-	// with carry from fraction:
-	{{ 1,0xC0000000}, { 1,0xC0000000}, { 3,0x80000000}},
-	// with carry from fraction and sign change:
-	{{0x7FFFFFFF, 0x7FFFFFFF}, {0x7FFFFFFF,0x7FFFFFFF}, {0xFFFFFFFE,0xFFFFFFFE}},
-	// two tests w/o carry (used for l_fp<-->double):
-	{{0x55555555,0xAAAAAAAA}, {0x11111111,0x11111111}, {0x66666666,0xBBBBBBBB}},
-	{{0x55555555,0x55555555}, {0x11111111,0x11111111}, {0x66666666,0x66666666}},
-	// wide-range test, triggers compare trouble
-	{{0x80000000,0x00000001}, {0xFFFFFFFF,0xFFFFFFFE}, {0x7FFFFFFF,0xFFFFFFFF}}
+    // trivial idendity:
+    {                   { 0, 0 },                   { 0, 0 },                   { 0, 0 } },
+    // with carry from fraction and sign change:
+    {         { -1, 0x80000000 },          { 0, 0x80000000 },                   { 0, 0 } },
+    // without carry from fraction
+    {          { 1, 0x40000000 },          { 1, 0x40000000 },          { 2, 0x80000000 } },
+    // with carry from fraction:
+    {          { 1, 0xC0000000 },          { 1, 0xC0000000 },          { 3, 0x80000000 } },
+    // with carry from fraction and sign change:
+    { { 0x7FFFFFFF, 0x7FFFFFFF }, { 0x7FFFFFFF, 0x7FFFFFFF }, { 0xFFFFFFFE, 0xFFFFFFFE } },
+    // two tests w/o carry (used for l_fp<-->double):
+    { { 0x55555555, 0xAAAAAAAA }, { 0x11111111, 0x11111111 }, { 0x66666666, 0xBBBBBBBB } },
+    { { 0x55555555, 0x55555555 }, { 0x11111111, 0x11111111 }, { 0x66666666, 0x66666666 } },
+    // wide-range test, triggers compare trouble
+    { { 0x80000000, 0x00000001 }, { 0xFFFFFFFF, 0xFFFFFFFE }, { 0x7FFFFFFF, 0xFFFFFFFF } }
 };
-static const size_t addsub_cnt = (sizeof(addsub_tab)/sizeof(addsub_tab[0U]));
-static const size_t addsub_tot = (sizeof(addsub_tab)/sizeof(addsub_tab[0U][0U]));
+static const size_t addsub_cnt = (sizeof(addsub_tab) / sizeof(addsub_tab[0U]));
+static const size_t addsub_tot = (sizeof(addsub_tab) / sizeof(addsub_tab[0U][0U]));
 
 
 
@@ -286,99 +282,99 @@ double
 eps(double d)
 {
 
-	return fmax(ldexp(1.0, -31), ldexp(fabs(d), -53));
+    return fmax(ldexp(1.0, -31), ldexp(fabs(d), -53));
 }
 
 //----------------------------------------------------------------------
 // test addition
 //----------------------------------------------------------------------
-void
-test_AdditionLR(void)
+void test_AdditionLR(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		l_fp op2 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
-		l_fp e_res = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
-		l_fp res = l_fp_add(op1, op2);
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        l_fp op2 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+        l_fp e_res = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
+        l_fp res = l_fp_add(op1, op2);
 
-		TEST_ASSERT_EQUAL_l_fp(e_res, res);
-	}
-	return;
+        TEST_ASSERT_EQUAL_l_fp(e_res, res);
+    }
+    return;
 }
 
-void
-test_AdditionRL(void)
+void test_AdditionRL(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op2 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		l_fp op1 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
-		l_fp e_res = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
-		l_fp res = l_fp_add(op1, op2);
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp op2 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        l_fp op1 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+        l_fp e_res = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
+        l_fp res = l_fp_add(op1, op2);
 
-		TEST_ASSERT_EQUAL_l_fp(e_res, res);
-	}
-	return;
+        TEST_ASSERT_EQUAL_l_fp(e_res, res);
+    }
+    return;
 }
 
 
 //----------------------------------------------------------------------
 // test subtraction
 //----------------------------------------------------------------------
-void
-test_SubtractionLR(void)
+void test_SubtractionLR(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op2 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		l_fp e_res = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
-		l_fp op1 = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
-		l_fp res = l_fp_subtract(op1, op2);
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp op2 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        l_fp e_res = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+        l_fp op1 = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
+        l_fp res = l_fp_subtract(op1, op2);
 
-		TEST_ASSERT_EQUAL_l_fp(e_res, res);
-	}
-	return;
+        TEST_ASSERT_EQUAL_l_fp(e_res, res);
+    }
+    return;
 }
 
-void
-test_SubtractionRL(void)
+void test_SubtractionRL(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp e_res = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		l_fp op2 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
-		l_fp op1 = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
-		l_fp res = l_fp_subtract(op1, op2);
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp e_res = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        l_fp op2 = l_fp_init(addsub_tab[idx][1U].h, addsub_tab[idx][1U].l);
+        l_fp op1 = l_fp_init(addsub_tab[idx][2U].h, addsub_tab[idx][2U].l);
+        l_fp res = l_fp_subtract(op1, op2);
 
-		TEST_ASSERT_EQUAL_l_fp(e_res, res);
-	}
-	return;
+        TEST_ASSERT_EQUAL_l_fp(e_res, res);
+    }
+    return;
 }
 
 //----------------------------------------------------------------------
 // test negation
 //----------------------------------------------------------------------
 
-void
-test_Negation(void)
+void test_Negation(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		l_fp op2 = l_fp_negate(op1);
-		l_fp sum = l_fp_add(op1, op2);
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        l_fp op2 = l_fp_negate(op1);
+        l_fp sum = l_fp_add(op1, op2);
 
-		l_fp zero = l_fp_init(0, 0);
+        l_fp zero = l_fp_init(0, 0);
 
-		TEST_ASSERT_EQUAL_l_fp(zero, sum);
-	}
-	return;
+        TEST_ASSERT_EQUAL_l_fp(zero, sum);
+    }
+    return;
 }
 
 
@@ -386,66 +382,66 @@ test_Negation(void)
 //----------------------------------------------------------------------
 // test absolute value
 //----------------------------------------------------------------------
-void
-test_Absolute(void)
+void test_Absolute(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		l_fp op2 = l_fp_abs(op1);
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        l_fp op2 = l_fp_abs(op1);
 
-		TEST_ASSERT_TRUE(l_fp_signum(op2) >= 0);
+        TEST_ASSERT_TRUE(l_fp_signum(op2) >= 0);
 
-		if (l_fp_signum(op1) >= 0)
-			op1 = l_fp_subtract(op1, op2);
-		else
-			op1 = l_fp_add(op1, op2);
+        if (l_fp_signum(op1) >= 0)
+            op1 = l_fp_subtract(op1, op2);
+        else
+            op1 = l_fp_add(op1, op2);
 
-		l_fp zero = l_fp_init(0, 0);
+        l_fp zero = l_fp_init(0, 0);
 
-		TEST_ASSERT_EQUAL_l_fp(zero, op1);
-	}
+        TEST_ASSERT_EQUAL_l_fp(zero, op1);
+    }
 
-	// There is one special case we have to check: the minimum
-	// value cannot be negated, or, to be more precise, the
-	// negation reproduces the original pattern.
-	l_fp minVal = l_fp_init(0x80000000, 0x00000000);
-	l_fp minAbs = l_fp_abs(minVal);
-	TEST_ASSERT_EQUAL(-1, l_fp_signum(minVal));
+    // There is one special case we have to check: the minimum
+    // value cannot be negated, or, to be more precise, the
+    // negation reproduces the original pattern.
+    l_fp minVal = l_fp_init(0x80000000, 0x00000000);
+    l_fp minAbs = l_fp_abs(minVal);
+    TEST_ASSERT_EQUAL(-1, l_fp_signum(minVal));
 
-	TEST_ASSERT_EQUAL_l_fp(minVal, minAbs);
+    TEST_ASSERT_EQUAL_l_fp(minVal, minAbs);
 
-	return;
+    return;
 }
 
 
 //----------------------------------------------------------------------
 // fp -> double -> fp rountrip test
 //----------------------------------------------------------------------
-void
-test_FDF_RoundTrip(void)
+void test_FDF_RoundTrip(void)
 {
-	size_t idx = 0;
+    size_t idx = 0;
 
-	// since a l_fp has 64 bits in it's mantissa and a double has
-	// only 54 bits available (including the hidden '1') we have to
-	// make a few concessions on the roundtrip precision. The 'eps()'
-	// function makes an educated guess about the avilable precision
-	// and checks the difference in the two 'l_fp' values against
-	// that limit.
+    // since a l_fp has 64 bits in it's mantissa and a double has
+    // only 54 bits available (including the hidden '1') we have to
+    // make a few concessions on the roundtrip precision. The 'eps()'
+    // function makes an educated guess about the avilable precision
+    // and checks the difference in the two 'l_fp' values against
+    // that limit.
 
-	for (idx = 0; idx < addsub_cnt; ++idx) {
-		l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
-		double op2 = l_fp_convert_to_double(op1);
-		l_fp op3 = l_fp_init_from_double(op2); 
+    for (idx = 0; idx < addsub_cnt; ++idx)
+    {
+        l_fp op1 = l_fp_init(addsub_tab[idx][0U].h, addsub_tab[idx][0U].l);
+        double op2 = l_fp_convert_to_double(op1);
+        l_fp op3 = l_fp_init_from_double(op2);
 
-		l_fp temp = l_fp_subtract(op1, op3);
-		double d = l_fp_convert_to_double(temp);
-		TEST_ASSERT_DOUBLE_WITHIN(eps(op2), 0.0, fabs(d));
-	}
+        l_fp temp = l_fp_subtract(op1, op3);
+        double d = l_fp_convert_to_double(temp);
+        TEST_ASSERT_DOUBLE_WITHIN(eps(op2), 0.0, fabs(d));
+    }
 
-	return;
+    return;
 }
 
 
@@ -455,90 +451,92 @@ test_FDF_RoundTrip(void)
 // This uses the local compare and checks if the operations using the
 // macros in 'ntp_fp.h' produce mathing results.
 // ----------------------------------------------------------------------
-void
-test_SignedRelOps(void)
+void test_SignedRelOps(void)
 {
-	const lfp_hl * tv = (&addsub_tab[0U][0U]);
-	size_t lc ;
+    const lfp_hl* tv = (&addsub_tab[0U][0U]);
+    size_t lc;
 
-	for (lc = addsub_tot - 1; lc; --lc, ++tv) {
-		l_fp op1 = l_fp_init(tv[0U].h, tv[0U].l);
-		l_fp op2 = l_fp_init(tv[1U].h, tv[1U].l);
-		int cmp = l_fp_scmp(op1, op2);
+    for (lc = addsub_tot - 1; lc; --lc, ++tv)
+    {
+        l_fp op1 = l_fp_init(tv[0U].h, tv[0U].l);
+        l_fp op2 = l_fp_init(tv[1U].h, tv[1U].l);
+        int cmp = l_fp_scmp(op1, op2);
 
-		switch (cmp) {
-		case -1:
-			//printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
-			l_fp_swap(&op1, &op2);
-			//printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
-		case 1:
-			TEST_ASSERT_TRUE (l_isgt(op1, op2));
-			TEST_ASSERT_FALSE(l_isgt(op2, op1));
+        switch (cmp)
+        {
+        case -1:
+            // printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
+            l_fp_swap(&op1, &op2);
+            // printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
+        case 1:
+            TEST_ASSERT_TRUE(l_isgt(op1, op2));
+            TEST_ASSERT_FALSE(l_isgt(op2, op1));
 
-			TEST_ASSERT_TRUE (l_isgeq(op1, op2));
-			TEST_ASSERT_FALSE(l_isgeq(op2, op1));
+            TEST_ASSERT_TRUE(l_isgeq(op1, op2));
+            TEST_ASSERT_FALSE(l_isgeq(op2, op1));
 
-			TEST_ASSERT_FALSE(l_isequ(op1, op2));
-			TEST_ASSERT_FALSE(l_isequ(op2, op1));
-			break;
-		case 0:
-			TEST_ASSERT_FALSE(l_isgt(op1, op2));
-			TEST_ASSERT_FALSE(l_isgt(op2, op1));
+            TEST_ASSERT_FALSE(l_isequ(op1, op2));
+            TEST_ASSERT_FALSE(l_isequ(op2, op1));
+            break;
+        case 0:
+            TEST_ASSERT_FALSE(l_isgt(op1, op2));
+            TEST_ASSERT_FALSE(l_isgt(op2, op1));
 
-			TEST_ASSERT_TRUE (l_isgeq(op1, op2));
-			TEST_ASSERT_TRUE (l_isgeq(op2, op1));
+            TEST_ASSERT_TRUE(l_isgeq(op1, op2));
+            TEST_ASSERT_TRUE(l_isgeq(op2, op1));
 
-			TEST_ASSERT_TRUE (l_isequ(op1, op2));
-			TEST_ASSERT_TRUE (l_isequ(op2, op1));
-			break;
-		default:
-			TEST_FAIL_MESSAGE("unexpected UCMP result: ");
-		}
-	}
+            TEST_ASSERT_TRUE(l_isequ(op1, op2));
+            TEST_ASSERT_TRUE(l_isequ(op2, op1));
+            break;
+        default:
+            TEST_FAIL_MESSAGE("unexpected UCMP result: ");
+        }
+    }
 
-	return;
+    return;
 }
 
-void
-test_UnsignedRelOps(void)
+void test_UnsignedRelOps(void)
 {
-	const lfp_hl * tv =(&addsub_tab[0U][0U]);
-	size_t lc;
+    const lfp_hl* tv = (&addsub_tab[0U][0U]);
+    size_t lc;
 
-	for (lc = addsub_tot - 1; lc; --lc, ++tv) {
-		l_fp op1 = l_fp_init(tv[0U].h, tv[0U].l);
-		l_fp op2 = l_fp_init(tv[1U].h, tv[1U].l);
-		int cmp = l_fp_ucmp(op1, op2);
+    for (lc = addsub_tot - 1; lc; --lc, ++tv)
+    {
+        l_fp op1 = l_fp_init(tv[0U].h, tv[0U].l);
+        l_fp op2 = l_fp_init(tv[1U].h, tv[1U].l);
+        int cmp = l_fp_ucmp(op1, op2);
 
-		switch (cmp) {
-		case -1:
-			//printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
-			l_fp_swap(&op1, &op2);
-			//printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
-		case 1:
-			TEST_ASSERT_TRUE (l_isgtu(op1, op2));
-			TEST_ASSERT_FALSE(l_isgtu(op2, op1));
+        switch (cmp)
+        {
+        case -1:
+            // printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
+            l_fp_swap(&op1, &op2);
+            // printf("op1:%d %d, op2:%d %d\n",op1.l_uf,op1.l_ui,op2.l_uf,op2.l_ui);
+        case 1:
+            TEST_ASSERT_TRUE(l_isgtu(op1, op2));
+            TEST_ASSERT_FALSE(l_isgtu(op2, op1));
 
-			TEST_ASSERT_TRUE (l_ishis(op1, op2));
-			TEST_ASSERT_FALSE(l_ishis(op2, op1));
-			break;
-		case 0:
-			TEST_ASSERT_FALSE(l_isgtu(op1, op2));
-			TEST_ASSERT_FALSE(l_isgtu(op2, op1));
+            TEST_ASSERT_TRUE(l_ishis(op1, op2));
+            TEST_ASSERT_FALSE(l_ishis(op2, op1));
+            break;
+        case 0:
+            TEST_ASSERT_FALSE(l_isgtu(op1, op2));
+            TEST_ASSERT_FALSE(l_isgtu(op2, op1));
 
-			TEST_ASSERT_TRUE (l_ishis(op1, op2));
-			TEST_ASSERT_TRUE (l_ishis(op2, op1));
-			break;
-		default:
-			TEST_FAIL_MESSAGE("unexpected UCMP result: ");
-		}
-	}
+            TEST_ASSERT_TRUE(l_ishis(op1, op2));
+            TEST_ASSERT_TRUE(l_ishis(op2, op1));
+            break;
+        default:
+            TEST_FAIL_MESSAGE("unexpected UCMP result: ");
+        }
+    }
 
-	return;
+    return;
 }
 
 /*
-*/
+ */
 
 //----------------------------------------------------------------------
 // that's all folks... but feel free to add things!

@@ -10,12 +10,12 @@
 
 #ifdef REFCLOCK
 
-#include "ntpd.h"
 #include "ntp_refclock.h"
 #include "ntp_stdlib.h"
+#include "ntpd.h"
 
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #ifdef KERNEL_PLL
 #include "ntp_syscall.h"
@@ -60,10 +60,10 @@
 /*
  * Local interface definitions
  */
-#define PRECISION	(-7)	/* about 10 ms precision */
+#define PRECISION (-7)                          /* about 10 ms precision */
 #define DESCRIPTION "Undisciplined local clock" /* WRU */
-#define STRATUM 	5	/* default stratum */
-#define DISPERSION	.01	/* default dispersion (10 ms) */
+#define STRATUM 5                               /* default stratum */
+#define DISPERSION .01                          /* default dispersion (10 ms) */
 
 /*
  * Imported from the timer module
@@ -78,25 +78,25 @@ extern s_char sys_precision;
 /*
  * Function prototypes
  */
-static	int local_start (int, struct peer *);
-static	void	local_poll	(int, struct peer *);
+static int local_start(int, struct peer*);
+static void local_poll(int, struct peer*);
 
 /*
  * Local variables
  */
-static	u_long poll_time;	/* last time polled */
-	
+static u_long poll_time; /* last time polled */
+
 /*
  * Transfer vector
  */
-struct	refclock refclock_local = {
-	local_start,		/* start up driver */
-	noentry,		/* shut down driver (not used) */
-	local_poll,	 	/* transmit poll message */
-	noentry,		/* not used (old lcl_control) */
-	noentry,		/* initialize driver (not used) */
-	noentry,		/* not used (old lcl_buginfo) */
-	NOFLAGS 		/* not used */
+struct refclock refclock_local = {
+    local_start, /* start up driver */
+    noentry,     /* shut down driver (not used) */
+    local_poll,  /* transmit poll message */
+    noentry,     /* not used (old lcl_control) */
+    noentry,     /* initialize driver (not used) */
+    noentry,     /* not used (old lcl_buginfo) */
+    NOFLAGS      /* not used */
 };
 
 
@@ -105,25 +105,24 @@ struct	refclock refclock_local = {
  */
 static int
 local_start(
-	int unit,
-	struct peer *peer
-	)
+    int unit,
+    struct peer* peer)
 {
-	struct refclockproc *pp;
+    struct refclockproc* pp;
 
-	pp = peer->procptr;
+    pp = peer->procptr;
 
-	/*
-	 * Initialize miscellaneous variables
-	 */
-	peer->precision = sys_precision;
-	pp->leap = LEAP_NOTINSYNC;
-	peer->stratum = STRATUM;
-	pp->stratum = STRATUM;
-	pp->clockdesc = DESCRIPTION;
-	memcpy(&pp->refid, "LOCL", 4);
-	poll_time = current_time;
-	return (1);
+    /*
+     * Initialize miscellaneous variables
+     */
+    peer->precision = sys_precision;
+    pp->leap = LEAP_NOTINSYNC;
+    peer->stratum = STRATUM;
+    pp->stratum = STRATUM;
+    pp->clockdesc = DESCRIPTION;
+    memcpy(&pp->refid, "LOCL", 4);
+    poll_time = current_time;
+    return (1);
 }
 
 
@@ -141,76 +140,77 @@ local_start(
  */
 static void
 local_poll(
-	int unit,
-	struct peer *peer
-	)
+    int unit,
+    struct peer* peer)
 {
 #if defined(KERNEL_PLL) && defined(LOCKCLOCK)
-	struct timex ntv;
+    struct timex ntv;
 #endif /* KERNEL_PLL LOCKCLOCK */
-	struct refclockproc *pp;
+    struct refclockproc* pp;
 
-	/*
-	 * Do no evil unless the house is dark or lit with our own lamp.
-	 */
-	if (!(sys_peer == NULL || sys_peer == peer))
-		return;
+    /*
+     * Do no evil unless the house is dark or lit with our own lamp.
+     */
+    if (!(sys_peer == NULL || sys_peer == peer))
+        return;
 
 #if defined(VMS) && defined(VMS_LOCALUNIT)
-	if (unit == VMS_LOCALUNIT) {
-		extern void vms_local_poll(struct peer *);
+    if (unit == VMS_LOCALUNIT)
+    {
+        extern void vms_local_poll(struct peer*);
 
-		vms_local_poll(peer);
-		return;
-	}
+        vms_local_poll(peer);
+        return;
+    }
 #endif /* VMS && VMS_LOCALUNIT */
 
-	pp = peer->procptr;
-	pp->polls++;
+    pp = peer->procptr;
+    pp->polls++;
 
-	/*
-	 * Ramble through the usual filtering and grooming code, which
-	 * is essentially a no-op and included mostly for pretty
-	 * billboards.
-	 */
-	poll_time = current_time;
-	refclock_process_offset(pp, pp->lastrec, pp->lastrec, 0);
+    /*
+     * Ramble through the usual filtering and grooming code, which
+     * is essentially a no-op and included mostly for pretty
+     * billboards.
+     */
+    poll_time = current_time;
+    refclock_process_offset(pp, pp->lastrec, pp->lastrec, 0);
 
-	/*
-	 * If another process is disciplining the system clock, we set
-	 * the leap bits and quality indicators from the kernel.
-	 */
+    /*
+     * If another process is disciplining the system clock, we set
+     * the leap bits and quality indicators from the kernel.
+     */
 #if defined(KERNEL_PLL) && defined(LOCKCLOCK)
-	memset(&ntv,  0, sizeof ntv);
-	switch (ntp_adjtime(&ntv)) {
-	case TIME_OK:
-		pp->leap = LEAP_NOWARNING;
-		peer->stratum = pp->stratum;
-		break;
+    memset(&ntv, 0, sizeof ntv);
+    switch (ntp_adjtime(&ntv))
+    {
+    case TIME_OK:
+        pp->leap = LEAP_NOWARNING;
+        peer->stratum = pp->stratum;
+        break;
 
-	case TIME_INS:
-		pp->leap = LEAP_ADDSECOND;
-		peer->stratum = pp->stratum;
-		break;
+    case TIME_INS:
+        pp->leap = LEAP_ADDSECOND;
+        peer->stratum = pp->stratum;
+        break;
 
-	case TIME_DEL:
-		pp->leap = LEAP_DELSECOND;
-		peer->stratum = pp->stratum;
-		break;
+    case TIME_DEL:
+        pp->leap = LEAP_DELSECOND;
+        peer->stratum = pp->stratum;
+        break;
 
-	default:
-		pp->leap = LEAP_NOTINSYNC;
-		peer->stratum = STRATUM_UNSPEC;
-	}
-	pp->disp = 0;
-	pp->jitter = 0;
-#else /* KERNEL_PLL LOCKCLOCK */
-	pp->leap = LEAP_NOWARNING;
-	pp->disp = DISPERSION;
-	pp->jitter = 0;
+    default:
+        pp->leap = LEAP_NOTINSYNC;
+        peer->stratum = STRATUM_UNSPEC;
+    }
+    pp->disp = 0;
+    pp->jitter = 0;
+#else  /* KERNEL_PLL LOCKCLOCK */
+    pp->leap = LEAP_NOWARNING;
+    pp->disp = DISPERSION;
+    pp->jitter = 0;
 #endif /* KERNEL_PLL LOCKCLOCK */
-	pp->lastref = pp->lastrec;
-	refclock_receive(peer);
+    pp->lastref = pp->lastrec;
+    refclock_receive(peer);
 }
 #else
 NONEMPTY_TRANSLATION_UNIT

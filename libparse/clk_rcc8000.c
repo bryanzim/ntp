@@ -14,23 +14,23 @@
  */
 
 #if HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_RCC8000)
 
+#include "ntp_calendar.h"
 #include "ntp_fp.h"
 #include "ntp_unixtime.h"
-#include "ntp_calendar.h"
-
 #include "parse.h"
 
 #ifndef PARSESTREAM
 #include "ntp_stdlib.h"
+
 #include <stdio.h>
 #else
 #include "sys/parsestreams.h"
-extern int printf (const char *, ...);
+extern int printf(const char*, ...);
 #endif
 
 /* Type II Serial Output format
@@ -47,85 +47,91 @@ extern int printf (const char *, ...);
  * P is the Status. See comment below for details.
  */
 
-#define	O_USEC		O_WDAY
-static struct format rcc8000_fmt =
-{ { { 13, 2 }, {16, 2}, { 19, 2}, /* Day, Month, Year */
-    {  0, 2 }, { 3, 2}, {  6, 2}, /* Hour, Minute, Second */
-    {  9, 3 }, {28, 1}, {  0, 0}, /* uSec, Status (Valid,Reject,BST,Leapyear) */  },
-  (const unsigned char *)"  :  :  .      /  /          \r\n",
-  /*"15:50:36.534 30/09/94 273 5 A\x0d\x0a" */
-  0
+#define O_USEC O_WDAY
+static struct format rcc8000_fmt = {
+    { { 13, 2 },
+     { 16, 2 },
+     { 19, 2 }, /* Day, Month, Year */
+      { 0, 2 },
+     { 3, 2 },
+     { 6, 2 }, /* Hour, Minute, Second */
+      { 9, 3 },
+     { 28, 1 },
+     { 0, 0 },
+     /* uSec, Status (Valid,Reject,BST,Leapyear) */ },
+    (const unsigned char*)"  :  :  .      /  /          \r\n",
+    /*"15:50:36.534 30/09/94 273 5 A\x0d\x0a" */
+    0
 };
 
 static parse_cvt_fnc_t cvt_rcc8000;
 static parse_inp_fnc_t inp_rcc8000;
 
-clockformat_t clock_rcc8000 =
-{
-  inp_rcc8000,			/* no input handling */
-  cvt_rcc8000,			/* Radiocode clock conversion */
-  0,				/* no direct PPS monitoring */
-  (void *)&rcc8000_fmt,		/* conversion configuration */
-  "Radiocode RCC8000",
-  31,				/* string buffer */
-  0				/* no private data */
+clockformat_t clock_rcc8000 = {
+    inp_rcc8000,         /* no input handling */
+    cvt_rcc8000,         /* Radiocode clock conversion */
+    0,                   /* no direct PPS monitoring */
+    (void*)&rcc8000_fmt, /* conversion configuration */
+    "Radiocode RCC8000",
+    31, /* string buffer */
+    0   /* no private data */
 };
 
 /* parse_cvt_fnc_t cvt_rcc8000 */
 static u_long
 cvt_rcc8000(
-	    unsigned char *buffer,
-	    int            size,
-	    struct format *format,
-	    clocktime_t   *clock_time,
-	    void          *local
-	    )
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-	if (!Strok(buffer, format->fixed_string)) return CVT_NONE;
-#define	OFFS(x) format->field_offsets[(x)].offset
+    if (!Strok(buffer, format->fixed_string))
+        return CVT_NONE;
+#define OFFS(x) format->field_offsets[(x)].offset
 #define STOI(x, y) Stoi(&buffer[OFFS(x)], y, format->field_offsets[(x)].length)
-	if (	STOI(O_DAY,	&clock_time->day)	||
-		STOI(O_MONTH,	&clock_time->month)	||
-		STOI(O_YEAR,	&clock_time->year)	||
-		STOI(O_HOUR,	&clock_time->hour)	||
-		STOI(O_MIN,	&clock_time->minute)	||
-		STOI(O_SEC,	&clock_time->second)	||
-		STOI(O_USEC,	&clock_time->usecond)
-		) return CVT_FAIL|CVT_BADFMT;
-	clock_time->usecond *= 1000;
+    if (STOI(O_DAY, &clock_time->day) ||
+        STOI(O_MONTH, &clock_time->month) ||
+        STOI(O_YEAR, &clock_time->year) ||
+        STOI(O_HOUR, &clock_time->hour) ||
+        STOI(O_MIN, &clock_time->minute) ||
+        STOI(O_SEC, &clock_time->second) ||
+        STOI(O_USEC, &clock_time->usecond))
+        return CVT_FAIL | CVT_BADFMT;
+    clock_time->usecond *= 1000;
 
-	clock_time->utcoffset = 0;
+    clock_time->utcoffset = 0;
 
 #define RCCP buffer[28]
-	/*
-	 * buffer[28] is the ASCII representation of a hex character ( 0 through F )
-	 *      The four bits correspond to:
-	 *      8 - Valid Time
-	 *      4 - Reject Code
-	 *      2 - British Summer Time (receiver set to emit GMT all year.)
-	 *      1 - Leap year
-	 */
-#define RCC8000_VALID  0x8
+    /*
+     * buffer[28] is the ASCII representation of a hex character ( 0 through F )
+     *      The four bits correspond to:
+     *      8 - Valid Time
+     *      4 - Reject Code
+     *      2 - British Summer Time (receiver set to emit GMT all year.)
+     *      1 - Leap year
+     */
+#define RCC8000_VALID 0x8
 #define RCC8000_REJECT 0x4
-#define RCC8000_BST    0x2
-#define RCC8000_LEAPY  0x1
+#define RCC8000_BST 0x2
+#define RCC8000_LEAPY 0x1
 
-	clock_time->flags = 0;
+    clock_time->flags = 0;
 
-	if ( (RCCP >= '0' && RCCP <= '9') || (RCCP >= 'A' && RCCP <= 'F') )
-	{
-		register int flag;
+    if ((RCCP >= '0' && RCCP <= '9') || (RCCP >= 'A' && RCCP <= 'F'))
+    {
+        register int flag;
 
-		flag = (RCCP >= '0' && RCCP <= '9' ) ?  RCCP - '0' : RCCP - 'A' + 10;
+        flag = (RCCP >= '0' && RCCP <= '9') ? RCCP - '0' : RCCP - 'A' + 10;
 
-		if (!(flag & RCC8000_VALID))
-		    clock_time->flags |= PARSEB_POWERUP;
+        if (!(flag & RCC8000_VALID))
+            clock_time->flags |= PARSEB_POWERUP;
 
-		clock_time->flags |= PARSEB_UTC; /* British special - guess why 8-) */
+        clock_time->flags |= PARSEB_UTC; /* British special - guess why 8-) */
 
-		/* other flags not used */
-	}
-	return CVT_OK;
+        /* other flags not used */
+    }
+    return CVT_OK;
 }
 /*
  * parse_inp_fnc_t inp_rcc8000
@@ -134,37 +140,36 @@ cvt_rcc8000(
  */
 static u_long
 inp_rcc8000(
-	    parse_t      *parseio,
-	    char         ch,
-	    timestamp_t  *tstamp
-	  )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
+    unsigned int rtc;
 
-	parseprintf(DD_PARSE, ("inp_rcc8000(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("inp_rcc8000(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-	switch (ch)
-	{
-	case '\n':
-		parseprintf(DD_PARSE, ("inp_rcc8000: EOL seen\n"));
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    switch (ch)
+    {
+    case '\n':
+        parseprintf(DD_PARSE, ("inp_rcc8000: EOL seen\n"));
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
 
 
-	default:
-		if (parseio->parse_index == 0) /* take sample at start of message */
-		{
-			parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
-		}
-		return parse_addchar(parseio, ch);
-	}
+    default:
+        if (parseio->parse_index == 0) /* take sample at start of message */
+        {
+            parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        }
+        return parse_addchar(parseio, ch);
+    }
 }
 
 #else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_RCC8000) */
 NONEMPTY_TRANSLATION_UNIT
-#endif  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_RCC8000) */
+#endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_RCC8000) */
 
 /*
  * History:

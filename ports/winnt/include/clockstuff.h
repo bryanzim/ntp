@@ -1,11 +1,12 @@
 #ifndef _CLOCKSTUFF_H
 #define _CLOCKSTUFF_H
 
-#include <time.h>
-#include <sys\timeb.h>
-
 #include "ntp_fp.h"
 #include "ntp_syslog.h"
+
+#include <sys\timeb.h>
+
+#include <time.h>
 
 
 void init_winnt_time(void);
@@ -16,8 +17,8 @@ void lock_thread_to_processor(HANDLE);
  * SystemTimeToFileTime()
  */
 
-#define FILETIME_1970     0x019db1ded53e8000
-#define HECTONANOSECONDS  10000000
+#define FILETIME_1970 0x019db1ded53e8000
+#define HECTONANOSECONDS 10000000
 
 /*
  * Multimedia Timer
@@ -25,9 +26,10 @@ void lock_thread_to_processor(HANDLE);
 
 void set_mm_timer(int);
 
-enum {
-	MM_TIMER_LORES,
-	MM_TIMER_HIRES
+enum
+{
+    MM_TIMER_LORES,
+    MM_TIMER_HIRES
 };
 
 /*
@@ -35,14 +37,14 @@ enum {
  * either GetSystemTimeAsFileTime provided by Windows
  * or ntpd's interpolating replacement.
  */
-typedef void (WINAPI *PGSTAFT)(LPFILETIME pftResult);
+typedef void(WINAPI* PGSTAFT)(LPFILETIME pftResult);
 extern PGSTAFT get_sys_time_as_filetime;
 extern PGSTAFT pGetSystemTimePreciseAsFileTime;
 
 /* This should really be in a ntpd_win.h or similar:
  * Set thread description visible in debugger.
  */
-typedef HRESULT (WINAPI *PSTD)(HANDLE hThread, PCWSTR pwstr);
+typedef HRESULT(WINAPI* PSTD)(HANDLE hThread, PCWSTR pwstr);
 extern PSTD pSetThreadDescription;
 
 void lock_thread_to_processor(HANDLE);

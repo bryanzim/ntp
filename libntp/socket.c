@@ -3,22 +3,22 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
+
+#include "ntp.h"
+#include "ntp_debug.h"
+#include "ntp_io.h"
+#include "ntp_net.h"
 
 #include <stdio.h>
 
-#include "ntp.h"
-#include "ntp_io.h"
-#include "ntp_net.h"
-#include "ntp_debug.h"
-
 /*
- * Windows C runtime ioctl() can't deal properly with sockets, 
+ * Windows C runtime ioctl() can't deal properly with sockets,
  * map to ioctlsocket for this source file.
  */
 #ifdef SYS_WINNT
-#define ioctl(fd, opt, val)  ioctlsocket(fd, opt, (u_long *)(val))
+#define ioctl(fd, opt, val) ioctlsocket(fd, opt, (u_long*)(val))
 #endif
 
 /*
@@ -52,15 +52,14 @@
  */
 SOCKET
 move_fd(
-	SOCKET fd
-	)
+    SOCKET fd)
 {
 #if !defined(SYS_WINNT) && defined(F_DUPFD)
 #ifndef FD_CHUNK
-#define FD_CHUNK	10
+#define FD_CHUNK 10
 #endif
 #ifndef FOPEN_MAX
-#define FOPEN_MAX	20
+#define FOPEN_MAX 20
 #endif
 /*
  * number of fds we would like to have for
@@ -75,110 +74,119 @@ move_fd(
 #define FD_PREFERRED_SOCKBOUNDARY 48
 #endif
 
-	static SOCKET socket_boundary = -1;
-	SOCKET newfd;
+    static SOCKET socket_boundary = -1;
+    SOCKET newfd;
 
-	REQUIRE((int)fd >= 0);
+    REQUIRE((int)fd >= 0);
 
-	/*
-	 * check whether boundary has be set up
-	 * already
-	 */
-	if (socket_boundary == -1) {
-		socket_boundary = max(0, min(GETDTABLESIZE() - FD_CHUNK,
-					     min(FOPEN_MAX, FD_PREFERRED_SOCKBOUNDARY)));
-		TRACE(1, ("move_fd: estimated max descriptors: %d, "
-			  "initial socket boundary: %d\n",
-			  GETDTABLESIZE(), socket_boundary));
-	}
+    /*
+     * check whether boundary has be set up
+     * already
+     */
+    if (socket_boundary == -1)
+    {
+        socket_boundary = max(0, min(GETDTABLESIZE() - FD_CHUNK,
+                                     min(FOPEN_MAX, FD_PREFERRED_SOCKBOUNDARY)));
+        TRACE(1, ("move_fd: estimated max descriptors: %d, "
+                  "initial socket boundary: %d\n",
+                  GETDTABLESIZE(), socket_boundary));
+    }
 
-	/*
-	 * Leave a space for stdio to work in. potentially moving the
-	 * socket_boundary lower until allocation succeeds.
-	 */
-	do {
-		if (fd >= 0 && fd < socket_boundary) {
-			/* inside reserved range: attempt to move fd */
-			newfd = fcntl(fd, F_DUPFD, socket_boundary);
+    /*
+     * Leave a space for stdio to work in. potentially moving the
+     * socket_boundary lower until allocation succeeds.
+     */
+    do
+    {
+        if (fd >= 0 && fd < socket_boundary)
+        {
+            /* inside reserved range: attempt to move fd */
+            newfd = fcntl(fd, F_DUPFD, socket_boundary);
 
-			if (newfd != -1) {
-				/* success: drop the old one - return the new one */
-				close(fd);
-				return newfd;
-			}
-		} else {
-			/* outside reserved range: no work - return the original one */
-			return fd;
-		}
-		socket_boundary = max(0, socket_boundary - FD_CHUNK);
-		TRACE(1, ("move_fd: selecting new socket boundary: %d\n",
-			  socket_boundary));
-	} while (socket_boundary > 0);
+            if (newfd != -1)
+            {
+                /* success: drop the old one - return the new one */
+                close(fd);
+                return newfd;
+            }
+        }
+        else
+        {
+            /* outside reserved range: no work - return the original one */
+            return fd;
+        }
+        socket_boundary = max(0, socket_boundary - FD_CHUNK);
+        TRACE(1, ("move_fd: selecting new socket boundary: %d\n",
+                  socket_boundary));
+    } while (socket_boundary > 0);
 #else
-	ENSURE((int)fd >= 0);
+    ENSURE((int)fd >= 0);
 #endif /* !defined(SYS_WINNT) && defined(F_DUPFD) */
-	return fd;
+    return fd;
 }
 
 
 /*
  * make_socket_nonblocking() - set up descriptor to be non blocking
  */
-void
-make_socket_nonblocking(
-	SOCKET fd
-	)
+void make_socket_nonblocking(
+    SOCKET fd)
 {
-	/*
-	 * set non-blocking,
-	 */
+    /*
+     * set non-blocking,
+     */
 
 #ifdef USE_FIONBIO
-	/* in vxWorks we use FIONBIO, but the others are defined for old
-	 * systems, so all hell breaks loose if we leave them defined
-	 */
+    /* in vxWorks we use FIONBIO, but the others are defined for old
+     * systems, so all hell breaks loose if we leave them defined
+     */
 #undef O_NONBLOCK
 #undef FNDELAY
 #undef O_NDELAY
 #endif
 
 #if defined(O_NONBLOCK) /* POSIX */
-	if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0) {
-		msyslog(LOG_ERR,
-			"fcntl(O_NONBLOCK) fails on fd #%d: %m", fd);
-		exit(1);
-	}
+    if (fcntl(fd, F_SETFL, O_NONBLOCK) < 0)
+    {
+        msyslog(LOG_ERR,
+                "fcntl(O_NONBLOCK) fails on fd #%d: %m", fd);
+        exit(1);
+    }
 #elif defined(FNDELAY)
-	if (fcntl(fd, F_SETFL, FNDELAY) < 0) {
-		msyslog(LOG_ERR, "fcntl(FNDELAY) fails on fd #%d: %m",
-			fd);
-		exit(1);
-	}
+    if (fcntl(fd, F_SETFL, FNDELAY) < 0)
+    {
+        msyslog(LOG_ERR, "fcntl(FNDELAY) fails on fd #%d: %m",
+                fd);
+        exit(1);
+    }
 #elif defined(O_NDELAY) /* generally the same as FNDELAY */
-	if (fcntl(fd, F_SETFL, O_NDELAY) < 0) {
-		msyslog(LOG_ERR, "fcntl(O_NDELAY) fails on fd #%d: %m",
-			fd);
-		exit(1);
-	}
+    if (fcntl(fd, F_SETFL, O_NDELAY) < 0)
+    {
+        msyslog(LOG_ERR, "fcntl(O_NDELAY) fails on fd #%d: %m",
+                fd);
+        exit(1);
+    }
 #elif defined(FIONBIO)
-	{
-		int on = 1;
+    {
+        int on = 1;
 
-		if (ioctl(fd, FIONBIO, &on) < 0) {
-			msyslog(LOG_ERR,
-				"ioctl(FIONBIO) fails on fd #%d: %m",
-				fd);
-			exit(1);
-		}
-	}
+        if (ioctl(fd, FIONBIO, &on) < 0)
+        {
+            msyslog(LOG_ERR,
+                    "ioctl(FIONBIO) fails on fd #%d: %m",
+                    fd);
+            exit(1);
+        }
+    }
 #elif defined(FIOSNBIO)
-	if (ioctl(fd, FIOSNBIO, &on) < 0) {
-		msyslog(LOG_ERR,
-			"ioctl(FIOSNBIO) fails on fd #%d: %m", fd);
-		exit(1);
-	}
+    if (ioctl(fd, FIOSNBIO, &on) < 0)
+    {
+        msyslog(LOG_ERR,
+                "ioctl(FIOSNBIO) fails on fd #%d: %m", fd);
+        exit(1);
+    }
 #else
-# include "Bletch: Need non-blocking I/O!"
+#include "Bletch: Need non-blocking I/O!"
 #endif
 }
 

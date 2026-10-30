@@ -35,48 +35,52 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_DCF7000)
 
+#include "ntp_calendar.h"
 #include "ntp_fp.h"
 #include "ntp_unixtime.h"
-#include "ntp_calendar.h"
-
 #include "parse.h"
 
 #ifndef PARSESTREAM
 #include "ntp_stdlib.h"
+
 #include <stdio.h>
 #else
 #include "sys/parsestreams.h"
-extern int printf (const char *, ...);
+extern int printf(const char*, ...);
 #endif
 
-static struct format dcf7000_fmt =
-{				/* ELV DCF7000 */
-	{
-		{  6, 2}, {  3, 2}, {  0, 2},
-		{ 12, 2}, { 15, 2}, { 18, 2},
-		{  9, 2}, { 21, 2},
-	},
-	(const unsigned char *)"  -  -  -  -  -  -  -  \r",
-	0
+static struct format dcf7000_fmt = {
+  /* ELV DCF7000 */
+    {
+     { 6, 2 },
+     { 3, 2 },
+     { 0, 2 },
+     { 12, 2 },
+     { 15, 2 },
+     { 18, 2 },
+     { 9, 2 },
+     { 21, 2 },
+     },
+    (const unsigned char*)"  -  -  -  -  -  -  -  \r",
+    0
 };
 
 static parse_cvt_fnc_t cvt_dcf7000;
 static parse_inp_fnc_t inp_dcf7000;
 
-clockformat_t clock_dcf7000 =
-{
-  inp_dcf7000,			/* DCF7000 input handling */
-  cvt_dcf7000,			/* ELV DCF77 conversion */
-  0,				/* no direct PPS monitoring */
-  (void *)&dcf7000_fmt,		/* conversion configuration */
-  "ELV DCF7000",		/* ELV clock */
-  24,				/* string buffer */
-  0				/* no private data (complete packets) */
+clockformat_t clock_dcf7000 = {
+    inp_dcf7000,         /* DCF7000 input handling */
+    cvt_dcf7000,         /* ELV DCF77 conversion */
+    0,                   /* no direct PPS monitoring */
+    (void*)&dcf7000_fmt, /* conversion configuration */
+    "ELV DCF7000",       /* ELV clock */
+    24,                  /* string buffer */
+    0                    /* no private data (complete packets) */
 };
 
 /*
@@ -86,62 +90,61 @@ clockformat_t clock_dcf7000 =
  */
 static u_long
 cvt_dcf7000(
-	    unsigned char *buffer,
-	    int            size,
-	    struct format *format,
-	    clocktime_t   *clock_time,
-	    void          *local
-	    )
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-	if (!Strok(buffer, format->fixed_string))
-	{
-		return CVT_NONE;
-	}
-	else
-	{
-		if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
-			 format->field_offsets[O_DAY].length) ||
-		    Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
-			 format->field_offsets[O_MONTH].length) ||
-		    Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
-			 format->field_offsets[O_YEAR].length) ||
-		    Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
-			 format->field_offsets[O_HOUR].length) ||
-		    Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
-			 format->field_offsets[O_MIN].length) ||
-		    Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
-			 format->field_offsets[O_SEC].length))
-		{
-			return CVT_FAIL|CVT_BADFMT;
-		}
-		else
-		{
-			unsigned char *f = &buffer[format->field_offsets[O_FLAGS].offset];
-			long flags;
+    if (!Strok(buffer, format->fixed_string))
+    {
+        return CVT_NONE;
+    }
+    else
+    {
+        if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
+                 format->field_offsets[O_DAY].length) ||
+            Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
+                 format->field_offsets[O_MONTH].length) ||
+            Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
+                 format->field_offsets[O_YEAR].length) ||
+            Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
+                 format->field_offsets[O_HOUR].length) ||
+            Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
+                 format->field_offsets[O_MIN].length) ||
+            Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
+                 format->field_offsets[O_SEC].length))
+        {
+            return CVT_FAIL | CVT_BADFMT;
+        }
+        else
+        {
+            unsigned char* f = &buffer[format->field_offsets[O_FLAGS].offset];
+            long flags;
 
-			clock_time->flags = 0;
-			clock_time->usecond = 0;
+            clock_time->flags = 0;
+            clock_time->usecond = 0;
 
-			if (Stoi(f, &flags, format->field_offsets[O_FLAGS].length))
-			{
-				return CVT_FAIL|CVT_BADFMT;
-			}
-			else
-			{
-				if (flags & 0x1)
-				    clock_time->utcoffset = -2*60*60;
-				else
-				    clock_time->utcoffset = -1*60*60;
+            if (Stoi(f, &flags, format->field_offsets[O_FLAGS].length))
+            {
+                return CVT_FAIL | CVT_BADFMT;
+            }
+            else
+            {
+                if (flags & 0x1)
+                    clock_time->utcoffset = -2 * 60 * 60;
+                else
+                    clock_time->utcoffset = -1 * 60 * 60;
 
-				if (flags & 0x2)
-				    clock_time->flags |= PARSEB_ANNOUNCE;
+                if (flags & 0x2)
+                    clock_time->flags |= PARSEB_ANNOUNCE;
 
-				if (flags & 0x4)
-				    clock_time->flags |= PARSEB_NOSYNC;
-			}
-			return CVT_OK;
-		}
-	}
+                if (flags & 0x4)
+                    clock_time->flags |= PARSEB_NOSYNC;
+            }
+            return CVT_OK;
+        }
+    }
 }
 
 /*
@@ -151,31 +154,30 @@ cvt_dcf7000(
  */
 static u_long
 inp_dcf7000(
-	  parse_t      *parseio,
-	  char         ch,
-	  timestamp_t  *tstamp
-	  )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
+    unsigned int rtc;
 
-	parseprintf(DD_PARSE, ("inp_dcf7000(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("inp_dcf7000(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-	switch (ch)
-	{
-	case '\r':
-		parseprintf(DD_PARSE, ("inp_dcf7000: EOL seen\n"));
-		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    switch (ch)
+    {
+    case '\r':
+        parseprintf(DD_PARSE, ("inp_dcf7000: EOL seen\n"));
+        parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
 
-	default:
-		return parse_addchar(parseio, ch);
-	}
+    default:
+        return parse_addchar(parseio, ch);
+    }
 }
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_DCF7000) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_DCF7000) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_DCF7000) */
 

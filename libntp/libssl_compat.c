@@ -15,13 +15,15 @@
  * ---------------------------------------------------------------------
  */
 #include "config.h"
+
 #include "ntp_types.h"
 
 /* ----------------------------------------------------------------- */
 #ifdef OPENSSL
-# include <string.h>
-# include <openssl/bn.h>
-# include <openssl/evp.h>
+#include <openssl/bn.h>
+#include <openssl/evp.h>
+
+#include <string.h>
 #endif
 /* ----------------------------------------------------------------- */
 
@@ -40,15 +42,15 @@
  */
 static void
 replace_bn_nn(
-	BIGNUM **	ps,
-	BIGNUM *	n
-	)
+    BIGNUM** ps,
+    BIGNUM* n)
 {
-	if (n) {
-		REQUIRE(*ps != n);
-		BN_clear_free(*ps);
-		*ps = n;
-	}
+    if (n)
+    {
+        REQUIRE(*ps != n);
+        BN_clear_free(*ps);
+        *ps = n;
+    }
 }
 
 /* --------------------------------------------------------------------
@@ -57,15 +59,13 @@ replace_bn_nn(
 BN_GENCB*
 sslshimBN_GENCB_new(void)
 {
-	return calloc(1,sizeof(BN_GENCB));
+    return calloc(1, sizeof(BN_GENCB));
 }
 
-void
-sslshimBN_GENCB_free(
-	BN_GENCB	*cb
-	)
+void sslshimBN_GENCB_free(
+    BN_GENCB* cb)
 {
-	free(cb);
+    free(cb);
 }
 
 /* --------------------------------------------------------------------
@@ -74,260 +74,226 @@ sslshimBN_GENCB_free(
 EVP_MD_CTX*
 sslshim_EVP_MD_CTX_new(void)
 {
-	EVP_MD_CTX *	ctx;
-	if (NULL != (ctx = calloc(1, sizeof(EVP_MD_CTX))))
-		EVP_MD_CTX_init(ctx);
-	return ctx;
+    EVP_MD_CTX* ctx;
+    if (NULL != (ctx = calloc(1, sizeof(EVP_MD_CTX))))
+        EVP_MD_CTX_init(ctx);
+    return ctx;
 }
 
-void
-sslshim_EVP_MD_CTX_free(
-	EVP_MD_CTX *	pctx
-	)
+void sslshim_EVP_MD_CTX_free(
+    EVP_MD_CTX* pctx)
 {
-	free(pctx);
+    free(pctx);
 }
 
 /* --------------------------------------------------------------------
  * get EVP keys and key type
  */
-int
-sslshim_EVP_PKEY_id(
-	const EVP_PKEY *pkey
-	)
+int sslshim_EVP_PKEY_id(
+    const EVP_PKEY* pkey)
 {
-	return (pkey) ? pkey->type : EVP_PKEY_NONE;
+    return (pkey) ? pkey->type : EVP_PKEY_NONE;
 }
 
-int
-sslshim_EVP_PKEY_base_id(
-	const EVP_PKEY *pkey
-	)
+int sslshim_EVP_PKEY_base_id(
+    const EVP_PKEY* pkey)
 {
-	return (pkey) ? EVP_PKEY_type(pkey->type) : EVP_PKEY_NONE;
+    return (pkey) ? EVP_PKEY_type(pkey->type) : EVP_PKEY_NONE;
 }
 
-RSA*
-sslshim_EVP_PKEY_get0_RSA(
-	EVP_PKEY *	pkey
-	)
+RSA* sslshim_EVP_PKEY_get0_RSA(
+    EVP_PKEY* pkey)
 {
-	return (pkey) ? pkey->pkey.rsa : NULL;
+    return (pkey) ? pkey->pkey.rsa : NULL;
 }
 
-DSA*
-sslshim_EVP_PKEY_get0_DSA(
-	EVP_PKEY *	pkey
-	)
+DSA* sslshim_EVP_PKEY_get0_DSA(
+    EVP_PKEY* pkey)
 {
-	return (pkey) ? pkey->pkey.dsa : NULL;
+    return (pkey) ? pkey->pkey.dsa : NULL;
 }
 
 /* --------------------------------------------------------------------
  * set/get RSA params
  */
-void
-sslshim_RSA_get0_key(
-	const RSA *	prsa,
-	const BIGNUM **	pn,
-	const BIGNUM **	pe,
-	const BIGNUM **	pd
-	)
+void sslshim_RSA_get0_key(
+    const RSA* prsa,
+    const BIGNUM** pn,
+    const BIGNUM** pe,
+    const BIGNUM** pd)
 {
-	REQUIRE(prsa != NULL);
+    REQUIRE(prsa != NULL);
 
-	if (pn)
-		*pn = prsa->n;
-	if (pe)
-		*pe = prsa->e;
-	if (pd)
-		*pd = prsa->d;
+    if (pn)
+        *pn = prsa->n;
+    if (pe)
+        *pe = prsa->e;
+    if (pd)
+        *pd = prsa->d;
 }
 
-int
-sslshim_RSA_set0_key(
-	RSA *		prsa,
-	BIGNUM *	n,
-	BIGNUM *	e,
-	BIGNUM *	d
-	)
+int sslshim_RSA_set0_key(
+    RSA* prsa,
+    BIGNUM* n,
+    BIGNUM* e,
+    BIGNUM* d)
 {
-	REQUIRE(prsa != NULL);
-	if (!((prsa->n || n) && (prsa->e || e)))
-		return 0;
+    REQUIRE(prsa != NULL);
+    if (!((prsa->n || n) && (prsa->e || e)))
+        return 0;
 
-	replace_bn_nn(&prsa->n, n);
-	replace_bn_nn(&prsa->e, e);
-	replace_bn_nn(&prsa->d, d);
-	
-	return 1;
+    replace_bn_nn(&prsa->n, n);
+    replace_bn_nn(&prsa->e, e);
+    replace_bn_nn(&prsa->d, d);
+
+    return 1;
 }
 
-void
-sslshim_RSA_get0_factors(
-	const RSA *	prsa,
-	const BIGNUM **	pp,
-	const BIGNUM **	pq
-	)
+void sslshim_RSA_get0_factors(
+    const RSA* prsa,
+    const BIGNUM** pp,
+    const BIGNUM** pq)
 {
-	REQUIRE(prsa != NULL);
+    REQUIRE(prsa != NULL);
 
-	if (pp)
-		*pp = prsa->p;
-	if (pq)
-		*pq = prsa->q;
+    if (pp)
+        *pp = prsa->p;
+    if (pq)
+        *pq = prsa->q;
 }
 
-int
-sslshim_RSA_set0_factors(
-	RSA    *	prsa,
-	BIGNUM *	p,
-	BIGNUM *	q
-	)
+int sslshim_RSA_set0_factors(
+    RSA* prsa,
+    BIGNUM* p,
+    BIGNUM* q)
 {
-	REQUIRE(prsa != NULL);
-	if (!((prsa->p || p) && (prsa->q || q)))
-		return 0;
+    REQUIRE(prsa != NULL);
+    if (!((prsa->p || p) && (prsa->q || q)))
+        return 0;
 
-	replace_bn_nn(&prsa->p, p);
-	replace_bn_nn(&prsa->q, q);
+    replace_bn_nn(&prsa->p, p);
+    replace_bn_nn(&prsa->q, q);
 
-	return 1;
+    return 1;
 }
 
-int
-sslshim_RSA_set0_crt_params(
-	RSA    *	prsa,
-	BIGNUM *	dmp1,
-	BIGNUM *	dmq1,
-	BIGNUM *	iqmp
-	)
+int sslshim_RSA_set0_crt_params(
+    RSA* prsa,
+    BIGNUM* dmp1,
+    BIGNUM* dmq1,
+    BIGNUM* iqmp)
 {
-	REQUIRE(prsa != NULL);
-	if (!((prsa->dmp1 || dmp1) &&
-	      (prsa->dmq1 || dmq1) &&
-	      (prsa->iqmp || iqmp) ))
-		return 0;
+    REQUIRE(prsa != NULL);
+    if (!((prsa->dmp1 || dmp1) &&
+          (prsa->dmq1 || dmq1) &&
+          (prsa->iqmp || iqmp)))
+        return 0;
 
-	replace_bn_nn(&prsa->dmp1, dmp1);
-	replace_bn_nn(&prsa->dmq1, dmq1);
-	replace_bn_nn(&prsa->iqmp, iqmp);
-	
-	return 1;
+    replace_bn_nn(&prsa->dmp1, dmp1);
+    replace_bn_nn(&prsa->dmq1, dmq1);
+    replace_bn_nn(&prsa->iqmp, iqmp);
+
+    return 1;
 }
 
 /* --------------------------------------------------------------------
  * set/get DSA signature parameters
  */
-void
-sslshim_DSA_SIG_get0(
-	const DSA_SIG *	psig,
-	const BIGNUM **	pr,
-	const BIGNUM **	ps
-	)
+void sslshim_DSA_SIG_get0(
+    const DSA_SIG* psig,
+    const BIGNUM** pr,
+    const BIGNUM** ps)
 {
-	REQUIRE(psig != NULL);
+    REQUIRE(psig != NULL);
 
-	if (pr != NULL)
-		*pr = psig->r;
-	if (ps != NULL)
-		*ps = psig->s;
+    if (pr != NULL)
+        *pr = psig->r;
+    if (ps != NULL)
+        *ps = psig->s;
 }
 
-int
-sslshim_DSA_SIG_set0(
-	DSA_SIG *	psig,
-	BIGNUM *	r,
-	BIGNUM *	s
-	)
+int sslshim_DSA_SIG_set0(
+    DSA_SIG* psig,
+    BIGNUM* r,
+    BIGNUM* s)
 {
-	REQUIRE(psig != NULL);
-	if (!(r && s))
-		return 0;
+    REQUIRE(psig != NULL);
+    if (!(r && s))
+        return 0;
 
-	replace_bn_nn(&psig->r, r);
-	replace_bn_nn(&psig->s, s);
-	
-	return 1;
+    replace_bn_nn(&psig->r, r);
+    replace_bn_nn(&psig->s, s);
+
+    return 1;
 }
 
 /* --------------------------------------------------------------------
  * get/set DSA parameters
  */
-void
-sslshim_DSA_get0_pqg(
-	const DSA *	pdsa,
-	const BIGNUM **	pp,
-	const BIGNUM **	pq,
-	const BIGNUM **	pg
-	)
+void sslshim_DSA_get0_pqg(
+    const DSA* pdsa,
+    const BIGNUM** pp,
+    const BIGNUM** pq,
+    const BIGNUM** pg)
 {
-	REQUIRE(pdsa != NULL);
+    REQUIRE(pdsa != NULL);
 
-	if (pp != NULL)
-		*pp = pdsa->p;
-	if (pq != NULL)
-		*pq = pdsa->q;
-	if (pg != NULL)
-		*pg = pdsa->g;
+    if (pp != NULL)
+        *pp = pdsa->p;
+    if (pq != NULL)
+        *pq = pdsa->q;
+    if (pg != NULL)
+        *pg = pdsa->g;
 }
 
-int
-sslshim_DSA_set0_pqg(
-	DSA *		pdsa,
-	BIGNUM *	p,
-	BIGNUM *	q,
-	BIGNUM *	g
-	)
+int sslshim_DSA_set0_pqg(
+    DSA* pdsa,
+    BIGNUM* p,
+    BIGNUM* q,
+    BIGNUM* g)
 {
-	if (!((pdsa->p || p) && (pdsa->q || q) && (pdsa->g || g)))
-		return 0;
+    if (!((pdsa->p || p) && (pdsa->q || q) && (pdsa->g || g)))
+        return 0;
 
-	replace_bn_nn(&pdsa->p, p);
-	replace_bn_nn(&pdsa->q, q);
-	replace_bn_nn(&pdsa->g, g);
+    replace_bn_nn(&pdsa->p, p);
+    replace_bn_nn(&pdsa->q, q);
+    replace_bn_nn(&pdsa->g, g);
 
-	return 1;
+    return 1;
 }
 
-void
-sslshim_DSA_get0_key(
-	const DSA *	pdsa,
-	const BIGNUM **	ppub_key,
-	const BIGNUM **	ppriv_key
-	)
+void sslshim_DSA_get0_key(
+    const DSA* pdsa,
+    const BIGNUM** ppub_key,
+    const BIGNUM** ppriv_key)
 {
-	REQUIRE(pdsa != NULL);
+    REQUIRE(pdsa != NULL);
 
-	if (ppub_key != NULL)
-		*ppub_key = pdsa->pub_key;
-	if (ppriv_key != NULL)
-		*ppriv_key = pdsa->priv_key;
+    if (ppub_key != NULL)
+        *ppub_key = pdsa->pub_key;
+    if (ppriv_key != NULL)
+        *ppriv_key = pdsa->priv_key;
 }
 
-int
-sslshim_DSA_set0_key(
-	DSA *		pdsa,
-	BIGNUM *	pub_key,
-	BIGNUM *	priv_key
-	)
+int sslshim_DSA_set0_key(
+    DSA* pdsa,
+    BIGNUM* pub_key,
+    BIGNUM* priv_key)
 {
-	REQUIRE(pdsa != NULL);
-	if (!(pdsa->pub_key || pub_key))
-		return 0;
+    REQUIRE(pdsa != NULL);
+    if (!(pdsa->pub_key || pub_key))
+        return 0;
 
-	replace_bn_nn(&pdsa->pub_key, pub_key);
-	replace_bn_nn(&pdsa->priv_key, priv_key);
+    replace_bn_nn(&pdsa->pub_key, pub_key);
+    replace_bn_nn(&pdsa->priv_key, priv_key);
 
-	return 1;
+    return 1;
 }
 
-int
-sslshim_X509_get_signature_nid(
-	const X509 *x
-	)
+int sslshim_X509_get_signature_nid(
+    const X509* x)
 {
-	return OBJ_obj2nid(x->sig_alg->algorithm);
+    return OBJ_obj2nid(x->sig_alg->algorithm);
 }
 
 /* ----------------------------------------------------------------- */

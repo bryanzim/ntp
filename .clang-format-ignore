@@ -1,0 +1,5 @@
+sntp/libevent/**
+sntp/libopts/**
+sntp/unity/**
+libntp/lib/isc/**
+libjsmn/**

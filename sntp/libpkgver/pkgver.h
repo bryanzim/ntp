@@ -1,5 +1,5 @@
 /*
- * 
+ *
  *   Copyright 2015 Harlan Stenn.  Used by NTP with permission.
  *
  *   Author: Harlan Stenn <harlan@pfcs.com>
@@ -10,10 +10,10 @@
  *   warranty.
  */
 
-extern int colcomp(char *s1, char *s2);
+extern int colcomp(char* s1, char* s2);
 
-#define PKG_VER_LT(x)	(colcomp((x), PACKAGE_VERSION) < 0)
-#define PKG_VER_LE(x)	(colcomp((x), PACKAGE_VERSION) <= 0)
-#define PKG_VER_EQ(x)	(colcomp((x), PACKAGE_VERSION) == 0)
-#define PKG_VER_GE(x)	(colcomp((x), PACKAGE_VERSION) >= 0)
-#define PKG_VER_GT(x)	(colcomp((x), PACKAGE_VERSION) > 0)
+#define PKG_VER_LT(x) (colcomp((x), PACKAGE_VERSION) < 0)
+#define PKG_VER_LE(x) (colcomp((x), PACKAGE_VERSION) <= 0)
+#define PKG_VER_EQ(x) (colcomp((x), PACKAGE_VERSION) == 0)
+#define PKG_VER_GE(x) (colcomp((x), PACKAGE_VERSION) >= 0)
+#define PKG_VER_GT(x) (colcomp((x), PACKAGE_VERSION) > 0)

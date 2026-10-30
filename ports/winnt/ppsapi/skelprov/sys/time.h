@@ -8,11 +8,13 @@
 #define SYS_TIME_H
 
 #include <windows.h>
+
 #include <time.h>
 
-typedef struct timespec {
-	time_t	tv_sec;
-	long	tv_nsec;
+typedef struct timespec
+{
+    time_t tv_sec;
+    long tv_nsec;
 } timespec_t;
 
 #endif /* SYS_TIME_H */

@@ -1,6 +1,6 @@
 /*
  * /src/NTP/ntp4-dev/libparse/clk_wharton.c,v 4.2 2004/11/14 15:29:41 kardel RELEASE_20050508_A
- *  
+ *
  * clk_wharton.c,v 4.2 2004/11/14 15:29:41 kardel RELEASE_20050508_A
  *
  * From Philippe De Muyter <phdm@macqel.be>, 1999
@@ -21,10 +21,11 @@
 
 #ifndef PARSESTREAM
 #include "ntp_stdlib.h"
+
 #include <stdio.h>
 #else
 #include "sys/parsestreams.h"
-extern void printf (const char *, ...);
+extern void printf(const char*, ...);
 #endif
 
 #include "ascii.h"
@@ -49,7 +50,7 @@ extern void printf (const char *, ...);
  *	Parity even			12		E
  *
  * WHARTON 400A Series output format 1 is as follows :
- * 
+ *
  * Timestamp	STXssmmhhDDMMYYSETX
  * Pos		0  12345678901234
  *		0  00000000011111
@@ -67,7 +68,7 @@ extern void printf (const char *, ...);
  *			bit 1	0 = Winter time		1 = Summer time
  *			bit 2	0 = not synchronised	1 = synchronised
  *			bit 3	0 = no early warning	1 = early warning
- * 
+ *
  */
 
 static parse_cvt_fnc_t cvt_wharton_400a;
@@ -75,48 +76,47 @@ static parse_inp_fnc_t inp_wharton_400a;
 
 /*
  * parse_cvt_fnc_t cvt_wharton_400a
- * 
+ *
  * convert simple type format
  */
-static          u_long
+static u_long
 cvt_wharton_400a(
-	unsigned char *buffer,
-	int            size,
-	struct format *format,
-	clocktime_t   *clock_time,
-	void          *local
-	)
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-	int	i;
+    int i;
 
-	/* The given `size' includes a terminating null-character. */
-	if (size != 15 || buffer[0U] != STX || buffer[14U] != ETX
-	    || buffer[13U] < '0' || buffer[13U] > ('0' + 0xf))
-		return CVT_NONE;
-	for (i = 1; i < 13; i += 1)
-		if (buffer[i] < '0' || buffer[i] > '9')
-			return CVT_NONE;
-	clock_time->second = (buffer[2U] - '0') * 10 + buffer[1U] - '0';
-	clock_time->minute = (buffer[4U] - '0') * 10 + buffer[3U] - '0';
-	clock_time->hour   = (buffer[6U] - '0') * 10 + buffer[5U] - '0';
-	clock_time->day    = (buffer[8U] - '0') * 10 + buffer[7U] - '0';
-	clock_time->month  = (buffer[10U] - '0') * 10 + buffer[9U] - '0';
-	clock_time->year   = (buffer[12U] - '0') * 10 + buffer[11U] - '0';
-	clock_time->usecond = 0;
-	if (buffer[13U] & 0x1) /* We have CET time */
-		clock_time->utcoffset = -1*60*60;
-	else		/* We have BST time */
-		clock_time->utcoffset = 0;
-	if (buffer[13U] & 0x2) {
-		clock_time->flags |= PARSEB_DST;
-		clock_time->utcoffset += -1*60*60;
-	}
-	if (!(buffer[13U] & 0x4))
-		clock_time->flags |= PARSEB_NOSYNC;
-	if (buffer[13U] & 0x8)
-		clock_time->flags |= PARSEB_ANNOUNCE;
+    /* The given `size' includes a terminating null-character. */
+    if (size != 15 || buffer[0U] != STX || buffer[14U] != ETX || buffer[13U] < '0' || buffer[13U] > ('0' + 0xf))
+        return CVT_NONE;
+    for (i = 1; i < 13; i += 1)
+        if (buffer[i] < '0' || buffer[i] > '9')
+            return CVT_NONE;
+    clock_time->second = (buffer[2U] - '0') * 10 + buffer[1U] - '0';
+    clock_time->minute = (buffer[4U] - '0') * 10 + buffer[3U] - '0';
+    clock_time->hour = (buffer[6U] - '0') * 10 + buffer[5U] - '0';
+    clock_time->day = (buffer[8U] - '0') * 10 + buffer[7U] - '0';
+    clock_time->month = (buffer[10U] - '0') * 10 + buffer[9U] - '0';
+    clock_time->year = (buffer[12U] - '0') * 10 + buffer[11U] - '0';
+    clock_time->usecond = 0;
+    if (buffer[13U] & 0x1) /* We have CET time */
+        clock_time->utcoffset = -1 * 60 * 60;
+    else /* We have BST time */
+        clock_time->utcoffset = 0;
+    if (buffer[13U] & 0x2)
+    {
+        clock_time->flags |= PARSEB_DST;
+        clock_time->utcoffset += -1 * 60 * 60;
+    }
+    if (!(buffer[13U] & 0x4))
+        clock_time->flags |= PARSEB_NOSYNC;
+    if (buffer[13U] & 0x8)
+        clock_time->flags |= PARSEB_ANNOUNCE;
 
-	return CVT_OK;
+    return CVT_OK;
 }
 
 /*
@@ -126,49 +126,47 @@ cvt_wharton_400a(
  */
 static u_long
 inp_wharton_400a(
-	      parse_t      *parseio,
-	      char         ch,
-	      timestamp_t  *tstamp
-	      )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
-	
-	parseprintf(DD_PARSE, ("inp_wharton_400a(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
-	
-	switch (ch)
-	{
-	case STX:
-		parseprintf(DD_PARSE, ("inp_wharton_400a: STX seen\n"));
-		
-		parseio->parse_index = 1;
-		parseio->parse_data[0U] = ch;
-		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
-		return PARSE_INP_SKIP;
-	  
-	case ETX:
-		parseprintf(DD_PARSE, ("inp_wharton_400a: ETX seen\n"));
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    unsigned int rtc;
 
-	default:
-		return parse_addchar(parseio, ch);
-	}
+    parseprintf(DD_PARSE, ("inp_wharton_400a(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+
+    switch (ch)
+    {
+    case STX:
+        parseprintf(DD_PARSE, ("inp_wharton_400a: STX seen\n"));
+
+        parseio->parse_index = 1;
+        parseio->parse_data[0U] = ch;
+        parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        return PARSE_INP_SKIP;
+
+    case ETX:
+        parseprintf(DD_PARSE, ("inp_wharton_400a: ETX seen\n"));
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
+
+    default:
+        return parse_addchar(parseio, ch);
+    }
 }
 
-clockformat_t   clock_wharton_400a =
-{
-	inp_wharton_400a,	/* input handling function */
-	cvt_wharton_400a,	/* conversion function */
-	0,			/* no PPS monitoring */
-	0,			/* conversion configuration */
-	"WHARTON 400A Series clock Output Format 1",	/* String format name */
-	15,			/* string buffer */
-	0			/* no private data (complete packets) */
+clockformat_t clock_wharton_400a = {
+    inp_wharton_400a,                            /* input handling function */
+    cvt_wharton_400a,                            /* conversion function */
+    0,                                           /* no PPS monitoring */
+    0,                                           /* conversion configuration */
+    "WHARTON 400A Series clock Output Format 1", /* String format name */
+    15,                                          /* string buffer */
+    0                                            /* no private data (complete packets) */
 };
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_WHARTON_400A) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_WHARTON_400A) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_WHARTON_400A) */
 

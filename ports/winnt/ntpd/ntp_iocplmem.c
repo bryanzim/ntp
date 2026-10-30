@@ -11,14 +11,15 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stddef.h>
+#include "ntp_iocplmem.h"
+#include "ntpd.h"
+
 #include <syslog.h>
 
-#include "ntpd.h"
-#include "ntp_iocplmem.h"
+#include <stddef.h>
 
 /* -------------------------------------------------------------------
  * We make a pool of our own for IO context objects -- the are owned by
@@ -27,21 +28,20 @@
  * cancel an IO request.
  * -------------------------------------------------------------------
  */
-static	HANDLE	hHeapHandle;
+static HANDLE hHeapHandle;
 
 /* -------------------------------------------------------------------
  * Create a new heap for IO context objects
  */
- void
-IOCPLPoolInit(
-	size_t	initSize
-	)
+void IOCPLPoolInit(
+    size_t initSize)
 {
-	hHeapHandle = HeapCreate(0, initSize, 0);
-	if (hHeapHandle == NULL) {
-		msyslog(LOG_ERR, "Can't initialize Heap: %m");
-		exit(1);
-	}
+    hHeapHandle = HeapCreate(0, initSize, 0);
+    if (hHeapHandle == NULL)
+    {
+        msyslog(LOG_ERR, "Can't initialize Heap: %m");
+        exit(1);
+    }
 }
 
 /* -------------------------------------------------------------------
@@ -53,10 +53,9 @@ IOCPLPoolInit(
  * show no leaks from IO context blocks. On the downside, we have to
  * track them ourselves if something goes wrong.
  */
-void
-IOCPLPoolDone(void)
+void IOCPLPoolDone(void)
 {
-	hHeapHandle = NULL;
+    hHeapHandle = NULL;
 }
 
 /* -------------------------------------------------------------------
@@ -65,59 +64,56 @@ IOCPLPoolDone(void)
  * When the heap handle is NULL, these both will fail; Alloc with a NULL
  * return and Free silently.
  */
-void * __fastcall
+void* __fastcall
 IOCPLPoolAlloc(
-	size_t		size,
-	const char *	desc
-	)
+    size_t size,
+    const char* desc)
 {
-	void *	ptr = NULL;
+    void* ptr = NULL;
 
-	if (hHeapHandle != NULL)
-		ptr = HeapAlloc(hHeapHandle, HEAP_ZERO_MEMORY, max(size, 1));
-	if (ptr == NULL)
-		errno = ENOMEM;
-	DPRINTF(6, ("IOCPLPoolAlloc: '%s', heap=%p, ptr=%p\n",
-		desc, hHeapHandle, ptr));
-	return ptr;
+    if (hHeapHandle != NULL)
+        ptr = HeapAlloc(hHeapHandle, HEAP_ZERO_MEMORY, max(size, 1));
+    if (ptr == NULL)
+        errno = ENOMEM;
+    DPRINTF(6, ("IOCPLPoolAlloc: '%s', heap=%p, ptr=%p\n",
+                desc, hHeapHandle, ptr));
+    return ptr;
 }
 /* ----------------------------------------------------------------- */
 void __fastcall
 IOCPLPoolFree(
-	void *		ptr,
-	const char *	desc
-	)
+    void* ptr,
+    const char* desc)
 {
-	DPRINTF(6, ("IOCPLPoolFree: '%s', heap=%p, ptr=%p\n",
-		desc, hHeapHandle, ptr));
-	if (ptr != NULL && hHeapHandle != NULL)
-		HeapFree(hHeapHandle, 0, ptr);
+    DPRINTF(6, ("IOCPLPoolFree: '%s', heap=%p, ptr=%p\n",
+                desc, hHeapHandle, ptr));
+    if (ptr != NULL && hHeapHandle != NULL)
+        HeapFree(hHeapHandle, 0, ptr);
 }
 
 /* -------------------------------------------------------------------
  * Allocate a memory buffer and copy the data from a source buffer
  * into the new allocated memory slice.
  */
-void * __fastcall
+void* __fastcall
 IOCPLPoolMemDup(
-const void *	psrc,
-size_t		size,
-const char *	desc
-)
+    const void* psrc,
+    size_t size,
+    const char* desc)
 {
-	void *	ptr = NULL;
+    void* ptr = NULL;
 
-	if (hHeapHandle != NULL) {
-		ptr = HeapAlloc(hHeapHandle, 0, max(size, 1));
-		if (ptr != NULL)
-			memcpy(ptr, psrc, size);
-	}
-	if (ptr == NULL)
-		errno = ENOMEM;
+    if (hHeapHandle != NULL)
+    {
+        ptr = HeapAlloc(hHeapHandle, 0, max(size, 1));
+        if (ptr != NULL)
+            memcpy(ptr, psrc, size);
+    }
+    if (ptr == NULL)
+        errno = ENOMEM;
 
-	DPRINTF(6, ("IOCPLPoolMemDup: '%s', heap=%p, ptr=%p\n",
-		desc, hHeapHandle, ptr));
-	return ptr;
-
+    DPRINTF(6, ("IOCPLPoolMemDup: '%s', heap=%p, ptr=%p\n",
+                desc, hHeapHandle, ptr));
+    return ptr;
 }
 /* -*- that's all folks -*- */

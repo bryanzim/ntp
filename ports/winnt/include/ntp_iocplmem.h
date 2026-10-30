@@ -17,8 +17,8 @@
 extern void IOCPLPoolInit(size_t initSize);
 extern void IOCPLPoolDone(void);
 
-extern void* __fastcall	IOCPLPoolAlloc(size_t size, const char*	desc);
-extern void* __fastcall	IOCPLPoolMemDup(const void* psrc, size_t size, const char* desc);
-extern void  __fastcall	IOCPLPoolFree(void* ptr, const char* desc);
+extern void* __fastcall IOCPLPoolAlloc(size_t size, const char* desc);
+extern void* __fastcall IOCPLPoolMemDup(const void* psrc, size_t size, const char* desc);
+extern void __fastcall IOCPLPoolFree(void* ptr, const char* desc);
 
 #endif /*!defined(NTP_IOCPLMEM_H)*/

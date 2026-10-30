@@ -3,20 +3,20 @@
  */
 
 #include <config.h>
-#include <stdio.h>
-#include <stddef.h>
 
-#include "ntpdc.h"
 #include "ntp_stdlib.h"
+#include "ntpdc.h"
+
+#include <stddef.h>
+#include <stdio.h>
 
 #if defined(IMPL_XNTPD_OLD) && IMPL_XNTPD != 3
 #error Unexpected IMPL_XNTPD
 #endif
 
-int
-main(void)
+int main(void)
 {
 #include "nl.c"
 
-  return (EXIT_SUCCESS);
+    return (EXIT_SUCCESS);
 }

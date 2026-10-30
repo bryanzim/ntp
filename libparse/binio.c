@@ -34,106 +34,91 @@
  */
 
 #include <config.h>
+
 #include "binio.h"
 
-long
-get_lsb_short(
-	unsigned char **bufpp
-	)
+long get_lsb_short(
+    unsigned char** bufpp)
 {
-  long retval;
+    long retval;
 
-  retval  = *((*bufpp)++);
-  retval |= *((*bufpp)++) << 8;
+    retval = *((*bufpp)++);
+    retval |= *((*bufpp)++) << 8;
 
-  return (retval & 0x8000) ? (~0xFFFF | retval) : retval;
+    return (retval & 0x8000) ? (~0xFFFF | retval) : retval;
 }
 
-void
-put_lsb_short(
-	unsigned char **bufpp,
-	long val
-	)
+void put_lsb_short(
+    unsigned char** bufpp,
+    long val)
 {
-  *((*bufpp)++) = (unsigned char) (val        & 0xFF);
-  *((*bufpp)++) = (unsigned char) ((val >> 8) & 0xFF);
+    *((*bufpp)++) = (unsigned char)(val & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 8) & 0xFF);
 }
 
-long
-get_lsb_long(
-	unsigned char **bufpp
-	)
+long get_lsb_long(
+    unsigned char** bufpp)
 {
-  long retval;
+    long retval;
 
-  retval  = *((*bufpp)++);
-  retval |= *((*bufpp)++) << 8;
-  retval |= *((*bufpp)++) << 16;
-  retval |= (u_long)*((*bufpp)++) << 24;
+    retval = *((*bufpp)++);
+    retval |= *((*bufpp)++) << 8;
+    retval |= *((*bufpp)++) << 16;
+    retval |= (u_long) * ((*bufpp)++) << 24;
 
-  return retval;
+    return retval;
 }
 
-void
-put_lsb_long(
-	unsigned char **bufpp,
-	long val
-	)
+void put_lsb_long(
+    unsigned char** bufpp,
+    long val)
 {
-  *((*bufpp)++) = (unsigned char)(val         & 0xFF);
-  *((*bufpp)++) = (unsigned char)((val >> 8)  & 0xFF);
-  *((*bufpp)++) = (unsigned char)((val >> 16) & 0xFF);
-  *((*bufpp)++) = (unsigned char)((val >> 24) & 0xFF);
+    *((*bufpp)++) = (unsigned char)(val & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 8) & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 16) & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 24) & 0xFF);
 }
 
-long
-get_msb_short(
-	unsigned char **bufpp
-	)
+long get_msb_short(
+    unsigned char** bufpp)
 {
-  long retval;
+    long retval;
 
-  retval  = *((*bufpp)++) << 8;
-  retval |= *((*bufpp)++);
+    retval = *((*bufpp)++) << 8;
+    retval |= *((*bufpp)++);
 
-  return (retval & 0x8000) ? (~0xFFFF | retval) : retval;
+    return (retval & 0x8000) ? (~0xFFFF | retval) : retval;
 }
 
-void
-put_msb_short(
-	unsigned char **bufpp,
-	long val
-	)
+void put_msb_short(
+    unsigned char** bufpp,
+    long val)
 {
-  *((*bufpp)++) = (unsigned char)((val >> 8) & 0xFF);
-  *((*bufpp)++) = (unsigned char)( val       & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 8) & 0xFF);
+    *((*bufpp)++) = (unsigned char)(val & 0xFF);
 }
 
-long
-get_msb_long(
-	unsigned char **bufpp
-	)
+long get_msb_long(
+    unsigned char** bufpp)
 {
-  long retval;
+    long retval;
 
-  retval  = (u_long)*((*bufpp)++) << 24;
-  retval |= *((*bufpp)++) << 16;
-  retval |= *((*bufpp)++) << 8;
-  retval |= *((*bufpp)++);
+    retval = (u_long) * ((*bufpp)++) << 24;
+    retval |= *((*bufpp)++) << 16;
+    retval |= *((*bufpp)++) << 8;
+    retval |= *((*bufpp)++);
 
-  return retval;
+    return retval;
 }
 
-void
-put_msb_long(
-	unsigned char **bufpp,
-	long val
-	)
+void put_msb_long(
+    unsigned char** bufpp,
+    long val)
 {
-  *((*bufpp)++) = (unsigned char)((val >> 24) & 0xFF);
-  *((*bufpp)++) = (unsigned char)((val >> 16) & 0xFF);
-  *((*bufpp)++) = (unsigned char)((val >> 8 ) & 0xFF);
-  *((*bufpp)++) = (unsigned char)( val        & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 24) & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 16) & 0xFF);
+    *((*bufpp)++) = (unsigned char)((val >> 8) & 0xFF);
+    *((*bufpp)++) = (unsigned char)(val & 0xFF);
 }
 
 /*

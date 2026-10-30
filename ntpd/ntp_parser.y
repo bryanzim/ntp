@@ -52,6 +52,10 @@
 /* Keep parser trace support (yydebug) enabled by default; matches AM_YFLAGS -t. */
 %define parse.trace
 
+%code requires {
+#include "ntp_config.h"
+}
+
 %union {
 	char *			String;
 	double			Double;

@@ -8,20 +8,20 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
+
+#include "ntp_iocplmem.h"
+#include "ntp_iocpltypes.h"
+#include "ntpd.h"
 
 #include <stddef.h>
 
-#include "ntpd.h"
-#include "ntp_iocplmem.h"
-#include "ntp_iocpltypes.h"
-
 /*
-* ====================================================================
-* Shared lock manipulation
-* ====================================================================
-*/
+ * ====================================================================
+ * Shared lock manipulation
+ * ====================================================================
+ */
 
 /* --------------------------------------------------------------------
  * Create new shared lock node. The shared lock is returned with a
@@ -29,37 +29,35 @@
  * lock is NOT aquired, and all IO handles or FDs are set to an
  * invalid value.
  */
-IoHndPad_T*  __fastcall
+IoHndPad_T* __fastcall
 iohpCreate(
-	void *	src
-	)
+    void* src)
 {
-	IoHndPad_T* retv;
+    IoHndPad_T* retv;
 
-	retv = IOCPLPoolAlloc(sizeof(IoHndPad_T), "Lock");
-	if (retv != NULL) {
-		retv->refc_count = 1;
-		retv->rsrc.any   = src;
-		retv->handles[0U] = INVALID_HANDLE_VALUE;
-		retv->handles[1U] = INVALID_HANDLE_VALUE;
-		retv->riofd	 = -1;
-	}
-	return retv;
+    retv = IOCPLPoolAlloc(sizeof(IoHndPad_T), "Lock");
+    if (retv != NULL)
+    {
+        retv->refc_count = 1;
+        retv->rsrc.any = src;
+        retv->handles[0U] = INVALID_HANDLE_VALUE;
+        retv->handles[1U] = INVALID_HANDLE_VALUE;
+        retv->riofd = -1;
+    }
+    return retv;
 }
 
 /* --------------------------------------------------------------------
  * Attach to a lock. This just increments the use count, but does not
  * aquire the internal lock. Return a pointer to the lock.
  */
-IoHndPad_T*  __fastcall
+IoHndPad_T* __fastcall
 iohpAttach(
-	IoHndPad_T *	lp
-	)
+    IoHndPad_T* lp)
 {
-	if (lp != NULL)
-		InterlockedIncrement((PLONG)&lp->refc_count);
-	return lp;
-
+    if (lp != NULL)
+        InterlockedIncrement((PLONG)&lp->refc_count);
+    return lp;
 }
 
 /* --------------------------------------------------------------------
@@ -69,16 +67,16 @@ iohpAttach(
  *
  * THE CALLER MUST NOT OWN THE INTERNAL LOCK WHEN DOING THIS!
  */
-IoHndPad_T*  __fastcall
+IoHndPad_T* __fastcall
 iohpDetach(
-	IoHndPad_T *	lp
-	)
+    IoHndPad_T* lp)
 {
-	if (lp != NULL && !InterlockedDecrement((PLONG)&lp->refc_count)) {
-		memset(lp, 0xFF, sizeof(IoHndPad_T));
-		IOCPLPoolFree(lp, "Lock");
-	}
-	return NULL;
+    if (lp != NULL && !InterlockedDecrement((PLONG)&lp->refc_count))
+    {
+        memset(lp, 0xFF, sizeof(IoHndPad_T));
+        IOCPLPoolFree(lp, "Lock");
+    }
+    return NULL;
 }
 
 /* --------------------------------------------------------------------
@@ -87,10 +85,9 @@ iohpDetach(
  */
 BOOL __fastcall
 iohpRefClockOK(
-	const IoHndPad_T *	lp
-	)
+    const IoHndPad_T* lp)
 {
-	return	lp->rsrc.rio && lp->rsrc.rio->active;
+    return lp->rsrc.rio && lp->rsrc.rio->active;
 }
 
 /* --------------------------------------------------------------------
@@ -99,10 +96,9 @@ iohpRefClockOK(
  */
 BOOL __fastcall
 iohpEndPointOK(
-const IoHndPad_T *	lp
-)
+    const IoHndPad_T* lp)
 {
-	return	lp->rsrc.ept &&	!lp->rsrc.ept->ignore_packets;
+    return lp->rsrc.ept && !lp->rsrc.ept->ignore_packets;
 }
 
 /* --------------------------------------------------------------------
@@ -114,24 +110,23 @@ const IoHndPad_T *	lp
  * !!NOTE!! The buffer is consumed by this call IN ANY CASE,
  * independent of the function result!
  */
-BOOL
-iohpQueueLocked(
-	CIoHndPad_T *	lp,
-	IoPreCheck_T	pred,
-	recvbuf_t *	buf
-	)
+BOOL iohpQueueLocked(
+    CIoHndPad_T* lp,
+    IoPreCheck_T pred,
+    recvbuf_t* buf)
 {
-	BOOL	done = FALSE;
-	if (lp) {
-		done = (*pred)(lp);
-		if (done)
-			add_full_recv_buffer(buf);
-	}
-	if (done)
-		SetEvent(WaitableIoEventHandle);
-	else
-		freerecvbuf(buf);
-	return done;
+    BOOL done = FALSE;
+    if (lp)
+    {
+        done = (*pred)(lp);
+        if (done)
+            add_full_recv_buffer(buf);
+    }
+    if (done)
+        SetEvent(WaitableIoEventHandle);
+    else
+        freerecvbuf(buf);
+    return done;
 }
 
 
@@ -141,43 +136,42 @@ iohpQueueLocked(
  */
 
 /* !NOTE! The returned context is already owned by the caller! */
-DevCtx_t * __fastcall
+DevCtx_t* __fastcall
 DevCtxAlloc(void)
 {
-	DevCtx_t *	devCtx;
-	u_long		slot;
+    DevCtx_t* devCtx;
+    u_long slot;
 
-	/* allocate struct and tag all slots as invalid */
-	devCtx = (DevCtx_t *)IOCPLPoolAlloc(sizeof(DevCtx_t), "DEV ctx");
-	if (devCtx != NULL) {
-		devCtx->ref_count = 1;	/* already owned! */
-		/* The initial COV values make sure there is no busy
-		* loop on unused/empty slots.
-		*/
-		for (slot = 0; slot < PPS_QUEUE_LEN; slot++)
-			devCtx->pps_buff[slot].cov_count = ~slot;
-	}
-	return devCtx;
+    /* allocate struct and tag all slots as invalid */
+    devCtx = (DevCtx_t*)IOCPLPoolAlloc(sizeof(DevCtx_t), "DEV ctx");
+    if (devCtx != NULL)
+    {
+        devCtx->ref_count = 1; /* already owned! */
+        /* The initial COV values make sure there is no busy
+         * loop on unused/empty slots.
+         */
+        for (slot = 0; slot < PPS_QUEUE_LEN; slot++)
+            devCtx->pps_buff[slot].cov_count = ~slot;
+    }
+    return devCtx;
 }
 
-DevCtx_t * __fastcall
+DevCtx_t* __fastcall
 DevCtxAttach(
-	DevCtx_t *	devCtx
-	)
+    DevCtx_t* devCtx)
 {
-	if (devCtx != NULL)
-		InterlockedIncrement((PLONG)&devCtx->ref_count);
-	return devCtx;
+    if (devCtx != NULL)
+        InterlockedIncrement((PLONG)&devCtx->ref_count);
+    return devCtx;
 }
 
-DevCtx_t * __fastcall
+DevCtx_t* __fastcall
 DevCtxDetach(
-	DevCtx_t *	devCtx
-	)
+    DevCtx_t* devCtx)
 {
-	if (devCtx && !InterlockedDecrement((PLONG)&devCtx->ref_count))
-		IOCPLPoolFree(devCtx, "DEV ctx");
-	return NULL;
+    if (devCtx && !InterlockedDecrement((PLONG)&devCtx->ref_count))
+        IOCPLPoolFree(devCtx, "DEV ctx");
+    return NULL;
 }
 
 /* ====================================================================
@@ -190,20 +184,20 @@ DevCtxDetach(
  * and device context given. (Either or both may be NULL.)
  * Returns new node, or NULL on error.
  */
-IoCtx_t * __fastcall
+IoCtx_t* __fastcall
 IoCtxAlloc(
-	IoHndPad_T *	lock,
-	DevCtx_t *	devCtx
-	)
+    IoHndPad_T* lock,
+    DevCtx_t* devCtx)
 {
-	IoCtx_t *	ctx;
+    IoCtx_t* ctx;
 
-	ctx = (IoCtx_t *)IOCPLPoolAlloc(sizeof(IoCtx_t), "IO ctx");
-	if (ctx != NULL) {
-		ctx->iopad = iohpAttach(lock);
-		ctx->devCtx = DevCtxAttach(devCtx);
-	}
-	return ctx;
+    ctx = (IoCtx_t*)IOCPLPoolAlloc(sizeof(IoCtx_t), "IO ctx");
+    if (ctx != NULL)
+    {
+        ctx->iopad = iohpAttach(lock);
+        ctx->devCtx = DevCtxAttach(devCtx);
+    }
+    return ctx;
 }
 
 /* --------------------------------------------------------------------
@@ -215,14 +209,14 @@ IoCtxAlloc(
  */
 void __fastcall
 IoCtxFree(
-	IoCtx_t *	ctx
-	)
+    IoCtx_t* ctx)
 {
-	if (ctx) {
-		ctx->iopad  = iohpDetach(ctx->iopad);
-		ctx->devCtx = DevCtxDetach(ctx->devCtx);
-		IOCPLPoolFree(ctx, "IO ctx");
-	}
+    if (ctx)
+    {
+        ctx->iopad = iohpDetach(ctx->iopad);
+        ctx->devCtx = DevCtxDetach(ctx->devCtx);
+        IOCPLPoolFree(ctx, "IO ctx");
+    }
 }
 
 /* --------------------------------------------------------------------
@@ -234,19 +228,19 @@ IoCtxFree(
  */
 void __fastcall
 IoCtxRelease(
-	IoCtx_t * 	ctx
-	)
+    IoCtx_t* ctx)
 {
-	static const char *const dmsg =
-		"Release overlapped IO data buffer";
+    static const char* const dmsg =
+        "Release overlapped IO data buffer";
 
-	if (ctx) {
-		if (ctx->flRawMem)
-			IOCPLPoolFree(ctx->trans_buf, dmsg);
-		else
-			freerecvbuf(ctx->recv_buf);
-		IoCtxFree(ctx);
-	}
+    if (ctx)
+    {
+        if (ctx->flRawMem)
+            IOCPLPoolFree(ctx->trans_buf, dmsg);
+        else
+            freerecvbuf(ctx->recv_buf);
+        IoCtxFree(ctx);
+    }
 }
 
 /* --------------------------------------------------------------------
@@ -257,12 +251,11 @@ IoCtxRelease(
  */
 BOOL __fastcall
 IoCtxAlive(
-	IoCtx_t *	ctx
-	)
+    IoCtx_t* ctx)
 {
-	return ctx			&&
-		ctx->iopad		&&
-		ctx->iopad->rsrc.any;
+    return ctx &&
+           ctx->iopad &&
+           ctx->iopad->rsrc.any;
 }
 
 /* --------------------------------------------------------------------
@@ -275,28 +268,28 @@ IoCtxAlive(
  * !!NOTE!! The context object and the buffer are consumed by this
  * call IN ANY CASE, independent of the function result!
  */
-BOOL
-IoCtxStartChecked(
-	IoCtx_t *	lpo,
-	IoCtxStarterT	func,
-	recvbuf_t *	buf
-	)
+BOOL IoCtxStartChecked(
+    IoCtx_t* lpo,
+    IoCtxStarterT func,
+    recvbuf_t* buf)
 {
-	BOOL		done  = FALSE;
-	IoHndPad_T *	iopad = lpo->iopad;
-	if (iopad != NULL) {
-		if ((lpo->io.hnd == iopad->handles[0U]) ||
-		    (lpo->io.hnd == iopad->handles[1U])  )
-		{
-			done = (func)(lpo, buf);
-			lpo  = NULL; /* consumed by 'func' */
-		}
-	}
-	if (lpo != NULL) {
-		freerecvbuf(buf);
-		IoCtxFree(lpo);
-	}
-	return done;
+    BOOL done = FALSE;
+    IoHndPad_T* iopad = lpo->iopad;
+    if (iopad != NULL)
+    {
+        if ((lpo->io.hnd == iopad->handles[0U]) ||
+            (lpo->io.hnd == iopad->handles[1U]))
+        {
+            done = (func)(lpo, buf);
+            lpo = NULL; /* consumed by 'func' */
+        }
+    }
+    if (lpo != NULL)
+    {
+        freerecvbuf(buf);
+        IoCtxFree(lpo);
+    }
+    return done;
 }
 
 /* -*- that's all folks -*- */

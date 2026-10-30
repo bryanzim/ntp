@@ -1,20 +1,20 @@
 /* this is a hacked version of if.h from unix to contain the stuff we need only to build named (bind) with
    the minimal amount of changes... by l. kahn */
 
-   /*
+/*
  * Copyright (c) 1982, 1986 Regents of the University of California.
  * All rights reserved.  The Berkeley software License Agreement
  * specifies the terms and conditions for redistribution.
  */
 
-#ifndef	_NET_IF_H
-#define	_NET_IF_H
+#ifndef _NET_IF_H
+#define _NET_IF_H
 
 
 /* #pragma ident	"@(#)if.h	1.3	93/06/30 SMI"
 /* if.h 1.26 90/05/29 SMI; from UCB 7.1 6/4/86		*/
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 extern "C" {
 #endif
 
@@ -59,19 +59,19 @@ extern "C" {
 #endif
 #define FD_SETSIZE 512
 #include <winsock.h>
-typedef char *caddr_t;
+typedef char* caddr_t;
 
 int get_winnt_interfaces();
 
-struct	ifreq {
-#define	IFNAMSIZ	16
-	char	ifr_name[IFNAMSIZ];		/* if name, e.g. "en0" */
-	struct	sockaddr ifru_addr;
-    char    nt_mask[IFNAMSIZ];      /* new field to store mask returned from nt lookup l. kahn */
+struct ifreq
+{
+#define IFNAMSIZ 16
+    char ifr_name[IFNAMSIZ]; /* if name, e.g. "en0" */
+    struct sockaddr ifru_addr;
+    char nt_mask[IFNAMSIZ]; /* new field to store mask returned from nt lookup l. kahn */
 
-#define	ifr_addr	ifru_addr	/* address */
-#define	ifr_mask	nt_mask	    /* nt mask in character form */
-
+#define ifr_addr ifru_addr /* address */
+#define ifr_mask nt_mask   /* nt mask in character form */
 };
 
 /*
@@ -80,19 +80,20 @@ struct	ifreq {
  * for machine (useful for programs which
  * must know all networks accessible).
  */
-struct	ifconf {
-	int	ifc_len;		/* size of associated buffer */
-	union {
-		caddr_t	ifcu_buf;
-		struct	ifreq *ifcu_req;
-	} ifc_ifcu;
-#define	ifc_buf	ifc_ifcu.ifcu_buf	/* buffer address */
-#define	ifc_req	ifc_ifcu.ifcu_req	/* array of structures returned */
+struct ifconf
+{
+    int ifc_len; /* size of associated buffer */
+    union
+    {
+        caddr_t ifcu_buf;
+        struct ifreq* ifcu_req;
+    } ifc_ifcu;
+#define ifc_buf ifc_ifcu.ifcu_buf /* buffer address */
+#define ifc_req ifc_ifcu.ifcu_req /* array of structures returned */
 };
 
-#ifdef	__cplusplus
+#ifdef __cplusplus
 }
 #endif
 
-#endif	/* _NET_IF_H */
-
+#endif /* _NET_IF_H */

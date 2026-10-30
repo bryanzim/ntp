@@ -67,7 +67,7 @@
 #ifndef _SYS_TIMEX_H_
 #define _SYS_TIMEX_H_ 1
 
-#ifndef MSDOS			/* Microsoft specific */
+#ifndef MSDOS /* Microsoft specific */
 #include <sys/syscall.h>
 #endif /* MSDOS */
 
@@ -93,11 +93,11 @@
  * zero to MAXTC, the PLL will converge in 15 minutes to 16 hours,
  * respectively.
  */
-#define SHIFT_HZ 7		/* log2(hz) */
-#define SHIFT_KG 6		/* phase factor (shift) */
-#define SHIFT_KF 16		/* PLL frequency factor (shift) */
-#define SHIFT_KH 2		/* FLL frequency factor (shift) */
-#define MAXTC 6			/* maximum time constant (shift) */
+#define SHIFT_HZ 7  /* log2(hz) */
+#define SHIFT_KG 6  /* phase factor (shift) */
+#define SHIFT_KF 16 /* PLL frequency factor (shift) */
+#define SHIFT_KH 2  /* FLL frequency factor (shift) */
+#define MAXTC 6     /* maximum time constant (shift) */
 
 /*
  * The following defines establish the scaling of the various variables
@@ -118,10 +118,10 @@
  *
  * FINEUSEC is 1 us in SHIFT_UPDATE units of the time_phase variable.
  */
-#define SHIFT_SCALE 22		/* phase scale (shift) */
+#define SHIFT_SCALE 22                  /* phase scale (shift) */
 #define SHIFT_UPDATE (SHIFT_KG + MAXTC) /* time offset scale (shift) */
-#define SHIFT_USEC 16		/* frequency offset scale (shift) */
-#define FINEUSEC (1L << SHIFT_SCALE) /* 1 us in phase units */
+#define SHIFT_USEC 16                   /* frequency offset scale (shift) */
+#define FINEUSEC (1L << SHIFT_SCALE)    /* 1 us in phase units */
 
 /*
  * The following defines establish the performance envelope of the PLL.
@@ -154,15 +154,15 @@
  * MINSEC and MAXSEC define the lower and upper bounds on the interval
  * between protocol updates.
  */
-#define MAXPHASE 512000L	/* max phase error (us) */
+#define MAXPHASE 512000L /* max phase error (us) */
 #ifdef PPS_SYNC
 #define MAXFREQ (512L << SHIFT_USEC) /* max freq error (100 ppm) */
-#define MAXTIME (200L << PPS_AVG) /* max PPS error (jitter) (200 us) */
+#define MAXTIME (200L << PPS_AVG)    /* max PPS error (jitter) (200 us) */
 #else
 #define MAXFREQ (512L << SHIFT_USEC) /* max freq error (200 ppm) */
-#endif /* PPS_SYNC */
-#define MINSEC 16L		/* min interval between updates (s) */
-#define MAXSEC 1200L		/* max interval between updates (s) */
+#endif                               /* PPS_SYNC */
+#define MINSEC 16L                   /* min interval between updates (s) */
+#define MAXSEC 1200L                 /* max interval between updates (s) */
 
 #ifdef PPS_SYNC
 /*
@@ -185,12 +185,12 @@
  * MAXGLITCH is the maximum interval before a time offset of more than
  * MAXTIME is believed.
  */
-#define PPS_AVG 2		/* pps averaging constant (shift) */
-#define PPS_SHIFT 2		/* min interval duration (s) (shift) */
-#define PPS_SHIFTMAX 8		/* max interval duration (s) (shift) */
-#define PPS_VALID 120		/* pps signal watchdog max (s) */
-#define MAXGLITCH 30		/* pps signal glitch max (s) */
-#endif /* PPS_SYNC */
+#define PPS_AVG 2      /* pps averaging constant (shift) */
+#define PPS_SHIFT 2    /* min interval duration (s) (shift) */
+#define PPS_SHIFTMAX 8 /* max interval duration (s) (shift) */
+#define PPS_VALID 120  /* pps signal watchdog max (s) */
+#define MAXGLITCH 30   /* pps signal glitch max (s) */
+#endif                 /* PPS_SYNC */
 
 /*
  * The following defines and structures define the user interface for
@@ -198,47 +198,47 @@
  *
  * Control mode codes (timex.modes)
  */
-#define MOD_OFFSET	0x0001	/* set time offset */
-#define MOD_FREQUENCY	0x0002	/* set frequency offset */
-#define MOD_MAXERROR	0x0004	/* set maximum time error */
-#define MOD_ESTERROR	0x0008	/* set estimated time error */
-#define MOD_STATUS	0x0010	/* set clock status bits */
-#define MOD_TIMECONST	0x0020	/* set pll time constant */
-#define MOD_CANSCALE	0x0040	/* kernel can scale offset field */
-#define MOD_DOSCALE	0x0080	/* userland wants to scale offset field */
+#define MOD_OFFSET 0x0001    /* set time offset */
+#define MOD_FREQUENCY 0x0002 /* set frequency offset */
+#define MOD_MAXERROR 0x0004  /* set maximum time error */
+#define MOD_ESTERROR 0x0008  /* set estimated time error */
+#define MOD_STATUS 0x0010    /* set clock status bits */
+#define MOD_TIMECONST 0x0020 /* set pll time constant */
+#define MOD_CANSCALE 0x0040  /* kernel can scale offset field */
+#define MOD_DOSCALE 0x0080   /* userland wants to scale offset field */
 
 /*
  * Status codes (timex.status)
  */
-#define STA_PLL		0x0001	/* enable PLL updates (rw) */
-#define STA_PPSFREQ	0x0002	/* enable PPS freq discipline (rw) */
-#define STA_PPSTIME	0x0004	/* enable PPS time discipline (rw) */
-#define STA_FLL		0x0008	/* select frequency-lock mode (rw) */
+#define STA_PLL 0x0001     /* enable PLL updates (rw) */
+#define STA_PPSFREQ 0x0002 /* enable PPS freq discipline (rw) */
+#define STA_PPSTIME 0x0004 /* enable PPS time discipline (rw) */
+#define STA_FLL 0x0008     /* select frequency-lock mode (rw) */
 
-#define STA_INS		0x0010	/* insert leap (rw) */
-#define STA_DEL		0x0020	/* delete leap (rw) */
-#define STA_UNSYNC	0x0040	/* clock unsynchronized (rw) */
-#define STA_FREQHOLD	0x0080	/* hold frequency (rw) */
+#define STA_INS 0x0010      /* insert leap (rw) */
+#define STA_DEL 0x0020      /* delete leap (rw) */
+#define STA_UNSYNC 0x0040   /* clock unsynchronized (rw) */
+#define STA_FREQHOLD 0x0080 /* hold frequency (rw) */
 
-#define STA_PPSSIGNAL	0x0100	/* PPS signal present (ro) */
-#define STA_PPSJITTER	0x0200	/* PPS signal jitter exceeded (ro) */
-#define STA_PPSWANDER	0x0400	/* PPS signal wander exceeded (ro) */
-#define STA_PPSERROR	0x0800	/* PPS signal calibration error (ro) */
+#define STA_PPSSIGNAL 0x0100 /* PPS signal present (ro) */
+#define STA_PPSJITTER 0x0200 /* PPS signal jitter exceeded (ro) */
+#define STA_PPSWANDER 0x0400 /* PPS signal wander exceeded (ro) */
+#define STA_PPSERROR 0x0800  /* PPS signal calibration error (ro) */
 
-#define STA_CLOCKERR	0x1000	/* clock hardware fault (ro) */
+#define STA_CLOCKERR 0x1000 /* clock hardware fault (ro) */
 
 #define STA_RONLY (STA_PPSSIGNAL | STA_PPSJITTER | STA_PPSWANDER | \
-    STA_PPSERROR | STA_CLOCKERR) /* read-only bits */
+                   STA_PPSERROR | STA_CLOCKERR) /* read-only bits */
 
 /*
  * Clock states (time_state)
  */
-#define TIME_OK		0	/* no leap second warning */
-#define TIME_INS	1	/* insert leap second warning */
-#define TIME_DEL	2	/* delete leap second warning */
-#define TIME_OOP	3	/* leap second in progress */
-#define TIME_WAIT	4	/* leap second has occurred */
-#define TIME_ERROR	5	/* clock not synchronized */
+#define TIME_OK 0    /* no leap second warning */
+#define TIME_INS 1   /* insert leap second warning */
+#define TIME_DEL 2   /* delete leap second warning */
+#define TIME_OOP 3   /* leap second in progress */
+#define TIME_WAIT 4  /* leap second has occurred */
+#define TIME_ERROR 5 /* clock not synchronized */
 
 /*
  * NTP user interface (ntp_gettime()) - used to read kernel clock values
@@ -246,61 +246,62 @@
  * Note: maximum error = NTP synch distance = dispersion + delay / 2;
  * estimated error = NTP dispersion.
  */
-struct ntptimeval {
-	struct timeval time;	/* current time (ro) */
-	long maxerror;		/* maximum error (us) (ro) */
-	long esterror;		/* estimated error (us) (ro) */
+struct ntptimeval
+{
+    struct timeval time; /* current time (ro) */
+    long maxerror;       /* maximum error (us) (ro) */
+    long esterror;       /* estimated error (us) (ro) */
 };
 
 /*
  * NTP daemon interface - (ntp_adjtime()) used to discipline CPU clock
  * oscillator
  */
-struct timex {
-	unsigned int modes;	/* clock mode bits (wo) */
-	long offset;		/* time offset (us) (rw) */
-	long freq;		/* frequency offset (scaled ppm) (rw) */
-	long maxerror;		/* maximum error (us) (rw) */
-	long esterror;		/* estimated error (us) (rw) */
-	int status;		/* clock status bits (rw) */
-	long constant;		/* pll time constant (rw) */
-	long precision;		/* clock precision (us) (ro) */
-	long tolerance;		/* clock frequency tolerance (scaled
-				 * ppm) (ro) */
-	/*
-	 * The following read-only structure members are implemented
-	 * only if the PPS signal discipline is configured in the
-	 * kernel.
-	 */
-	long ppsfreq;		/* pps frequency (scaled ppm) (ro) */
-	long jitter;		/* pps jitter (us) (ro) */
-	int shift;		/* interval duration (s) (shift) (ro) */
-	long stabil;		/* pps stability (scaled ppm) (ro) */
-	long jitcnt;		/* jitter limit exceeded (ro) */
-	long calcnt;		/* calibration intervals (ro) */
-	long errcnt;		/* calibration errors (ro) */
-	long stbcnt;		/* stability limit exceeded (ro) */
-
+struct timex
+{
+    unsigned int modes; /* clock mode bits (wo) */
+    long offset;        /* time offset (us) (rw) */
+    long freq;          /* frequency offset (scaled ppm) (rw) */
+    long maxerror;      /* maximum error (us) (rw) */
+    long esterror;      /* estimated error (us) (rw) */
+    int status;         /* clock status bits (rw) */
+    long constant;      /* pll time constant (rw) */
+    long precision;     /* clock precision (us) (ro) */
+    long tolerance;     /* clock frequency tolerance (scaled
+                         * ppm) (ro) */
+    /*
+     * The following read-only structure members are implemented
+     * only if the PPS signal discipline is configured in the
+     * kernel.
+     */
+    long ppsfreq; /* pps frequency (scaled ppm) (ro) */
+    long jitter;  /* pps jitter (us) (ro) */
+    int shift;    /* interval duration (s) (shift) (ro) */
+    long stabil;  /* pps stability (scaled ppm) (ro) */
+    long jitcnt;  /* jitter limit exceeded (ro) */
+    long calcnt;  /* calibration intervals (ro) */
+    long errcnt;  /* calibration errors (ro) */
+    long stbcnt;  /* stability limit exceeded (ro) */
 };
 #ifdef __FreeBSD__
 
 /*
  * sysctl identifiers underneath kern.ntp_pll
  */
-#define NTP_PLL_GETTIME	1	/* used by ntp_gettime() */
-#define NTP_PLL_MAXID	2	/* number of valid ids */
+#define NTP_PLL_GETTIME 1 /* used by ntp_gettime() */
+#define NTP_PLL_MAXID 2   /* number of valid ids */
 
-#define NTP_PLL_NAMES { \
-			  { 0, 0 }, \
-			  { "gettime", CTLTYPE_STRUCT }, \
-		      }
+#define NTP_PLL_NAMES {            \
+    {         0,              0 },                      \
+    { "gettime", CTLTYPE_STRUCT }, \
+}
 
 #ifndef KERNEL
 #include <sys/cdefs.h>
 
 __BEGIN_DECLS
-extern int ntp_gettime        __P((struct ntptimeval *));
-extern int ntp_adjtime        __P((struct timex *));
+extern int ntp_gettime __P((struct ntptimeval*));
+extern int ntp_adjtime __P((struct timex*));
 __END_DECLS
 
 #endif /* not KERNEL */

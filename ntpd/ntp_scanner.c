@@ -1,7 +1,7 @@
 
 /* ntp_scanner.c
  *
- * The source code for a simple lexical analyzer. 
+ * The source code for a simple lexical analyzer.
  *
  * Written By:	Sachin Kamboj
  *		University of Delaware
@@ -10,44 +10,44 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <ctype.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <string.h>
-
-#include "ntpd.h"
 #include "ntp_config.h"
-#include "ntpsim.h"
-#include "ntp_scanner.h"
 #include "ntp_parser.h"
+#include "ntp_scanner.h"
+#include "ntpd.h"
+#include "ntpsim.h"
+
+#include <ctype.h>
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 /* ntp_keyword.h declares finite state machine and token text */
 #include "ntp_keyword.h"
 
 
 
-/* SCANNER GLOBAL VARIABLES 
+/* SCANNER GLOBAL VARIABLES
  * ------------------------
  */
 
-#define MAX_LEXEME	128	/* The maximum size of a lexeme */
-char yytext[MAX_LEXEME];	/* Buffer for storing the input text/lexeme */
-u_int32 conf_file_sum;		/* Simple sum of characters read */
+#define MAX_LEXEME 128   /* The maximum size of a lexeme */
+char yytext[MAX_LEXEME]; /* Buffer for storing the input text/lexeme */
+u_int32 conf_file_sum;   /* Simple sum of characters read */
 
-static struct FILE_INFO * lex_stack = NULL;
+static struct FILE_INFO* lex_stack = NULL;
 
 
 
-/* CONSTANTS 
+/* CONSTANTS
  * ---------
  */
 
 
-/* SCANNER GLOBAL VARIABLES 
+/* SCANNER GLOBAL VARIABLES
  * ------------------------
  */
 const char special_chars[] = "{}(),;|=";
@@ -57,7 +57,7 @@ const char special_chars[] = "{}(),;|=";
  * ---------
  */
 
-static int is_keyword(char *lexeme, follby *pfollowedby);
+static int is_keyword(char* lexeme, follby* pfollowedby);
 
 
 /*
@@ -66,33 +66,36 @@ static int is_keyword(char *lexeme, follby *pfollowedby);
  *	       Example: keyword(T_Server) returns "server"
  *			token_name(T_Server) returns "T_Server"
  */
-const char *
+const char*
 keyword(
-	int token
-	)
+    int token)
 {
-	size_t i;
-	const char *text;
-	static char sbuf[64];
+    size_t i;
+    const char* text;
+    static char sbuf[64];
 
-	i = token - LOWEST_KEYWORD_ID;
+    i = token - LOWEST_KEYWORD_ID;
 
-	switch (token) {
-	    case T_ServerresponseFuzz:
-		text = "serverresponse fuzz";
-		break;
+    switch (token)
+    {
+    case T_ServerresponseFuzz:
+        text = "serverresponse fuzz";
+        break;
 
-	    default:
-		if (i < COUNTOF(keyword_text)) {
-			text = keyword_text[i];
-		} else {
-			snprintf(sbuf, sizeof sbuf,
-				"(keyword #%u not found)", token);
-			text = sbuf;
-		}
-	}
+    default:
+        if (i < COUNTOF(keyword_text))
+        {
+            text = keyword_text[i];
+        }
+        else
+        {
+            snprintf(sbuf, sizeof sbuf,
+                     "(keyword #%u not found)", token);
+            text = sbuf;
+        }
+    }
 
-	return text;
+    return text;
 }
 
 
@@ -131,30 +134,31 @@ keyword(
  * secure than keeping a reference to some other storage that might go
  * out of scope.
  */
-static struct FILE_INFO *
+static struct FILE_INFO*
 lex_open(
-	const char *path,
-	const char *mode
-	)
+    const char* path,
+    const char* mode)
 {
-	struct FILE_INFO *stream;
-	size_t            nnambuf;
+    struct FILE_INFO* stream;
+    size_t nnambuf;
 
-	nnambuf = strlen(path);
-	stream = emalloc_zero(sizeof(*stream) + nnambuf);
-	stream->curpos.nline = 1;
-	stream->backch = EOF;
-	/* copy name with memcpy -- trailing NUL already there! */
-	memcpy(stream->fname, path, nnambuf);
+    nnambuf = strlen(path);
+    stream = emalloc_zero(sizeof(*stream) + nnambuf);
+    stream->curpos.nline = 1;
+    stream->backch = EOF;
+    /* copy name with memcpy -- trailing NUL already there! */
+    memcpy(stream->fname, path, nnambuf);
 
-	if (NULL != mode) {
-		stream->fpi = fopen(path, mode);
-		if (NULL == stream->fpi) {
-			free(stream);
-			stream = NULL;
-		}
-	}
-	return stream;
+    if (NULL != mode)
+    {
+        stream->fpi = fopen(path, mode);
+        if (NULL == stream->fpi)
+        {
+            free(stream);
+            stream = NULL;
+        }
+    }
+    return stream;
 }
 
 /* get next character from buffer or file. This will return any putback
@@ -163,60 +167,70 @@ lex_open(
  */
 static int
 lex_getch(
-	struct FILE_INFO *stream
-	)
+    struct FILE_INFO* stream)
 {
-	int ch;
+    int ch;
 
-	if (NULL == stream || stream->force_eof)
-		return EOF;
+    if (NULL == stream || stream->force_eof)
+        return EOF;
 
-	if (EOF != stream->backch) {
-		ch = stream->backch;
-		stream->backch = EOF;
-		if (stream->fpi)
-			conf_file_sum += ch;
-		stream->curpos.ncol++;
-	} else if (stream->fpi) {
-		/* fetch next 7-bit ASCII char (or EOF) from file */
-		while ((ch = fgetc(stream->fpi)) != EOF && ch > SCHAR_MAX)
-			stream->curpos.ncol++;
-		if (EOF != ch) {
-			conf_file_sum += ch;
-			stream->curpos.ncol++;
-		}
-	} else {
-		/* fetch next 7-bit ASCII char from buffer */
-		const char * scan;
-		scan = &remote_config.buffer[remote_config.pos];
-		while ((ch = (u_char)*scan) > SCHAR_MAX) {
-			scan++;
-			stream->curpos.ncol++;
-		}
-		if ('\0' != ch) {
-			scan++;
-			stream->curpos.ncol++;
-		} else {
-			ch = EOF;
-		}
-		remote_config.pos = (int)(scan - remote_config.buffer);
-	}
+    if (EOF != stream->backch)
+    {
+        ch = stream->backch;
+        stream->backch = EOF;
+        if (stream->fpi)
+            conf_file_sum += ch;
+        stream->curpos.ncol++;
+    }
+    else if (stream->fpi)
+    {
+        /* fetch next 7-bit ASCII char (or EOF) from file */
+        while ((ch = fgetc(stream->fpi)) != EOF && ch > SCHAR_MAX)
+            stream->curpos.ncol++;
+        if (EOF != ch)
+        {
+            conf_file_sum += ch;
+            stream->curpos.ncol++;
+        }
+    }
+    else
+    {
+        /* fetch next 7-bit ASCII char from buffer */
+        const char* scan;
+        scan = &remote_config.buffer[remote_config.pos];
+        while ((ch = (u_char)*scan) > SCHAR_MAX)
+        {
+            scan++;
+            stream->curpos.ncol++;
+        }
+        if ('\0' != ch)
+        {
+            scan++;
+            stream->curpos.ncol++;
+        }
+        else
+        {
+            ch = EOF;
+        }
+        remote_config.pos = (int)(scan - remote_config.buffer);
+    }
 
-	/* If the last line ends without '\n', generate one. This
-	 * happens most likely on Windows, where editors often have a
-	 * sloppy concept of a line.
-	 */
-	if (EOF == ch && stream->curpos.ncol != 0)
-		ch = '\n';
+    /* If the last line ends without '\n', generate one. This
+     * happens most likely on Windows, where editors often have a
+     * sloppy concept of a line.
+     */
+    if (EOF == ch && stream->curpos.ncol != 0)
+        ch = '\n';
 
-	/* update scan position tallies */
-	if (ch == '\n') {
-		stream->bakpos = stream->curpos;
-		stream->curpos.nline++;
-		stream->curpos.ncol = 0;
-	}
+    /* update scan position tallies */
+    if (ch == '\n')
+    {
+        stream->bakpos = stream->curpos;
+        stream->curpos.nline++;
+        stream->curpos.ncol = 0;
+    }
 
-	return ch;
+    return ch;
 }
 
 /* Note: lex_ungetch will fail to track more than one line of push
@@ -225,28 +239,28 @@ lex_getch(
  */
 static int
 lex_ungetch(
-	int ch,
-	struct FILE_INFO *stream
-	)
+    int ch,
+    struct FILE_INFO* stream)
 {
-	/* check preconditions */
-	if (NULL == stream || stream->force_eof)
-		return EOF;
-	if (EOF != stream->backch || EOF == ch)
-		return EOF;
+    /* check preconditions */
+    if (NULL == stream || stream->force_eof)
+        return EOF;
+    if (EOF != stream->backch || EOF == ch)
+        return EOF;
 
-	/* keep for later reference and update checksum */
-	stream->backch = (u_char)ch;
-	if (stream->fpi)
-		conf_file_sum -= stream->backch;
+    /* keep for later reference and update checksum */
+    stream->backch = (u_char)ch;
+    if (stream->fpi)
+        conf_file_sum -= stream->backch;
 
-	/* update position */
-	if (stream->backch == '\n') {
-	    stream->curpos = stream->bakpos;
-	    stream->bakpos.ncol = -1;
-	}
-	stream->curpos.ncol--;
-	return stream->backch;
+    /* update position */
+    if (stream->backch == '\n')
+    {
+        stream->curpos = stream->bakpos;
+        stream->bakpos.ncol = -1;
+    }
+    stream->curpos.ncol--;
+    return stream->backch;
 }
 
 /* dispose of an input structure. If the file pointer is not NULL, close
@@ -254,14 +268,14 @@ lex_ungetch(
  */
 static void
 lex_close(
-	struct FILE_INFO *stream
-	)
+    struct FILE_INFO* stream)
 {
-	if (NULL != stream) {
-		if (NULL != stream->fpi)
-			fclose(stream->fpi);		
-		free(stream);
-	}
+    if (NULL != stream)
+    {
+        if (NULL != stream->fpi)
+            fclose(stream->fpi);
+        free(stream);
+    }
 }
 
 /* INPUT STACK
@@ -277,18 +291,18 @@ lex_close(
  * the outermost input file remains until the parser folds up.
  */
 
-static struct FILE_INFO *
+static struct FILE_INFO*
 drop_stack_do(
-	struct FILE_INFO * head
-	)
+    struct FILE_INFO* head)
 {
-	struct FILE_INFO * tail;
-	while (NULL != head) {
-		tail = head->st_next;
-		lex_close(head);
-		head = tail;
-	}
-	return head;
+    struct FILE_INFO* tail;
+    while (NULL != head)
+    {
+        tail = head->st_next;
+        lex_close(head);
+        head = tail;
+    }
+    return head;
 }
 
 
@@ -299,17 +313,16 @@ drop_stack_do(
  *
  * Returns TRUE if a new input object was successfully created.
  */
-int/*BOOL*/
+int /*BOOL*/
 lex_init_stack(
-	const char * path,
-	const char * mode
-	)
+    const char* path,
+    const char* mode)
 {
-	if (NULL != lex_stack || NULL == path)
-		return FALSE;
+    if (NULL != lex_stack || NULL == path)
+        return FALSE;
 
-	lex_stack = lex_open(path, mode);
-	return (NULL != lex_stack);
+    lex_stack = lex_open(path, mode);
+    return (NULL != lex_stack);
 }
 
 /* This removes *all* input sources from the stack, leaving the head
@@ -319,10 +332,9 @@ lex_init_stack(
  * In other words: Use this to clean up after parsing, and do not parse
  * anything until the next 'lex_init_stack()' succeeded.
  */
-void
-lex_drop_stack(void)
+void lex_drop_stack(void)
 {
-	lex_stack = drop_stack_do(lex_stack);
+    lex_stack = drop_stack_do(lex_stack);
 }
 
 /* Flush the lexer input stack: This will nip all input objects on the
@@ -333,18 +345,19 @@ lex_drop_stack(void)
  * Returns TRUE if there is a head element (top-of-stack) that was not
  * in the force-eof mode before this call.
  */
-int/*BOOL*/
+int /*BOOL*/
 lex_flush_stack(void)
 {
-	int retv = FALSE;
+    int retv = FALSE;
 
-	if (NULL != lex_stack) {
-		retv = !lex_stack->force_eof;
-		lex_stack->force_eof = TRUE;
-		lex_stack->st_next = drop_stack_do(
-					lex_stack->st_next);
-	}
-	return retv;
+    if (NULL != lex_stack)
+    {
+        retv = !lex_stack->force_eof;
+        lex_stack->force_eof = TRUE;
+        lex_stack->st_next = drop_stack_do(
+            lex_stack->st_next);
+    }
+    return retv;
 }
 
 /* Push another file on the parsing stack. If the mode is NULL, create a
@@ -354,21 +367,22 @@ lex_flush_stack(void)
  *
  * Returns TRUE if a new info record was pushed onto the stack.
  */
-int/*BOOL*/ lex_push_file(
-	const char * path,
-	const char * mode
-	)
+int /*BOOL*/ lex_push_file(
+    const char* path,
+    const char* mode)
 {
-	struct FILE_INFO * next = NULL;
+    struct FILE_INFO* next = NULL;
 
-	if (NULL != path) {
-		next = lex_open(path, mode);
-		if (NULL != next) {
-			next->st_next = lex_stack;
-			lex_stack = next;
-		}
-	}
-	return (NULL != next);
+    if (NULL != path)
+    {
+        next = lex_open(path, mode);
+        if (NULL != next)
+        {
+            next->st_next = lex_stack;
+            lex_stack = next;
+        }
+    }
+    return (NULL != next);
 }
 
 /* Pop, close & free the top of the include stack, unless the stack
@@ -378,20 +392,22 @@ int/*BOOL*/ lex_push_file(
  *
  * Returns TRUE if an object was successfuly popped from the stack.
  */
-int/*BOOL*/
+int /*BOOL*/
 lex_pop_file(void)
 {
-	struct FILE_INFO * head = lex_stack;
-	struct FILE_INFO * tail = NULL; 
-	
-	if (NULL != head) {
-		tail = head->st_next;
-		if (NULL != tail) {
-			lex_stack = tail;
-			lex_close(head);
-		}
-	}
-	return (NULL != tail);
+    struct FILE_INFO* head = lex_stack;
+    struct FILE_INFO* tail = NULL;
+
+    if (NULL != head)
+    {
+        tail = head->st_next;
+        if (NULL != tail)
+        {
+            lex_stack = tail;
+            lex_close(head);
+        }
+    }
+    return (NULL != tail);
 }
 
 /* Get include nesting level. This currently loops over the stack and
@@ -402,269 +418,274 @@ lex_pop_file(void)
  * Returns the nesting level of includes, that is, the current depth of
  * the lexer input stack.
  *
- * Note: 
+ * Note:
  */
 size_t
 lex_level(void)
 {
-	size_t            cnt = 0;
-	struct FILE_INFO *ipf = lex_stack;
+    size_t cnt = 0;
+    struct FILE_INFO* ipf = lex_stack;
 
-	while (NULL != ipf) {
-		cnt++;
-		ipf = ipf->st_next;
-	}
-	return cnt;
+    while (NULL != ipf)
+    {
+        cnt++;
+        ipf = ipf->st_next;
+    }
+    return cnt;
 }
 
-/* check if the current input is from a file */	
-int/*BOOL*/
+/* check if the current input is from a file */
+int /*BOOL*/
 lex_from_file(void)
 {
-	return (NULL != lex_stack) && (NULL != lex_stack->fpi);
+    return (NULL != lex_stack) && (NULL != lex_stack->fpi);
 }
 
-struct FILE_INFO *
+struct FILE_INFO*
 lex_current(void)
 {
-	/* this became so simple, it could be a macro. But then,
-	 * lex_stack needed to be global...
-	 */
-	return lex_stack;
+    /* this became so simple, it could be a macro. But then,
+     * lex_stack needed to be global...
+     */
+    return lex_stack;
 }
 
 
-/* STATE MACHINES 
+/* STATE MACHINES
  * --------------
  */
 
 /* Keywords */
 static int
 is_keyword(
-	char *lexeme,
-	follby *pfollowedby
-	)
+    char* lexeme,
+    follby* pfollowedby)
 {
-	follby fb;
-	int curr_s;		/* current state index */
-	int token;
-	int i;
+    follby fb;
+    int curr_s; /* current state index */
+    int token;
+    int i;
 
-	curr_s = SCANNER_INIT_S;
-	token = 0;
+    curr_s = SCANNER_INIT_S;
+    token = 0;
 
-	for (i = 0; lexeme[i]; i++) {
-		while (curr_s && (lexeme[i] != SS_CH(sst[curr_s])))
-			curr_s = SS_OTHER_N(sst[curr_s]);
+    for (i = 0; lexeme[i]; i++)
+    {
+        while (curr_s && (lexeme[i] != SS_CH(sst[curr_s])))
+            curr_s = SS_OTHER_N(sst[curr_s]);
 
-		if (curr_s && (lexeme[i] == SS_CH(sst[curr_s]))) {
-			if ('\0' == lexeme[i + 1]
-			    && FOLLBY_NON_ACCEPTING 
-			       != SS_FB(sst[curr_s])) {
-				fb = SS_FB(sst[curr_s]);
-				*pfollowedby = fb;
-				token = curr_s;
-				break;
-			}
-			curr_s = SS_MATCH_N(sst[curr_s]);
-		} else
-			break;
-	}
+        if (curr_s && (lexeme[i] == SS_CH(sst[curr_s])))
+        {
+            if ('\0' == lexeme[i + 1] && FOLLBY_NON_ACCEPTING != SS_FB(sst[curr_s]))
+            {
+                fb = SS_FB(sst[curr_s]);
+                *pfollowedby = fb;
+                token = curr_s;
+                break;
+            }
+            curr_s = SS_MATCH_N(sst[curr_s]);
+        }
+        else
+            break;
+    }
 
-	return token;
+    return token;
 }
 
 
 /* Integer */
 static int
 is_integer(
-	char *lexeme
-	)
+    char* lexeme)
 {
-	int	i;
-	int	is_neg;
-	u_int	u_val;
-	
-	i = 0;
+    int i;
+    int is_neg;
+    u_int u_val;
 
-	/* Allow a leading minus sign */
-	if (lexeme[i] == '-') {
-		i++;
-		is_neg = TRUE;
-	} else {
-		is_neg = FALSE;
-	}
+    i = 0;
 
-	/* Check that all the remaining characters are digits */
-	for (; lexeme[i] != '\0'; i++) {
-		if (!isdigit((u_char)lexeme[i]))
-			return FALSE;
-	}
+    /* Allow a leading minus sign */
+    if (lexeme[i] == '-')
+    {
+        i++;
+        is_neg = TRUE;
+    }
+    else
+    {
+        is_neg = FALSE;
+    }
 
-	if (is_neg)
-		return TRUE;
+    /* Check that all the remaining characters are digits */
+    for (; lexeme[i] != '\0'; i++)
+    {
+        if (!isdigit((u_char)lexeme[i]))
+            return FALSE;
+    }
 
-	/* Reject numbers that fit in unsigned but not in signed int */
-	if (1 == sscanf(lexeme, "%u", &u_val))
-		return (u_val <= INT_MAX);
-	else
-		return FALSE;
+    if (is_neg)
+        return TRUE;
+
+    /* Reject numbers that fit in unsigned but not in signed int */
+    if (1 == sscanf(lexeme, "%u", &u_val))
+        return (u_val <= INT_MAX);
+    else
+        return FALSE;
 }
 
 
 /* U_int -- assumes is_integer() has returned FALSE */
 static int
 is_u_int(
-	char *lexeme
-	)
+    char* lexeme)
 {
-	int	i;
-	int	is_hex;
-	
-	i = 0;
-	if ('0' == lexeme[i] && 'x' == tolower((u_char)lexeme[i + 1])) {
-		i += 2;
-		is_hex = TRUE;
-	} else {
-		is_hex = FALSE;
-	}
+    int i;
+    int is_hex;
 
-	/* Check that all the remaining characters are digits */
-	for (; lexeme[i] != '\0'; i++) {
-		if (is_hex && !isxdigit((u_char)lexeme[i]))
-			return FALSE;
-		if (!is_hex && !isdigit((u_char)lexeme[i]))
-			return FALSE;
-	}
+    i = 0;
+    if ('0' == lexeme[i] && 'x' == tolower((u_char)lexeme[i + 1]))
+    {
+        i += 2;
+        is_hex = TRUE;
+    }
+    else
+    {
+        is_hex = FALSE;
+    }
 
-	return TRUE;
+    /* Check that all the remaining characters are digits */
+    for (; lexeme[i] != '\0'; i++)
+    {
+        if (is_hex && !isxdigit((u_char)lexeme[i]))
+            return FALSE;
+        if (!is_hex && !isdigit((u_char)lexeme[i]))
+            return FALSE;
+    }
+
+    return TRUE;
 }
 
 
 /* Double */
 static int
 is_double(
-	char *lexeme
-	)
+    char* lexeme)
 {
-	u_int num_digits = 0;  /* Number of digits read */
-	u_int i;
+    u_int num_digits = 0; /* Number of digits read */
+    u_int i;
 
-	i = 0;
+    i = 0;
 
-	/* Check for an optional '+' or '-' */
-	if ('+' == lexeme[i] || '-' == lexeme[i])
-		i++;
+    /* Check for an optional '+' or '-' */
+    if ('+' == lexeme[i] || '-' == lexeme[i])
+        i++;
 
-	/* Read the integer part */
-	for (; lexeme[i] && isdigit((u_char)lexeme[i]); i++)
-		num_digits++;
+    /* Read the integer part */
+    for (; lexeme[i] && isdigit((u_char)lexeme[i]); i++)
+        num_digits++;
 
-	/* Check for the optional decimal point */
-	if ('.' == lexeme[i]) {
-		i++;
-		/* Check for any digits after the decimal point */
-		for (; lexeme[i] && isdigit((u_char)lexeme[i]); i++)
-			num_digits++;
-	}
+    /* Check for the optional decimal point */
+    if ('.' == lexeme[i])
+    {
+        i++;
+        /* Check for any digits after the decimal point */
+        for (; lexeme[i] && isdigit((u_char)lexeme[i]); i++)
+            num_digits++;
+    }
 
-	/*
-	 * The number of digits in both the decimal part and the
-	 * fraction part must not be zero at this point 
-	 */
-	if (!num_digits)
-		return 0;
+    /*
+     * The number of digits in both the decimal part and the
+     * fraction part must not be zero at this point
+     */
+    if (!num_digits)
+        return 0;
 
-	/* Check if we are done */
-	if (!lexeme[i])
-		return 1;
+    /* Check if we are done */
+    if (!lexeme[i])
+        return 1;
 
-	/* There is still more input, read the exponent */
-	if ('e' == tolower((u_char)lexeme[i]))
-		i++;
-	else
-		return 0;
+    /* There is still more input, read the exponent */
+    if ('e' == tolower((u_char)lexeme[i]))
+        i++;
+    else
+        return 0;
 
-	/* Read an optional Sign */
-	if ('+' == lexeme[i] || '-' == lexeme[i])
-		i++;
+    /* Read an optional Sign */
+    if ('+' == lexeme[i] || '-' == lexeme[i])
+        i++;
 
-	/* Now read the exponent part */
-	while (lexeme[i] && isdigit((u_char)lexeme[i]))
-		i++;
+    /* Now read the exponent part */
+    while (lexeme[i] && isdigit((u_char)lexeme[i]))
+        i++;
 
-	/* Check if we are done */
-	if (!lexeme[i])
-		return 1;
-	else
-		return 0;
+    /* Check if we are done */
+    if (!lexeme[i])
+        return 1;
+    else
+        return 0;
 }
 
 
 /* is_special() - Test whether a character is a token */
 static inline int
 is_special(
-	int ch
-	)
+    int ch)
 {
-	return strchr(special_chars, ch) != NULL;
+    return strchr(special_chars, ch) != NULL;
 }
 
 
 static int
 is_EOC(
-	int ch
-	)
+    int ch)
 {
-	if ((old_config_style && (ch == '\n')) ||
-	    (!old_config_style && (ch == ';')))
-		return 1;
-	return 0;
+    if ((old_config_style && (ch == '\n')) ||
+        (!old_config_style && (ch == ';')))
+        return 1;
+    return 0;
 }
 
 
-char *
-quote_if_needed(char *str)
+char* quote_if_needed(char* str)
 {
-	char *ret;
-	size_t len;
-	size_t octets;
+    char* ret;
+    size_t len;
+    size_t octets;
 
-	len = strlen(str);
-	octets = len + 2 + 1;
-	ret = emalloc(octets);
-	if ('"' != str[0U] 
-	    && (strcspn(str, special_chars) < len 
-		|| strchr(str, ' ') != NULL)) {
-		snprintf(ret, octets, "\"%s\"", str);
-	} else
-		strlcpy(ret, str, octets);
+    len = strlen(str);
+    octets = len + 2 + 1;
+    ret = emalloc(octets);
+    if ('"' != str[0U] && (strcspn(str, special_chars) < len || strchr(str, ' ') != NULL))
+    {
+        snprintf(ret, octets, "\"%s\"", str);
+    }
+    else
+        strlcpy(ret, str, octets);
 
-	return ret;
+    return ret;
 }
 
 
 static int
 create_string_token(
-	char *lexeme
-	)
+    char* lexeme)
 {
-	char *pch;
+    char* pch;
 
-	/*
-	 * ignore end of line whitespace
-	 */
-	pch = lexeme;
-	while (*pch && isspace((u_char)*pch))
-		pch++;
+    /*
+     * ignore end of line whitespace
+     */
+    pch = lexeme;
+    while (*pch && isspace((u_char)*pch))
+        pch++;
 
-	if (!*pch) {
-		yylval.Integer = T_EOC;
-		return yylval.Integer;
-	}
+    if (!*pch)
+    {
+        yylval.Integer = T_EOC;
+        return yylval.Integer;
+    }
 
-	yylval.String = estrdup(lexeme);
-	return T_String;
+    yylval.String = estrdup(lexeme);
+    return T_String;
 }
 
 
@@ -675,274 +696,302 @@ create_string_token(
  * Conceptually yylex "returns" yylval as well as the actual return
  * value representing the token or type.
  */
-int
-yylex(void)
+int yylex(void)
 {
-	static follby	followedby = FOLLBY_TOKEN;
-	size_t		i;
-	int		instring;
-	int		yylval_was_set;
-	int		converted;
-	int		token;		/* The return value */
-	int		ch;
+    static follby followedby = FOLLBY_TOKEN;
+    size_t i;
+    int instring;
+    int yylval_was_set;
+    int converted;
+    int token; /* The return value */
+    int ch;
 
-	instring = FALSE;
-	yylval_was_set = FALSE;
+    instring = FALSE;
+    yylval_was_set = FALSE;
 
-	do {
-		/* Ignore whitespace at the beginning */
-		while (EOF != (ch = lex_getch(lex_stack)) &&
-		       isspace(ch) &&
-		       !is_EOC(ch))
+    do
+    {
+        /* Ignore whitespace at the beginning */
+        while (EOF != (ch = lex_getch(lex_stack)) &&
+               isspace(ch) &&
+               !is_EOC(ch))
 
-			; /* Null Statement */
+            ; /* Null Statement */
 
-		if (EOF == ch) {
+        if (EOF == ch)
+        {
 
-			if ( ! lex_pop_file())
-				return 0;
-			token = T_EOC;
-			goto normal_return;
+            if (!lex_pop_file())
+                return 0;
+            token = T_EOC;
+            goto normal_return;
+        }
+        else if (is_EOC(ch))
+        {
 
-		} else if (is_EOC(ch)) {
+            /* end FOLLBY_STRINGS_TO_EOC effect */
+            followedby = FOLLBY_TOKEN;
+            token = T_EOC;
+            goto normal_return;
+        }
+        else if (is_special(ch) && FOLLBY_TOKEN == followedby)
+        {
+            /* special chars are their own token values */
+            token = ch;
+            /*
+             * '=' outside simulator configuration implies
+             * a single string following as in:
+             * setvar Owner = "The Boss" default
+             */
+            if ('=' == ch && old_config_style)
+                followedby = FOLLBY_STRING;
+            yytext[0U] = (char)ch;
+            yytext[1U] = '\0';
+            goto normal_return;
+        }
+        else
+            lex_ungetch(ch, lex_stack);
 
-			/* end FOLLBY_STRINGS_TO_EOC effect */
-			followedby = FOLLBY_TOKEN;
-			token = T_EOC;
-			goto normal_return;
+        /* save the position of start of the token */
+        lex_stack->tokpos = lex_stack->curpos;
 
-		} else if (is_special(ch) && FOLLBY_TOKEN == followedby) {
-			/* special chars are their own token values */
-			token = ch;
-			/*
-			 * '=' outside simulator configuration implies
-			 * a single string following as in:
-			 * setvar Owner = "The Boss" default
-			 */
-			if ('=' == ch && old_config_style)
-				followedby = FOLLBY_STRING;
-			yytext[0U] = (char)ch;
-			yytext[1U] = '\0';
-			goto normal_return;
-		} else
-			lex_ungetch(ch, lex_stack);
+        /* Read in the lexeme */
+        i = 0;
+        while (EOF != (ch = lex_getch(lex_stack)))
+        {
 
-		/* save the position of start of the token */
-		lex_stack->tokpos = lex_stack->curpos;
+            yytext[i] = (char)ch;
 
-		/* Read in the lexeme */
-		i = 0;
-		while (EOF != (ch = lex_getch(lex_stack))) {
+            /* Break on whitespace or a special character */
+            if (isspace(ch) || is_EOC(ch) || '"' == ch || (FOLLBY_TOKEN == followedby && is_special(ch)))
+                break;
 
-			yytext[i] = (char)ch;
+            /* Read the rest of the line on reading a start
+               of comment character */
+            if ('#' == ch)
+            {
+                while (EOF != (ch = lex_getch(lex_stack)) && '\n' != ch)
+                    ; /* Null Statement */
+                break;
+            }
 
-			/* Break on whitespace or a special character */
-			if (isspace(ch) || is_EOC(ch) 
-			    || '"' == ch
-			    || (FOLLBY_TOKEN == followedby
-				&& is_special(ch)))
-				break;
+            i++;
+            if (i >= COUNTOF(yytext))
+                goto lex_too_long;
+        }
+        /* Pick up all of the string inside between " marks, to
+         * end of line.  If we make it to EOL without a
+         * terminating " assume it for them.
+         *
+         * XXX - HMS: I'm not sure we want to assume the closing "
+         */
+        if ('"' == ch)
+        {
+            instring = TRUE;
+            while (EOF != (ch = lex_getch(lex_stack)) &&
+                   ch != '"' && ch != '\n')
+            {
+                yytext[i++] = (char)ch;
+                if (i >= COUNTOF(yytext))
+                    goto lex_too_long;
+            }
+            /*
+             * yytext[i] will be pushed back as not part of
+             * this lexeme, but any closing quote should
+             * not be pushed back, so we read another char.
+             */
+            if ('"' == ch)
+                ch = lex_getch(lex_stack);
+        }
+        /* Pushback the last character read that is not a part
+         * of this lexeme. This fails silently if ch is EOF,
+         * but then the EOF condition persists and is handled on
+         * the next turn by the include stack mechanism.
+         */
+        lex_ungetch(ch, lex_stack);
 
-			/* Read the rest of the line on reading a start
-			   of comment character */
-			if ('#' == ch) {
-				while (EOF != (ch = lex_getch(lex_stack))
-				       && '\n' != ch)
-					; /* Null Statement */
-				break;
-			}
+        yytext[i] = '\0';
+    } while (i == 0);
 
-			i++;
-			if (i >= COUNTOF(yytext))
-				goto lex_too_long;
-		}
-		/* Pick up all of the string inside between " marks, to
-		 * end of line.  If we make it to EOL without a
-		 * terminating " assume it for them.
-		 *
-		 * XXX - HMS: I'm not sure we want to assume the closing "
-		 */
-		if ('"' == ch) {
-			instring = TRUE;
-			while (EOF != (ch = lex_getch(lex_stack)) &&
-			       ch != '"' && ch != '\n') {
-				yytext[i++] = (char)ch;
-				if (i >= COUNTOF(yytext))
-					goto lex_too_long;
-			}
-			/*
-			 * yytext[i] will be pushed back as not part of
-			 * this lexeme, but any closing quote should
-			 * not be pushed back, so we read another char.
-			 */
-			if ('"' == ch)
-				ch = lex_getch(lex_stack);
-		}
-		/* Pushback the last character read that is not a part
-		 * of this lexeme. This fails silently if ch is EOF,
-		 * but then the EOF condition persists and is handled on
-		 * the next turn by the include stack mechanism.
-		 */
-		lex_ungetch(ch, lex_stack);
+    /* Now return the desired token */
 
-		yytext[i] = '\0';
-	} while (i == 0);
+    /* First make sure that the parser is *not* expecting a string
+     * as the next token (based on the previous token that was
+     * returned) and that we haven't read a string.
+     */
 
-	/* Now return the desired token */
-	
-	/* First make sure that the parser is *not* expecting a string
-	 * as the next token (based on the previous token that was
-	 * returned) and that we haven't read a string.
-	 */
-	
-	if (followedby == FOLLBY_TOKEN && !instring) {
-		token = is_keyword(yytext, &followedby);
-		if (token) {
-			/*
-			 * T_Server is exceptional as it forces the
-			 * following token to be a string in the
-			 * non-simulator parts of the configuration,
-			 * but in the simulator configuration section,
-			 * "server" is followed by "=" which must be
-			 * recognized as a token not a string.
-			 */
-			if (T_Server == token && !old_config_style)
-				followedby = FOLLBY_TOKEN;
-			goto normal_return;
-		} else if (is_integer(yytext)) {
-			yylval_was_set = TRUE;
-			errno = 0;
-			if ((yylval.Integer = strtol(yytext, NULL, 10)) == 0
-			    && ((errno == EINVAL) || (errno == ERANGE))) {
-				msyslog(LOG_ERR, 
-					"Integer cannot be represented: %s",
-					yytext);
-				if (lex_from_file()) {
-					exit(1);
-				} else {
-					/* force end of parsing */
-					yylval.Integer = 0;
-					return 0;
-				}
-			}
-			token = T_Integer;
-			goto normal_return;
-		} else if (is_u_int(yytext)) {
-			yylval_was_set = TRUE;
-			if ('0' == yytext[0U] &&
-			    'x' == tolower((unsigned long)yytext[1U]))
-				converted = sscanf(&yytext[2U], "%x",
-						   &yylval.U_int);
-			else
-				converted = sscanf(yytext, "%u",
-						   &yylval.U_int);
-			if (1 != converted) {
-				msyslog(LOG_ERR, 
-					"U_int cannot be represented: %s",
-					yytext);
-				if (lex_from_file()) {
-					exit(1);
-				} else {
-					/* force end of parsing */
-					yylval.Integer = 0;
-					return 0;
-				}
-			}
-			token = T_U_int;
-			goto normal_return;
-		} else if (is_double(yytext)) {
-			yylval_was_set = TRUE;
-			errno = 0;
-			if ((yylval.Double = atof(yytext)) == 0 && errno == ERANGE) {
-				msyslog(LOG_ERR,
-					"Double too large to represent: %s",
-					yytext);
-				exit(1);
-			} else {
-				token = T_Double;
-				goto normal_return;
-			}
-		} else {
-			/* Default: Everything is a string */
-			yylval_was_set = TRUE;
-			token = create_string_token(yytext);
-			goto normal_return;
-		}
-	}
+    if (followedby == FOLLBY_TOKEN && !instring)
+    {
+        token = is_keyword(yytext, &followedby);
+        if (token)
+        {
+            /*
+             * T_Server is exceptional as it forces the
+             * following token to be a string in the
+             * non-simulator parts of the configuration,
+             * but in the simulator configuration section,
+             * "server" is followed by "=" which must be
+             * recognized as a token not a string.
+             */
+            if (T_Server == token && !old_config_style)
+                followedby = FOLLBY_TOKEN;
+            goto normal_return;
+        }
+        else if (is_integer(yytext))
+        {
+            yylval_was_set = TRUE;
+            errno = 0;
+            if ((yylval.Integer = strtol(yytext, NULL, 10)) == 0 && ((errno == EINVAL) || (errno == ERANGE)))
+            {
+                msyslog(LOG_ERR,
+                        "Integer cannot be represented: %s",
+                        yytext);
+                if (lex_from_file())
+                {
+                    exit(1);
+                }
+                else
+                {
+                    /* force end of parsing */
+                    yylval.Integer = 0;
+                    return 0;
+                }
+            }
+            token = T_Integer;
+            goto normal_return;
+        }
+        else if (is_u_int(yytext))
+        {
+            yylval_was_set = TRUE;
+            if ('0' == yytext[0U] &&
+                'x' == tolower((unsigned long)yytext[1U]))
+                converted = sscanf(&yytext[2U], "%x",
+                                   &yylval.U_int);
+            else
+                converted = sscanf(yytext, "%u",
+                                   &yylval.U_int);
+            if (1 != converted)
+            {
+                msyslog(LOG_ERR,
+                        "U_int cannot be represented: %s",
+                        yytext);
+                if (lex_from_file())
+                {
+                    exit(1);
+                }
+                else
+                {
+                    /* force end of parsing */
+                    yylval.Integer = 0;
+                    return 0;
+                }
+            }
+            token = T_U_int;
+            goto normal_return;
+        }
+        else if (is_double(yytext))
+        {
+            yylval_was_set = TRUE;
+            errno = 0;
+            if ((yylval.Double = atof(yytext)) == 0 && errno == ERANGE)
+            {
+                msyslog(LOG_ERR,
+                        "Double too large to represent: %s",
+                        yytext);
+                exit(1);
+            }
+            else
+            {
+                token = T_Double;
+                goto normal_return;
+            }
+        }
+        else
+        {
+            /* Default: Everything is a string */
+            yylval_was_set = TRUE;
+            token = create_string_token(yytext);
+            goto normal_return;
+        }
+    }
 
-	/*
-	 * Either followedby is not FOLLBY_TOKEN or this lexeme is part
-	 * of a string.  Hence, we need to return T_String.
-	 * 
-	 * _Except_ we might have a -4 or -6 flag on a an association
-	 * configuration line (server, peer, pool, etc.).
-	 *
-	 * This is a terrible hack, but the grammar is ambiguous so we
-	 * don't have a choice.  [SK]
-	 *
-	 * The ambiguity is in the keyword scanner, not ntp_parser.y.
-	 * We do not require server addresses be quoted in ntp.conf,
-	 * complicating the scanner's job.  To avoid trying (and
-	 * failing) to match an IP address or DNS name to a keyword,
-	 * the association keywords use FOLLBY_STRING in the keyword
-	 * table, which tells the scanner to force the next token to be
-	 * a T_String, so it does not try to match a keyword but rather
-	 * expects a string when -4/-6 modifiers to server, peer, etc.
-	 * are encountered.
-	 * restrict -4 and restrict -6 parsing works correctly without
-	 * this hack, as restrict uses FOLLBY_TOKEN.  [DH]
-	 */
-	if ('-' == yytext[0U]) {
-		if ('4' == yytext[1U]) {
-			token = T_Ipv4_flag;
-			goto normal_return;
-		} else if ('6' == yytext[1U]) {
-			token = T_Ipv6_flag;
-			goto normal_return;
-		}
-	}
+    /*
+     * Either followedby is not FOLLBY_TOKEN or this lexeme is part
+     * of a string.  Hence, we need to return T_String.
+     *
+     * _Except_ we might have a -4 or -6 flag on a an association
+     * configuration line (server, peer, pool, etc.).
+     *
+     * This is a terrible hack, but the grammar is ambiguous so we
+     * don't have a choice.  [SK]
+     *
+     * The ambiguity is in the keyword scanner, not ntp_parser.y.
+     * We do not require server addresses be quoted in ntp.conf,
+     * complicating the scanner's job.  To avoid trying (and
+     * failing) to match an IP address or DNS name to a keyword,
+     * the association keywords use FOLLBY_STRING in the keyword
+     * table, which tells the scanner to force the next token to be
+     * a T_String, so it does not try to match a keyword but rather
+     * expects a string when -4/-6 modifiers to server, peer, etc.
+     * are encountered.
+     * restrict -4 and restrict -6 parsing works correctly without
+     * this hack, as restrict uses FOLLBY_TOKEN.  [DH]
+     */
+    if ('-' == yytext[0U])
+    {
+        if ('4' == yytext[1U])
+        {
+            token = T_Ipv4_flag;
+            goto normal_return;
+        }
+        else if ('6' == yytext[1U])
+        {
+            token = T_Ipv6_flag;
+            goto normal_return;
+        }
+    }
 
-	if (FOLLBY_STRING == followedby)
-		followedby = FOLLBY_TOKEN;
+    if (FOLLBY_STRING == followedby)
+        followedby = FOLLBY_TOKEN;
 
-	yylval_was_set = TRUE;
-	token = create_string_token(yytext);
+    yylval_was_set = TRUE;
+    token = create_string_token(yytext);
 
 normal_return:
-	if (T_EOC == token)
-		DPRINTF(10, ("\t<end of command>\n"));
-	else
-		DPRINTF(10, ("yylex: lexeme '%s' -> %s\n", yytext,
-			    token_name(token)));
+    if (T_EOC == token)
+        DPRINTF(10, ("\t<end of command>\n"));
+    else
+        DPRINTF(10, ("yylex: lexeme '%s' -> %s\n", yytext,
+                     token_name(token)));
 
-	if (!yylval_was_set)
-		yylval.Integer = token;
+    if (!yylval_was_set)
+        yylval.Integer = token;
 
-	return token;
+    return token;
 
 lex_too_long:
-	/*
-	 * DLH: What is the purpose of the limit of 50?
-	 * Is there any reason for yytext[] to be bigger?
-	 */
-	yytext[min(sizeof(yytext) - 1, 50)] = 0;
-	msyslog(LOG_ERR, 
-		"configuration item on line %d longer than limit of %lu, began with '%s'",
-		lex_stack->curpos.nline, (u_long)min(sizeof(yytext) - 1, 50),
-		yytext);
+    /*
+     * DLH: What is the purpose of the limit of 50?
+     * Is there any reason for yytext[] to be bigger?
+     */
+    yytext[min(sizeof(yytext) - 1, 50)] = 0;
+    msyslog(LOG_ERR,
+            "configuration item on line %d longer than limit of %lu, began with '%s'",
+            lex_stack->curpos.nline, (u_long)min(sizeof(yytext) - 1, 50),
+            yytext);
 
-	/*
-	 * If we hit the length limit reading the startup configuration
-	 * file, abort.
-	 */
-	if (lex_from_file())
-		exit(sizeof(yytext) - 1);
+    /*
+     * If we hit the length limit reading the startup configuration
+     * file, abort.
+     */
+    if (lex_from_file())
+        exit(sizeof(yytext) - 1);
 
-	/*
-	 * If it's runtime configuration via ntpq :config treat it as
-	 * if the configuration text ended before the too-long lexeme,
-	 * hostname, or string.
-	 */
-	yylval.Integer = 0;
-	return 0;
+    /*
+     * If it's runtime configuration via ntpq :config treat it as
+     * if the configuration text ended before the too-long lexeme,
+     * hostname, or string.
+     */
+    yylval.Integer = 0;
+    return 0;
 }

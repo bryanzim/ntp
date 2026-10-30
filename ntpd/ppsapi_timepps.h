@@ -6,21 +6,21 @@
  */
 
 #ifdef HAVE_TIMEPPS_H
-# include <timepps.h>
+#include <timepps.h>
 #else
-# ifdef HAVE_SYS_TIMEPPS_H
-#  include <sys/timepps.h>
-# else
-#  ifdef HAVE_CIOGETEV
-#   include "timepps-SunOS.h"
-#  else
-#   ifdef HAVE_TIOCGPPSEV
-#    include "timepps-Solaris.h"
-#   else
-#    ifdef TIOCDCDTIMESTAMP
-#     include "timepps-SCO.h"
-#    endif
-#   endif
-#  endif
-# endif
+#ifdef HAVE_SYS_TIMEPPS_H
+#include <sys/timepps.h>
+#else
+#ifdef HAVE_CIOGETEV
+#include "timepps-SunOS.h"
+#else
+#ifdef HAVE_TIOCGPPSEV
+#include "timepps-Solaris.h"
+#else
+#ifdef TIOCDCDTIMESTAMP
+#include "timepps-SCO.h"
+#endif
+#endif
+#endif
+#endif
 #endif

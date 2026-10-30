@@ -60,9 +60,10 @@
  */
 
 #include <config.h>
+
 #include "ntp_types.h"
 
-#if !defined(HAVE_MKTIME) || ( !defined(HAVE_TIMEGM) && defined(WANT_TIMEGM) )
+#if !defined(HAVE_MKTIME) || (!defined(HAVE_TIMEGM) && defined(WANT_TIMEGM))
 
 #if SIZEOF_TIME_T >= 8
 #error libntp supplied mktime()/timegm() do not support 64-bit time_t
@@ -76,25 +77,25 @@
 #define TRUE 1
 
 /* some constants from tzfile.h */
-#define SECSPERMIN      60
-#define MINSPERHOUR     60
-#define HOURSPERDAY     24
-#define DAYSPERWEEK     7
-#define DAYSPERNYEAR    365
-#define DAYSPERLYEAR    366
-#define SECSPERHOUR     (SECSPERMIN * MINSPERHOUR)
-#define SECSPERDAY      ((long) SECSPERHOUR * HOURSPERDAY)
-#define MONSPERYEAR     12
-#define TM_YEAR_BASE    1900
+#define SECSPERMIN 60
+#define MINSPERHOUR 60
+#define HOURSPERDAY 24
+#define DAYSPERWEEK 7
+#define DAYSPERNYEAR 365
+#define DAYSPERLYEAR 366
+#define SECSPERHOUR (SECSPERMIN * MINSPERHOUR)
+#define SECSPERDAY ((long)SECSPERHOUR * HOURSPERDAY)
+#define MONSPERYEAR 12
+#define TM_YEAR_BASE 1900
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
-static int	mon_lengths[2][MONSPERYEAR] = {
-	{ 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
-	{ 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
+static int mon_lengths[2][MONSPERYEAR] = {
+    { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
+    { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
 };
 
-static int	year_lengths[2] = {
-	DAYSPERNYEAR, DAYSPERLYEAR
+static int year_lengths[2] = {
+    DAYSPERNYEAR, DAYSPERLYEAR
 };
 
 /*
@@ -107,33 +108,35 @@ static int	year_lengths[2] = {
 */
 
 #ifndef WRONG
-#define WRONG	(-1)
+#define WRONG (-1)
 #endif /* !defined WRONG */
 
 static void
 normalize(
-	int * tensptr,
-	int * unitsptr,
-	int	base
-	)
+    int* tensptr,
+    int* unitsptr,
+    int base)
 {
-	if (*unitsptr >= base) {
-		*tensptr += *unitsptr / base;
-		*unitsptr %= base;
-	} else if (*unitsptr < 0) {
-		--*tensptr;
-		*unitsptr += base;
-		if (*unitsptr < 0) {
-			*tensptr -= 1 + (-*unitsptr) / base;
-			*unitsptr = base - (-*unitsptr) % base;
-		}
-	}
+    if (*unitsptr >= base)
+    {
+        *tensptr += *unitsptr / base;
+        *unitsptr %= base;
+    }
+    else if (*unitsptr < 0)
+    {
+        --*tensptr;
+        *unitsptr += base;
+        if (*unitsptr < 0)
+        {
+            *tensptr -= 1 + (-*unitsptr) / base;
+            *unitsptr = base - (-*unitsptr) % base;
+        }
+    }
 }
 
-static struct tm *
+static struct tm*
 mkdst(
-	struct tm *	tmp
-	)
+    struct tm* tmp)
 {
     /* jds */
     static struct tm tmbuf;
@@ -147,116 +150,120 @@ mkdst(
 
 static int
 tmcomp(
-	register struct tm * atmp,
-	register struct tm * btmp
-	)
+    register struct tm* atmp,
+    register struct tm* btmp)
 {
-	register int	result;
+    register int result;
 
-	/* compare down to the same day */
+    /* compare down to the same day */
 
-	if ((result = (atmp->tm_year - btmp->tm_year)) == 0 &&
-	    (result = (atmp->tm_mon - btmp->tm_mon)) == 0)
-	    result = (atmp->tm_mday - btmp->tm_mday);
+    if ((result = (atmp->tm_year - btmp->tm_year)) == 0 &&
+        (result = (atmp->tm_mon - btmp->tm_mon)) == 0)
+        result = (atmp->tm_mday - btmp->tm_mday);
 
-	if(result != 0)
-	    return result;
+    if (result != 0)
+        return result;
 
-	/* get rid of one-sided dst bias */
+    /* get rid of one-sided dst bias */
 
-	if(atmp->tm_isdst == 1 && !btmp->tm_isdst)
-	    btmp = mkdst(btmp);
-	else if(btmp->tm_isdst == 1 && !atmp->tm_isdst)
-	    atmp = mkdst(atmp);
+    if (atmp->tm_isdst == 1 && !btmp->tm_isdst)
+        btmp = mkdst(btmp);
+    else if (btmp->tm_isdst == 1 && !atmp->tm_isdst)
+        atmp = mkdst(atmp);
 
-	/* compare the rest of the way */
+    /* compare the rest of the way */
 
-	if ((result = (atmp->tm_hour - btmp->tm_hour)) == 0 &&
-	    (result = (atmp->tm_min - btmp->tm_min)) == 0)
-	    result = atmp->tm_sec - btmp->tm_sec;
-	return result;
+    if ((result = (atmp->tm_hour - btmp->tm_hour)) == 0 &&
+        (result = (atmp->tm_min - btmp->tm_min)) == 0)
+        result = atmp->tm_sec - btmp->tm_sec;
+    return result;
 }
 
 
 static time_t
 time2(
-	struct tm *	tmp,
-	int * 		okayp,
-	int		usezn
-	)
+    struct tm* tmp,
+    int* okayp,
+    int usezn)
 {
-	register int			dir;
-	register int			bits;
-	register int			i;
-	register int			saved_seconds;
-	time_t				t;
-	struct tm			yourtm, mytm;
+    register int dir;
+    register int bits;
+    register int i;
+    register int saved_seconds;
+    time_t t;
+    struct tm yourtm, mytm;
 
-	*okayp = FALSE;
-	yourtm = *tmp;
-	if (yourtm.tm_sec >= SECSPERMIN + 2 || yourtm.tm_sec < 0)
-		normalize(&yourtm.tm_min, &yourtm.tm_sec, SECSPERMIN);
-	normalize(&yourtm.tm_hour, &yourtm.tm_min, MINSPERHOUR);
-	normalize(&yourtm.tm_mday, &yourtm.tm_hour, HOURSPERDAY);
-	normalize(&yourtm.tm_year, &yourtm.tm_mon, MONSPERYEAR);
-	while (yourtm.tm_mday <= 0) {
-		--yourtm.tm_year;
-		yourtm.tm_mday +=
-			year_lengths[isleap(yourtm.tm_year + TM_YEAR_BASE)];
-	}
-	for ( ; ; ) {
-		i = mon_lengths[isleap(yourtm.tm_year +
-			TM_YEAR_BASE)][yourtm.tm_mon];
-		if (yourtm.tm_mday <= i)
-			break;
-		yourtm.tm_mday -= i;
-		if (++yourtm.tm_mon >= MONSPERYEAR) {
-			yourtm.tm_mon = 0;
-			++yourtm.tm_year;
-		}
-	}
-	saved_seconds = yourtm.tm_sec;
-	yourtm.tm_sec = 0;
-	/*
-	** Calculate the number of magnitude bits in a time_t
-	** (this works regardless of whether time_t is
-	** signed or unsigned, though lint complains if unsigned).
-	*/
-	for (bits = 0, t = 1; t > 0; ++bits, t <<= 1)
-		;
-	/*
-	** If time_t is signed, then 0 is the median value,
-	** if time_t is unsigned, then 1 << bits is median.
-	*/
-	t = (t < 0) ? 0 : ((time_t) 1 << bits);
-	for ( ; ; ) {
-		if (usezn)
-			mytm = *localtime(&t);
-		else
-			mytm = *gmtime(&t);
-		dir = tmcomp(&mytm, &yourtm);
-		if (dir != 0) {
-			if (bits-- < 0)
-				return WRONG;
-			if (bits < 0)
-				--t;
-			else if (dir > 0)
-				t -= (time_t) 1 << bits;
-			else	t += (time_t) 1 << bits;
-			continue;
-		}
-		if (yourtm.tm_isdst < 0 || mytm.tm_isdst == yourtm.tm_isdst)
-			break;
+    *okayp = FALSE;
+    yourtm = *tmp;
+    if (yourtm.tm_sec >= SECSPERMIN + 2 || yourtm.tm_sec < 0)
+        normalize(&yourtm.tm_min, &yourtm.tm_sec, SECSPERMIN);
+    normalize(&yourtm.tm_hour, &yourtm.tm_min, MINSPERHOUR);
+    normalize(&yourtm.tm_mday, &yourtm.tm_hour, HOURSPERDAY);
+    normalize(&yourtm.tm_year, &yourtm.tm_mon, MONSPERYEAR);
+    while (yourtm.tm_mday <= 0)
+    {
+        --yourtm.tm_year;
+        yourtm.tm_mday +=
+            year_lengths[isleap(yourtm.tm_year + TM_YEAR_BASE)];
+    }
+    for (;;)
+    {
+        i = mon_lengths[isleap(yourtm.tm_year +
+                               TM_YEAR_BASE)][yourtm.tm_mon];
+        if (yourtm.tm_mday <= i)
+            break;
+        yourtm.tm_mday -= i;
+        if (++yourtm.tm_mon >= MONSPERYEAR)
+        {
+            yourtm.tm_mon = 0;
+            ++yourtm.tm_year;
+        }
+    }
+    saved_seconds = yourtm.tm_sec;
+    yourtm.tm_sec = 0;
+    /*
+    ** Calculate the number of magnitude bits in a time_t
+    ** (this works regardless of whether time_t is
+    ** signed or unsigned, though lint complains if unsigned).
+    */
+    for (bits = 0, t = 1; t > 0; ++bits, t <<= 1)
+        ;
+    /*
+    ** If time_t is signed, then 0 is the median value,
+    ** if time_t is unsigned, then 1 << bits is median.
+    */
+    t = (t < 0) ? 0 : ((time_t)1 << bits);
+    for (;;)
+    {
+        if (usezn)
+            mytm = *localtime(&t);
+        else
+            mytm = *gmtime(&t);
+        dir = tmcomp(&mytm, &yourtm);
+        if (dir != 0)
+        {
+            if (bits-- < 0)
+                return WRONG;
+            if (bits < 0)
+                --t;
+            else if (dir > 0)
+                t -= (time_t)1 << bits;
+            else
+                t += (time_t)1 << bits;
+            continue;
+        }
+        if (yourtm.tm_isdst < 0 || mytm.tm_isdst == yourtm.tm_isdst)
+            break;
 
-		return WRONG;
-	}
-	t += saved_seconds;
-	if (usezn)
-		*tmp = *localtime(&t);
-	else
-		*tmp = *gmtime(&t);
-	*okayp = TRUE;
-	return t;
+        return WRONG;
+    }
+    t += saved_seconds;
+    if (usezn)
+        *tmp = *localtime(&t);
+    else
+        *tmp = *gmtime(&t);
+    *okayp = TRUE;
+    return t;
 }
 #else
 NONEMPTY_TRANSLATION_UNIT
@@ -265,27 +272,25 @@ NONEMPTY_TRANSLATION_UNIT
 #ifndef HAVE_MKTIME
 static time_t
 time1(
-	struct tm * tmp
-	)
+    struct tm* tmp)
 {
-	register time_t			t;
-	int				okay;
+    register time_t t;
+    int okay;
 
-	if (tmp->tm_isdst > 1)
-		tmp->tm_isdst = 1;
-	t = time2(tmp, &okay, 1);
-	if (okay || tmp->tm_isdst < 0)
-		return t;
+    if (tmp->tm_isdst > 1)
+        tmp->tm_isdst = 1;
+    t = time2(tmp, &okay, 1);
+    if (okay || tmp->tm_isdst < 0)
+        return t;
 
-	return WRONG;
+    return WRONG;
 }
 
 time_t
 mktime(
-	struct tm * tmp
-	)
+    struct tm* tmp)
 {
-	return time1(tmp);
+    return time1(tmp);
 }
 #endif /* !HAVE_MKTIME */
 
@@ -293,18 +298,17 @@ mktime(
 #ifndef HAVE_TIMEGM
 time_t
 timegm(
-	struct tm * tmp
-	)
+    struct tm* tmp)
 {
-	register time_t			t;
-	int				okay;
+    register time_t t;
+    int okay;
 
-	tmp->tm_isdst = 0;
-	t = time2(tmp, &okay, 0);
-	if (okay || tmp->tm_isdst < 0)
-		return t;
+    tmp->tm_isdst = 0;
+    t = time2(tmp, &okay, 0);
+    if (okay || tmp->tm_isdst < 0)
+        return t;
 
-	return WRONG;
+    return WRONG;
 }
 #endif /* !HAVE_TIMEGM */
 #endif /* WANT_TIMEGM */

@@ -15,9 +15,9 @@
  */
 
 
-//#ifndef TESTCALSHIMS_H
+// #ifndef TESTCALSHIMS_H
 #include "testcalshims.h"
-//#endif
+// #endif
 
 
 #ifndef TIMESTRUCTS_H
@@ -26,107 +26,137 @@
 #include "ntp_fp.h"
 
 
-l_fp test ; 
-//namespace timeStruct {
+l_fp test;
+// namespace timeStruct {
 
 // wrap a l_fp struct with common operations
-struct l_fp_wrap {
-  
-	l_fp V;
-	
-	
-	//bool operator == (const l_fp_wrap &rhs) const
-	//	{ return L_ISEQU(&V, &rhs.V); }
+struct l_fp_wrap
+{
 
-//---------------THIS HAS TO BE MANUALLY CONVERTED IN CODE!!!
-	//operator l_fp* () 
-	//	{ return &V; }
-	//operator l_fp& ()
-	//	{ return V; }
-//-----------------------------------------
-/*
-	l_fp_wrap &operator = (const l_fp_wrap &rhs)
-		{ V = rhs.V; return *this; }
-	l_fp_wrap &operator = (const l_fp &rhs)
-		{ V = rhs; return *this; }
-*/
+    l_fp V;
+
+
+    // bool operator == (const l_fp_wrap &rhs) const
+    //	{ return L_ISEQU(&V, &rhs.V); }
+
+    //---------------THIS HAS TO BE MANUALLY CONVERTED IN CODE!!!
+    // operator l_fp* ()
+    //	{ return &V; }
+    // operator l_fp& ()
+    //	{ return V; }
+    //-----------------------------------------
+    /*
+        l_fp_wrap &operator = (const l_fp_wrap &rhs)
+            { V = rhs.V; return *this; }
+        l_fp_wrap &operator = (const l_fp &rhs)
+            { V = rhs; return *this; }
+    */
 };
 
-l_fp_wrap(l_fp V) {
-	ZERO(V); }
-l_fp_wrap(l_fp V, u_int32 hi, u_int32 lo) {
-	V.l_ui = hi; V.l_uf = lo; }
-l_fp_wrap(l_fp V, const l_fp &rhs) {
-	V = rhs; }
-
-l_fp_wrap_equals(const l_fp_wrap &current, const l_fp_wrap &rhs) const // operator ==
-	{ return L_ISEQU(&current.V, &rhs.V); }
-
-l_fp_wrap_and(const l_fp_wrap &current, const l_fp_wrap &rhs) {
-	V = rhs.V; 
-	return current//*this;
+l_fp_wrap(l_fp V)
+{
+    ZERO(V);
 }
-l_fp_wrap_and(const l_fp &current, const l_fp &rhs) { 
-	V = rhs; 
-	return current//*this; 
+l_fp_wrap(l_fp V, u_int32 hi, u_int32 lo)
+{
+    V.l_ui = hi;
+    V.l_uf = lo;
+}
+l_fp_wrap(l_fp V, const l_fp& rhs)
+{
+    V = rhs;
 }
 
-	
+l_fp_wrap_equals(const l_fp_wrap& current, const l_fp_wrap& rhs) const // operator ==
+{ return L_ISEQU(&current.V, &rhs.V); }
+
+l_fp_wrap_and(const l_fp_wrap& current, const l_fp_wrap& rhs)
+{
+    V = rhs.V;
+    return current //*this;
+}
+l_fp_wrap_and(const l_fp& current, const l_fp& rhs)
+{
+    V = rhs;
+    return current //*this;
+}
+
+
 
 // wrap a 'struct timeval' with common operations
-struct timeval_wrap {
+struct timeval_wrap
+{
 
-	struct timeval V;
+    struct timeval V;
 
-	timeval_wrap()
-		{ ZERO(V); }
-	timeval_wrap(time_t hi, long lo)
-		{ V.tv_sec = hi; V.tv_usec = lo; }
-	timeval_wrap(const struct timeval &rhs)
-		{ V = rhs; }
-	timeval_wrap(const timeval_wrap &rhs)
-		{ V = rhs.V; }
-	bool operator == (const timeval_wrap &rhs) const
-		{ return V.tv_sec == rhs.V.tv_sec &&
-			 V.tv_usec == rhs.V.tv_usec ; }
-	bool valid() const
-		{ return V.tv_usec >= 0 && V.tv_usec < 1000000; }
-	operator struct timeval* () 
-		{ return &V; }
-	operator struct timeval& ()
-		{ return V; }
-	timeval_wrap &operator = (const timeval_wrap &rhs)
-		{ V = rhs.V; return *this; }
-	timeval_wrap &operator = (const struct timeval &rhs)
-		{ V = rhs; return *this; }
+    timeval_wrap()
+    { ZERO(V); }
+    timeval_wrap(time_t hi, long lo)
+    {
+        V.tv_sec = hi;
+        V.tv_usec = lo;
+    }
+    timeval_wrap(const struct timeval& rhs)
+    { V = rhs; }
+    timeval_wrap(const timeval_wrap& rhs)
+    { V = rhs.V; }
+    bool operator==(const timeval_wrap& rhs) const
+    { return V.tv_sec == rhs.V.tv_sec &&
+             V.tv_usec == rhs.V.tv_usec; }
+    bool valid() const
+    { return V.tv_usec >= 0 && V.tv_usec < 1000000; }
+    operator struct timeval*()
+    { return &V; }
+    operator struct timeval&()
+    { return V; }
+    timeval_wrap& operator=(const timeval_wrap& rhs)
+    {
+        V = rhs.V;
+        return *this;
+    }
+    timeval_wrap& operator=(const struct timeval& rhs)
+    {
+        V = rhs;
+        return *this;
+    }
 };
 
 // wrap a 'struct timespec' with common operations
-struct timespec_wrap {
+struct timespec_wrap
+{
 
-	struct timespec V;
+    struct timespec V;
 
-	timespec_wrap()
-		{ ZERO(V); }
-	timespec_wrap(time_t hi, long lo)
-		{ V.tv_sec = hi; V.tv_nsec = lo; }
-	timespec_wrap(const struct timespec &rhs)
-		{ V = rhs; }
-	timespec_wrap(const timespec_wrap &rhs)
-		{ V = rhs.V; }
-	bool operator == (const timespec_wrap &rhs) const
-		{ return V.tv_sec == rhs.V.tv_sec &&
-			 V.tv_nsec == rhs.V.tv_nsec ; }
-	bool valid() const
-		{ return V.tv_nsec >= 0 && V.tv_nsec < 1000000000; }
-	operator struct timespec* () 
-		{ return &V; }
-	operator struct timespec& ()
-		{ return V;	}
-	timespec_wrap &operator = (const timespec_wrap &rhs)
-		{ V = rhs.V; return *this; }
-	timespec_wrap &operator = (const struct timespec &rhs)
-		{ V = rhs; return *this; }
+    timespec_wrap()
+    { ZERO(V); }
+    timespec_wrap(time_t hi, long lo)
+    {
+        V.tv_sec = hi;
+        V.tv_nsec = lo;
+    }
+    timespec_wrap(const struct timespec& rhs)
+    { V = rhs; }
+    timespec_wrap(const timespec_wrap& rhs)
+    { V = rhs.V; }
+    bool operator==(const timespec_wrap& rhs) const
+    { return V.tv_sec == rhs.V.tv_sec &&
+             V.tv_nsec == rhs.V.tv_nsec; }
+    bool valid() const
+    { return V.tv_nsec >= 0 && V.tv_nsec < 1000000000; }
+    operator struct timespec*()
+    { return &V; }
+    operator struct timespec&()
+    { return V; }
+    timespec_wrap& operator=(const timespec_wrap& rhs)
+    {
+        V = rhs.V;
+        return *this;
+    }
+    timespec_wrap& operator=(const struct timespec& rhs)
+    {
+        V = rhs;
+        return *this;
+    }
 };
 
 // l_fp closeness testing predicate
@@ -135,16 +165,17 @@ struct timespec_wrap {
 // values. Once constructed with a limit, it can be used to check the
 // absolute difference of two l_fp structs against that limit; if the
 // difference is less or equal to this limit, the test passes.
-class AssertFpClose {
+class AssertFpClose
+{
 private:
-	l_fp limit;
+    l_fp limit;
 
 public:
-	AssertFpClose(u_int32 hi, u_int32 lo);
+    AssertFpClose(u_int32 hi, u_int32 lo);
 
-	::testing::AssertionResult
-	operator()(const char* m_expr, const char* n_expr,
-		   const l_fp &m, const l_fp &n);
+    ::testing::AssertionResult
+    operator()(const char* m_expr, const char* n_expr,
+               const l_fp& m, const l_fp& n);
 };
 
 
@@ -159,18 +190,19 @@ public:
 // fact that these basic operations can be tested by exact value tests,
 // so once the basic timeval operations passed it's safe to use this
 // predicate.
-class AssertTimevalClose {
+class AssertTimevalClose
+{
 private:
-	struct timeval limit;
+    struct timeval limit;
 
 public:
-	// note: (hi,lo) should be a positive normalised timeval;
-	// the constructor does not normalise the values!
-	AssertTimevalClose(time_t hi, int32 lo);
+    // note: (hi,lo) should be a positive normalised timeval;
+    // the constructor does not normalise the values!
+    AssertTimevalClose(time_t hi, int32 lo);
 
-	::testing::AssertionResult
-	operator()(const char* m_expr, const char* n_expr,
-		   const struct timeval &m, const struct timeval &n);
+    ::testing::AssertionResult
+    operator()(const char* m_expr, const char* n_expr,
+               const struct timeval& m, const struct timeval& n);
 };
 
 
@@ -182,18 +214,19 @@ public:
 // - cmp_tspec
 //
 // See the equivalent timeval helper.
-class AssertTimespecClose {
+class AssertTimespecClose
+{
 private:
-	struct timespec limit;
+    struct timespec limit;
 
 public:
-	// note: (hi,lo) should be a positive normalised timespec;
-	// the constructor does not normalise the values!
-	AssertTimespecClose(time_t hi, int32 lo);
+    // note: (hi,lo) should be a positive normalised timespec;
+    // the constructor does not normalise the values!
+    AssertTimespecClose(time_t hi, int32 lo);
 
-	::testing::AssertionResult
-	operator()(const char* m_expr, const char* n_expr,
-		   const struct timespec &m, const struct timespec &n);
+    ::testing::AssertionResult
+    operator()(const char* m_expr, const char* n_expr,
+               const struct timespec& m, const struct timespec& n);
 };
 
 
@@ -201,12 +234,12 @@ public:
 // necessary operators. Since all adaptors have only public members
 // there is need for friend declarations anywhere.
 
-extern std::ostream& operator << (std::ostream& os,
-				  const timeStruct::l_fp_wrap& val);
-extern std::ostream& operator << (std::ostream& os,
-				  const timeStruct::timeval_wrap& val);
-extern std::ostream& operator << (std::ostream& os,
-				  const timeStruct::timespec_wrap& val);
+extern std::ostream& operator<<(std::ostream& os,
+                                const timeStruct::l_fp_wrap& val);
+extern std::ostream& operator<<(std::ostream& os,
+                                const timeStruct::timeval_wrap& val);
+extern std::ostream& operator<<(std::ostream& os,
+                                const timeStruct::timespec_wrap& val);
 
 //} // namespace timeStruct
 

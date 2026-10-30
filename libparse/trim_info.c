@@ -34,23 +34,23 @@
  *
  */
 #include <config.h>
+
 #include "ntp_types.h"
 #include "trimble.h"
 
-cmd_info_t *
+cmd_info_t*
 trimble_convert(
-		unsigned int cmd,
-		cmd_info_t   *tbl
-		)
+    unsigned int cmd,
+    cmd_info_t* tbl)
 {
-  int i;
+    int i;
 
-  for (i = 0; tbl[i].cmd != 0xFF; i++)
+    for (i = 0; tbl[i].cmd != 0xFF; i++)
     {
-      if (tbl[i].cmd == cmd)
-	return &tbl[i];
+        if (tbl[i].cmd == cmd)
+            return &tbl[i];
     }
-  return 0;
+    return 0;
 }
 
 /*

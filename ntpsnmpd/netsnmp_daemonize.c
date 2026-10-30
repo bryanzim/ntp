@@ -46,9 +46,9 @@ SOFTWARE.
 
 #ifdef NEED_NETSNMP_DAEMONIZE
 
-#include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
+#include <stdio.h>
 
 #if HAVE_UNISTD_H
 #include <unistd.h>
@@ -58,13 +58,13 @@ SOFTWARE.
 #endif
 
 #ifdef WIN32
-# include <sys/timeb.h>
+#include <sys/timeb.h>
 #else
-# include <sys/time.h>
+#include <sys/time.h>
 #endif
-#include <time.h>
-
 #include <sys/types.h>
+
+#include <time.h>
 
 #if HAVE_NETINET_IN_H
 #include <netinet/in.h>
@@ -140,22 +140,21 @@ SOFTWARE.
 #include <sys/systeminfo.h>
 #endif
 
-#include <net-snmp/types.h>
-#include <net-snmp/output_api.h>
-#include <net-snmp/utilities.h>
-#include <net-snmp/library/system.h>    /* for "internal" definitions */
-
-#include <net-snmp/library/snmp_api.h>
 #include <net-snmp/library/read_config.h> /* for get_temp_file_pattern() */
+#include <net-snmp/library/snmp_api.h>
+#include <net-snmp/library/system.h> /* for "internal" definitions */
+#include <net-snmp/output_api.h>
+#include <net-snmp/types.h>
+#include <net-snmp/utilities.h>
 
 #ifndef IFF_LOOPBACK
-#	define IFF_LOOPBACK 0
+#define IFF_LOOPBACK 0
 #endif
 
-#ifdef  INADDR_LOOPBACK
-# define LOOPBACK    INADDR_LOOPBACK
+#ifdef INADDR_LOOPBACK
+#define LOOPBACK INADDR_LOOPBACK
 #else
-# define LOOPBACK    0x7f000001
+#define LOOPBACK 0x7f000001
 #endif
 
 /**
@@ -180,33 +179,38 @@ SOFTWARE.
  *           0 : child process returning
  *          >0 : parent process returning. returned value is the child PID.
  */
-int
-netsnmp_daemonize(int quit_immediately, int stderr_log)
+int netsnmp_daemonize(int quit_immediately, int stderr_log)
 {
     int i = 0;
     int saved_errno;
 
-    DEBUGMSGT(("daemonize","daemonizing...\n"));
+    DEBUGMSGT(("daemonize", "daemonizing...\n"));
 #ifdef HAVE_WORKING_FORK
     /*
      * Fork to return control to the invoking process and to
      * guarantee that we aren't a process group leader.
      */
     i = fork();
-    if (i != 0) {
+    if (i != 0)
+    {
         /* Parent. */
-	saved_errno = errno;
-        DEBUGMSGT(("daemonize","first fork returned %d.\n", i));
-        if(i == -1) {
-            snmp_log(LOG_ERR,"first fork failed (errno %d) in "
-                     "netsnmp_daemonize()\n", saved_errno);
+        saved_errno = errno;
+        DEBUGMSGT(("daemonize", "first fork returned %d.\n", i));
+        if (i == -1)
+        {
+            snmp_log(LOG_ERR, "first fork failed (errno %d) in "
+                              "netsnmp_daemonize()\n",
+                     saved_errno);
             return -1;
         }
-        if (quit_immediately) {
-            DEBUGMSGT(("daemonize","parent exiting\n"));
+        if (quit_immediately)
+        {
+            DEBUGMSGT(("daemonize", "parent exiting\n"));
             exit(0);
         }
-    } else {
+    }
+    else
+    {
         /* Child. */
 #ifdef HAVE_SETSID
         /* Become a process/session group leader. */
@@ -215,26 +219,31 @@ netsnmp_daemonize(int quit_immediately, int stderr_log)
         /*
          * Fork to let the process/session group leader exit.
          */
-        if ((i = fork()) != 0) {
-	    saved_errno = errno;
-            DEBUGMSGT(("daemonize","second fork returned %d.\n", i));
-            if(i == -1) {
-                snmp_log(LOG_ERR,"second fork failed (errno %d) in "
-                         "netsnmp_daemonize()\n", saved_errno);
+        if ((i = fork()) != 0)
+        {
+            saved_errno = errno;
+            DEBUGMSGT(("daemonize", "second fork returned %d.\n", i));
+            if (i == -1)
+            {
+                snmp_log(LOG_ERR, "second fork failed (errno %d) in "
+                                  "netsnmp_daemonize()\n",
+                         saved_errno);
             }
             /* Parent. */
             exit(0);
         }
 #ifndef WIN32
-        else {
+        else
+        {
             /* Child. */
-            
-            DEBUGMSGT(("daemonize","child continuing\n"));
+
+            DEBUGMSGT(("daemonize", "child continuing\n"));
 
             /* Avoid keeping any directory in use. */
             chdir("/");
-            
-            if (!stderr_log) {
+
+            if (!stderr_log)
+            {
                 /*
                  * Close inherited file descriptors to avoid
                  * keeping unnecessary references.
@@ -242,7 +251,7 @@ netsnmp_daemonize(int quit_immediately, int stderr_log)
                 close(0);
                 close(1);
                 close(2);
-                
+
                 /*
                  * Redirect std{in,out,err} to /dev/null, just in
                  * case.

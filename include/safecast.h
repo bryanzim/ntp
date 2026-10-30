@@ -4,14 +4,14 @@
 #include <limits.h>
 static inline int size2int_chk(size_t v)
 {
-	if (v > INT_MAX)
-		abort();
-	return (int)(v);
+    if (v > INT_MAX)
+        abort();
+    return (int)(v);
 }
 
 static inline int size2int_sat(size_t v)
 {
-	return (v > INT_MAX) ? INT_MAX : (int)v;
+    return (v > INT_MAX) ? INT_MAX : (int)v;
 }
 
 /* Compilers can emit warning about increased alignment requirements
@@ -27,8 +27,8 @@ static inline int size2int_sat(size_t v)
  * The following cast macros are going through void pointers to tell
  * the compiler that there is no alignment requirement to watch.
  */
-#define UA_PTR(ptype,pval) ((ptype *)(void*)(pval))
-#define UAC_PTR(ptype,pval) ((const ptype *)(const void*)(pval))
-#define UAV_PTR(ptype,pval) ((volatile ptype *)(volatile void*)(pval))
+#define UA_PTR(ptype, pval) ((ptype*)(void*)(pval))
+#define UAC_PTR(ptype, pval) ((const ptype*)(const void*)(pval))
+#define UAV_PTR(ptype, pval) ((volatile ptype*)(volatile void*)(pval))
 
 #endif

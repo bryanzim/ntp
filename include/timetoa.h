@@ -77,7 +77,7 @@ typedef unsigned long long u_time;
  * This function uses the string buffer library for the return value,
  * so do not keep the resulting pointers around.
  */
-extern const char *
+extern const char*
 format_time_fraction(time_t secs, long frac, int prec);
 
 #endif /* !defined(TIMETOA_H) */
