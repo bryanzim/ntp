@@ -1,9 +1,11 @@
 #include <config.h>
-#include <sys/types.h>
-#include <ctype.h>
 
-#include "ntp_types.h"
 #include "ntp_stdlib.h"
+#include "ntp_types.h"
+
+#include <sys/types.h>
+
+#include <ctype.h>
 
 /*
  * atouint() - convert an ascii string representing a whole base 10
@@ -13,30 +15,29 @@
  *	       this function uses u_long but should use u_int32, and
  *	       probably be renamed.
  */
-int
-atouint(
-	const char *str,
-	u_long *uval
-	)
+int atouint(
+    const char* str,
+    u_long* uval)
 {
-	u_long u;
-	const char *cp;
+    u_long u;
+    const char* cp;
 
-	cp = str;
-	if ('\0' == *cp)
-		return 0;
+    cp = str;
+    if ('\0' == *cp)
+        return 0;
 
-	u = 0;
-	while ('\0' != *cp) {
-		if (!isdigit((unsigned char)*cp))
-			return 0;
-		if (u > 429496729 || (u == 429496729 && *cp >= '6'))
-			return 0;		/* overflow */
-		/* hand-optimized u *= 10; */
-		u = (u << 3) + (u << 1);
-		u += *cp++ - '0';		/* not '\0' */
-	}
+    u = 0;
+    while ('\0' != *cp)
+    {
+        if (!isdigit((unsigned char)*cp))
+            return 0;
+        if (u > 429496729 || (u == 429496729 && *cp >= '6'))
+            return 0; /* overflow */
+        /* hand-optimized u *= 10; */
+        u = (u << 3) + (u << 1);
+        u += *cp++ - '0'; /* not '\0' */
+    }
 
-	*uval = u;
-	return 1;
+    *uval = u;
+    return 1;
 }

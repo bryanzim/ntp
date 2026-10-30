@@ -35,23 +35,23 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_TRIMTAIP)
 
+#include "ntp_calendar.h"
 #include "ntp_fp.h"
 #include "ntp_unixtime.h"
-#include "ntp_calendar.h"
-
 #include "parse.h"
 
 #ifndef PARSESTREAM
 #include "ntp_stdlib.h"
+
 #include <stdio.h>
 #else
 #include "sys/parsestreams.h"
-extern int printf (const char *, ...);
+extern int printf(const char*, ...);
 #endif
 
 /*	0000000000111111111122222222223333333	/ char
@@ -61,84 +61,95 @@ extern int printf (const char *, ...);
  *	>RTM                      1     ;*  <",	Check
  */
 
-#define	hexval(x) (('0' <= (x) && (x) <= '9') ? (x) - '0' : \
-		   ('a' <= (x) && (x) <= 'f') ? (x) - 'a' + 10 : \
-		   ('A' <= (x) && (x) <= 'F') ? (x) - 'A' + 10 : \
-		   -1)
-#define	O_USEC		O_WDAY
-#define	O_GPSFIX	O_FLAGS
-#define	O_CHKSUM	O_UTCHOFFSET
-     static struct format trimsv6_fmt =
-{ { { 13, 2 }, {15, 2}, { 17, 4}, /* Day, Month, Year */
-    {  4, 2 }, { 6, 2}, {  8, 2}, /* Hour, Minute, Second */
-    { 10, 3 }, {23, 1}, {  0, 0}, /* uSec, FIXes (WeekDAY, FLAGS, ZONE) */
-    { 34, 2 }, { 0, 0}, { 21, 2}, /* cksum, -, utcS (UTC[HMS]OFFSET) */
-},
-  (const unsigned char *)">RTM                      1     ;*  <",
-  0
+#define hexval(x) (('0' <= (x) && (x) <= '9') ? (x) - '0' : ('a' <= (x) && (x) <= 'f') ? (x) - 'a' + 10 \
+                                                        : ('A' <= (x) && (x) <= 'F')   ? (x) - 'A' + 10 \
+                                                                                       : -1)
+#define O_USEC O_WDAY
+#define O_GPSFIX O_FLAGS
+#define O_CHKSUM O_UTCHOFFSET
+static struct format trimsv6_fmt = {
+    {
+     { 13, 2 },
+     { 15, 2 },
+     { 17, 4 }, /* Day, Month, Year */
+        { 4, 2 },
+     { 6, 2 },
+     { 8, 2 }, /* Hour, Minute, Second */
+        { 10, 3 },
+     { 23, 1 },
+     { 0, 0 }, /* uSec, FIXes (WeekDAY, FLAGS, ZONE) */
+        { 34, 2 },
+     { 0, 0 },
+     { 21, 2 }, /* cksum, -, utcS (UTC[HMS]OFFSET) */
+    },
+    (const unsigned char*)">RTM                      1     ;*  <",
+    0
 };
 
 static parse_cvt_fnc_t cvt_trimtaip;
 static parse_inp_fnc_t inp_trimtaip;
 
-clockformat_t clock_trimtaip =
-{
-  inp_trimtaip,			/* no input handling */
-  cvt_trimtaip,			/* Trimble conversion */
-  pps_one,			/* easy PPS monitoring */
-  (void *)&trimsv6_fmt,		/* conversion configuration */
-  "Trimble TAIP",
-  37,				/* string buffer */
-  0				/* no private data */
+clockformat_t clock_trimtaip = {
+    inp_trimtaip,        /* no input handling */
+    cvt_trimtaip,        /* Trimble conversion */
+    pps_one,             /* easy PPS monitoring */
+    (void*)&trimsv6_fmt, /* conversion configuration */
+    "Trimble TAIP",
+    37, /* string buffer */
+    0   /* no private data */
 };
 
 /* parse_cvt_fnc_t cvt_trimtaip */
 static u_long
 cvt_trimtaip(
-	     unsigned char *buffer,
-	     int            size,
-	     struct format *format,
-	     clocktime_t   *clock_time,
-	     void          *local
-	     )
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-	long gpsfix;
-	u_char calc_csum = 0;
-	long   recv_csum;
-	int	 i;
+    long gpsfix;
+    u_char calc_csum = 0;
+    long recv_csum;
+    int i;
 
-	if (!Strok(buffer, format->fixed_string)) return CVT_NONE;
-#define	OFFS(x) format->field_offsets[(x)].offset
-#define	STOI(x, y) \
-	Stoi(&buffer[OFFS(x)], y, \
-	     format->field_offsets[(x)].length)
-		if (	STOI(O_DAY,	&clock_time->day)	||
-			STOI(O_MONTH,	&clock_time->month)	||
-			STOI(O_YEAR,	&clock_time->year)	||
-			STOI(O_HOUR,	&clock_time->hour)	||
-			STOI(O_MIN,	&clock_time->minute)	||
-			STOI(O_SEC,	&clock_time->second)	||
-			STOI(O_USEC,	&clock_time->usecond)||
-			STOI(O_GPSFIX,	&gpsfix)
-			) return CVT_FAIL|CVT_BADFMT;
+    if (!Strok(buffer, format->fixed_string))
+        return CVT_NONE;
+#define OFFS(x) format->field_offsets[(x)].offset
+#define STOI(x, y)            \
+    Stoi(&buffer[OFFS(x)], y, \
+         format->field_offsets[(x)].length)
+    if (STOI(O_DAY, &clock_time->day) ||
+        STOI(O_MONTH, &clock_time->month) ||
+        STOI(O_YEAR, &clock_time->year) ||
+        STOI(O_HOUR, &clock_time->hour) ||
+        STOI(O_MIN, &clock_time->minute) ||
+        STOI(O_SEC, &clock_time->second) ||
+        STOI(O_USEC, &clock_time->usecond) ||
+        STOI(O_GPSFIX, &gpsfix))
+        return CVT_FAIL | CVT_BADFMT;
 
-	clock_time->usecond *= 1000;
-	/* Check that the checksum is right */
-	for (i=OFFS(O_CHKSUM)-1; i >= 0; i--) calc_csum ^= buffer[i];
-	recv_csum =	(hexval(buffer[OFFS(O_CHKSUM)]) << 4) |
-		hexval(buffer[OFFS(O_CHKSUM)+1]);
-	if (recv_csum < 0) return CVT_FAIL|CVT_BADTIME;
-	if (((u_char) recv_csum) != calc_csum) return CVT_FAIL|CVT_BADTIME;
+    clock_time->usecond *= 1000;
+    /* Check that the checksum is right */
+    for (i = OFFS(O_CHKSUM) - 1; i >= 0; i--)
+        calc_csum ^= buffer[i];
+    recv_csum = (hexval(buffer[OFFS(O_CHKSUM)]) << 4) |
+                hexval(buffer[OFFS(O_CHKSUM) + 1]);
+    if (recv_csum < 0)
+        return CVT_FAIL | CVT_BADTIME;
+    if (((u_char)recv_csum) != calc_csum)
+        return CVT_FAIL | CVT_BADTIME;
 
-	clock_time->utcoffset = 0;
+    clock_time->utcoffset = 0;
 
-	/* What should flags be set to ? */
-	clock_time->flags = PARSEB_UTC;
+    /* What should flags be set to ? */
+    clock_time->flags = PARSEB_UTC;
 
-	/* if the current GPS fix is 9 (unknown), reject */
-	if (0 > gpsfix || gpsfix > 9) clock_time->flags |= PARSEB_POWERUP;
+    /* if the current GPS fix is 9 (unknown), reject */
+    if (0 > gpsfix || gpsfix > 9)
+        clock_time->flags |= PARSEB_POWERUP;
 
-	return CVT_OK;
+    return CVT_OK;
 }
 
 /*
@@ -148,39 +159,38 @@ cvt_trimtaip(
  */
 static u_long
 inp_trimtaip(
-	     parse_t      *parseio,
-	     char         ch,
-	     timestamp_t  *tstamp
-	  )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
+    unsigned int rtc;
 
-	parseprintf(DD_PARSE, ("inp_trimtaip(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("inp_trimtaip(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-	switch (ch)
-	{
-	case '>':
-		parseprintf(DD_PARSE, ("inp_trimptaip: START seen\n"));
+    switch (ch)
+    {
+    case '>':
+        parseprintf(DD_PARSE, ("inp_trimptaip: START seen\n"));
 
-		parseio->parse_index = 1;
-		parseio->parse_data[0U] = ch;
-		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
-		return PARSE_INP_SKIP;
+        parseio->parse_index = 1;
+        parseio->parse_data[0U] = ch;
+        parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        return PARSE_INP_SKIP;
 
-	case '<':
-		parseprintf(DD_PARSE, ("inp_trimtaip: END seen\n"));
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    case '<':
+        parseprintf(DD_PARSE, ("inp_trimtaip: END seen\n"));
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
 
 
-	default:
-		return parse_addchar(parseio, ch);
-	}
+    default:
+        return parse_addchar(parseio, ch);
+    }
 }
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_TRIMTAIP) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_TRIMTAIP) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_TRIMTAIP) */
 
@@ -221,4 +231,3 @@ NONEMPTY_TRANSLATION_UNIT
  *
  * from V3 1.4 log info deleted 1998/04/11 kardel
  */
-

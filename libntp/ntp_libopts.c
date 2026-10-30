@@ -5,15 +5,16 @@
  * processing.
  */
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
-#include <stdio.h>
-#include <stddef.h>
 #include "ntp_libopts.h"
 #include "ntp_stdlib.h"
 
-extern const char *Version;	/* version.c for each program */
+#include <stddef.h>
+#include <stdio.h>
+
+extern const char* Version; /* version.c for each program */
 
 
 /*
@@ -23,14 +24,12 @@ extern const char *Version;	/* version.c for each program */
  * AutoOpts' version-proc = override in copyright.def, so this
  * routine is a straightforward wrapper of optionProcess().
  */
-int
-ntpOptionProcess(
-	tOptions *	pOpts,
-	int		argc,
-	char **		argv
-	)
+int ntpOptionProcess(
+    tOptions* pOpts,
+    int argc,
+    char** argv)
 {
-	return optionProcess(pOpts, argc, argv);
+    return optionProcess(pOpts, argc, argv);
 }
 
 
@@ -43,16 +42,14 @@ ntpOptionProcess(
  * Like optionPrintVersion() this function must exit(0) rather than
  * return.
  */
-void
-ntpOptionPrintVersion(
-	tOptions *	pOpts,
-	tOptDesc *	pOD
-	)
+void ntpOptionPrintVersion(
+    tOptions* pOpts,
+    tOptDesc* pOD)
 {
-	UNUSED_ARG(pOpts);
-	UNUSED_ARG(pOD);
+    UNUSED_ARG(pOpts);
+    UNUSED_ARG(pOD);
 
-	printf("%s\n", Version);
-	fflush(stdout);
-	exit(EXIT_SUCCESS);
+    printf("%s\n", Version);
+    fflush(stdout);
+    exit(EXIT_SUCCESS);
 }

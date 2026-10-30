@@ -35,17 +35,15 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_MEINBERG)
 
-#include "ntp_fp.h"
-#include "ntp_unixtime.h"
 #include "ntp_calendar.h"
-
+#include "ntp_fp.h"
 #include "ntp_machine.h"
-
+#include "ntp_unixtime.h"
 #include "parse.h"
 
 #ifndef PARSESTREAM
@@ -54,13 +52,10 @@
 #include "sys/parsestreams.h"
 #endif
 
-#include "ntp_stdlib.h"
-
-#include "ntp_stdlib.h"
-
-#include "mbg_gps166.h"
-#include "binio.h"
 #include "ascii.h"
+#include "binio.h"
+#include "mbg_gps166.h"
+#include "ntp_stdlib.h"
 
 /*
  * The Meinberg receiver every second sends a datagram of the following form
@@ -154,64 +149,63 @@
 /* Ret val:      the checksum                                   */
 /*+-------------------------------------------------------------*/
 
-CSUM
-mbg_csum(
-	 unsigned char *p,
-	 unsigned int n
-	 )
+CSUM mbg_csum(
+    unsigned char* p,
+    unsigned int n)
 {
-  unsigned int sum = 0;
-  unsigned int i;
+    unsigned int sum = 0;
+    unsigned int i;
 
-  for ( i = 0; i < n; i++ )
-    sum += *p++;
+    for (i = 0; i < n; i++)
+        sum += *p++;
 
-  return (CSUM) sum;
+    return (CSUM)sum;
 
-}  /* csum */
+} /* csum */
 
-void
-get_mbg_header(
-	       unsigned char **bufpp,
-	       GPS_MSG_HDR *headerp
-	       )
+void get_mbg_header(
+    unsigned char** bufpp,
+    GPS_MSG_HDR* headerp)
 {
-  headerp->cmd = (GPS_CMD) get_lsb_short(bufpp);
-  headerp->len = get_lsb_uint16(bufpp);
-  headerp->data_csum = (CSUM) get_lsb_short(bufpp);
-  headerp->hdr_csum  = (CSUM) get_lsb_short(bufpp);
+    headerp->cmd = (GPS_CMD)get_lsb_short(bufpp);
+    headerp->len = get_lsb_uint16(bufpp);
+    headerp->data_csum = (CSUM)get_lsb_short(bufpp);
+    headerp->hdr_csum = (CSUM)get_lsb_short(bufpp);
 }
 
-static struct format meinberg_fmt[] =
-{
-	{
-		{
-			{ 3, 2},  {  6, 2}, {  9, 2},
-			{ 18, 2}, { 21, 2}, { 24, 2},
-			{ 14, 1}, { 27, 4}, { 29, 1},
-		},
-		(const unsigned char *)"\2D:  .  .  ;T: ;U:  .  .  ;    \3",
-		0
-	},
-	{			/* special extended FAU Erlangen extended format */
-		{
-			{ 1, 2},  { 4,  2}, {  7, 2},
-			{ 14, 2}, { 17, 2}, { 20, 2},
-			{ 11, 1}, { 25, 4}, { 27, 1},
-		},
-		(const unsigned char *)"\2  .  .  ;  ;   :  :  ;        \3",
-		MBG_EXTENDED
-	},
-	{			/* special extended FAU Erlangen GPS format */
-		{
-			{ 1,  2}, {  4, 2}, {  7, 2},
-			{ 14, 2}, { 17, 2}, { 20, 2},
-			{ 11, 1}, { 32, 7}, { 35, 1},
-			{ 25, 2}, { 28, 2}, { 24, 1}
-		},
-		(const unsigned char *)"\2  .  .  ;  ;   :  :  ;    :  ;        ;   .         .       ",
-		0
-	}
+static struct format meinberg_fmt[] = {
+    {                                                                                                                                     {
+                                                                                                                                     { 3, 2 },
+                                                                                                                                     { 6, 2 },
+                                                                                                                                     { 9, 2 },
+                                                                                                                                     { 18, 2 },
+                                                                                                                                     { 21, 2 },
+                                                                                                                                     { 24, 2 },
+                                                                                                                                     { 14, 1 },
+                                                                                                                                     { 27, 4 },
+                                                                                                                                     { 29, 1 },
+                                                                                                                                     },
+     (const unsigned char*)"\2D:  .  .  ;T: ;U:  .  .  ;    \3",
+     0           },
+    {                                                                                                                                     /* special extended FAU Erlangen extended format */
+                                                                                                                                     {
+                                                                                                                                     { 1, 2 },
+                                                                                                                                     { 4, 2 },
+                                                                                                                                     { 7, 2 },
+                                                                                                                                     { 14, 2 },
+                                                                                                                                     { 17, 2 },
+                                                                                                                                     { 20, 2 },
+                                                                                                                                     { 11, 1 },
+                                                                                                                                     { 25, 4 },
+                                                                                                                                     { 27, 1 },
+                                                                                                                                     },
+     (const unsigned char*)"\2  .  .  ;  ;   :  :  ;        \3",
+     MBG_EXTENDED },
+    { /* special extended FAU Erlangen GPS format */
+ {
+ { 1, 2 }, { 4, 2 }, { 7, 2 }, { 14, 2 }, { 17, 2 }, { 20, 2 }, { 11, 1 }, { 32, 7 }, { 35, 1 }, { 25, 2 }, { 28, 2 }, { 24, 1 } },
+     (const unsigned char*)"\2  .  .  ;  ;   :  :  ;    :  ;        ;   .         .       ",
+     0           }
 };
 
 static parse_cvt_fnc_t cvt_meinberg;
@@ -221,44 +215,37 @@ static parse_inp_fnc_t gps_input;
 
 struct msg_buf
 {
-  unsigned short len;		/* len to fill */
-  unsigned short phase;		/* current input phase */
+    unsigned short len;   /* len to fill */
+    unsigned short phase; /* current input phase */
 };
 
-#define MBG_NONE	0	/* no data input */
-#define MBG_HEADER	1	/* receiving header */
-#define MBG_DATA	2	/* receiving data */
-#define MBG_STRING      3	/* receiving standard data message */
+#define MBG_NONE 0   /* no data input */
+#define MBG_HEADER 1 /* receiving header */
+#define MBG_DATA 2   /* receiving data */
+#define MBG_STRING 3 /* receiving standard data message */
 
-clockformat_t clock_meinberg[] =
-{
-	{
-		mbg_input,	/* normal input handling */
-		cvt_meinberg,	/* Meinberg conversion */
-		pps_one,	/* easy PPS monitoring */
-		0,		/* conversion configuration */
-		"Meinberg Standard", /* Meinberg simple format - beware */
-		32,				/* string buffer */
-		0		/* no private data (complete packets) */
-	},
-	{
-		mbg_input,	/* normal input handling */
-		cvt_meinberg,	/* Meinberg conversion */
-		pps_one,	/* easy PPS monitoring */
-		0,		/* conversion configuration */
-		"Meinberg Extended", /* Meinberg enhanced format */
-		32,		/* string buffer */
-		0		/* no private data (complete packets) */
-	},
-	{
-		gps_input,	/* no input handling */
-		cvt_mgps,	/* Meinberg GPS receiver conversion */
-		pps_one,	/* easy PPS monitoring */
-		(void *)&meinberg_fmt[2U], /* conversion configuration */
-		"Meinberg GPS Extended",  /* Meinberg FAU GPS format */
-		512,		/* string buffer */
-		sizeof(struct msg_buf)	/* no private data (complete packets) */
-	}
+clockformat_t clock_meinberg[] = {
+    { mbg_input, /* normal input handling */
+ cvt_meinberg, /* Meinberg conversion */
+ pps_one,                        /* easy PPS monitoring */
+                        0,     /* conversion configuration */
+     "Meinberg Standard",  /* Meinberg simple format - beware */
+  32,                      /* string buffer */
+                      0 /* no private data (complete packets) */ },
+    { mbg_input, /* normal input handling */
+ cvt_meinberg, /* Meinberg conversion */
+ pps_one,                        /* easy PPS monitoring */
+                        0,     /* conversion configuration */
+     "Meinberg Extended",  /* Meinberg enhanced format */
+  32,                      /* string buffer */
+                      0 /* no private data (complete packets) */ },
+    { gps_input,     /* no input handling */
+     cvt_mgps, /* Meinberg GPS receiver conversion */
+ pps_one, /* easy PPS monitoring */
+ (void*)&meinberg_fmt[2U], /* conversion configuration */
+ "Meinberg GPS Extended", /* Meinberg FAU GPS format */
+ 512, /* string buffer */
+ sizeof(struct msg_buf) /* no private data (complete packets) */ }
 };
 
 /*
@@ -268,155 +255,154 @@ clockformat_t clock_meinberg[] =
  */
 static u_long
 cvt_meinberg(
-	     unsigned char *buffer,
-	     int            size,
-	     struct format *unused,
-	     clocktime_t   *clock_time,
-	     void          *local
-	     )
+    unsigned char* buffer,
+    int size,
+    struct format* unused,
+    clocktime_t* clock_time,
+    void* local)
 {
-	struct format *format;
+    struct format* format;
 
-	/*
-	 * select automagically correct data format
-	 */
-	if (Strok(buffer, meinberg_fmt[0U].fixed_string))
-	{
-		format = &meinberg_fmt[0U];
-	}
-	else
-	{
-		if (Strok(buffer, meinberg_fmt[1U].fixed_string))
-		{
-			format = &meinberg_fmt[1U];
-		}
-		else
-		{
-			return CVT_FAIL|CVT_BADFMT;
-		}
-	}
+    /*
+     * select automagically correct data format
+     */
+    if (Strok(buffer, meinberg_fmt[0U].fixed_string))
+    {
+        format = &meinberg_fmt[0U];
+    }
+    else
+    {
+        if (Strok(buffer, meinberg_fmt[1U].fixed_string))
+        {
+            format = &meinberg_fmt[1U];
+        }
+        else
+        {
+            return CVT_FAIL | CVT_BADFMT;
+        }
+    }
 
-	/*
-	 * collect data
-	 */
-	if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
-		 format->field_offsets[O_DAY].length) ||
-	    Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
-		 format->field_offsets[O_MONTH].length) ||
-	    Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
-		 format->field_offsets[O_YEAR].length) ||
-	    Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
-		 format->field_offsets[O_HOUR].length) ||
-	    Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
-		 format->field_offsets[O_MIN].length) ||
-	    Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
-		 format->field_offsets[O_SEC].length))
-	{
-		return CVT_FAIL|CVT_BADFMT;
-	}
-	else
-	{
-		unsigned char *f = &buffer[format->field_offsets[O_FLAGS].offset];
+    /*
+     * collect data
+     */
+    if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
+             format->field_offsets[O_DAY].length) ||
+        Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
+             format->field_offsets[O_MONTH].length) ||
+        Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
+             format->field_offsets[O_YEAR].length) ||
+        Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
+             format->field_offsets[O_HOUR].length) ||
+        Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
+             format->field_offsets[O_MIN].length) ||
+        Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
+             format->field_offsets[O_SEC].length))
+    {
+        return CVT_FAIL | CVT_BADFMT;
+    }
+    else
+    {
+        unsigned char* f = &buffer[format->field_offsets[O_FLAGS].offset];
 
-		clock_time->usecond = 0;
-		clock_time->flags   = PARSEB_S_LEAP;
+        clock_time->usecond = 0;
+        clock_time->flags = PARSEB_S_LEAP;
 
-		if (clock_time->second == 60)
-			clock_time->flags |= PARSEB_LEAPSECOND;
+        if (clock_time->second == 60)
+            clock_time->flags |= PARSEB_LEAPSECOND;
 
-		/*
-		 * in the extended timecode format we have also the
-		 * indication that the timecode is in UTC
-		 * for compatibilty reasons we start at the USUAL
-		 * offset (POWERUP flag) and know that the UTC indication
-		 * is the character before the powerup flag
-		 */
-		if ((format->flags & MBG_EXTENDED) && (f[-1] == 'U'))
-		{
-			/*
-			 * timecode is in UTC
-			 */
-			clock_time->utcoffset = 0; /* UTC */
-			clock_time->flags    |= PARSEB_UTC;
-		}
-		else
-		{
-			/*
-			 * only calculate UTC offset if MET/MED is in time code
-			 * or we have the old time code format, where we do not
-			 * know whether it is UTC time or MET/MED
-			 * pray that nobody switches to UTC in the *old* standard time code
-			 * ROMS !!!! The new ROMS have 'U' at the ZONE field - good.
-			 */
-			switch (buffer[format->field_offsets[O_ZONE].offset])
-			{
-			case ' ':
-				clock_time->utcoffset = -1*60*60; /* MET */
-				break;
+        /*
+         * in the extended timecode format we have also the
+         * indication that the timecode is in UTC
+         * for compatibilty reasons we start at the USUAL
+         * offset (POWERUP flag) and know that the UTC indication
+         * is the character before the powerup flag
+         */
+        if ((format->flags & MBG_EXTENDED) && (f[-1] == 'U'))
+        {
+            /*
+             * timecode is in UTC
+             */
+            clock_time->utcoffset = 0; /* UTC */
+            clock_time->flags |= PARSEB_UTC;
+        }
+        else
+        {
+            /*
+             * only calculate UTC offset if MET/MED is in time code
+             * or we have the old time code format, where we do not
+             * know whether it is UTC time or MET/MED
+             * pray that nobody switches to UTC in the *old* standard time code
+             * ROMS !!!! The new ROMS have 'U' at the ZONE field - good.
+             */
+            switch (buffer[format->field_offsets[O_ZONE].offset])
+            {
+            case ' ':
+                clock_time->utcoffset = -1 * 60 * 60; /* MET */
+                break;
 
-			case 'S':
-				clock_time->utcoffset = -2*60*60; /* MED */
-				break;
+            case 'S':
+                clock_time->utcoffset = -2 * 60 * 60; /* MED */
+                break;
 
-			case 'U':
-				/*
-				 * timecode is in UTC
-				 */
-				clock_time->utcoffset = 0;        /* UTC */
-				clock_time->flags    |= PARSEB_UTC;
-				break;
+            case 'U':
+                /*
+                 * timecode is in UTC
+                 */
+                clock_time->utcoffset = 0; /* UTC */
+                clock_time->flags |= PARSEB_UTC;
+                break;
 
-			default:
-				return CVT_FAIL|CVT_BADFMT;
-			}
-		}
+            default:
+                return CVT_FAIL | CVT_BADFMT;
+            }
+        }
 
-		/*
-		 * gather status flags
-		 */
-		if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
-			clock_time->flags    |= PARSEB_DST;
+        /*
+         * gather status flags
+         */
+        if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
+            clock_time->flags |= PARSEB_DST;
 
-		if (f[0U] == '#')
-			clock_time->flags |= PARSEB_POWERUP;
+        if (f[0U] == '#')
+            clock_time->flags |= PARSEB_POWERUP;
 
-		if (f[1U] == '*')
-			clock_time->flags |= PARSEB_NOSYNC;
+        if (f[1U] == '*')
+            clock_time->flags |= PARSEB_NOSYNC;
 
-		if (f[3U] == '!')
-			clock_time->flags |= PARSEB_ANNOUNCE;
+        if (f[3U] == '!')
+            clock_time->flags |= PARSEB_ANNOUNCE;
 
-		/*
-		 * oncoming leap second
-		 * 'a' code not confirmed - earth is not
-		 * expected to speed up
-		 */
-		if (f[3U] == 'A')
-			clock_time->flags |= PARSEB_LEAPADD;
+        /*
+         * oncoming leap second
+         * 'a' code not confirmed - earth is not
+         * expected to speed up
+         */
+        if (f[3U] == 'A')
+            clock_time->flags |= PARSEB_LEAPADD;
 
-		if (f[3U] == 'a')
-			clock_time->flags |= PARSEB_LEAPDEL;
+        if (f[3U] == 'a')
+            clock_time->flags |= PARSEB_LEAPDEL;
 
 
-		if (format->flags & MBG_EXTENDED)
-		{
-			clock_time->flags |= PARSEB_S_CALLBIT;
+        if (format->flags & MBG_EXTENDED)
+        {
+            clock_time->flags |= PARSEB_S_CALLBIT;
 
-			/*
-			 * DCF77 does not encode the direction -
-			 * so we take the current default -
-			 * earth slowing down
-			 */
-			clock_time->flags &= ~PARSEB_LEAPDEL;
+            /*
+             * DCF77 does not encode the direction -
+             * so we take the current default -
+             * earth slowing down
+             */
+            clock_time->flags &= ~PARSEB_LEAPDEL;
 
-			if (f[4U] == 'A')
-				clock_time->flags |= PARSEB_LEAPADD;
+            if (f[4U] == 'A')
+                clock_time->flags |= PARSEB_LEAPADD;
 
-			if (f[5U] == 'R')
-				clock_time->flags |= PARSEB_CALLBIT;
-		}
-		return CVT_OK;
-	}
+            if (f[5U] == 'R')
+                clock_time->flags |= PARSEB_CALLBIT;
+        }
+        return CVT_OK;
+    }
 }
 
 
@@ -427,35 +413,34 @@ cvt_meinberg(
  */
 static u_long
 mbg_input(
-	  parse_t      *parseio,
-	  char         ch,
-	  timestamp_t  *tstamp
-	  )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
+    unsigned int rtc;
 
-	parseprintf(DD_PARSE, ("mbg_input(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("mbg_input(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-	switch (ch)
-	{
-	case STX:
-		parseprintf(DD_PARSE, ("mbg_input: STX seen\n"));
+    switch (ch)
+    {
+    case STX:
+        parseprintf(DD_PARSE, ("mbg_input: STX seen\n"));
 
-		parseio->parse_index = 1;
-		parseio->parse_data[0U] = ch;
-		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
-		return PARSE_INP_SKIP;
+        parseio->parse_index = 1;
+        parseio->parse_data[0U] = ch;
+        parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        return PARSE_INP_SKIP;
 
-	case ETX:
-		parseprintf(DD_PARSE, ("mbg_input: ETX seen\n"));
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    case ETX:
+        parseprintf(DD_PARSE, ("mbg_input: ETX seen\n"));
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
 
-	default:
-		return parse_addchar(parseio, ch);
-	}
+    default:
+        return parse_addchar(parseio, ch);
+    }
 }
 
 
@@ -466,122 +451,120 @@ mbg_input(
  */
 static u_long
 cvt_mgps(
-	 unsigned char *buffer,
-	 int            size,
-	 struct format *format,
-	 clocktime_t   *clock_time,
-	 void          *local
-	)
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-	if (!Strok(buffer, format->fixed_string))
-	{
-		return cvt_meinberg(buffer, size, format, clock_time, local);
-	}
-	else
-	{
-		if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
-			 format->field_offsets[O_DAY].length) ||
-		    Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
-			 format->field_offsets[O_MONTH].length) ||
-		    Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
-			 format->field_offsets[O_YEAR].length) ||
-		    Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
-			 format->field_offsets[O_HOUR].length) ||
-		    Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
-			 format->field_offsets[O_MIN].length) ||
-		    Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
-			 format->field_offsets[O_SEC].length))
-		{
-			return CVT_FAIL|CVT_BADFMT;
-		}
-		else
-		{
-			long h;
-			unsigned char *f = &buffer[format->field_offsets[O_FLAGS].offset];
+    if (!Strok(buffer, format->fixed_string))
+    {
+        return cvt_meinberg(buffer, size, format, clock_time, local);
+    }
+    else
+    {
+        if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
+                 format->field_offsets[O_DAY].length) ||
+            Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
+                 format->field_offsets[O_MONTH].length) ||
+            Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
+                 format->field_offsets[O_YEAR].length) ||
+            Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
+                 format->field_offsets[O_HOUR].length) ||
+            Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
+                 format->field_offsets[O_MIN].length) ||
+            Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
+                 format->field_offsets[O_SEC].length))
+        {
+            return CVT_FAIL | CVT_BADFMT;
+        }
+        else
+        {
+            long h;
+            unsigned char* f = &buffer[format->field_offsets[O_FLAGS].offset];
 
-			clock_time->flags = PARSEB_S_LEAP|PARSEB_S_POSITION;
+            clock_time->flags = PARSEB_S_LEAP | PARSEB_S_POSITION;
 
-			clock_time->usecond = 0;
+            clock_time->usecond = 0;
 
-			/*
-			 * calculate UTC offset
-			 */
-			if (Stoi(&buffer[format->field_offsets[O_UTCHOFFSET].offset], &h,
-				 format->field_offsets[O_UTCHOFFSET].length))
-			{
-				return CVT_FAIL|CVT_BADFMT;
-			}
-			else
-			{
-				if (Stoi(&buffer[format->field_offsets[O_UTCMOFFSET].offset], &clock_time->utcoffset,
-					 format->field_offsets[O_UTCMOFFSET].length))
-				{
-					return CVT_FAIL|CVT_BADFMT;
-				}
+            /*
+             * calculate UTC offset
+             */
+            if (Stoi(&buffer[format->field_offsets[O_UTCHOFFSET].offset], &h,
+                     format->field_offsets[O_UTCHOFFSET].length))
+            {
+                return CVT_FAIL | CVT_BADFMT;
+            }
+            else
+            {
+                if (Stoi(&buffer[format->field_offsets[O_UTCMOFFSET].offset], &clock_time->utcoffset,
+                         format->field_offsets[O_UTCMOFFSET].length))
+                {
+                    return CVT_FAIL | CVT_BADFMT;
+                }
 
-				clock_time->utcoffset += TIMES60(h);
-				clock_time->utcoffset  = TIMES60(clock_time->utcoffset);
+                clock_time->utcoffset += TIMES60(h);
+                clock_time->utcoffset = TIMES60(clock_time->utcoffset);
 
-				if (buffer[format->field_offsets[O_UTCSOFFSET].offset] != '-')
-				{
-					clock_time->utcoffset = -clock_time->utcoffset;
-				}
-			}
+                if (buffer[format->field_offsets[O_UTCSOFFSET].offset] != '-')
+                {
+                    clock_time->utcoffset = -clock_time->utcoffset;
+                }
+            }
 
-			/*
-			 * gather status flags
-			 */
-			if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
-			    clock_time->flags    |= PARSEB_DST;
+            /*
+             * gather status flags
+             */
+            if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
+                clock_time->flags |= PARSEB_DST;
 
-			if (clock_time->utcoffset == 0)
-			    clock_time->flags |= PARSEB_UTC;
+            if (clock_time->utcoffset == 0)
+                clock_time->flags |= PARSEB_UTC;
 
-			/*
-			 * no sv's seen - no time & position
-			 */
-			if (f[0U] == '#')
-			    clock_time->flags |= PARSEB_POWERUP;
+            /*
+             * no sv's seen - no time & position
+             */
+            if (f[0U] == '#')
+                clock_time->flags |= PARSEB_POWERUP;
 
-			/*
-			 * at least one sv seen - time (for last position)
-			 */
-			if (f[1U] == '*')
-			    clock_time->flags |= PARSEB_NOSYNC;
-			else
-			    if (!(clock_time->flags & PARSEB_POWERUP))
-				clock_time->flags |= PARSEB_POSITION;
+            /*
+             * at least one sv seen - time (for last position)
+             */
+            if (f[1U] == '*')
+                clock_time->flags |= PARSEB_NOSYNC;
+            else if (!(clock_time->flags & PARSEB_POWERUP))
+                clock_time->flags |= PARSEB_POSITION;
 
-			/*
-			 * oncoming zone switch
-			 */
-			if (f[3U] == '!')
-			    clock_time->flags |= PARSEB_ANNOUNCE;
+            /*
+             * oncoming zone switch
+             */
+            if (f[3U] == '!')
+                clock_time->flags |= PARSEB_ANNOUNCE;
 
-			/*
-			 * oncoming leap second
-			 * 'a' code not confirmed - earth is not
-			 * expected to speed up
-			 */
-			if (f[4U] == 'A')
-			    clock_time->flags |= PARSEB_LEAPADD;
+            /*
+             * oncoming leap second
+             * 'a' code not confirmed - earth is not
+             * expected to speed up
+             */
+            if (f[4U] == 'A')
+                clock_time->flags |= PARSEB_LEAPADD;
 
-			if (f[4U] == 'a')
-			    clock_time->flags |= PARSEB_LEAPDEL;
+            if (f[4U] == 'a')
+                clock_time->flags |= PARSEB_LEAPDEL;
 
-			/*
-			 * f[5] == ' '
-			 */
+            /*
+             * f[5] == ' '
+             */
 
-			/*
-			 * this is the leap second
-			 */
-			if ((f[6U] == 'L') || (clock_time->second == 60))
-			    clock_time->flags |= PARSEB_LEAPSECOND;
+            /*
+             * this is the leap second
+             */
+            if ((f[6U] == 'L') || (clock_time->second == 60))
+                clock_time->flags |= PARSEB_LEAPSECOND;
 
-			return CVT_OK;
-		}
-	}
+            return CVT_OK;
+        }
+    }
 }
 
 /*
@@ -591,148 +574,147 @@ cvt_mgps(
  */
 static u_long
 gps_input(
-	  parse_t      *parseio,
-	  char ch,
-	  timestamp_t  *tstamp
-	  )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-  CSUM calc_csum;                    /* used to compare the incoming csums */
-  GPS_MSG_HDR header;
-  struct msg_buf *msg_buf;
+    CSUM calc_csum; /* used to compare the incoming csums */
+    GPS_MSG_HDR header;
+    struct msg_buf* msg_buf;
 
-  msg_buf = (struct msg_buf *)parseio->parse_pdata;
+    msg_buf = (struct msg_buf*)parseio->parse_pdata;
 
-  parseprintf(DD_PARSE, ("gps_input(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("gps_input(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-  if (!msg_buf)
-    return PARSE_INP_SKIP;
+    if (!msg_buf)
+        return PARSE_INP_SKIP;
 
-  if ( msg_buf->phase == MBG_NONE )
-    {                  /* not receiving yet */
-      switch (ch)
-	{
-	case SOH:
-	  parseprintf(DD_PARSE, ("gps_input: SOH seen\n"));
+    if (msg_buf->phase == MBG_NONE)
+    { /* not receiving yet */
+        switch (ch)
+        {
+        case SOH:
+            parseprintf(DD_PARSE, ("gps_input: SOH seen\n"));
 
-	  msg_buf->len = sizeof( header ); /* prepare to receive msg header */
-	  msg_buf->phase = MBG_HEADER; /* receiving header */
-	  break;
+            msg_buf->len = sizeof(header); /* prepare to receive msg header */
+            msg_buf->phase = MBG_HEADER;   /* receiving header */
+            break;
 
-	case STX:
-	  parseprintf(DD_PARSE, ("gps_input: STX seen\n"));
+        case STX:
+            parseprintf(DD_PARSE, ("gps_input: STX seen\n"));
 
-	  msg_buf->len = 0;
-	  msg_buf->phase = MBG_STRING; /* prepare to receive ASCII ETX delimited message */
-	  parseio->parse_index = 1;
-	  parseio->parse_data[0U] = ch;
-	  break;
+            msg_buf->len = 0;
+            msg_buf->phase = MBG_STRING; /* prepare to receive ASCII ETX delimited message */
+            parseio->parse_index = 1;
+            parseio->parse_data[0U] = ch;
+            break;
 
-	default:
-	  return PARSE_INP_SKIP;	/* keep searching */
-	}
+        default:
+            return PARSE_INP_SKIP; /* keep searching */
+        }
 
-      parseio->parse_dtime.parse_msglen = 1; /* reset buffer pointer */
-      parseio->parse_dtime.parse_msg[0U] = ch; /* fill in first character */
-      parseio->parse_dtime.parse_stime  = *tstamp; /* collect timestamp */
-      return PARSE_INP_SKIP;
+        parseio->parse_dtime.parse_msglen = 1;      /* reset buffer pointer */
+        parseio->parse_dtime.parse_msg[0U] = ch;    /* fill in first character */
+        parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        return PARSE_INP_SKIP;
     }
 
-  /* SOH/STX has already been received */
+    /* SOH/STX has already been received */
 
-  /* save incoming character in both buffers if needbe */
-  if ((msg_buf->phase == MBG_STRING) &&
-      (parseio->parse_index < parseio->parse_dsize))
-    parseio->parse_data[parseio->parse_index++] = ch;
+    /* save incoming character in both buffers if needbe */
+    if ((msg_buf->phase == MBG_STRING) &&
+        (parseio->parse_index < parseio->parse_dsize))
+        parseio->parse_data[parseio->parse_index++] = ch;
 
-  parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
+    parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
 
-  if (parseio->parse_dtime.parse_msglen > sizeof(parseio->parse_dtime.parse_msg))
+    if (parseio->parse_dtime.parse_msglen > sizeof(parseio->parse_dtime.parse_msg))
     {
-      msg_buf->phase = MBG_NONE; /* buffer overflow - discard */
-      parseio->parse_data[parseio->parse_index] = '\0';
-      memcpy(parseio->parse_ldata, parseio->parse_data, (unsigned)(parseio->parse_index+1));
-      parseio->parse_ldsize = parseio->parse_index;
-      return PARSE_INP_DATA;
+        msg_buf->phase = MBG_NONE; /* buffer overflow - discard */
+        parseio->parse_data[parseio->parse_index] = '\0';
+        memcpy(parseio->parse_ldata, parseio->parse_data, (unsigned)(parseio->parse_index + 1));
+        parseio->parse_ldsize = parseio->parse_index;
+        return PARSE_INP_DATA;
     }
 
-  switch (msg_buf->phase)
+    switch (msg_buf->phase)
     {
     case MBG_HEADER:
     case MBG_DATA:
-      msg_buf->len--;
+        msg_buf->len--;
 
-      if ( msg_buf->len )               /* transfer not complete */
-	return PARSE_INP_SKIP;
+        if (msg_buf->len) /* transfer not complete */
+            return PARSE_INP_SKIP;
 
-      parseprintf(DD_PARSE, ("gps_input: %s complete\n", (msg_buf->phase == MBG_DATA) ? "data" : "header"));
+        parseprintf(DD_PARSE, ("gps_input: %s complete\n", (msg_buf->phase == MBG_DATA) ? "data" : "header"));
 
-      break;
+        break;
 
     case MBG_STRING:
-      if ((ch == ETX) || (parseio->parse_index >= parseio->parse_dsize))
-	{
-	  msg_buf->phase = MBG_NONE;
-	  parseprintf(DD_PARSE, ("gps_input: string complete\n"));
-	  parseio->parse_data[parseio->parse_index] = '\0';
-	  memcpy(parseio->parse_ldata, parseio->parse_data, (unsigned)(parseio->parse_index+1));
-	  parseio->parse_ldsize = parseio->parse_index;
-	  parseio->parse_index = 0;
-	  return PARSE_INP_TIME;
-	}
-      else
-	{
-	  return PARSE_INP_SKIP;
-	}
+        if ((ch == ETX) || (parseio->parse_index >= parseio->parse_dsize))
+        {
+            msg_buf->phase = MBG_NONE;
+            parseprintf(DD_PARSE, ("gps_input: string complete\n"));
+            parseio->parse_data[parseio->parse_index] = '\0';
+            memcpy(parseio->parse_ldata, parseio->parse_data, (unsigned)(parseio->parse_index + 1));
+            parseio->parse_ldsize = parseio->parse_index;
+            parseio->parse_index = 0;
+            return PARSE_INP_TIME;
+        }
+        else
+        {
+            return PARSE_INP_SKIP;
+        }
     }
 
-  /* cnt == 0, so the header or the whole message is complete */
+    /* cnt == 0, so the header or the whole message is complete */
 
-  if ( msg_buf->phase == MBG_HEADER )
-    {         /* header complete now */
-      unsigned char *datap = parseio->parse_dtime.parse_msg + 1;
+    if (msg_buf->phase == MBG_HEADER)
+    { /* header complete now */
+        unsigned char* datap = parseio->parse_dtime.parse_msg + 1;
 
-      get_mbg_header(&datap, &header);
+        get_mbg_header(&datap, &header);
 
-      parseprintf(DD_PARSE, ("gps_input: header: cmd 0x%x, len %d, dcsum 0x%x, hcsum 0x%x\n",
-			     (int)header.cmd, (int)header.len, (int)header.data_csum,
-			     (int)header.hdr_csum));
+        parseprintf(DD_PARSE, ("gps_input: header: cmd 0x%x, len %d, dcsum 0x%x, hcsum 0x%x\n",
+                               (int)header.cmd, (int)header.len, (int)header.data_csum,
+                               (int)header.hdr_csum));
 
 
-      calc_csum = mbg_csum( (unsigned char *) parseio->parse_dtime.parse_msg + 1, (unsigned short)6 );
+        calc_csum = mbg_csum((unsigned char*)parseio->parse_dtime.parse_msg + 1, (unsigned short)6);
 
-      if ( calc_csum != header.hdr_csum )
-	{
-	  parseprintf(DD_PARSE, ("gps_input: header checksum mismatch expected 0x%x, got 0x%x\n",
-				 (int)calc_csum, (int)mbg_csum( (unsigned char *) parseio->parse_dtime.parse_msg, (unsigned short)6 )));
+        if (calc_csum != header.hdr_csum)
+        {
+            parseprintf(DD_PARSE, ("gps_input: header checksum mismatch expected 0x%x, got 0x%x\n",
+                                   (int)calc_csum, (int)mbg_csum((unsigned char*)parseio->parse_dtime.parse_msg, (unsigned short)6)));
 
-	  msg_buf->phase = MBG_NONE;  /* back to hunting mode */
-	  return PARSE_INP_DATA;      /* invalid header checksum received - pass up for detection */
-	}
+            msg_buf->phase = MBG_NONE; /* back to hunting mode */
+            return PARSE_INP_DATA;     /* invalid header checksum received - pass up for detection */
+        }
 
-      if ((header.len == 0)  ||       /* no data to wait for */
-	  (header.len >= (sizeof (parseio->parse_dtime.parse_msg) - sizeof(header) - 1)))	/* blows anything we have space for */
-	{
-	  msg_buf->phase = MBG_NONE;  /* back to hunting mode */
-	  return (header.len == 0) ? PARSE_INP_DATA : PARSE_INP_SKIP; /* message complete/throwaway */
-	}
+        if ((header.len == 0) ||                                                           /* no data to wait for */
+            (header.len >= (sizeof(parseio->parse_dtime.parse_msg) - sizeof(header) - 1))) /* blows anything we have space for */
+        {
+            msg_buf->phase = MBG_NONE;                                  /* back to hunting mode */
+            return (header.len == 0) ? PARSE_INP_DATA : PARSE_INP_SKIP; /* message complete/throwaway */
+        }
 
-      parseprintf(DD_PARSE, ("gps_input: expecting %d bytes of data message\n", (int)header.len));
+        parseprintf(DD_PARSE, ("gps_input: expecting %d bytes of data message\n", (int)header.len));
 
-      msg_buf->len   = header.len;/* save number of bytes to wait for */
-      msg_buf->phase = MBG_DATA;      /* flag header already complete */
-      return PARSE_INP_SKIP;
+        msg_buf->len = header.len; /* save number of bytes to wait for */
+        msg_buf->phase = MBG_DATA; /* flag header already complete */
+        return PARSE_INP_SKIP;
     }
 
-  parseprintf(DD_PARSE, ("gps_input: message data complete\n"));
+    parseprintf(DD_PARSE, ("gps_input: message data complete\n"));
 
-  /* Header and data have been received. The header checksum has been */
-  /* checked */
+    /* Header and data have been received. The header checksum has been */
+    /* checked */
 
-  msg_buf->phase = MBG_NONE;	      /* back to hunting mode */
-  return PARSE_INP_DATA;              /* message complete, must be evaluated */
+    msg_buf->phase = MBG_NONE; /* back to hunting mode */
+    return PARSE_INP_DATA;     /* message complete, must be evaluated */
 }
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_MEINBERG) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_MEINBERG) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_MEINBERG) */
 

@@ -2,13 +2,11 @@
 
 #include "main.h"
 
-const char * progname;
+const char* progname;
 
-int 
-main (
-	int	argc,
-	char **	argv
-	) 
+int main(
+    int argc,
+    char** argv)
 {
-	return sntp_main(argc, argv, Version);
+    return sntp_main(argc, argv, Version);
 }

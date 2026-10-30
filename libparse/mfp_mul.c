@@ -33,13 +33,15 @@
  *
  */
 #include <config.h>
-#include <stdio.h>
+
+#include "ntp_fp.h"
 #include "ntp_stdlib.h"
 #include "ntp_types.h"
-#include "ntp_fp.h"
 
-#define LOW_MASK  (u_int32)((1<<(FRACTION_PREC/2))-1)
-#define HIGH_MASK (u_int32)(LOW_MASK << (FRACTION_PREC/2))
+#include <stdio.h>
+
+#define LOW_MASK (u_int32)((1 << (FRACTION_PREC / 2)) - 1)
+#define HIGH_MASK (u_int32)(LOW_MASK << (FRACTION_PREC / 2))
 
 /*
  * for those who worry about overflows (possibly triggered by static analysis tools):
@@ -53,120 +55,120 @@
  *    addition, so no storage for the 2^2n term from above is needed.
  */
 
-void
-mfp_mul(
-	int32   *o_i,
-	u_int32 *o_f,
-	int32    a_i,
-	u_int32  a_f,
-	int32    b_i,
-	u_int32  b_f
-	)
+void mfp_mul(
+    int32* o_i,
+    u_int32* o_f,
+    int32 a_i,
+    u_int32 a_f,
+    int32 b_i,
+    u_int32 b_f)
 {
-  int32 i, j;
-  u_int32  f;
-  u_long a[4];			/* operand a */
-  u_long b[4];			/* operand b */
-  u_long c[5];			/* result c - 5 items for performance - see below */
-  u_long carry;
-  
-  int neg = 0;
+    int32 i, j;
+    u_int32 f;
+    u_long a[4]; /* operand a */
+    u_long b[4]; /* operand b */
+    u_long c[5]; /* result c - 5 items for performance - see below */
+    u_long carry;
 
-  if (a_i < 0)			/* examine sign situation */
+    int neg = 0;
+
+    if (a_i < 0) /* examine sign situation */
     {
-      neg = 1;
-      M_NEG(a_i, a_f);
+        neg = 1;
+        M_NEG(a_i, a_f);
     }
 
-  if (b_i < 0)			/* examine sign situation */
+    if (b_i < 0) /* examine sign situation */
     {
-      neg = !neg;
-      M_NEG(b_i, b_f);
+        neg = !neg;
+        M_NEG(b_i, b_f);
     }
-  
-  a[0U] = a_f & LOW_MASK;	/* prepare a operand */
-  a[1U] = (a_f & HIGH_MASK) >> (FRACTION_PREC/2);
-  a[2U] = a_i & LOW_MASK;
-  a[3U] = (a_i & HIGH_MASK) >> (FRACTION_PREC/2);
-  
-  b[0U] = b_f & LOW_MASK;	/* prepare b operand */
-  b[1U] = (b_f & HIGH_MASK) >> (FRACTION_PREC/2);
-  b[2U] = b_i & LOW_MASK;
-  b[3U] = (b_i & HIGH_MASK) >> (FRACTION_PREC/2);
 
-  c[0U] = c[1U] = c[2U] = c[3U] = c[4U] = 0;
+    a[0U] = a_f & LOW_MASK; /* prepare a operand */
+    a[1U] = (a_f & HIGH_MASK) >> (FRACTION_PREC / 2);
+    a[2U] = a_i & LOW_MASK;
+    a[3U] = (a_i & HIGH_MASK) >> (FRACTION_PREC / 2);
 
-  for (i = 0; i < 4; i++)	/* we do assume 32 * 32 = 64 bit multiplication */
-    for (j = 0; j < 4; j++)
-      {
-	u_long result_low, result_high;
-	int low_index = (i+j)/2;      /* formal [0..3]  - index for low long word */
-	int mid_index = 1+low_index;  /* formal [1..4]! - index for high long word
-					 will generate unecessary add of 0 to c[4]
-					 but save 15 'if (result_high) expressions' */
-	int high_index = 1+mid_index; /* formal [2..5]! - index for high word overflow
-					 - only assigned on overflow (limits range to 2..3) */
+    b[0U] = b_f & LOW_MASK; /* prepare b operand */
+    b[1U] = (b_f & HIGH_MASK) >> (FRACTION_PREC / 2);
+    b[2U] = b_i & LOW_MASK;
+    b[3U] = (b_i & HIGH_MASK) >> (FRACTION_PREC / 2);
 
-	result_low = (u_long)a[i] * (u_long)b[j];	/* partial product */
+    c[0U] = c[1U] = c[2U] = c[3U] = c[4U] = 0;
 
-	if ((i+j) & 1)		/* splits across two result registers */
-	  {
-	    result_high   = result_low >> (FRACTION_PREC/2);
-	    result_low  <<= FRACTION_PREC/2;
-	    carry         = (unsigned)1<<(FRACTION_PREC/2);
-	  }
-	else
-	  {			/* stays in a result register - except for overflows */
-	    result_high = 0;
-	    carry       = 1;
-	  }
+    for (i = 0; i < 4; i++) /* we do assume 32 * 32 = 64 bit multiplication */
+        for (j = 0; j < 4; j++)
+        {
+            u_long result_low, result_high;
+            int low_index = (i + j) / 2;    /* formal [0..3]  - index for low long word */
+            int mid_index = 1 + low_index;  /* formal [1..4]! - index for high long word
+                               will generate unecessary add of 0 to c[4]
+                               but save 15 'if (result_high) expressions' */
+            int high_index = 1 + mid_index; /* formal [2..5]! - index for high word overflow
+                               - only assigned on overflow (limits range to 2..3) */
 
-	if (((c[low_index] >> 1) + (result_low >> 1) + ((c[low_index] & result_low & carry) != 0)) &
-	    (u_int32)((unsigned)1<<(FRACTION_PREC - 1))) {
-	  result_high++;	/* propagate overflows */
+            result_low = (u_long)a[i] * (u_long)b[j]; /* partial product */
+
+            if ((i + j) & 1) /* splits across two result registers */
+            {
+                result_high = result_low >> (FRACTION_PREC / 2);
+                result_low <<= FRACTION_PREC / 2;
+                carry = (unsigned)1 << (FRACTION_PREC / 2);
+            }
+            else
+            { /* stays in a result register - except for overflows */
+                result_high = 0;
+                carry = 1;
+            }
+
+            if (((c[low_index] >> 1) + (result_low >> 1) + ((c[low_index] & result_low & carry) != 0)) &
+                (u_int32)((unsigned)1 << (FRACTION_PREC - 1)))
+            {
+                result_high++; /* propagate overflows */
+            }
+
+            c[low_index] += result_low; /* add up partial products */
+
+            if (((c[mid_index] >> 1) + (result_high >> 1) + ((c[mid_index] & result_high & 1) != 0)) &
+                (u_int32)((unsigned)1 << (FRACTION_PREC - 1)))
+            {
+                c[high_index]++; /* propagate overflows of high word sum */
+            }
+
+            c[mid_index] += result_high; /* will add a 0 to c[4] once but saves 15 if conditions */
         }
-
-	c[low_index]   += result_low; /* add up partial products */
-
-	if (((c[mid_index] >> 1) + (result_high >> 1) + ((c[mid_index] & result_high & 1) != 0)) &
-	    (u_int32)((unsigned)1<<(FRACTION_PREC - 1))) {
-	  c[high_index]++;		/* propagate overflows of high word sum */
-        }
-
-	c[mid_index] += result_high;  /* will add a 0 to c[4] once but saves 15 if conditions */
-      }
 
 #ifdef DEBUG
-  if (debug > 6)
-    printf("mfp_mul: 0x%04lx%04lx%04lx%04lx * 0x%04lx%04lx%04lx%04lx = 0x%08lx%08lx%08lx%08lx\n",
-	 a[3U], a[2], a[1], a[0], b[3], b[2], b[1], b[0], c[3], c[2], c[1], c[0]);
+    if (debug > 6)
+        printf("mfp_mul: 0x%04lx%04lx%04lx%04lx * 0x%04lx%04lx%04lx%04lx = 0x%08lx%08lx%08lx%08lx\n",
+               a[3U], a[2], a[1], a[0], b[3], b[2], b[1], b[0], c[3], c[2], c[1], c[0]);
 #endif
 
-  if (c[3U])			/* overflow */
+    if (c[3U]) /* overflow */
     {
-      i = ((unsigned)1 << (FRACTION_PREC-1)) - 1;
-      f = ~(unsigned)0;
+        i = ((unsigned)1 << (FRACTION_PREC - 1)) - 1;
+        f = ~(unsigned)0;
     }
-  else
-    {				/* take produkt - discarding extra precision */
-      i = c[2U];
-      f = c[1U];
-    }
-  
-  if (neg)			/* recover sign */
-    {
-      M_NEG(i, f);
+    else
+    { /* take produkt - discarding extra precision */
+        i = c[2U];
+        f = c[1U];
     }
 
-  *o_i = i;
-  *o_f = f;
+    if (neg) /* recover sign */
+    {
+        M_NEG(i, f);
+    }
+
+    *o_i = i;
+    *o_f = f;
 
 #ifdef DEBUG
-  if (debug > 6)
-    printf("mfp_mul: %s * %s => %s\n",
-	   mfptoa((u_long)a_i, a_f, 6),
-	   mfptoa((u_long)b_i, b_f, 6),
-	   mfptoa((u_long)i, f, 6));
+    if (debug > 6)
+        printf("mfp_mul: %s * %s => %s\n",
+               mfptoa((u_long)a_i, a_f, 6),
+               mfptoa((u_long)b_i, b_f, 6),
+               mfptoa((u_long)i, f, 6));
 #endif
 }
 

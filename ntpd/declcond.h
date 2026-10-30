@@ -14,8 +14,8 @@
 #ifndef DECLCOND_H
 #define DECLCOND_H
 
-#ifdef DEBUG			/* uncommented in ntpd/declcond.h */
+#ifdef DEBUG /* uncommented in ntpd/declcond.h */
 extern int debug;
-#endif				/* uncommented in ntpd/declcond.h */
+#endif /* uncommented in ntpd/declcond.h */
 
-#endif	/* DECLCOND_H */
+#endif /* DECLCOND_H */

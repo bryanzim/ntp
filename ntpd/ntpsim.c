@@ -1,6 +1,6 @@
 /* ntpdsim.c
  *
- * The source code for the ntp discrete event simulator. 
+ * The source code for the ntp discrete event simulator.
  *
  * Written By:	Sachin Kamboj
  *		University of Delaware
@@ -11,39 +11,37 @@
 
 #include <config.h>
 #ifdef SIM
-#include "ntpd.h"
 #include "ntp_config.h"
+#include "ntpd.h"
 
 /* forward prototypes */
-int determine_event_ordering(const Event *e1, const Event *e2);
-int determine_recv_buf_ordering(const struct recvbuf *b1, 
-				const struct recvbuf *b2);
+int determine_event_ordering(const Event* e1, const Event* e2);
+int determine_recv_buf_ordering(const struct recvbuf* b1,
+                                const struct recvbuf* b2);
 void create_server_associations(void);
 void init_sim_io(void);
 
 /* Global Variable Definitions */
-sim_info simulation;		/* Simulation Control Variables */
-local_clock_info simclock;	/* Local Clock Variables */
-queue *event_queue;		/* Event Queue */
-queue *recv_queue;		/* Receive Queue */
-static double sys_residual = 0;	/* adjustment residue (s) */
+sim_info simulation;            /* Simulation Control Variables */
+local_clock_info simclock;      /* Local Clock Variables */
+queue* event_queue;             /* Event Queue */
+queue* recv_queue;              /* Receive Queue */
+static double sys_residual = 0; /* adjustment residue (s) */
 
-void (*event_ptr[]) (Event *) = {
+void (*event_ptr[])(Event*) = {
     sim_event_beep, sim_update_clocks, sim_event_timer, sim_event_recv_packet
-};			/* Function pointer to the events */
+}; /* Function pointer to the events */
 
 
 /*
  * Define a function to compare two events to determine which one occurs
  * first.
  */
-int
-determine_event_ordering(
-	const Event *e1,
-	const Event *e2
-	)
+int determine_event_ordering(
+    const Event* e1,
+    const Event* e2)
 {
-	return (e1->time - e2->time);
+    return (e1->time - e2->time);
 }
 
 
@@ -51,167 +49,165 @@ determine_event_ordering(
  * Define a function to compare two received packets to determine which
  * one is received first.
  */
-int
-determine_recv_buf_ordering(
-	const struct recvbuf *b1,
-	const struct recvbuf *b2
-	)
+int determine_recv_buf_ordering(
+    const struct recvbuf* b1,
+    const struct recvbuf* b2)
 {
-	double recv_time1;
-	double recv_time2;
+    double recv_time1;
+    double recv_time2;
 
-	/* Simply convert the time received to double and subtract */
-	LFPTOD(&b1->recv_time, recv_time1);
-	LFPTOD(&b2->recv_time, recv_time2);
+    /* Simply convert the time received to double and subtract */
+    LFPTOD(&b1->recv_time, recv_time1);
+    LFPTOD(&b2->recv_time, recv_time2);
 
-	return (int)(recv_time1 - recv_time2);
+    return (int)(recv_time1 - recv_time2);
 }
 
 
 /* Define a function to create the server associations */
 void create_server_associations(void)
 {
-	int i;
+    int i;
 
-	for (i = 0; i < simulation.num_of_servers; ++i) {
-		printf("%s\n", stoa(simulation.servers[i].addr));
-		if (peer_config(simulation.servers[i].addr,
-				NULL,
-				loopback_interface,
-				MODE_CLIENT,
-				-1,
-				NTP_VERSION,
-				NTP_MINDPOLL,
-				NTP_MAXDPOLL,
-				0, /* peerflags */
-				0, /* ttl */
-				0, /* peerkey */
-				NULL /* group ident */) == 0) {
-			fprintf(stderr,
-				"ERROR!! Could not create association for: %s\n",
-				stoa(simulation.servers[i].addr));
-		}
-	}
+    for (i = 0; i < simulation.num_of_servers; ++i)
+    {
+        printf("%s\n", stoa(simulation.servers[i].addr));
+        if (peer_config(simulation.servers[i].addr,
+                        NULL,
+                        loopback_interface,
+                        MODE_CLIENT,
+                        -1,
+                        NTP_VERSION,
+                        NTP_MINDPOLL,
+                        NTP_MAXDPOLL,
+                        0, /* peerflags */
+                        0, /* ttl */
+                        0, /* peerkey */
+                        NULL /* group ident */) == 0)
+        {
+            fprintf(stderr,
+                    "ERROR!! Could not create association for: %s\n",
+                    stoa(simulation.servers[i].addr));
+        }
+    }
 }
 
 
 /* Main Simulator Code */
 
-int
-ntpsim(
-	int	argc,
-	char *	argv[]
-	)
+int ntpsim(
+    int argc,
+    char* argv[])
 {
-	Event *		curr_event;
-	struct timeval	seed;
+    Event* curr_event;
+    struct timeval seed;
 
-	/* Initialize the local Clock */
-	simclock.local_time = 0;
-	simclock.adj = 0;
-	simclock.slew = 500e-6;
+    /* Initialize the local Clock */
+    simclock.local_time = 0;
+    simclock.adj = 0;
+    simclock.slew = 500e-6;
 
-	/* Initialize the simulation */
-	simulation.num_of_servers = 0;
-	simulation.beep_delay = BEEP_DLY;
-	simulation.sim_time = 0;
-	simulation.end_time = SIM_TIME;
+    /* Initialize the simulation */
+    simulation.num_of_servers = 0;
+    simulation.beep_delay = BEEP_DLY;
+    simulation.sim_time = 0;
+    simulation.end_time = SIM_TIME;
 
-	/* Initialize ntp modules */
-	initializing = TRUE;
-	msyslog_term = TRUE;
-	init_sim_io();
-	init_auth();
-	init_util();
-	init_restrict();
-	init_mon();
-	init_timer();
-	init_lib();
-	init_request();
-	init_control();
-	init_peer();
-	init_proto();
-	init_loopfilter();
-	mon_start(MON_OFF);
+    /* Initialize ntp modules */
+    initializing = TRUE;
+    msyslog_term = TRUE;
+    init_sim_io();
+    init_auth();
+    init_util();
+    init_restrict();
+    init_mon();
+    init_timer();
+    init_lib();
+    init_request();
+    init_control();
+    init_peer();
+    init_proto();
+    init_loopfilter();
+    mon_start(MON_OFF);
 
-	/* Call getconfig to parse the configuration file */
-	getconfig(argc, argv);
-	loop_config(LOOP_DRIFTINIT, 0);
-	initializing = FALSE;
+    /* Call getconfig to parse the configuration file */
+    getconfig(argc, argv);
+    loop_config(LOOP_DRIFTINIT, 0);
+    initializing = FALSE;
 
-	/*
-	 * Watch out here, we want the real time, not the silly stuff.
-	 */
-	gettimeofday(&seed, NULL);
-	ntp_srandom(seed.tv_usec);
+    /*
+     * Watch out here, we want the real time, not the silly stuff.
+     */
+    gettimeofday(&seed, NULL);
+    ntp_srandom(seed.tv_usec);
 
-	/* Initialize the event queue */
-	event_queue = create_priority_queue((q_order_func)
-	    determine_event_ordering);
+    /* Initialize the event queue */
+    event_queue = create_priority_queue((q_order_func)
+                                            determine_event_ordering);
 
-	/* Initialize the receive queue */
-	recv_queue = create_priority_queue((q_order_func)
-	    determine_recv_buf_ordering);
+    /* Initialize the receive queue */
+    recv_queue = create_priority_queue((q_order_func)
+                                           determine_recv_buf_ordering);
 
-	/* Push a beep and a timer on the event queue */
-	enqueue(event_queue, event(0, BEEP));
-	enqueue(event_queue, event(simulation.sim_time + 1.0, TIMER));
+    /* Push a beep and a timer on the event queue */
+    enqueue(event_queue, event(0, BEEP));
+    enqueue(event_queue, event(simulation.sim_time + 1.0, TIMER));
 
-	/* 
-	 * Pop the queue until nothing is left or time is exceeded
-	 */
-	/* maxtime = simulation.sim_time + simulation.end_time;*/
-	while (simulation.sim_time <= simulation.end_time &&
-	   (!empty(event_queue))) {
-		curr_event = dequeue(event_queue);
-		/* Update all the clocks to the time on the event */
-		sim_update_clocks(curr_event);
+    /*
+     * Pop the queue until nothing is left or time is exceeded
+     */
+    /* maxtime = simulation.sim_time + simulation.end_time;*/
+    while (simulation.sim_time <= simulation.end_time &&
+           (!empty(event_queue)))
+    {
+        curr_event = dequeue(event_queue);
+        /* Update all the clocks to the time on the event */
+        sim_update_clocks(curr_event);
 
-		/* Execute the function associated with the event */
-		(*event_ptr[curr_event->function])(curr_event);
-		free_node(curr_event);
-	}
-	printf("sys_received: %lu\n", sys_received);
-	printf("sys_badlength: %lu\n", sys_badlength);
-	printf("sys_declined: %lu\n", sys_declined);
-	printf("sys_restricted: %lu\n", sys_restricted);
-	printf("sys_newversion: %lu\n", sys_newversion);
-	printf("sys_oldversion: %lu\n", sys_oldversion);
-	printf("sys_limitrejected: %lu\n", sys_limitrejected);
-	printf("sys_badauth: %lu\n", sys_badauth);
+        /* Execute the function associated with the event */
+        (*event_ptr[curr_event->function])(curr_event);
+        free_node(curr_event);
+    }
+    printf("sys_received: %lu\n", sys_received);
+    printf("sys_badlength: %lu\n", sys_badlength);
+    printf("sys_declined: %lu\n", sys_declined);
+    printf("sys_restricted: %lu\n", sys_restricted);
+    printf("sys_newversion: %lu\n", sys_newversion);
+    printf("sys_oldversion: %lu\n", sys_oldversion);
+    printf("sys_limitrejected: %lu\n", sys_limitrejected);
+    printf("sys_badauth: %lu\n", sys_badauth);
 
-	return (0);
+    return (0);
 }
 
 
-void
-init_sim_io(void)
+void init_sim_io(void)
 {
-	loopback_interface = emalloc_zero(sizeof(*loopback_interface));
-	ep_list = loopback_interface;
-	strlcpy(loopback_interface->name, "IPv4loop",
-		sizeof(loopback_interface->name));
-	loopback_interface->flags = INT_UP | INT_LOOPBACK;
-	loopback_interface->fd = -1;
-	loopback_interface->bfd = -1;
-	loopback_interface->ifnum = 1;
-	loopback_interface->family = AF_INET;
-	AF(&loopback_interface->sin) = AF_INET;
-	SET_ADDR4(&loopback_interface->sin, LOOPBACKADR);
-	SET_PORT(&loopback_interface->sin, NTP_PORT);
-	AF(&loopback_interface->mask) = AF_INET;
-	SET_ADDR4(&loopback_interface->mask, LOOPNETMASK);
+    loopback_interface = emalloc_zero(sizeof(*loopback_interface));
+    ep_list = loopback_interface;
+    strlcpy(loopback_interface->name, "IPv4loop",
+            sizeof(loopback_interface->name));
+    loopback_interface->flags = INT_UP | INT_LOOPBACK;
+    loopback_interface->fd = -1;
+    loopback_interface->bfd = -1;
+    loopback_interface->ifnum = 1;
+    loopback_interface->family = AF_INET;
+    AF(&loopback_interface->sin) = AF_INET;
+    SET_ADDR4(&loopback_interface->sin, LOOPBACKADR);
+    SET_PORT(&loopback_interface->sin, NTP_PORT);
+    AF(&loopback_interface->mask) = AF_INET;
+    SET_ADDR4(&loopback_interface->mask, LOOPNETMASK);
 }
 
 
 /* Define a function to create an return an Event  */
 
-Event *event(double t, funcTkn f)
+Event* event(double t, funcTkn f)
 {
-    Event *e;
+    Event* e;
 
     if ((e = get_node(sizeof(*e))) == NULL)
-	abortsim("get_node failed in event");
+        abortsim("get_node failed in event");
     e->time = t;
     e->function = f;
     return (e);
@@ -223,9 +219,9 @@ Event *event(double t, funcTkn f)
  * On every timer interrupt, call the NTP timer to send packets and process
  * the clock and then call the receive function to receive packets.
  */
-void sim_event_timer(Event *e)
+void sim_event_timer(Event* e)
 {
-    struct recvbuf *rbuf;
+    struct recvbuf* rbuf;
 
     /* Call the NTP timer.
      * This will be responsible for actually "sending the packets."
@@ -235,15 +231,16 @@ void sim_event_timer(Event *e)
     timer();
 
     /* Process received buffers */
-    while (!empty(recv_queue)) {
-	rbuf = (struct recvbuf *)dequeue(recv_queue);
-	(*rbuf->receiver)(rbuf);
-	free_node(rbuf);
+    while (!empty(recv_queue))
+    {
+        rbuf = (struct recvbuf*)dequeue(recv_queue);
+        (*rbuf->receiver)(rbuf);
+        free_node(rbuf);
     }
 
     /* Arm the next timer interrupt. */
-    enqueue(event_queue, 
-	    event(simulation.sim_time + (1 << EVENT_TIMEOUT), TIMER));
+    enqueue(event_queue,
+            event(simulation.sim_time + (1 << EVENT_TIMEOUT), TIMER));
 }
 
 
@@ -253,50 +250,52 @@ void sim_event_timer(Event *e)
  * creates a reply packet and pushes the reply packet onto the event queue
  */
 int simulate_server(
-    sockaddr_u *serv_addr,	/* Address of the server */
-    endpt *	inter,		/* Interface on which the reply should
-				   be inserted */
-    struct pkt *rpkt		/* Packet sent to the server that
-				   needs to be processed. */
-    )
+    sockaddr_u* serv_addr, /* Address of the server */
+    endpt* inter,          /* Interface on which the reply should
+                      be inserted */
+    struct pkt* rpkt       /* Packet sent to the server that
+                  needs to be processed. */
+)
 {
-    struct pkt xpkt;		/* Packet to be transmitted back
-				   to the client */
-    struct recvbuf rbuf;	/* Buffer for the received packet */
-    Event *e;			/* Packet receive event */
-    server_info *server;	/* Pointer to the server being simulated */
-    script_info *curr_script;	/* Current script being processed */
+    struct pkt xpkt;          /* Packet to be transmitted back
+                     to the client */
+    struct recvbuf rbuf;      /* Buffer for the received packet */
+    Event* e;                 /* Packet receive event */
+    server_info* server;      /* Pointer to the server being simulated */
+    script_info* curr_script; /* Current script being processed */
     int i;
-    double d1, d2, d3;		/* Delays while the packet is enroute */
-    double t1, t2, t3, t4;	/* The four timestamps in the packet */
-    l_fp lfp_host;		/* host-order l_fp */
+    double d1, d2, d3;     /* Delays while the packet is enroute */
+    double t1, t2, t3, t4; /* The four timestamps in the packet */
+    l_fp lfp_host;         /* host-order l_fp */
 
     ZERO(xpkt);
     ZERO(rbuf);
 
     /* Search for the server with the desired address */
     server = NULL;
-    for (i = 0; i < simulation.num_of_servers; ++i) {
-	if (memcmp(simulation.servers[i].addr, serv_addr, 
-		   sizeof(*serv_addr)) == 0) { 
-	    server = &simulation.servers[i];
-	    break;
-	}
+    for (i = 0; i < simulation.num_of_servers; ++i)
+    {
+        if (memcmp(simulation.servers[i].addr, serv_addr,
+                   sizeof(*serv_addr)) == 0)
+        {
+            server = &simulation.servers[i];
+            break;
+        }
     }
 
     fprintf(stderr, "Received packet from %s on %s\n",
-	    stoa(serv_addr), latoa(inter));
+            stoa(serv_addr), latoa(inter));
     if (server == NULL)
-	abortsim("Server with specified address not found!!!");
-    
+        abortsim("Server with specified address not found!!!");
+
     /* Get the current script for the server */
     curr_script = server->curr_script;
 
-    /* Create a server reply packet. 
+    /* Create a server reply packet.
      * Masquerade the reply as a stratum-1 server with a GPS clock
      */
     xpkt.li_vn_mode = PKT_LI_VN_MODE(LEAP_NOWARNING, NTP_VERSION,
-				     MODE_SERVER);
+                                     MODE_SERVER);
     xpkt.stratum = STRATUM_TO_PKT(((u_char)1));
     memcpy(&xpkt.refid, "GPS", 4);
     xpkt.ppoll = rpkt->ppoll;
@@ -305,23 +304,23 @@ int simulate_server(
     xpkt.rootdisp = 0;
 
     /* TIMESTAMP CALCULATIONS
-	    t1				 t4
-	     \				/
-	  d1  \			       / d3
-	       \		      /
-	       t2 ----------------- t3
-			 d2
+        t1				 t4
+         \				/
+      d1  \			       / d3
+           \		      /
+           t2 ----------------- t3
+             d2
     */
     /* Compute the delays */
     d1 = poisson(curr_script->prop_delay, curr_script->jitter);
     d2 = poisson(curr_script->proc_delay, 0);
     d3 = poisson(curr_script->prop_delay, curr_script->jitter);
 
-    /* Note: In the transmitted packet: 
+    /* Note: In the transmitted packet:
      * 1. t1 and t4 are times in the client according to the local clock.
      * 2. t2 and t3 are server times according to the simulated server.
      * Compute t1, t2, t3 and t4
-     * Note: This function is called at time t1. 
+     * Note: This function is called at time t1.
      */
 
     NTOHL_FP(&rpkt->xmt, &lfp_host);
@@ -338,12 +337,12 @@ int simulate_server(
     HTONL_FP(&lfp_host, &xpkt.xmt);
     xpkt.reftime = xpkt.xmt;
 
-    /* 
+    /*
      * Ok, we are done with the packet. Now initialize the receive
      * buffer for the packet.
      */
     rbuf.used = 1;
-    rbuf.receiver = &receive;   /* callback to process the packet */
+    rbuf.receiver = &receive; /* callback to process the packet */
     rbuf.recv_length = LEN_PKT_NOMAC;
     rbuf.recv_pkt = xpkt;
     rbuf.dstadr = inter;
@@ -353,7 +352,7 @@ int simulate_server(
 
     /*
      * Create a packet event and insert it onto the event_queue at the
-     * arrival time (t4) of the packet at the client 
+     * arrival time (t4) of the packet at the client
      */
     e = event(t4, PACKET);
     e->rcv_buf = rbuf;
@@ -362,26 +361,27 @@ int simulate_server(
     /*
      * Check if the time of the script has expired. If yes, delete it.
      */
-    if (curr_script->duration > simulation.sim_time && 
-	NULL == HEAD_PFIFO(server->script)) {
-	printf("Hello\n");
-	/* 
-	 * For some reason freeing up the curr_script memory kills the
-	 * simulation. Further debugging is needed to determine why.
-	 * free(curr_script);
-	 */
-	UNLINK_FIFO(curr_script, *server->script, link);
+    if (curr_script->duration > simulation.sim_time &&
+        NULL == HEAD_PFIFO(server->script))
+    {
+        printf("Hello\n");
+        /*
+         * For some reason freeing up the curr_script memory kills the
+         * simulation. Further debugging is needed to determine why.
+         * free(curr_script);
+         */
+        UNLINK_FIFO(curr_script, *server->script, link);
     }
 
     return (0);
 }
 
 
-/* Define a function to update all the clocks 
+/* Define a function to update all the clocks
  * Most of the code is modified from the systime.c file by Prof. Mills
  */
 
-void sim_update_clocks(Event *e)
+void sim_update_clocks(Event* e)
 {
     double time_gap;
     double adj;
@@ -391,13 +391,13 @@ void sim_update_clocks(Event *e)
     time_gap = e->time - simulation.sim_time;
 
     if (time_gap < 0)
-	    printf("WARNING: e->time %.6g comes before sim_time %.6g (gap %+.6g)\n",
-		   e->time, simulation.sim_time, time_gap);
+        printf("WARNING: e->time %.6g comes before sim_time %.6g (gap %+.6g)\n",
+               e->time, simulation.sim_time, time_gap);
 
     /* Advance the client clock */
     if (e->time + time_gap < simclock.local_time)
-	    printf("WARNING: e->time + gap %.6g comes before local_time %.6g\n",
-		   e->time + time_gap, simclock.local_time);
+        printf("WARNING: e->time + gap %.6g comes before local_time %.6g\n",
+               e->time + time_gap, simclock.local_time);
     simclock.local_time = e->time + time_gap;
 
     /* Advance the simulation time */
@@ -407,12 +407,13 @@ void sim_update_clocks(Event *e)
      * errors. The random error is a random walk computed as the
      * integral of samples from a Gaussian distribution.
      */
-    for (i = 0; i < simulation.num_of_servers; ++i) {
-	simulation.servers[i].curr_script->freq_offset +=
-	    gauss(0, time_gap * simulation.servers[i].curr_script->wander);
+    for (i = 0; i < simulation.num_of_servers; ++i)
+    {
+        simulation.servers[i].curr_script->freq_offset +=
+            gauss(0, time_gap * simulation.servers[i].curr_script->wander);
 
-	simulation.servers[i].server_time += time_gap * 
-	    (1 + simulation.servers[i].curr_script->freq_offset);
+        simulation.servers[i].server_time += time_gap *
+                                             (1 + simulation.servers[i].curr_script->freq_offset);
     }
 
     /* Perform the adjtime() function. If the adjustment completed
@@ -421,32 +422,38 @@ void sim_update_clocks(Event *e)
      */
 
     adj = time_gap * simclock.slew;
-    if (adj < fabs(simclock.adj)) {
-	if (simclock.adj < 0) {
-	    simclock.adj += adj;
-	    simclock.local_time -= adj;
-	} else {
-	    simclock.adj -= adj;
-	    simclock.local_time += adj;
-	}    
-    } else {
-	simclock.local_time += simclock.adj;
-	simclock.adj = 0;
+    if (adj < fabs(simclock.adj))
+    {
+        if (simclock.adj < 0)
+        {
+            simclock.adj += adj;
+            simclock.local_time -= adj;
+        }
+        else
+        {
+            simclock.adj -= adj;
+            simclock.local_time += adj;
+        }
+    }
+    else
+    {
+        simclock.local_time += simclock.adj;
+        simclock.adj = 0;
     }
 }
 
 
-/* Define a function that processes a receive packet event. 
+/* Define a function that processes a receive packet event.
  * This function simply inserts the packet received onto the receive queue
- */   
+ */
 
-void sim_event_recv_packet(Event *e)
+void sim_event_recv_packet(Event* e)
 {
-    struct recvbuf *rbuf;
+    struct recvbuf* rbuf;
 
     /* Allocate a receive buffer and copy the packet to it */
     if ((rbuf = get_node(sizeof(*rbuf))) == NULL)
-	abortsim("get_node failed in sim_event_recv_packet");
+        abortsim("get_node failed in sim_event_recv_packet");
     memcpy(rbuf, &e->rcv_buf, sizeof(*rbuf));
 
     /* Store the local time in the received packet */
@@ -462,7 +469,7 @@ void sim_event_recv_packet(Event *e)
  */
 
 /*** TODO: Need to decide on how to output for multiple servers ***/
-void sim_event_beep(Event *e)
+void sim_event_beep(Event* e)
 {
 #if 0
     static int first_time = 1;
@@ -487,7 +494,6 @@ void sim_event_beep(Event *e)
 	       simclock.local_time, 
 	       n->time, n->clk_time, n->ntp_time);
 #endif
-
 }
 
 
@@ -495,7 +501,7 @@ void sim_event_beep(Event *e)
  * error message
  */
 
-void abortsim(char *errmsg)
+void abortsim(char* errmsg)
 {
     perror(errmsg);
     exit(1);
@@ -503,10 +509,10 @@ void abortsim(char *errmsg)
 
 
 
-/* CODE ORIGINALLY IN libntp/systime.c 
+/* CODE ORIGINALLY IN libntp/systime.c
  * -----------------------------------
- * This code was a part of the original NTP simulator and originally 
- * had its home in the libntp/systime.c file. 
+ * This code was a part of the original NTP simulator and originally
+ * had its home in the libntp/systime.c file.
  *
  * It has been shamelessly moved to here and has been modified for the
  * purposes of the current simulator.
@@ -514,11 +520,10 @@ void abortsim(char *errmsg)
 
 
 /*
- * get_systime - return the system time in NTP timestamp format 
+ * get_systime - return the system time in NTP timestamp format
  */
-void
-get_systime(
-    l_fp *now		/* current system time in l_fp */        )
+void get_systime(
+    l_fp* now /* current system time in l_fp */)
 {
     /*
      * To fool the code that determines the local clock precision,
@@ -533,28 +538,28 @@ get_systime(
 
     simclock.last_read_time = simclock.local_time;
     DTOLFP(simclock.local_time, now);
-/* OLD Code
-   if (ntp_node.ntp_time == ntp_node.last_time)
-   ntp_node.ntp_time += 200e-9;
-   ntp_node.last_time = ntp_node.ntp_time;
-   DTOLFP(ntp_node.ntp_time, now);
-*/
+    /* OLD Code
+       if (ntp_node.ntp_time == ntp_node.last_time)
+       ntp_node.ntp_time += 200e-9;
+       ntp_node.last_time = ntp_node.ntp_time;
+       DTOLFP(ntp_node.ntp_time, now);
+    */
 }
- 
- 
+
+
 /*
  * adj_systime - advance or retard the system clock exactly like the
  * real thng.
  */
-int				/* always succeeds */
+int /* always succeeds */
 adj_systime(
-    double now		/* time adjustment (s) */
-    )
+    double now /* time adjustment (s) */
+)
 {
-    struct timeval adjtv;	/* new adjustment */
-    double	dtemp;
-    long	ticks;
-    int	isneg = 0;
+    struct timeval adjtv; /* new adjustment */
+    double dtemp;
+    long ticks;
+    int isneg = 0;
 
     /*
      * Most Unix adjtime() implementations adjust the system clock
@@ -563,9 +568,10 @@ adj_systime(
      * adjust in quanta and keep the residue for later.
      */
     dtemp = now + sys_residual;
-    if (dtemp < 0) {
-	isneg = 1;
-	dtemp = -dtemp;
+    if (dtemp < 0)
+    {
+        isneg = 1;
+        dtemp = -dtemp;
     }
     adjtv.tv_sec = (long)dtemp;
     dtemp -= adjtv.tv_sec;
@@ -579,42 +585,43 @@ adj_systime(
      * adjtime() system call. Note we purposely lose the adjtime()
      * leftover.
      */
-    if (isneg) {
-	adjtv.tv_sec = -adjtv.tv_sec;
-	adjtv.tv_usec = -adjtv.tv_usec;
-	sys_residual = -sys_residual;
+    if (isneg)
+    {
+        adjtv.tv_sec = -adjtv.tv_sec;
+        adjtv.tv_usec = -adjtv.tv_usec;
+        sys_residual = -sys_residual;
     }
     simclock.adj = now;
-/*	ntp_node.adj = now; */
+    /*	ntp_node.adj = now; */
     return (1);
 }
- 
- 
+
+
 /*
  * step_systime - step the system clock. We are religious here.
  */
-int				/* always succeeds */
+int /* always succeeds */
 step_systime(
-    double now		/* step adjustment (s) */
-    )
+    double now /* step adjustment (s) */
+)
 {
 #ifdef DEBUG
     if (debug)
-	printf("step_systime: time %.6f adj %.6f\n",
-	       simclock.local_time, now);
+        printf("step_systime: time %.6f adj %.6f\n",
+               simclock.local_time, now);
 #endif
     simclock.local_time += now;
     return (1);
 }
- 
+
 /*
  * gauss() - returns samples from a gaussion distribution
  */
-double				/* Gaussian sample */
+double /* Gaussian sample */
 gauss(
-    double m,		/* sample mean */
-    double s		/* sample standard deviation (sigma) */
-    )
+    double m, /* sample mean */
+    double s  /* sample standard deviation (sigma) */
+)
 {
     double q1, q2;
 
@@ -626,20 +633,20 @@ gauss(
     if (s == 0)
         return (m);
     while ((q1 = drand48()) == 0)
-	/* empty statement */;
+        /* empty statement */;
     q2 = drand48();
     return (m + s * sqrt(-2. * log(q1)) * cos(2. * PI * q2));
 }
 
- 
+
 /*
  * poisson() - returns samples from a network delay distribution
  */
-double				/* delay sample (s) */
+double /* delay sample (s) */
 poisson(
-    double m,		/* fixed propagation delay (s) */
-    double s		/* exponential parameter (mu) */
-    )
+    double m, /* fixed propagation delay (s) */
+    double s  /* exponential parameter (mu) */
+)
 {
     double q1;
 
@@ -651,7 +658,7 @@ poisson(
     if (s == 0)
         return (m);
     while ((q1 = drand48()) == 0)
-	/* empty statement */;
+        /* empty statement */;
     return (m - s * log(q1 * s));
 }
 

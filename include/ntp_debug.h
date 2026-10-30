@@ -18,10 +18,11 @@
  *     TRACE(debuglevel, (fmt, ...));
  *     TRACE(2, ("this will appear on stdout if debug >= %d\n", 2));
  */
-#define TRACE(lvl, arg)					\
-	do { 						\
-		if (debug >= (lvl))			\
-			mprintf arg;			\
-	} while (0)
+#define TRACE(lvl, arg)     \
+    do                      \
+    {                       \
+        if (debug >= (lvl)) \
+            mprintf arg;    \
+    } while (0)
 
-#endif	/* NTP_DEBUG_H */
+#endif /* NTP_DEBUG_H */

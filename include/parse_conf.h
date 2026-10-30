@@ -34,28 +34,28 @@
 
 #ifndef __PARSE_CONF_H__
 #define __PARSE_CONF_H__
-#if	!(defined(lint) || defined(__GNUC__))
-  static char prshrcsid[] = "parse_conf.h,v 4.7 2005/06/25 10:58:45 kardel RELEASE_20050625_A";
+#if !(defined(lint) || defined(__GNUC__))
+static char prshrcsid[] = "parse_conf.h,v 4.7 2005/06/25 10:58:45 kardel RELEASE_20050625_A";
 #endif
 
 /*
  * field location structure
  */
-#define O_DAY   0
+#define O_DAY 0
 #define O_MONTH 1
-#define O_YEAR  2
-#define O_HOUR  3
-#define O_MIN   4
-#define O_SEC   5
-#define O_WDAY  6
+#define O_YEAR 2
+#define O_HOUR 3
+#define O_MIN 4
+#define O_SEC 5
+#define O_WDAY 6
 #define O_FLAGS 7
-#define O_ZONE  8
+#define O_ZONE 8
 #define O_UTCHOFFSET 9
 #define O_UTCMOFFSET 10
 #define O_UTCSOFFSET 11
-#define O_COUNT (O_UTCSOFFSET+1)
+#define O_COUNT (O_UTCSOFFSET + 1)
 
-#define MBG_EXTENDED	0x00000001
+#define MBG_EXTENDED 0x00000001
 
 /*
  * see below for field offsets
@@ -63,13 +63,13 @@
 
 struct format
 {
-  struct foff
+    struct foff
     {
-      unsigned short offset;		/* offset into buffer */
-      unsigned short length;		/* length of field */
-    }         field_offsets[O_COUNT];
-  const unsigned char *fixed_string;		/* string with must be chars (blanks = wildcards) */
-  u_long      flags;
+        unsigned short offset; /* offset into buffer */
+        unsigned short length; /* length of field */
+    } field_offsets[O_COUNT];
+    const unsigned char* fixed_string; /* string with must be chars (blanks = wildcards) */
+    u_long flags;
 };
 #endif
 

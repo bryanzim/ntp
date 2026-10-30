@@ -1,1 +1,1 @@
-extern	void	getCmdOpts(int, char **);
+extern void getCmdOpts(int, char**);

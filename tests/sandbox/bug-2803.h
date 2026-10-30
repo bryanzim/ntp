@@ -1,1 +1,1 @@
-int main2( void );
+int main2(void);

@@ -1,5 +1,5 @@
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_COMPUTIME)
@@ -43,18 +43,17 @@
  *
  */
 
-#include "ntp_fp.h"
-#include "ntp_unixtime.h"
 #include "ntp_calendar.h"
+#include "ntp_fp.h"
 #include "ntp_stdlib.h"
-
+#include "ntp_unixtime.h"
 #include "parse.h"
 
 #ifndef PARSESTREAM
 #include <stdio.h>
 #else
 #include "sys/parsestreams.h"
-extern int printf (const char *, ...);
+extern int printf(const char*, ...);
 #endif
 
 /*
@@ -77,29 +76,31 @@ extern int printf (const char *, ...);
  *
  */
 
-static struct format computime_fmt =
-{
-	{
-		{8, 2},  {5,  2}, {2,  2},	/* day, month, year */
-		{14, 2}, {17, 2}, {20, 2},	/* hour, minute, second */
-		{11, 2},                        /* dayofweek,  */
-	},
-	(const unsigned char *)"T:  :  :  :  :  :  :  \r\n",
-	0
+static struct format computime_fmt = {
+    {
+     { 8, 2 },
+     { 5, 2 },
+     { 2, 2 }, /* day, month, year */
+        { 14, 2 },
+     { 17, 2 },
+     { 20, 2 }, /* hour, minute, second */
+        { 11, 2 }, /* dayofweek,  */
+    },
+    (const unsigned char*)"T:  :  :  :  :  :  :  \r\n",
+    0
 };
 
 static parse_cvt_fnc_t cvt_computime;
 static parse_inp_fnc_t inp_computime;
 
-clockformat_t clock_computime =
-{
-	inp_computime,		/* Computime input handling */
-	cvt_computime,		/* Computime conversion */
-	0,			/* no PPS monitoring */
-	(void *)&computime_fmt,	/* conversion configuration */
-	"Diem's Computime Radio Clock",	/* Computime Radio Clock */
-	24,			/* string buffer */
-	0			/* no private data (complete packets) */
+clockformat_t clock_computime = {
+    inp_computime,                  /* Computime input handling */
+    cvt_computime,                  /* Computime conversion */
+    0,                              /* no PPS monitoring */
+    (void*)&computime_fmt,          /* conversion configuration */
+    "Diem's Computime Radio Clock", /* Computime Radio Clock */
+    24,                             /* string buffer */
+    0                               /* no private data (complete packets) */
 };
 
 /*
@@ -109,38 +110,43 @@ clockformat_t clock_computime =
  */
 static u_long
 cvt_computime(
-	unsigned char *buffer,
-	int            size,
-	struct format *format,
-	clocktime_t   *clock_time,
-	void          *local
-	)
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
 
-	if (!Strok(buffer, format->fixed_string)) {
-		return CVT_NONE;
-	} else {
-		if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
-			 format->field_offsets[O_DAY].length) ||
-		    Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
-			 format->field_offsets[O_MONTH].length) ||
-		    Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
-			 format->field_offsets[O_YEAR].length) ||
-		    Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
-			 format->field_offsets[O_HOUR].length) ||
-		    Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
-			 format->field_offsets[O_MIN].length) ||
-		    Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
-			 format->field_offsets[O_SEC].length)) {
-			return CVT_FAIL | CVT_BADFMT;
-		} else {
+    if (!Strok(buffer, format->fixed_string))
+    {
+        return CVT_NONE;
+    }
+    else
+    {
+        if (Stoi(&buffer[format->field_offsets[O_DAY].offset], &clock_time->day,
+                 format->field_offsets[O_DAY].length) ||
+            Stoi(&buffer[format->field_offsets[O_MONTH].offset], &clock_time->month,
+                 format->field_offsets[O_MONTH].length) ||
+            Stoi(&buffer[format->field_offsets[O_YEAR].offset], &clock_time->year,
+                 format->field_offsets[O_YEAR].length) ||
+            Stoi(&buffer[format->field_offsets[O_HOUR].offset], &clock_time->hour,
+                 format->field_offsets[O_HOUR].length) ||
+            Stoi(&buffer[format->field_offsets[O_MIN].offset], &clock_time->minute,
+                 format->field_offsets[O_MIN].length) ||
+            Stoi(&buffer[format->field_offsets[O_SEC].offset], &clock_time->second,
+                 format->field_offsets[O_SEC].length))
+        {
+            return CVT_FAIL | CVT_BADFMT;
+        }
+        else
+        {
 
-			clock_time->flags = 0;
-			clock_time->utcoffset = 0;	/* We have UTC time */
+            clock_time->flags = 0;
+            clock_time->utcoffset = 0; /* We have UTC time */
 
-			return CVT_OK;
-		}
-	}
+            return CVT_OK;
+        }
+    }
 }
 
 /*
@@ -150,38 +156,37 @@ cvt_computime(
  */
 static u_long
 inp_computime(
-	      parse_t      *parseio,
-	      char         ch,
-	      timestamp_t  *tstamp
-	      )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
+    unsigned int rtc;
 
-	parseprintf(DD_PARSE, ("inp_computime(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("inp_computime(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-	switch (ch)
-	{
-	case 'T':
-		parseprintf(DD_PARSE, ("inp_computime: START seen\n"));
+    switch (ch)
+    {
+    case 'T':
+        parseprintf(DD_PARSE, ("inp_computime: START seen\n"));
 
-		parseio->parse_index = 1;
-		parseio->parse_data[0U] = ch;
-		parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
-		return PARSE_INP_SKIP;
+        parseio->parse_index = 1;
+        parseio->parse_data[0U] = ch;
+        parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
+        return PARSE_INP_SKIP;
 
-	case '\n':
-		parseprintf(DD_PARSE, ("inp_computime: END seen\n"));
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    case '\n':
+        parseprintf(DD_PARSE, ("inp_computime: END seen\n"));
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
 
-	default:
-		return parse_addchar(parseio, ch);
-	}
+    default:
+        return parse_addchar(parseio, ch);
+    }
 }
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_COMPUTIME) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_COMPUTIME) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_COMPUTIME) */
 

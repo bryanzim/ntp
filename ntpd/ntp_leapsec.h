@@ -11,6 +11,8 @@
 #ifndef NTP_LEAPSEC_H
 #define NTP_LEAPSEC_H
 
+#include "ntp_types.h"
+
 struct stat;
 
 
@@ -18,8 +20,8 @@ struct stat;
  * to the dumper resp. reader type, provided the auxiliary argument is a
  * valid FILE pointer in hat case.
  */
-typedef void (*leapsec_dumper)(void*, const char *fmt, ...);
-typedef int  (*leapsec_reader)(void*);
+typedef void (*leapsec_dumper)(void*, const char* fmt, ...);
+typedef int (*leapsec_reader)(void*);
 
 struct leap_table;
 typedef struct leap_table leap_table_t;
@@ -29,10 +31,10 @@ typedef struct leap_table leap_table_t;
  * the SHA1 hash and preprocessing as described in the NIST leapsecond
  * file.
  */
-#define LSVALID_GOODHASH	1	/* valid signature         */
-#define LSVALID_NOHASH		0	/* no signature in file    */
-#define LSVALID_BADHASH	       -1	/* signature mismatch      */
-#define LSVALID_BADFORMAT      -2	/* signature not parseable */
+#define LSVALID_GOODHASH 1   /* valid signature         */
+#define LSVALID_NOHASH 0     /* no signature in file    */
+#define LSVALID_BADHASH -1   /* signature mismatch      */
+#define LSVALID_BADFORMAT -2 /* signature not parseable */
 
 extern int leapsec_validate(leapsec_reader, void*);
 
@@ -59,15 +61,16 @@ extern int leapsec_validate(leapsec_reader, void*);
  * does not have any unwanted side effects.  You can query by giving a
  * negative value for the switch.
  */
-extern int/*BOOL*/ leapsec_electric(int/*BOOL*/ on);
+extern int /*BOOL*/ leapsec_electric(int /*BOOL*/ on);
 
 /* Query result for a leap era. This is the minimal stateless
  * information available for a time stamp in UTC.
  */
-struct leap_era {
-	vint64   ebase;	/* era base (UTC of start)		*/
-	vint64   ttime; /* era end (UTC of next leap second)	*/
-	int16_t  taiof;	/* offset to TAI in this era		*/
+struct leap_era
+{
+    vint64 ebase;  /* era base (UTC of start)		*/
+    vint64 ttime;  /* era end (UTC of next leap second)	*/
+    int16_t taiof; /* offset to TAI in this era		*/
 };
 typedef struct leap_era leap_era_t;
 
@@ -91,15 +94,16 @@ typedef struct leap_era leap_era_t;
  *	more useful than an absolute difference to the leap second.
  * 'dynamic' != 0 if entry was requested by clock/peer
  */
-struct leap_result {
-	vint64   ebase;
-	vint64   ttime;
-	uint32_t ddist;
-	int16_t  tai_offs;
-	int16_t  tai_diff;
-	int16_t  warped;
-	uint8_t  proximity;
-	uint8_t  dynamic;
+struct leap_result
+{
+    vint64 ebase;
+    vint64 ttime;
+    uint32_t ddist;
+    int16_t tai_offs;
+    int16_t tai_diff;
+    int16_t warped;
+    uint8_t proximity;
+    uint8_t dynamic;
 };
 typedef struct leap_result leap_result_t;
 
@@ -112,48 +116,50 @@ typedef struct leap_result leap_result_t;
  *    the *current* TAI offset, the *next* transition time and the
  *    expiration time of the table.
  */
-struct leap_signature {
-	uint32_t etime;	/* expiration time	*/
-	uint32_t ttime;	/* transition time	*/
-	int16_t  taiof;	/* total offset to TAI	*/
+struct leap_signature
+{
+    uint32_t etime; /* expiration time	*/
+    uint32_t ttime; /* transition time	*/
+    int16_t taiof;  /* total offset to TAI	*/
 };
 typedef struct leap_signature leap_signature_t;
 
 
 #ifdef LEAP_SMEAR
 
-struct leap_smear_info {
-	int enabled;        /* not 0 if smearing is generally enabled */
-	int in_progress;    /* not 0 if smearing is in progress, i.e. the offset has been computed */
-	int leap_occurred;  /* not 0 if the leap second has already occurred, i.e., during the leap second */
-	double doffset;     /* the current smear offset as double */
-	l_fp offset;        /* the current smear offset */
-	uint32_t t_offset;  /* the current time for which a smear offset has been computed */
-	long interval;      /* smear interval, in [s], should be at least some hours */
-	double intv_start;  /* start time of the smear interval */
-	double intv_end;    /* end time of the smear interval */
+struct leap_smear_info
+{
+    int enabled;       /* not 0 if smearing is generally enabled */
+    int in_progress;   /* not 0 if smearing is in progress, i.e. the offset has been computed */
+    int leap_occurred; /* not 0 if the leap second has already occurred, i.e., during the leap second */
+    double doffset;    /* the current smear offset as double */
+    l_fp offset;       /* the current smear offset */
+    uint32_t t_offset; /* the current time for which a smear offset has been computed */
+    long interval;     /* smear interval, in [s], should be at least some hours */
+    double intv_start; /* start time of the smear interval */
+    double intv_end;   /* end time of the smear interval */
 };
 typedef struct leap_smear_info leap_smear_info_t;
 
-#endif  /* LEAP_SMEAR */
+#endif /* LEAP_SMEAR */
 
 
-#define LSPROX_NOWARN	0	/* clear radar screen         */
-#define LSPROX_SCHEDULE	1	/* less than 1 month to target*/
-#define LSPROX_ANNOUNCE	2	/* less than 1 day to target  */
-#define LSPROX_ALERT	3	/* less than 10 sec to target */
+#define LSPROX_NOWARN 0   /* clear radar screen         */
+#define LSPROX_SCHEDULE 1 /* less than 1 month to target*/
+#define LSPROX_ANNOUNCE 2 /* less than 1 day to target  */
+#define LSPROX_ALERT 3    /* less than 10 sec to target */
 
 /* Get the current or alternate table pointer. Getting the alternate
  * pointer will automatically copy the primary table, so it can be
  * subsequently modified.
  */
-extern leap_table_t *leapsec_get_table(int alternate);
+extern leap_table_t* leapsec_get_table(int alternate);
 
 /* Set the current leap table. Accepts only return values from
  * 'leapsec_get_table()', so it's hard to do something wrong. Returns
  * TRUE if the current table is the requested one.
  */
-extern int/*BOOL*/ leapsec_set_table(leap_table_t *);
+extern int /*BOOL*/ leapsec_set_table(leap_table_t*);
 
 /* Clear all leap second data. Use it for init & cleanup */
 extern void leapsec_clear(leap_table_t*);
@@ -162,19 +168,19 @@ extern void leapsec_clear(leap_table_t*);
  * register with their TAI offset) leap entries before the build date.
  * Update the leap signature data on the fly.
  */
-extern int/*BOOL*/ leapsec_load(leap_table_t*, leapsec_reader,
-				void*, int blimit);
+extern int /*BOOL*/ leapsec_load(leap_table_t*, leapsec_reader,
+                                 void*, int blimit);
 
 /* Dump the current leap table in readable format, using the provided
  * dump formatter function.
  */
-extern void leapsec_dump(const leap_table_t*, leapsec_dumper func, void *farg);
+extern void leapsec_dump(const leap_table_t*, leapsec_dumper func, void* farg);
 
 /* Read a leap second file from stream. This is a convenience wrapper
  * around the generic load function, 'leapsec_load()'.
  */
-extern int/*BOOL*/ leapsec_load_stream(FILE * fp, const char * fname,
-				       int/*BOOL*/logall, int/*BOOL*/vhash);
+extern int /*BOOL*/ leapsec_load_stream(FILE* fp, const char* fname,
+                                        int /*BOOL*/ logall, int /*BOOL*/ vhash);
 
 /* Read a leap second file from file. It checks that the file exists and
  * (if 'force' is not applied) the ctime/mtime has changed since the
@@ -183,26 +189,26 @@ extern int/*BOOL*/ leapsec_load_stream(FILE * fp, const char * fname,
  * '*sb' for the next cycle. Returns TRUE on successful load, FALSE
  * otherwise. Uses 'leapsec_load_stream()' internally.
  */
-extern int/*BOOL*/ leapsec_load_file(const char * fname, struct stat * sb,
-				     int/*BOOL*/force, int/*BOOL*/logall,
-				     int/*BOOL*/vhash);
+extern int /*BOOL*/ leapsec_load_file(const char* fname, struct stat* sb,
+                                      int /*BOOL*/ force, int /*BOOL*/ logall,
+                                      int /*BOOL*/ vhash);
 
 /* Get the current leap data signature. This consists of the last
  * ransition, the table expiration, and the total TAI difference at the
  * last transition. This is valid even if the leap transition itself was
  * culled due to the build date limit.
  */
-extern void        leapsec_getsig(leap_signature_t * psig);
+extern void leapsec_getsig(leap_signature_t* psig);
 
 /* Check if the leap table is expired at the given time.
  */
-extern int/*BOOL*/ leapsec_expired(uint32_t when, const time_t * pivot);
+extern int /*BOOL*/ leapsec_expired(uint32_t when, const time_t* pivot);
 
 /* Get the distance to expiration in days.
  * Returns negative values if expired, zero if there are less than 24hrs
  * left, and positive numbers otherwise.
  */
-extern int32_t leapsec_daystolive(uint32_t when, const time_t * pivot);
+extern int32_t leapsec_daystolive(uint32_t when, const time_t* pivot);
 
 /* Reset the current leap frame, so the next query will do proper table
  * lookup from fresh. Suppresses a possible leap era transition detection
@@ -232,8 +238,8 @@ extern int/*BOOL*/ leapsec_add_fix(int offset, uint32_t ttime, uint32_t etime,
  * 'ntp_now' is subject to era unfolding. The entry is marked
  * dynamic. The leap signature is NOT updated.
  */
-extern int/*BOOL*/ leapsec_add_dyn(int/*BOOL*/ insert, uint32_t ntp_now,
-				   const time_t * pivot);
+extern int /*BOOL*/ leapsec_add_dyn(int /*BOOL*/ insert, uint32_t ntp_now,
+                                    const time_t* pivot);
 
 /* Take a time stamp and get the associated leap information. The time
  * stamp is subject to era unfolding around the pivot or the current
@@ -242,14 +248,14 @@ extern int/*BOOL*/ leapsec_add_dyn(int/*BOOL*/ insert, uint32_t ntp_now,
  * last and the current query. In that case, qr->warped contains the
  * required clock stepping, which is always zero in electric mode.
  */
-extern int/*BOOL*/ leapsec_query(leap_result_t * qr, uint32_t ntpts,
-				 const time_t * pivot);
+extern int /*BOOL*/ leapsec_query(leap_result_t* qr, uint32_t ntpts,
+                                  const time_t* pivot);
 
 /* For a given time stamp, fetch the data for the bracketing leap
  * era. The time stamp is subject to NTP era unfolding.
  */
-extern int/*BOOL*/ leapsec_query_era(leap_era_t * qr, uint32_t ntpts,
-				     const time_t * pivot);
+extern int /*BOOL*/ leapsec_query_era(leap_era_t* qr, uint32_t ntpts,
+                                      const time_t* pivot);
 
 /* Get the current leap frame info. Returns TRUE if the result contains
  * useable data, FALSE if there is currently no leap second frame.
@@ -261,15 +267,15 @@ extern int/*BOOL*/ leapsec_query_era(leap_era_t * qr, uint32_t ntpts,
  *  qr->tai_diff;
  *  qr->dynamic;
  */
-extern int/*BOOL*/ leapsec_frame(leap_result_t *qr);
+extern int /*BOOL*/ leapsec_frame(leap_result_t* qr);
 
 
 /* Process a AUTOKEY TAI offset information. This *might* augment the
  * current leap data table with the given TAI offset.
  * Returns TRUE if action was taken, FALSE otherwise.
  */
-extern int/*BOOL*/ leapsec_autokey_tai(int tai_offset, uint32_t ntpnow,
-				       const time_t * pivot);
+extern int /*BOOL*/ leapsec_autokey_tai(int tai_offset, uint32_t ntpnow,
+                                        const time_t* pivot);
 
 /* reset global state for unit tests */
 extern void leapsec_ut_pristine(void);

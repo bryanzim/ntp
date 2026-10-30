@@ -21,7 +21,7 @@ extern double dbl_from_var_long(long lval, int status);
 /* convert a 'long' time value in usec into seconds, expressed as
  * 'double'.  This function is there for pure symmetry right now -- it
  * just casts and scales without any additional bells and whistles.
- */ 
+ */
 extern double dbl_from_usec_long(long lval);
 
 /* If MOD_NANO is defined, set the MOD_NANO bit in '*modes' and
@@ -31,7 +31,7 @@ extern double dbl_from_usec_long(long lval);
  * Applies proper bounds checks and saturation on LONG_MAX/LONG_MIN to
  * avoid undefined behaviour.
  */
-extern long var_long_from_dbl(double dval, unsigned int *modes);
+extern long var_long_from_dbl(double dval, unsigned int* modes);
 
 /* convert a 'double' time value (in seconds) into usec with proper
  * bounds check and range clamp.

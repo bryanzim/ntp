@@ -2,13 +2,14 @@
  * caltontp - convert a date to an NTP time
  */
 #include <config.h>
-#include <sys/types.h>
 
-#include "ntp_types.h"
+#include "ntp_assert.h"
 #include "ntp_calendar.h"
 #include "ntp_stdlib.h"
-#include "ntp_assert.h"
+#include "ntp_types.h"
 #include "ntp_unixtime.h"
+
+#include <sys/types.h>
 
 /*
  * Juergen Perlinger, 2008-11-12
@@ -34,39 +35,34 @@
 
 uint32_t
 caltontp(
-	const struct calendar *jt
-	)
+    const struct calendar* jt)
 {
-	int32_t eraday;	/* CE Rata Die number	*/
-	vint64  ntptime;/* resulting NTP time	*/
+    int32_t eraday; /* CE Rata Die number	*/
+    vint64 ntptime; /* resulting NTP time	*/
 
-	if (NULL == jt) {
-		errno = EINVAL;
-		return 0;
-	}
+    if (NULL == jt)
+    {
+        errno = EINVAL;
+        return 0;
+    }
 
-	if (   (jt->month > 13)	/* permit month 0..13! */
-	    || (jt->monthday > 32)
-	    || (jt->yearday > 366)
-	    || (jt->hour > 24)
-	    || (jt->minute > MINSPERHR)
-	    || (jt->second > SECSPERMIN))
-		errno = ERANGE;
+    if ((jt->month > 13) /* permit month 0..13! */
+        || (jt->monthday > 32) || (jt->yearday > 366) || (jt->hour > 24) || (jt->minute > MINSPERHR) || (jt->second > SECSPERMIN))
+        errno = ERANGE;
 
-	/*
-	 * First convert the date to he corresponding RataDie
-	 * number. If yearday is not zero, assume that it contains a
-	 * useable value and avoid all calculations involving month
-	 * and day-of-month. Do a full evaluation otherwise.
-	 */
-	if (jt->yearday)
-		eraday = ntpcal_year_to_ystart(jt->year)
-		       + jt->yearday - 1;
-	else
-		eraday = ntpcal_date_to_rd(jt);
+    /*
+     * First convert the date to he corresponding RataDie
+     * number. If yearday is not zero, assume that it contains a
+     * useable value and avoid all calculations involving month
+     * and day-of-month. Do a full evaluation otherwise.
+     */
+    if (jt->yearday)
+        eraday = ntpcal_year_to_ystart(jt->year) + jt->yearday - 1;
+    else
+        eraday = ntpcal_date_to_rd(jt);
 
-	ntptime = ntpcal_dayjoin(eraday - DAY_NTP_STARTS,
-				 ntpcal_etime_to_seconds(jt->hour, jt->minute,
-							 jt->second));
-	return ntptime.d_s.lo;
+    ntptime = ntpcal_dayjoin(eraday - DAY_NTP_STARTS,
+                             ntpcal_etime_to_seconds(jt->hour, jt->minute,
+                                                     jt->second));
+    return ntptime.d_s.lo;
 }

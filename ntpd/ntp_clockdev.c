@@ -10,19 +10,20 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #ifdef HAVE_NETINFO
-# include <netinfo/ni.h>
+#include <netinfo/ni.h>
 #endif
 
-#include <stdio.h>
+#include "ntp.h"
+#include "ntp_clockdev.h"
+#include "ntpd.h"
+
 #include <isc/net.h>
 
-#include "ntp.h"
-#include "ntpd.h"
-#include "ntp_clockdev.h"
+#include <stdio.h>
 
 /* In the windows port 'refclock_open' is in 'libntp' (windows specific
  * 'termios.c' source) and calling a function located in NTPD from the
@@ -32,136 +33,138 @@
  * redirections...
  */
 #ifdef SYS_WINNT
-extern const char * (*termios_device_lookup_func)(const sockaddr_u*, int);
+extern const char* (*termios_device_lookup_func)(const sockaddr_u*, int);
 #endif
 
 /* What we remember for a device redirection */
 typedef struct DeviceInfoS DeviceInfoT;
-struct DeviceInfoS {
-	DeviceInfoT *next;	/* link to next record		*/
-	int	     ident;	/* type (byte1) and unit (byte0)*/
-	char	    *ttyName;	/* time data IO device		*/
-	char	    *ppsName;	/* PPS device			*/
+struct DeviceInfoS
+{
+    DeviceInfoT* next; /* link to next record		*/
+    int ident;         /* type (byte1) and unit (byte0)*/
+    char* ttyName;     /* time data IO device		*/
+    char* ppsName;     /* PPS device			*/
 };
 
 /* Our list of device redirections: */
-static DeviceInfoT * InfoList = NULL;
+static DeviceInfoT* InfoList = NULL;
 
 /* Free a single record: */
 static void freeDeviceInfo(
-	DeviceInfoT *item
-	)
+    DeviceInfoT* item)
 {
-	if (NULL != item) {
-		free(item->ttyName);
-		free(item->ppsName);
-		free(item);
-	}
+    if (NULL != item)
+    {
+        free(item->ttyName);
+        free(item->ppsName);
+        free(item);
+    }
 }
 
 /* Get clock ID from pseudo network address. Returns -1 on error. */
 static int
 getClockIdent(
-	const sockaddr_u *srcadr
-	)
+    const sockaddr_u* srcadr)
 {
-	int clkType, clkUnit;
+    int clkType, clkUnit;
 
-	/*
-	 * Check for valid address and running peer
-	 */
-	if (!ISREFCLOCKADR(srcadr))
-		return -1;
+    /*
+     * Check for valid address and running peer
+     */
+    if (!ISREFCLOCKADR(srcadr))
+        return -1;
 
-	clkType = REFCLOCKTYPE(srcadr);
-	clkUnit = REFCLOCKUNIT(srcadr);
-	return (clkType << 8) + clkUnit;
+    clkType = REFCLOCKTYPE(srcadr);
+    clkUnit = REFCLOCKUNIT(srcadr);
+    return (clkType << 8) + clkUnit;
 }
 
 /* Purge the complete redirection list. */
-void
-clockdev_clear(void)
+void clockdev_clear(void)
 {
-	DeviceInfoT * item;
-	while (NULL != (item = InfoList)) {
-		InfoList = item->next;
-		freeDeviceInfo(item);
-	}
+    DeviceInfoT* item;
+    while (NULL != (item = InfoList))
+    {
+        InfoList = item->next;
+        freeDeviceInfo(item);
+    }
 }
 
 /* Remove record(s) for a clock.
  * returns number of removed records (maybe zero) or -1 on error
  */
-int
-clockdev_remove(
-	const sockaddr_u *addr_sock
-	)
+int clockdev_remove(
+    const sockaddr_u* addr_sock)
 {
-	DeviceInfoT *item, **ppl;
-	int	     rcnt  = 0;
-	const int    ident = getClockIdent(addr_sock);
+    DeviceInfoT *item, **ppl;
+    int rcnt = 0;
+    const int ident = getClockIdent(addr_sock);
 
-	if (ident < 0)
-		return -1;
+    if (ident < 0)
+        return -1;
 
-	ppl = &InfoList;
-	while (NULL != (item = *ppl)) {
-		if (ident == item->ident) {
-			*ppl = item->next;
-			freeDeviceInfo(item);
-			++rcnt;
-		} else {
-			ppl = &item->next;
-		}
-	}
-	return rcnt;
+    ppl = &InfoList;
+    while (NULL != (item = *ppl))
+    {
+        if (ident == item->ident)
+        {
+            *ppl = item->next;
+            freeDeviceInfo(item);
+            ++rcnt;
+        }
+        else
+        {
+            ppl = &item->next;
+        }
+    }
+    return rcnt;
 }
 
 /* Update or create a redirection record for a clock instace */
 int /*error*/
 clockdev_update(
-	const sockaddr_u *addr_sock,
-	const char	 *ttyName,
-	const char	 *ppsName
-	)
+    const sockaddr_u* addr_sock,
+    const char* ttyName,
+    const char* ppsName)
 {
-	DeviceInfoT *item;
-	const int   ident = getClockIdent(addr_sock);
-	if (ident < 0)
-		return EINVAL;
+    DeviceInfoT* item;
+    const int ident = getClockIdent(addr_sock);
+    if (ident < 0)
+        return EINVAL;
 
-	/* make sure Windows can use device redirections, too: */
-#   ifdef SYS_WINNT
-	termios_device_lookup_func = clockdev_lookup;
-#   endif
+    /* make sure Windows can use device redirections, too: */
+#ifdef SYS_WINNT
+    termios_device_lookup_func = clockdev_lookup;
+#endif
 
-	/* try to update an existing record */
-	for (item = InfoList;  NULL != item;  item = item->next)
-		if (ident == item->ident) {
-			msyslog(LOG_INFO, "Update IO devices for %s: timedata='%s' ppsdata='%s'",
-				refnumtoa(addr_sock),
-				ttyName ? ttyName : "(null)",
-				ppsName ? ppsName : "(null)");
-			free(item->ttyName);
-			free(item->ppsName);
-			item->ttyName = ttyName ? estrdup(ttyName) : NULL;
-			item->ppsName = ppsName ? estrdup(ppsName) : NULL;
-			return 0;
-		}
+    /* try to update an existing record */
+    for (item = InfoList; NULL != item; item = item->next)
+        if (ident == item->ident)
+        {
+            msyslog(LOG_INFO, "Update IO devices for %s: timedata='%s' ppsdata='%s'",
+                    refnumtoa(addr_sock),
+                    ttyName ? ttyName : "(null)",
+                    ppsName ? ppsName : "(null)");
+            free(item->ttyName);
+            free(item->ppsName);
+            item->ttyName = ttyName ? estrdup(ttyName) : NULL;
+            item->ppsName = ppsName ? estrdup(ppsName) : NULL;
+            return 0;
+        }
 
-	/* seems we have to create a new entry... */
-	msyslog(LOG_INFO, "Add IO devices for %s: timedata='%s' ppsdata='%s'",
-		refnumtoa(addr_sock),
-		ttyName ? ttyName : "(null)",
-		ppsName ? ppsName : "(null)");
+    /* seems we have to create a new entry... */
+    msyslog(LOG_INFO, "Add IO devices for %s: timedata='%s' ppsdata='%s'",
+            refnumtoa(addr_sock),
+            ttyName ? ttyName : "(null)",
+            ppsName ? ppsName : "(null)");
 
-	item = emalloc(sizeof(*item));
-	item->next    = InfoList;
-	item->ident   = ident;
-	item->ttyName = ttyName ? estrdup(ttyName) : NULL;
-	item->ppsName = ppsName ? estrdup(ppsName) : NULL;
-	InfoList = item;
-	return 0;
+    item = emalloc(sizeof(*item));
+    item->next = InfoList;
+    item->ident = ident;
+    item->ttyName = ttyName ? estrdup(ttyName) : NULL;
+    item->ppsName = ppsName ? estrdup(ppsName) : NULL;
+    InfoList = item;
+    return 0;
 }
 
 /* Lookup a redirection for a clock instance. Returns either the name
@@ -169,19 +172,18 @@ clockdev_update(
  */
 const char*
 clockdev_lookup(
-	const sockaddr_u *addr_sock,
-	int		  getPPS
-	)
+    const sockaddr_u* addr_sock,
+    int getPPS)
 {
-	const DeviceInfoT *item;
-	const int	  ident = getClockIdent(addr_sock);
+    const DeviceInfoT* item;
+    const int ident = getClockIdent(addr_sock);
 
-	if (ident < 0)
-		return NULL;
+    if (ident < 0)
+        return NULL;
 
-	for (item = InfoList;  NULL != item;  item = item->next)
-		if (ident == item->ident)
-			return getPPS ? item->ppsName : item->ttyName;
+    for (item = InfoList; NULL != item; item = item->next)
+        if (ident == item->ident)
+            return getPPS ? item->ppsName : item->ttyName;
 
-	return NULL;
+    return NULL;
 }

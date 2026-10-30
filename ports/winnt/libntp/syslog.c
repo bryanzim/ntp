@@ -19,19 +19,20 @@
 
 #include <config.h>
 
-#include <stdio.h>
-#include <windows.h>
-#include <string.h>
-#include <stdlib.h>
-#include <syslog.h>
-
-#include <isc/strerror.h>
+#include "messages.h"
 #include "ntp_stdlib.h"
 
-#include "messages.h"
+#include <isc/strerror.h>
+#include <syslog.h>
+
+#include <windows.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 static HANDLE hAppLog = NULL;
-static FILE *log_stream;
+static FILE* log_stream;
 static int debug_level = 0;
 static char progname[51] = "NTP";
 static int logmask = 0;
@@ -39,48 +40,50 @@ static int logmask = 0;
 /*
  * Log to the NT Event Log
  */
-void
-syslog(int level, const char *fmt, ...) {
-	va_list ap;
-	char buf[1024];
-	char *str[1];
+void syslog(int level, const char* fmt, ...)
+{
+    va_list ap;
+    char buf[1024];
+    char* str[1];
 
-	str[0U] = buf;
+    str[0U] = buf;
 
-	va_start(ap, fmt);
-	vsnprintf(buf, sizeof(buf), fmt, ap);
-	va_end(ap);
+    va_start(ap, fmt);
+    vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
 
-	/* Make sure that the channel is open to write the event */
-	if (hAppLog == NULL) {
-		openlog(progname, LOG_PID);
-	}
-	switch (level) {
-		case LOG_INFO:
-		case LOG_NOTICE:
-		case LOG_DEBUG:
-			ReportEvent(hAppLog, EVENTLOG_INFORMATION_TYPE, 0,
-				    NTP_INFO, NULL, 1, 0, (LPCSTR *)str, NULL);
-			break;
-		case LOG_WARNING:
-			ReportEvent(hAppLog, EVENTLOG_WARNING_TYPE, 0,
-				    NTP_WARNING, NULL, 1, 0, (LPCSTR *)str, NULL);
-			break;
-		default:
-			ReportEvent(hAppLog, EVENTLOG_ERROR_TYPE, 0,
-				    NTP_ERROR, NULL, 1, 0, (LPCSTR *)str, NULL);
-			break;
-		}
+    /* Make sure that the channel is open to write the event */
+    if (hAppLog == NULL)
+    {
+        openlog(progname, LOG_PID);
+    }
+    switch (level)
+    {
+    case LOG_INFO:
+    case LOG_NOTICE:
+    case LOG_DEBUG:
+        ReportEvent(hAppLog, EVENTLOG_INFORMATION_TYPE, 0,
+                    NTP_INFO, NULL, 1, 0, (LPCSTR*)str, NULL);
+        break;
+    case LOG_WARNING:
+        ReportEvent(hAppLog, EVENTLOG_WARNING_TYPE, 0,
+                    NTP_WARNING, NULL, 1, 0, (LPCSTR*)str, NULL);
+        break;
+    default:
+        ReportEvent(hAppLog, EVENTLOG_ERROR_TYPE, 0,
+                    NTP_ERROR, NULL, 1, 0, (LPCSTR*)str, NULL);
+        break;
+    }
 }
 
 /*
  * Initialize event logging
  */
-void
-openlog(const char *name, int flags, ...) {
-	/* Get a handle to the Application event log */
-	hAppLog = RegisterEventSource(NULL, progname);
-	strlcpy(progname, name, sizeof(progname));
+void openlog(const char* name, int flags, ...)
+{
+    /* Get a handle to the Application event log */
+    hAppLog = RegisterEventSource(NULL, progname);
+    strlcpy(progname, name, sizeof(progname));
 }
 
 /*
@@ -88,38 +91,38 @@ openlog(const char *name, int flags, ...) {
  * We don't care whether or not we succeeded so ignore return values
  * In fact if we failed then we would have nowhere to put the message
  */
-void
-closelog() {
-	DeregisterEventSource(hAppLog);
+void closelog()
+{
+    DeregisterEventSource(hAppLog);
 }
 
 /*
  * Keep event logging synced with the current debug level
  */
-void
-ModifyLogLevel(int level) {
-	debug_level = level;	
+void ModifyLogLevel(int level)
+{
+    debug_level = level;
 }
 /*
  * Set the log priority mask to the given value.
  * Return the previous priority mask
  * Note that this setting is ignored in Win32
  */
-int
-setlogmask(int maskpri) {
-	int temp = logmask;
-	logmask = maskpri;
-	return (temp);
+int setlogmask(int maskpri)
+{
+    int temp = logmask;
+    logmask = maskpri;
+    return (temp);
 }
 
 /*
  * Initialize logging for the port section of libbind.
  * Piggyback onto stream given.
  */
-void
-InitNTLogging(FILE *stream, int debug) {
-	log_stream = stream;
-	ModifyLogLevel(debug);
+void InitNTLogging(FILE* stream, int debug)
+{
+    log_stream = stream;
+    ModifyLogLevel(debug);
 }
 /*
  * This function is for reporting errors to the application
@@ -127,19 +130,19 @@ InitNTLogging(FILE *stream, int debug) {
  * mainly during startup. It should not be used under normal
  * circumstances.
  */
-void
-NTReportError(const char *name, const char *str) {
-	HANDLE hNTAppLog = NULL;
-	const char *buf[1];
+void NTReportError(const char* name, const char* str)
+{
+    HANDLE hNTAppLog = NULL;
+    const char* buf[1];
 
-	buf[0U] = str;
+    buf[0U] = str;
 
-	hNTAppLog = RegisterEventSource(NULL, name);
+    hNTAppLog = RegisterEventSource(NULL, name);
 
-	ReportEvent(hNTAppLog, EVENTLOG_ERROR_TYPE, 0,
-		    NTP_ERROR, NULL, 1, 0, buf, NULL);
+    ReportEvent(hNTAppLog, EVENTLOG_ERROR_TYPE, 0,
+                NTP_ERROR, NULL, 1, 0, buf, NULL);
 
-	DeregisterEventSource(hNTAppLog);
+    DeregisterEventSource(hNTAppLog);
 }
 
 
@@ -149,15 +152,13 @@ NTReportError(const char *name, const char *str) {
  *		    C runtime error messages.
  */
 
-char *
-ntp_strerror(
-	int code
-	)
+char* ntp_strerror(
+    int code)
 {
-	char *	buf;
+    char* buf;
 
-	LIB_GETBUF(buf);
-	isc__strerror(code, buf, LIB_BUFLENGTH);
+    LIB_GETBUF(buf);
+    isc__strerror(code, buf, LIB_BUFLENGTH);
 
-	return buf;
+    return buf;
 }

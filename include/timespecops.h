@@ -38,12 +38,13 @@
 #ifndef TIMESPECOPS_H
 #define TIMESPECOPS_H
 
-#include <sys/types.h>
-#include <stdio.h>
-#include <math.h>
-
 #include "ntp.h"
 #include "timetoa.h"
+
+#include <sys/types.h>
+
+#include <math.h>
+#include <stdio.h>
 
 
 /* nanoseconds per second */
@@ -51,10 +52,10 @@
 
 /* predicate: returns TRUE if the nanoseconds are in nominal range */
 #define timespec_isnormal(x) \
-	((x)->tv_nsec >= 0 && (x)->tv_nsec < NANOSECONDS)
+    ((x)->tv_nsec >= 0 && (x)->tv_nsec < NANOSECONDS)
 
 /* predicate: returns TRUE if the nanoseconds are out-of-bounds */
-#define timespec_isdenormal(x)	(!timespec_isnormal(x))
+#define timespec_isdenormal(x) (!timespec_isnormal(x))
 
 
 
@@ -65,77 +66,72 @@ extern struct timespec normalize_tspec(struct timespec x);
 /* x = a + b */
 static inline struct timespec
 add_tspec(
-	struct timespec	a,
-	struct timespec	b
-	)
+    struct timespec a,
+    struct timespec b)
 {
-	struct timespec	x;
+    struct timespec x;
 
-	x = a;
-	x.tv_sec += b.tv_sec;
-	x.tv_nsec += b.tv_nsec;
+    x = a;
+    x.tv_sec += b.tv_sec;
+    x.tv_nsec += b.tv_nsec;
 
-	return normalize_tspec(x);
+    return normalize_tspec(x);
 }
 
 /* x = a + b, b is fraction only */
 static inline struct timespec
 add_tspec_ns(
-	struct timespec	a,
-	long		b
-	)
+    struct timespec a,
+    long b)
 {
-	struct timespec x;
+    struct timespec x;
 
-	x = a;
-	x.tv_nsec += b;
+    x = a;
+    x.tv_nsec += b;
 
-	return normalize_tspec(x);
+    return normalize_tspec(x);
 }
 
 /* x = a - b */
 static inline struct timespec
 sub_tspec(
-	struct timespec	a,
-	struct timespec	b
-	)
-{	
-	struct timespec x;
+    struct timespec a,
+    struct timespec b)
+{
+    struct timespec x;
 
-	x = a;
-	x.tv_sec -= b.tv_sec;
-	x.tv_nsec -= b.tv_nsec;
+    x = a;
+    x.tv_sec -= b.tv_sec;
+    x.tv_nsec -= b.tv_nsec;
 
-	return normalize_tspec(x);
+    return normalize_tspec(x);
 }
 
 /* x = a - b, b is fraction only */
 static inline struct timespec
 sub_tspec_ns(
-	struct timespec	a,
-	long		b
-	)
+    struct timespec a,
+    long b)
 {
-	struct timespec	x;
+    struct timespec x;
 
-	x = a;
-	x.tv_nsec -= b;
+    x = a;
+    x.tv_nsec -= b;
 
-	return normalize_tspec(x);
+    return normalize_tspec(x);
 }
 
 /* x = -a */
 static inline struct timespec
 neg_tspec(
-	struct timespec	a
-	)
-{	
-	struct timespec	x;
+    struct timespec a)
+{
+    struct timespec x;
 
-	x.tv_sec = -a.tv_sec;
-	x.tv_nsec = -a.tv_nsec;
+    x.tv_sec = -a.tv_sec;
+    x.tv_nsec = -a.tv_nsec;
 
-	return normalize_tspec(x);
+    return normalize_tspec(x);
 }
 
 /* x = abs(a) */
@@ -145,7 +141,7 @@ struct timespec abs_tspec(struct timespec a);
  * compare previously-normalised a and b
  * return 1 / 0 / -1 if a < / == / > b
  */
-extern int cmp_tspec(struct timespec a,	struct timespec b);
+extern int cmp_tspec(struct timespec a, struct timespec b);
 
 /*
  * compare possibly-denormal a and b
@@ -153,11 +149,10 @@ extern int cmp_tspec(struct timespec a,	struct timespec b);
  */
 static inline int
 cmp_tspec_denorm(
-	struct timespec	a,
-	struct timespec	b
-	)
+    struct timespec a,
+    struct timespec b)
 {
-	return cmp_tspec(normalize_tspec(a), normalize_tspec(b));
+    return cmp_tspec(normalize_tspec(a), normalize_tspec(b));
 }
 
 /*
@@ -172,19 +167,17 @@ extern int test_tspec(struct timespec a);
  */
 static inline int
 test_tspec_denorm(
-	struct timespec	a
-	)
+    struct timespec a)
 {
-	return test_tspec(normalize_tspec(a));
+    return test_tspec(normalize_tspec(a));
 }
 
 /* return LIB buffer ptr to string rep */
-static inline const char *
+static inline const char*
 tspectoa(
-	struct timespec	x
-	)
+    struct timespec x)
 {
-	return format_time_fraction(x.tv_sec, x.tv_nsec, 9);
+    return format_time_fraction(x.tv_sec, x.tv_nsec, 9);
 }
 
 /*
@@ -197,15 +190,14 @@ extern l_fp tspec_intv_to_lfp(struct timespec x);
 /* x must be UN*X epoch, output will be in NTP epoch */
 static inline l_fp
 tspec_stamp_to_lfp(
-	struct timespec	x
-	)
+    struct timespec x)
 {
-	l_fp		y;
+    l_fp y;
 
-	y = tspec_intv_to_lfp(x);
-	y.l_ui += JAN_1970;
+    y = tspec_intv_to_lfp(x);
+    y.l_ui += JAN_1970;
 
-	return y;
+    return y;
 }
 
 /* convert from l_fp type, relative signed/unsigned and absolute */
@@ -217,6 +209,6 @@ extern struct timespec lfp_uintv_to_tspec(l_fp x);
  * is in UN*X epoch. The NTP time stamp will be expanded around the
  * pivot time *p or the current time, if p is NULL.
  */
-extern struct timespec lfp_stamp_to_tspec(l_fp x, const time_t *pivot);
+extern struct timespec lfp_stamp_to_tspec(l_fp x, const time_t* pivot);
 
-#endif	/* TIMESPECOPS_H */
+#endif /* TIMESPECOPS_H */

@@ -12,27 +12,25 @@
 #include "timevalops.h"
 
 #ifndef SYS_WINNT
-int
-buftvtots(
-	const char *bufp,
-	l_fp *ts
-	)
+int buftvtots(
+    const char* bufp,
+    l_fp* ts)
 {
-	struct timeval tv;
+    struct timeval tv;
 
-	/*
-	 * copy to adhere to alignment restrictions
-	 */
-	memcpy(&tv, bufp, sizeof(tv));
+    /*
+     * copy to adhere to alignment restrictions
+     */
+    memcpy(&tv, bufp, sizeof(tv));
 
-	/*
-	 * and use it
-	 */
-	if (tv.tv_usec > MICROSECONDS - 1)
-		return FALSE;
+    /*
+     * and use it
+     */
+    if (tv.tv_usec > MICROSECONDS - 1)
+        return FALSE;
 
-	*ts = tval_stamp_to_lfp(tv);
+    *ts = tval_stamp_to_lfp(tv);
 
-	return TRUE;
+    return TRUE;
 }
-#endif	/* !SYS_WINNT */
+#endif /* !SYS_WINNT */

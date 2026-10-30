@@ -22,27 +22,25 @@
 static const char sccsid[] = "@(#)strerror.c	5.1 (Berkeley) 4/9/89";
 #endif /* LIBC_SCCS and not lint */
 
+#include "l_stdlib.h"
+
 #include <sys/types.h>
 
 #include <stdio.h>
 #include <string.h>
 
-#include "l_stdlib.h"
-
-char *
-strerror(
-	int errnum
-	)
+char* strerror(
+    int errnum)
 {
-	extern int sys_nerr;
-	extern char *sys_errlist[];
-	static char ebuf[20];
+    extern int sys_nerr;
+    extern char* sys_errlist[];
+    static char ebuf[20];
 
-	if ((unsigned int)errnum < sys_nerr)
-		return sys_errlist[errnum];
-	snprintf(ebuf, sizeof(ebuf), "Unknown error: %d", errnum);
+    if ((unsigned int)errnum < sys_nerr)
+        return sys_errlist[errnum];
+    snprintf(ebuf, sizeof(ebuf), "Unknown error: %d", errnum);
 
-	return ebuf;
+    return ebuf;
 }
 #else
 NONEMPTY_TRANSLATION_UNIT

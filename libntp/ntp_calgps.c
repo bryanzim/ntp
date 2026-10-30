@@ -10,37 +10,36 @@
  */
 
 #include <config.h>
-#include <sys/types.h>
 
-#include "ntp_types.h"
-#include "ntp_calendar.h"
 #include "ntp_calgps.h"
-#include "ntp_stdlib.h"
-#include "ntp_unixtime.h"
 
+#include "ntp_calendar.h"
 #include "ntp_fp.h"
+#include "ntp_stdlib.h"
+#include "ntp_types.h"
+#include "ntp_unixtime.h"
 #include "ntpd.h"
 #include "vint64ops.h"
+
+#include <sys/types.h>
 
 /* ====================================================================
  * misc. helpers -- might go elsewhere sometime?
  * ====================================================================
  */
 
-l_fp
-ntpfp_with_fudge(
-	l_fp	lfp,
-	double	ofs
-	)
+l_fp ntpfp_with_fudge(
+    l_fp lfp,
+    double ofs)
 {
-	l_fp	fpo;
-	/* calculate 'lfp - ofs' as '(l_fp)(-ofs) + lfp': negating a
-	 * double is cheap, as it only flips one bit...
-	 */
-	ofs = -ofs;
-	DTOLFP(ofs, &fpo);
-	L_ADD(&fpo, &lfp);
-	return fpo;
+    l_fp fpo;
+    /* calculate 'lfp - ofs' as '(l_fp)(-ofs) + lfp': negating a
+     * double is cheap, as it only flips one bit...
+     */
+    ofs = -ofs;
+    DTOLFP(ofs, &fpo);
+    L_ADD(&fpo, &lfp);
+    return fpo;
 }
 
 
@@ -58,38 +57,42 @@ ntpfp_with_fudge(
  */
 static void
 _norm_ntp_datum(
-	TNtpDatum *	datum
-	)
+    TNtpDatum* datum)
 {
-	static const int32_t limit = SECSPERDAY;
+    static const int32_t limit = SECSPERDAY;
 
-	if (datum->secs >= limit) {
-		do
-			++datum->days;
-		while ((datum->secs -= limit) >= limit);
-	} else if (datum->secs < 0) {
-		do
-			--datum->days;
-		while ((datum->secs += limit) < 0);
-	}
+    if (datum->secs >= limit)
+    {
+        do
+            ++datum->days;
+        while ((datum->secs -= limit) >= limit);
+    }
+    else if (datum->secs < 0)
+    {
+        do
+            --datum->days;
+        while ((datum->secs += limit) < 0);
+    }
 }
 
 static void
 _norm_gps_datum(
-	TGpsDatum *	datum
-	)
+    TGpsDatum* datum)
 {
-	static const int32_t limit = 7 * SECSPERDAY;
+    static const int32_t limit = 7 * SECSPERDAY;
 
-	if (datum->wsecs >= limit) {
-		do
-			++datum->weeks;
-		while ((datum->wsecs -= limit) >= limit);
-	} else if (datum->wsecs < 0) {
-		do
-			--datum->weeks;
-		while ((datum->wsecs += limit) < 0);
-	}
+    if (datum->wsecs >= limit)
+    {
+        do
+            ++datum->weeks;
+        while ((datum->wsecs -= limit) >= limit);
+    }
+    else if (datum->wsecs < 0)
+    {
+        do
+            --datum->weeks;
+        while ((datum->wsecs += limit) < 0);
+    }
 }
 
 /* --------------------------------------------------------------------
@@ -99,41 +102,37 @@ _norm_gps_datum(
  * (either a day or a week).
  * --------------------------------------------------------------------
  */
-void
-gpsntp_add_offset(
-	TNtpDatum *	datum,
-	l_fp		offset
-	)
+void gpsntp_add_offset(
+    TNtpDatum* datum,
+    l_fp offset)
 {
-	/* fraction can be added easily */
-	datum->frac += offset.l_uf;
-	datum->secs += (datum->frac < offset.l_uf);
+    /* fraction can be added easily */
+    datum->frac += offset.l_uf;
+    datum->secs += (datum->frac < offset.l_uf);
 
-	/* avoid integer overflow on the seconds */
-	if (offset.l_ui >= INT32_MAX)
-		datum->secs -= (int32_t)~offset.l_ui + 1;
-	else
-		datum->secs += (int32_t)offset.l_ui;
-	_norm_ntp_datum(datum);
+    /* avoid integer overflow on the seconds */
+    if (offset.l_ui >= INT32_MAX)
+        datum->secs -= (int32_t)~offset.l_ui + 1;
+    else
+        datum->secs += (int32_t)offset.l_ui;
+    _norm_ntp_datum(datum);
 }
 
-void
-gpscal_add_offset(
-	TGpsDatum *	datum,
-	l_fp		offset
-	)
+void gpscal_add_offset(
+    TGpsDatum* datum,
+    l_fp offset)
 {
-	/* fraction can be added easily */
-	datum->frac  += offset.l_uf;
-	datum->wsecs += (datum->frac < offset.l_uf);
+    /* fraction can be added easily */
+    datum->frac += offset.l_uf;
+    datum->wsecs += (datum->frac < offset.l_uf);
 
 
-	/* avoid integer overflow on the seconds */
-	if (offset.l_ui >= INT32_MAX)
-		datum->wsecs -= (int32_t)~offset.l_ui + 1;
-	else
-		datum->wsecs += (int32_t)offset.l_ui;
-	_norm_gps_datum(datum);
+    /* avoid integer overflow on the seconds */
+    if (offset.l_ui >= INT32_MAX)
+        datum->wsecs -= (int32_t)~offset.l_ui + 1;
+    else
+        datum->wsecs += (int32_t)offset.l_ui;
+    _norm_gps_datum(datum);
 }
 
 /* -------------------------------------------------------------------
@@ -143,76 +142,75 @@ gpscal_add_offset(
 
 static TNtpDatum
 _gpsntp_fix_gps_era(
-	TcNtpDatum * in
-	)
+    TcNtpDatum* in)
 {
-	/* force result in basedate era
-	 *
-	 * When calculating this directly in days, we have to execute a
-	 * real modulus calculation, since we're obviously not doing a
-	 * modulus by a power of 2. Executing this as true floor mod
-	 * needs some care and is done under explicit usage of one's
-	 * complement and masking to get mostly branchless code.
-	 */
-	static uint32_t const	clen = 7*1024;
+    /* force result in basedate era
+     *
+     * When calculating this directly in days, we have to execute a
+     * real modulus calculation, since we're obviously not doing a
+     * modulus by a power of 2. Executing this as true floor mod
+     * needs some care and is done under explicit usage of one's
+     * complement and masking to get mostly branchless code.
+     */
+    static uint32_t const clen = 7 * 1024;
 
-	uint32_t	base, days, sign;
-	TNtpDatum	out = *in;
+    uint32_t base, days, sign;
+    TNtpDatum out = *in;
 
-	/* Get base in NTP day scale. No overflows here. */
-	base = (basedate_get_gpsweek() + GPSNTP_WSHIFT) * 7
-	     - GPSNTP_DSHIFT;
-	days = out.days;
+    /* Get base in NTP day scale. No overflows here. */
+    base = (basedate_get_gpsweek() + GPSNTP_WSHIFT) * 7 - GPSNTP_DSHIFT;
+    days = out.days;
 
-	sign = (uint32_t)-(days < base);
-	days = sign ^ (days - base);
-	days %= clen;
-	days = base + (sign & clen) + (sign ^ days);
+    sign = (uint32_t)-(days < base);
+    days = sign ^ (days - base);
+    days %= clen;
+    days = base + (sign & clen) + (sign ^ days);
 
-	out.days = days;
-	return out;
+    out.days = days;
+    return out;
 }
 
 TNtpDatum
 gpsntp_fix_gps_era(
-	TcNtpDatum * in
-	)
+    TcNtpDatum* in)
 {
-	TNtpDatum out = *in;
-	_norm_ntp_datum(&out);
-	return _gpsntp_fix_gps_era(&out);
+    TNtpDatum out = *in;
+    _norm_ntp_datum(&out);
+    return _gpsntp_fix_gps_era(&out);
 }
 
 /* ----------------------------------------------------------------- */
 static TNtpDatum
 _gpsntp_from_daytime(
-	TcCivilDate *	jd,
-	l_fp		fofs,
-	TcNtpDatum *	pivot,
-	int		warp
-	)
+    TcCivilDate* jd,
+    l_fp fofs,
+    TcNtpDatum* pivot,
+    int warp)
 {
-	static const int32_t shift = SECSPERDAY / 2;
+    static const int32_t shift = SECSPERDAY / 2;
 
-	TNtpDatum	retv;
+    TNtpDatum retv;
 
-	/* set result based on pivot -- ops order is important here */
-	ZERO(retv);
-	retv.secs = ntpcal_date_to_daysec(jd);
-	gpsntp_add_offset(&retv, fofs);	/* result is normalized */
-	retv.days = pivot->days;
+    /* set result based on pivot -- ops order is important here */
+    ZERO(retv);
+    retv.secs = ntpcal_date_to_daysec(jd);
+    gpsntp_add_offset(&retv, fofs); /* result is normalized */
+    retv.days = pivot->days;
 
-	/* Manual periodic extension without division: */
-	if (pivot->secs < shift) {
-		int32_t lim = pivot->secs + shift;
-		retv.days -= (retv.secs > lim ||
-			      (retv.secs == lim && retv.frac >= pivot->frac));
-	} else {
-		int32_t lim = pivot->secs - shift;
-		retv.days += (retv.secs < lim ||
-			      (retv.secs == lim && retv.frac < pivot->frac));
-	}
-	return warp ? _gpsntp_fix_gps_era(&retv) : retv;
+    /* Manual periodic extension without division: */
+    if (pivot->secs < shift)
+    {
+        int32_t lim = pivot->secs + shift;
+        retv.days -= (retv.secs > lim ||
+                      (retv.secs == lim && retv.frac >= pivot->frac));
+    }
+    else
+    {
+        int32_t lim = pivot->secs - shift;
+        retv.days += (retv.secs < lim ||
+                      (retv.secs == lim && retv.frac < pivot->frac));
+    }
+    return warp ? _gpsntp_fix_gps_era(&retv) : retv;
 }
 
 /* -----------------------------------------------------------------
@@ -223,15 +221,14 @@ _gpsntp_from_daytime(
  */
 TNtpDatum
 gpsntp_from_daytime2_ex(
-	TcCivilDate *	jd,
-	l_fp		fofs,
-	TcNtpDatum *	pivot,
-	int/*BOOL*/	warp
-	)
+    TcCivilDate* jd,
+    l_fp fofs,
+    TcNtpDatum* pivot,
+    int /*BOOL*/ warp)
 {
-	TNtpDatum	dpiv = *pivot;
-	_norm_ntp_datum(&dpiv);
-	return _gpsntp_from_daytime(jd, fofs, &dpiv, warp);
+    TNtpDatum dpiv = *pivot;
+    _norm_ntp_datum(&dpiv);
+    return _gpsntp_from_daytime(jd, fofs, &dpiv, warp);
 }
 
 /* -----------------------------------------------------------------
@@ -243,22 +240,21 @@ gpsntp_from_daytime2_ex(
  */
 TNtpDatum
 gpsntp_from_daytime1_ex(
-	TcCivilDate *	jd,
-	l_fp		fofs,
-	l_fp		pivot,
-	int/*BOOL*/	warp
-	)
+    TcCivilDate* jd,
+    l_fp fofs,
+    l_fp pivot,
+    int /*BOOL*/ warp)
 {
-	vint64		pvi64;
-	TNtpDatum	dpiv;
-	ntpcal_split	split;
+    vint64 pvi64;
+    TNtpDatum dpiv;
+    ntpcal_split split;
 
-	pvi64 = ntpcal_ntp_to_ntp(pivot.l_ui, NULL);
-	split = ntpcal_daysplit(&pvi64);
-	dpiv.days = split.hi;
-	dpiv.secs = split.lo;
-	dpiv.frac = pivot.l_uf;
-	return _gpsntp_from_daytime(jd, fofs, &dpiv, warp);
+    pvi64 = ntpcal_ntp_to_ntp(pivot.l_ui, NULL);
+    split = ntpcal_daysplit(&pvi64);
+    dpiv.days = split.hi;
+    dpiv.secs = split.lo;
+    dpiv.frac = pivot.l_uf;
+    return _gpsntp_from_daytime(jd, fofs, &dpiv, warp);
 }
 
 /* -----------------------------------------------------------------
@@ -267,30 +263,26 @@ gpsntp_from_daytime1_ex(
  */
 TNtpDatum
 gpsntp_from_calendar_ex(
-	TcCivilDate *	jd,
-	l_fp		fofs,
-	int/*BOOL*/	warp
-	)
+    TcCivilDate* jd,
+    l_fp fofs,
+    int /*BOOL*/ warp)
 {
-	TGpsDatum	gps;
-	gps = gpscal_from_calendar_ex(jd, fofs, warp);
-	return gpsntp_from_gpscal_ex(&gps, FALSE);
+    TGpsDatum gps;
+    gps = gpscal_from_calendar_ex(jd, fofs, warp);
+    return gpsntp_from_gpscal_ex(&gps, FALSE);
 }
 
 /* -----------------------------------------------------------------
  * create a civil calendar datum from a NTP date representation
  */
-void
-gpsntp_to_calendar(
-	TCivilDate * cd,
-	TcNtpDatum * nd
-	)
+void gpsntp_to_calendar(
+    TCivilDate* cd,
+    TcNtpDatum* nd)
 {
-	memset(cd, 0, sizeof(*cd));
-	ntpcal_rd_to_date(
-		cd,
-		nd->days + DAY_NTP_STARTS + ntpcal_daysec_to_date(
-			cd, nd->secs));
+    memset(cd, 0, sizeof(*cd));
+    ntpcal_rd_to_date(
+        cd,
+        nd->days + DAY_NTP_STARTS + ntpcal_daysec_to_date(cd, nd->secs));
 }
 
 /* -----------------------------------------------------------------
@@ -298,45 +290,42 @@ gpsntp_to_calendar(
  */
 TNtpDatum
 gpsntp_from_gpscal_ex(
-	TcGpsDatum *	gd,
-    	int/*BOOL*/	warp
-	)
+    TcGpsDatum* gd,
+    int /*BOOL*/ warp)
 {
-	TNtpDatum	retv;
-	vint64		ts64;
-	ntpcal_split	split;
-	TGpsDatum	date = *gd;
+    TNtpDatum retv;
+    vint64 ts64;
+    ntpcal_split split;
+    TGpsDatum date = *gd;
 
-	if (warp) {
-		uint32_t base = basedate_get_gpsweek() + GPSNTP_WSHIFT;
-		_norm_gps_datum(&date);
-		date.weeks = ((date.weeks - base) & 1023u) + base;
-	}
+    if (warp)
+    {
+        uint32_t base = basedate_get_gpsweek() + GPSNTP_WSHIFT;
+        _norm_gps_datum(&date);
+        date.weeks = ((date.weeks - base) & 1023u) + base;
+    }
 
-	ts64  = ntpcal_weekjoin(date.weeks, date.wsecs);
-	ts64  = subv64u32(&ts64, (GPSNTP_DSHIFT * SECSPERDAY));
-	split = ntpcal_daysplit(&ts64);
+    ts64 = ntpcal_weekjoin(date.weeks, date.wsecs);
+    ts64 = subv64u32(&ts64, (GPSNTP_DSHIFT * SECSPERDAY));
+    split = ntpcal_daysplit(&ts64);
 
-	retv.frac = gd->frac;
-	retv.secs = split.lo;
-	retv.days = split.hi;
-	return retv;
+    retv.frac = gd->frac;
+    retv.secs = split.lo;
+    retv.days = split.hi;
+    return retv;
 }
 
 /* -----------------------------------------------------------------
  * get LFP from ntp datum
  */
-l_fp
-ntpfp_from_ntpdatum(
-	TcNtpDatum *	nd
-	)
+l_fp ntpfp_from_ntpdatum(
+    TcNtpDatum* nd)
 {
-	l_fp retv;
+    l_fp retv;
 
-	retv.l_uf = nd->frac;
-	retv.l_ui = nd->days * (uint32_t)SECSPERDAY
-	          + nd->secs;
-	return retv;
+    retv.l_uf = nd->frac;
+    retv.l_ui = nd->days * (uint32_t)SECSPERDAY + nd->secs;
+    return retv;
 }
 
 /* -------------------------------------------------------------------
@@ -349,33 +338,31 @@ ntpfp_from_ntpdatum(
 
 static TGpsDatum
 _gpscal_fix_gps_era(
-	TcGpsDatum * in
-	)
+    TcGpsDatum* in)
 {
-	/* force result in basedate era
-	 *
-	 * This is based on calculating the modulus to a power of two,
-	 * so signed integer overflow does not affect the result. Which
-	 * in turn makes for a very compact calculation...
-	 */
-	uint32_t	base, week;
-	TGpsDatum	out = *in;
+    /* force result in basedate era
+     *
+     * This is based on calculating the modulus to a power of two,
+     * so signed integer overflow does not affect the result. Which
+     * in turn makes for a very compact calculation...
+     */
+    uint32_t base, week;
+    TGpsDatum out = *in;
 
-	week = out.weeks;
-	base = basedate_get_gpsweek() + GPSNTP_WSHIFT;
-	week = base + ((week - base) & (GPSWEEKS - 1));
-	out.weeks = week;
-	return out;
+    week = out.weeks;
+    base = basedate_get_gpsweek() + GPSNTP_WSHIFT;
+    week = base + ((week - base) & (GPSWEEKS - 1));
+    out.weeks = week;
+    return out;
 }
 
 TGpsDatum
 gpscal_fix_gps_era(
-	TcGpsDatum * in
-	)
+    TcGpsDatum* in)
 {
-	TGpsDatum out = *in;
-	_norm_gps_datum(&out);
-	return _gpscal_fix_gps_era(&out);
+    TGpsDatum out = *in;
+    _norm_gps_datum(&out);
+    return _gpscal_fix_gps_era(&out);
 }
 
 /* -----------------------------------------------------------------
@@ -396,96 +383,100 @@ gpscal_fix_gps_era(
  */
 TGpsDatum
 gpscal_from_calendar_ex(
-	TcCivilDate *	jd,
-	l_fp		fofs,
-	int/*BOOL*/	warp
-	)
+    TcCivilDate* jd,
+    l_fp fofs,
+    int /*BOOL*/ warp)
 {
-	/*  (-DAY_GPS_STARTS) (mod 7*1024) -- complement of cycle shift */
-	static const uint32_t s_compl_shift =
-	    (7 * 1024) - DAY_GPS_STARTS % (7 * 1024);
+    /*  (-DAY_GPS_STARTS) (mod 7*1024) -- complement of cycle shift */
+    static const uint32_t s_compl_shift =
+        (7 * 1024) - DAY_GPS_STARTS % (7 * 1024);
 
-	TGpsDatum	gps;
-	TCivilDate	cal;
-	int32_t		days, week;
+    TGpsDatum gps;
+    TCivilDate cal;
+    int32_t days, week;
 
-	/* if needed, convert from 2-digit year to full year
-	 * !!NOTE!! works only between 1980 and 2079!
-	 */
-	cal = *jd;
-	if (cal.year < 80)
-		cal.year += 2000;
-	else if (cal.year < 100)
-		cal.year += 1900;
+    /* if needed, convert from 2-digit year to full year
+     * !!NOTE!! works only between 1980 and 2079!
+     */
+    cal = *jd;
+    if (cal.year < 80)
+        cal.year += 2000;
+    else if (cal.year < 100)
+        cal.year += 1900;
 
-	/* get RDN from date, possibly adjusting the century */
-again:	if (cal.month && cal.monthday) {	/* use Y/M/D civil date */
-		days = ntpcal_date_to_rd(&cal);
-	} else {				/* using Y/DoY date */
-		days = ntpcal_year_to_ystart(cal.year)
-		     + (int32_t)cal.yearday
-		     - 1; /* both RDN and yearday start with '1'. */
-	}
+    /* get RDN from date, possibly adjusting the century */
+again:
+    if (cal.month && cal.monthday)
+    { /* use Y/M/D civil date */
+        days = ntpcal_date_to_rd(&cal);
+    }
+    else
+    {                                                                      /* using Y/DoY date */
+        days = ntpcal_year_to_ystart(cal.year) + (int32_t)cal.yearday - 1; /* both RDN and yearday start with '1'. */
+    }
 
-	/* Rebase to days after the GPS epoch. 'days' is positive here,
-	 * but it might be less than the GPS epoch start. Depending on
-	 * the input, we have to do different things to get the desired
-	 * result. (Since we want to remap the era anyway, we only have
-	 * to retain congruential identities....)
-	 */
+    /* Rebase to days after the GPS epoch. 'days' is positive here,
+     * but it might be less than the GPS epoch start. Depending on
+     * the input, we have to do different things to get the desired
+     * result. (Since we want to remap the era anyway, we only have
+     * to retain congruential identities....)
+     */
 
-	if (days >= DAY_GPS_STARTS) {
-		/* simply shift to days since GPS epoch */
-		days -= DAY_GPS_STARTS;
-	} else if (jd->year < 100) {
-		/* Two-digit year on input: add another century and
-		 * retry.  This can happen only if the century expansion
-		 * yielded a date between 1980-01-01 and 1980-01-05,
-		 * both inclusive. We have at most one retry here.
-		 */
-		cal.year += 100;
-		goto again;
-	} else {
-		/* A very bad date before the GPS epoch. There's not
-		 * much we can do, except to add the complement of
-		 * DAY_GPS_STARTS % (7 * 1024) here, that is, use a
-		 * congruential identity: Add the complement instead of
-		 * subtracting the value gives a value with the same
-		 * modulus. But of course, now we MUST to go through a
-		 * cycle fix... because the date was obviously wrong!
-		 */
-		warp  = TRUE;
-		days += s_compl_shift;
-	}
+    if (days >= DAY_GPS_STARTS)
+    {
+        /* simply shift to days since GPS epoch */
+        days -= DAY_GPS_STARTS;
+    }
+    else if (jd->year < 100)
+    {
+        /* Two-digit year on input: add another century and
+         * retry.  This can happen only if the century expansion
+         * yielded a date between 1980-01-01 and 1980-01-05,
+         * both inclusive. We have at most one retry here.
+         */
+        cal.year += 100;
+        goto again;
+    }
+    else
+    {
+        /* A very bad date before the GPS epoch. There's not
+         * much we can do, except to add the complement of
+         * DAY_GPS_STARTS % (7 * 1024) here, that is, use a
+         * congruential identity: Add the complement instead of
+         * subtracting the value gives a value with the same
+         * modulus. But of course, now we MUST to go through a
+         * cycle fix... because the date was obviously wrong!
+         */
+        warp = TRUE;
+        days += s_compl_shift;
+    }
 
-	/* Splitting to weeks is simple now: */
-	week  = days / 7;
-	days -= week * 7;
+    /* Splitting to weeks is simple now: */
+    week = days / 7;
+    days -= week * 7;
 
-	/* re-base on start of NTP with weeks mapped to 1024 weeks
-	 * starting with the GPS base day set in the calendar.
-	 */
-	gps.weeks = week + GPSNTP_WSHIFT;
-	gps.wsecs = days * SECSPERDAY + ntpcal_date_to_daysec(&cal);
-	gps.frac  = 0;
-	gpscal_add_offset(&gps, fofs);
-	return warp ? _gpscal_fix_gps_era(&gps) : gps;
+    /* re-base on start of NTP with weeks mapped to 1024 weeks
+     * starting with the GPS base day set in the calendar.
+     */
+    gps.weeks = week + GPSNTP_WSHIFT;
+    gps.wsecs = days * SECSPERDAY + ntpcal_date_to_daysec(&cal);
+    gps.frac = 0;
+    gpscal_add_offset(&gps, fofs);
+    return warp ? _gpscal_fix_gps_era(&gps) : gps;
 }
 
 /* -----------------------------------------------------------------
  * get civil date from week/tow representation
  */
-void
-gpscal_to_calendar(
-	TCivilDate * cd,
-	TcGpsDatum * wd
-	)
+void gpscal_to_calendar(
+    TCivilDate* cd,
+    TcGpsDatum* wd)
 {
-	TNtpDatum nd;
+    TNtpDatum nd;
 
-	memset(cd, 0, sizeof(*cd));
-	nd = gpsntp_from_gpscal_ex(wd, FALSE);
-	gpsntp_to_calendar(cd, &nd);
+    memset(cd, 0, sizeof(*cd));
+    nd = gpsntp_from_gpscal_ex(wd, FALSE);
+    gpsntp_to_calendar(cd, &nd);
 }
 
 /* -----------------------------------------------------------------
@@ -501,18 +492,17 @@ gpscal_to_calendar(
  */
 TGpsDatum
 gpscal_from_gpsweek(
-	uint16_t	week,
-	int32_t		secs,
-	l_fp		fofs
-	)
+    uint16_t week,
+    int32_t secs,
+    l_fp fofs)
 {
-	TGpsDatum retv;
+    TGpsDatum retv;
 
-	retv.frac  = 0;
-	retv.wsecs = secs;
-	retv.weeks = week + GPSNTP_WSHIFT;
-	gpscal_add_offset(&retv, fofs);
-	return _gpscal_fix_gps_era(&retv);
+    retv.frac = 0;
+    retv.wsecs = secs;
+    retv.weeks = week + GPSNTP_WSHIFT;
+    gpscal_add_offset(&retv, fofs);
+    return _gpscal_fix_gps_era(&retv);
 }
 
 /* -----------------------------------------------------------------
@@ -520,32 +510,34 @@ gpscal_from_gpsweek(
  */
 static TGpsDatum
 _gpscal_from_weektime(
-	int32_t		wsecs,
-	l_fp    	fofs,
-	TcGpsDatum *	pivot
-	)
+    int32_t wsecs,
+    l_fp fofs,
+    TcGpsDatum* pivot)
 {
-	static const int32_t shift = SECSPERWEEK / 2;
+    static const int32_t shift = SECSPERWEEK / 2;
 
-	TGpsDatum	retv;
+    TGpsDatum retv;
 
-	/* set result based on pivot -- ops order is important here */
-	ZERO(retv);
-	retv.wsecs = wsecs;
-	gpscal_add_offset(&retv, fofs);	/* result is normalized */
-	retv.weeks = pivot->weeks;
+    /* set result based on pivot -- ops order is important here */
+    ZERO(retv);
+    retv.wsecs = wsecs;
+    gpscal_add_offset(&retv, fofs); /* result is normalized */
+    retv.weeks = pivot->weeks;
 
-	/* Manual periodic extension without division: */
-	if (pivot->wsecs < shift) {
-		int32_t lim = pivot->wsecs + shift;
-		retv.weeks -= (retv.wsecs > lim ||
-			       (retv.wsecs == lim && retv.frac >= pivot->frac));
-	} else {
-		int32_t lim = pivot->wsecs - shift;
-		retv.weeks += (retv.wsecs < lim ||
-			       (retv.wsecs == lim && retv.frac < pivot->frac));
-	}
-	return _gpscal_fix_gps_era(&retv);
+    /* Manual periodic extension without division: */
+    if (pivot->wsecs < shift)
+    {
+        int32_t lim = pivot->wsecs + shift;
+        retv.weeks -= (retv.wsecs > lim ||
+                       (retv.wsecs == lim && retv.frac >= pivot->frac));
+    }
+    else
+    {
+        int32_t lim = pivot->wsecs - shift;
+        retv.weeks += (retv.wsecs < lim ||
+                       (retv.wsecs == lim && retv.frac < pivot->frac));
+    }
+    return _gpscal_fix_gps_era(&retv);
 }
 
 /* -----------------------------------------------------------------
@@ -553,14 +545,13 @@ _gpscal_from_weektime(
  */
 TGpsDatum
 gpscal_from_weektime2(
-	int32_t		wsecs,
-	l_fp    	fofs,
-	TcGpsDatum *	pivot
-	)
+    int32_t wsecs,
+    l_fp fofs,
+    TcGpsDatum* pivot)
 {
-	TGpsDatum wpiv = * pivot;
-	_norm_gps_datum(&wpiv);
-	return _gpscal_from_weektime(wsecs, fofs, &wpiv);
+    TGpsDatum wpiv = *pivot;
+    _norm_gps_datum(&wpiv);
+    return _gpscal_from_weektime(wsecs, fofs, &wpiv);
 }
 
 /* -----------------------------------------------------------------
@@ -570,26 +561,25 @@ gpscal_from_weektime2(
  */
 TGpsDatum
 gpscal_from_weektime1(
-	int32_t	wsecs,
-	l_fp    fofs,
-	l_fp    pivot
-	)
+    int32_t wsecs,
+    l_fp fofs,
+    l_fp pivot)
 {
-	vint64		pvi64;
-	TGpsDatum	wpiv;
-	ntpcal_split	split;
+    vint64 pvi64;
+    TGpsDatum wpiv;
+    ntpcal_split split;
 
-	/* get 64-bit pivot in NTP epoch */
-	pvi64 = ntpcal_ntp_to_ntp(pivot.l_ui, NULL);
+    /* get 64-bit pivot in NTP epoch */
+    pvi64 = ntpcal_ntp_to_ntp(pivot.l_ui, NULL);
 
-	/* convert to weeks since 1899-12-31 and seconds in week */
-	pvi64 = addv64u32(&pvi64, (GPSNTP_DSHIFT * SECSPERDAY));
-	split = ntpcal_weeksplit(&pvi64);
+    /* convert to weeks since 1899-12-31 and seconds in week */
+    pvi64 = addv64u32(&pvi64, (GPSNTP_DSHIFT * SECSPERDAY));
+    split = ntpcal_weeksplit(&pvi64);
 
-	wpiv.weeks = split.hi;
-	wpiv.wsecs = split.lo;
-	wpiv.frac  = pivot.l_uf;
-	return _gpscal_from_weektime(wsecs, fofs, &wpiv);
+    wpiv.weeks = split.hi;
+    wpiv.wsecs = split.lo;
+    wpiv.frac = pivot.l_uf;
+    return _gpscal_from_weektime(wsecs, fofs, &wpiv);
 }
 
 /* -----------------------------------------------------------------
@@ -597,38 +587,33 @@ gpscal_from_weektime1(
  */
 TGpsDatum
 gpscal_from_gpsntp(
-	TcNtpDatum *	gd
-	)
+    TcNtpDatum* gd)
 {
-	TGpsDatum	retv;
-	vint64		ts64;
-	ntpcal_split	split;
+    TGpsDatum retv;
+    vint64 ts64;
+    ntpcal_split split;
 
-	ts64  = ntpcal_dayjoin(gd->days, gd->secs);
-	ts64  = addv64u32(&ts64, (GPSNTP_DSHIFT * SECSPERDAY));
-	split = ntpcal_weeksplit(&ts64);
+    ts64 = ntpcal_dayjoin(gd->days, gd->secs);
+    ts64 = addv64u32(&ts64, (GPSNTP_DSHIFT * SECSPERDAY));
+    split = ntpcal_weeksplit(&ts64);
 
-	retv.frac  = gd->frac;
-	retv.wsecs = split.lo;
-	retv.weeks = split.hi;
-	return retv;
+    retv.frac = gd->frac;
+    retv.wsecs = split.lo;
+    retv.weeks = split.hi;
+    return retv;
 }
 
 /* -----------------------------------------------------------------
  * convert week/tow to LFP stamp
  */
-l_fp
-ntpfp_from_gpsdatum(
-	TcGpsDatum *	gd
-	)
+l_fp ntpfp_from_gpsdatum(
+    TcGpsDatum* gd)
 {
-	l_fp retv;
+    l_fp retv;
 
-	retv.l_uf = gd->frac;
-	retv.l_ui = gd->weeks * (uint32_t)SECSPERWEEK
-	          + (uint32_t)gd->wsecs
-	          - (uint32_t)SECSPERDAY * GPSNTP_DSHIFT;
-	return retv;
+    retv.l_uf = gd->frac;
+    retv.l_ui = gd->weeks * (uint32_t)SECSPERWEEK + (uint32_t)gd->wsecs - (uint32_t)SECSPERDAY * GPSNTP_DSHIFT;
+    return retv;
 }
 
 /* -*-EOF-*- */

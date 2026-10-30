@@ -20,19 +20,20 @@
 
 #include "config.h"
 
+#include "timetoa.h"
+
+#include "lib_strbuf.h"
+#include "ntp_assert.h"
+
 #include <math.h>
 #include <stdio.h>
-
-#include "timetoa.h"
-#include "ntp_assert.h"
-#include "lib_strbuf.h"
 
 /*
  * Formatting to string needs at max 40 bytes (even with 64 bit time_t),
  * so we check LIB_BUFLENGTH is big enough for our purpose.
  */
 #if LIB_BUFLENGTH < 40
-# include "GRONK: LIB_BUFLENGTH is not sufficient"
+#include "GRONK: LIB_BUFLENGTH is not sufficient"
 #endif
 
 /*
@@ -44,63 +45,66 @@
  * away from signed integer overflow, as this might cause trouble even
  * with two's complement representation.
  */
-const char *
+const char*
 format_time_fraction(
-	time_t	secs,
-	long	frac,
-	int	prec
-	)
+    time_t secs,
+    long frac,
+    int prec)
 {
-	char *		cp;
-	u_int		prec_u;
-	u_time		secs_u;
-	u_int		u;
-	long		fraclimit;
-	int		notneg;	/* flag for non-negative value	*/
-	ldiv_t		qr;
+    char* cp;
+    u_int prec_u;
+    u_time secs_u;
+    u_int u;
+    long fraclimit;
+    int notneg; /* flag for non-negative value	*/
+    ldiv_t qr;
 
-	DEBUG_REQUIRE(prec != 0);
+    DEBUG_REQUIRE(prec != 0);
 
-	LIB_GETBUF(cp);
-	secs_u = (u_time)secs;
-	
-	/* check if we need signed or unsigned mode */
-	notneg = (prec < 0);
-	prec_u = abs(prec);
-	/* fraclimit = (long)pow(10, prec_u); */
-	for (fraclimit = 10, u = 1; u < prec_u; u++) {
-		DEBUG_INSIST(fraclimit < fraclimit * 10);
-		fraclimit *= 10;
-	}
+    LIB_GETBUF(cp);
+    secs_u = (u_time)secs;
 
-	/*
-	 * Since conversion to string uses lots of divisions anyway,
-	 * there's no big extra penalty for normalisation. We do it for
-	 * consistency.
-	 */
-	if (frac < 0 || frac >= fraclimit) {
-		qr = ldiv(frac, fraclimit);
-		if (qr.rem < 0) {
-			qr.quot--;
-			qr.rem += fraclimit;
-		}
-		secs_u += (time_t)qr.quot;
-		frac = qr.rem;
-	}
+    /* check if we need signed or unsigned mode */
+    notneg = (prec < 0);
+    prec_u = abs(prec);
+    /* fraclimit = (long)pow(10, prec_u); */
+    for (fraclimit = 10, u = 1; u < prec_u; u++)
+    {
+        DEBUG_INSIST(fraclimit < fraclimit * 10);
+        fraclimit *= 10;
+    }
 
-	/* Get the absolute value of the split representation time. */
-	notneg = notneg || ((time_t)secs_u >= 0);
-	if (!notneg) {
-		secs_u = ~secs_u;
-		if (0 == frac)
-			secs_u++;
-		else
-			frac = fraclimit - frac;
-	}
+    /*
+     * Since conversion to string uses lots of divisions anyway,
+     * there's no big extra penalty for normalisation. We do it for
+     * consistency.
+     */
+    if (frac < 0 || frac >= fraclimit)
+    {
+        qr = ldiv(frac, fraclimit);
+        if (qr.rem < 0)
+        {
+            qr.quot--;
+            qr.rem += fraclimit;
+        }
+        secs_u += (time_t)qr.quot;
+        frac = qr.rem;
+    }
 
-	/* finally format the data and return the result */
-	snprintf(cp, LIB_BUFLENGTH, "%s%" UTIME_FORMAT ".%0*ld",
-	    notneg? "" : "-", secs_u, prec_u, frac);
-	
-	return cp;
+    /* Get the absolute value of the split representation time. */
+    notneg = notneg || ((time_t)secs_u >= 0);
+    if (!notneg)
+    {
+        secs_u = ~secs_u;
+        if (0 == frac)
+            secs_u++;
+        else
+            frac = fraclimit - frac;
+    }
+
+    /* finally format the data and return the result */
+    snprintf(cp, LIB_BUFLENGTH, "%s%" UTIME_FORMAT ".%0*ld",
+             notneg ? "" : "-", secs_u, prec_u, frac);
+
+    return cp;
 }

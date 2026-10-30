@@ -31,38 +31,41 @@
 #ifndef ISC_MEM_H
 #define ISC_MEM_H 1
 
-#include <stdio.h>
-
 #include <isc/lang.h>
 #include <isc/mutex.h>
 #include <isc/platform.h>
 #include <isc/types.h>
 #include <isc/xml.h>
-
 #include <ntp_stdlib.h>
 
+#include <stdio.h>
 
-#define ISC_MEM_UNUSED_ARG(a)		((void)(a))
 
-#define isc_mem_allocate(c, cnt)	isc_mem_get(c, cnt)
-#define isc_mem_get(c, cnt)		\
-	( ISC_MEM_UNUSED_ARG(c),	emalloc(cnt) )
+#define ISC_MEM_UNUSED_ARG(a) ((void)(a))
 
-#define isc_mem_reallocate(c, mem, cnt)	\
-	( ISC_MEM_UNUSED_ARG(c),	erealloc((mem), cnt) )
+#define isc_mem_allocate(c, cnt) isc_mem_get(c, cnt)
+#define isc_mem_get(c, cnt) \
+    (ISC_MEM_UNUSED_ARG(c), emalloc(cnt))
 
-#define isc_mem_put(c, mem, cnt)	\
-	( ISC_MEM_UNUSED_ARG(cnt),	isc_mem_free(c, (mem)) )
+#define isc_mem_reallocate(c, mem, cnt) \
+    (ISC_MEM_UNUSED_ARG(c), erealloc((mem), cnt))
 
-#define isc_mem_free(c, mem)		\
-	( ISC_MEM_UNUSED_ARG(c),	free(mem) )
+#define isc_mem_put(c, mem, cnt) \
+    (ISC_MEM_UNUSED_ARG(cnt), isc_mem_free(c, (mem)))
 
-#define isc_mem_strdup(c, str)		\
-	( ISC_MEM_UNUSED_ARG(c),	estrdup(str) )
+#define isc_mem_free(c, mem) \
+    (ISC_MEM_UNUSED_ARG(c), free(mem))
 
-#define isc__mem_attach(src, ptgt)	do { *(ptgt) = (src); } while (0)
-#define isc__mem_detach(c)		ISC_MEM_UNUSED_ARG(c)
-#define isc__mem_printallactive(s)	fprintf((s), \
-					"isc_mem_printallactive() stubbed.\n")
+#define isc_mem_strdup(c, str) \
+    (ISC_MEM_UNUSED_ARG(c), estrdup(str))
+
+#define isc__mem_attach(src, ptgt) \
+    do                             \
+    {                              \
+        *(ptgt) = (src);           \
+    } while (0)
+#define isc__mem_detach(c) ISC_MEM_UNUSED_ARG(c)
+#define isc__mem_printallactive(s) fprintf((s), \
+                                           "isc_mem_printallactive() stubbed.\n")
 
 #endif /* ISC_MEM_H */

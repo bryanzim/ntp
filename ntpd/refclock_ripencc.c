@@ -25,7 +25,7 @@
  * This driver was developed for use with the RIPE NCC TTM project.
  *
  *
- * The initial driver was developed by Daniel Karrenberg <dfk@ripe.net> 
+ * The initial driver was developed by Daniel Karrenberg <dfk@ripe.net>
  * using the code made available by Trimble. This was for xntpd-3.x.x
  *
  * Rewrite of the driver for ntpd-4.x.x by Mark Santcroos <marks@ripe.net>
@@ -38,14 +38,14 @@
 
 #if defined(REFCLOCK) && defined(CLOCK_RIPENCC)
 
-#include "ntp_stdlib.h"
-#include "ntpd.h"
-#include "ntp_refclock.h"
-#include "ntp_unixtime.h"
 #include "ntp_io.h"
+#include "ntp_refclock.h"
+#include "ntp_stdlib.h"
+#include "ntp_unixtime.h"
+#include "ntpd.h"
 
 #ifdef HAVE_PPSAPI
-# include "ppsapi_timepps.h"
+#include "ppsapi_timepps.h"
 #endif
 
 /*
@@ -55,7 +55,7 @@
 /* we are on little endian */
 #define BYTESWAP
 
-/* 
+/*
  * DEBUG statements: uncomment if necessary
  */
 /* #define DEBUG_NCC */ /* general debug statements */
@@ -66,549 +66,576 @@
 #define TSIP_VERNUM "7.12a"
 
 #ifndef FALSE
-#define FALSE 	(0)
-#define TRUE 	(!FALSE)
+#define FALSE (0)
+#define TRUE (!FALSE)
 #endif /* FALSE */
 
-#define GPS_PI 	(3.1415926535898)
-#define GPS_C 		(299792458.)
-#define	D2R		(GPS_PI/180.0)
-#define	R2D		(180.0/GPS_PI)
-#define WEEK 	(604800.)
-#define MAXCHAN  (8)
+#define GPS_PI (3.1415926535898)
+#define GPS_C (299792458.)
+#define D2R (GPS_PI / 180.0)
+#define R2D (180.0 / GPS_PI)
+#define WEEK (604800.)
+#define MAXCHAN (8)
 
 /* control characters for TSIP packets */
-#define DLE 	(0x10)
-#define ETX 	(0x03)
+#define DLE (0x10)
+#define ETX (0x03)
 
 #define MAX_RPTBUF (256)
 
 /* values of TSIPPKT.status */
-#define TSIP_PARSED_EMPTY 	0
-#define TSIP_PARSED_FULL 	1
-#define TSIP_PARSED_DLE_1 	2
-#define TSIP_PARSED_DATA 	3
-#define TSIP_PARSED_DLE_2 	4
+#define TSIP_PARSED_EMPTY 0
+#define TSIP_PARSED_FULL 1
+#define TSIP_PARSED_DLE_1 2
+#define TSIP_PARSED_DATA 3
+#define TSIP_PARSED_DLE_2 4
 
-#define UTCF_UTC_AVAIL  (unsigned char) (1)     /* UTC available */
-#define UTCF_LEAP_SCHD  (unsigned char) (1<<4)  /* Leap scheduled */
-#define UTCF_LEAP_PNDG  (unsigned char) (1<<5)  /* Leap pending, will occur at end of day */
+#define UTCF_UTC_AVAIL (unsigned char)(1)      /* UTC available */
+#define UTCF_LEAP_SCHD (unsigned char)(1 << 4) /* Leap scheduled */
+#define UTCF_LEAP_PNDG (unsigned char)(1 << 5) /* Leap pending, will occur at end of day */
 
-#define DEVICE  "/dev/gps%d"	/* name of radio device */
-#define PRECISION       (-9)    /* precision assumed (about 2 ms) */
-#define PPS_PRECISION   (-20)	/* precision assumed (about 1 us) */
-#define REFID           "GPS\0" /* reference id */
-#define REFID_LEN	4
-#define DESCRIPTION     "RIPE NCC GPS (Palisade)"	/* Description */
-#define SPEED232        B9600   /* 9600 baud */
+#define DEVICE "/dev/gps%d" /* name of radio device */
+#define PRECISION (-9)      /* precision assumed (about 2 ms) */
+#define PPS_PRECISION (-20) /* precision assumed (about 1 us) */
+#define REFID "GPS\0"       /* reference id */
+#define REFID_LEN 4
+#define DESCRIPTION "RIPE NCC GPS (Palisade)" /* Description */
+#define SPEED232 B9600                        /* 9600 baud */
 
-#define NSAMPLES        3       /* stages of median filter */
+#define NSAMPLES 3 /* stages of median filter */
 
 /* Structures */
 
 /* TSIP packets have the following structure, whether report or command. */
-typedef struct {
-	short 
-	    counter,		/* counter */
-	    len;		/* size of buf; < MAX_RPTBUF unsigned chars */
-	unsigned char
-	    status,		/* TSIP packet format/parse status */
-	    code,		/* TSIP code */
-	    buf[MAX_RPTBUF];	/* report or command string */
+typedef struct
+{
+    short
+        counter, /* counter */
+        len;     /* size of buf; < MAX_RPTBUF unsigned chars */
+    unsigned char
+        status,          /* TSIP packet format/parse status */
+        code,            /* TSIP code */
+        buf[MAX_RPTBUF]; /* report or command string */
 } TSIPPKT;
 
 /* TSIP binary data structures */
-typedef struct {
-	unsigned char
-	    t_oa_raw, SV_health;
-	float
-	    e, t_oa, i_0, OMEGADOT, sqrt_A,
-	    OMEGA_0, omega, M_0, a_f0, a_f1,
-	    Axis, n, OMEGA_n, ODOT_n, t_zc;
-	short
-	    weeknum, wn_oa;
+typedef struct
+{
+    unsigned char
+        t_oa_raw,
+        SV_health;
+    float
+        e,
+        t_oa, i_0, OMEGADOT, sqrt_A,
+        OMEGA_0, omega, M_0, a_f0, a_f1,
+        Axis, n, OMEGA_n, ODOT_n, t_zc;
+    short
+        weeknum,
+        wn_oa;
 } ALM_INFO;
 
-typedef struct {		/*  Almanac health page (25) parameters  */
-	unsigned char
-	    WN_a, SV_health[32], t_oa;
+typedef struct
+{ /*  Almanac health page (25) parameters  */
+    unsigned char
+        WN_a,
+        SV_health[32], t_oa;
 } ALH_PARMS;
 
-typedef struct {		/*  Universal Coordinated Time (UTC) parms */
-	double
-	    A_0;
-	float
-	    A_1;
-	short
-	    delta_t_LS;
-	float
-	    t_ot;
-	short
-	    WN_t, WN_LSF, DN, delta_t_LSF;
+typedef struct
+{ /*  Universal Coordinated Time (UTC) parms */
+    double
+        A_0;
+    float
+        A_1;
+    short
+        delta_t_LS;
+    float
+        t_ot;
+    short
+        WN_t,
+        WN_LSF, DN, delta_t_LSF;
 } UTC_INFO;
 
-typedef struct {		/*  Ionospheric info (float)  */
-	float
-	    alpha_0, alpha_1, alpha_2, alpha_3,
-	    beta_0, beta_1, beta_2, beta_3;
+typedef struct
+{ /*  Ionospheric info (float)  */
+    float
+        alpha_0,
+        alpha_1, alpha_2, alpha_3,
+        beta_0, beta_1, beta_2, beta_3;
 } ION_INFO;
 
-typedef struct {		/*  Subframe 1 info (float)  */
-	short
-	    weeknum;
-	unsigned char
-	    codeL2, L2Pdata, SVacc_raw, SV_health;
-	short
-	    IODC;
-	float
-	    T_GD, t_oc, a_f2, a_f1, a_f0, SVacc;
+typedef struct
+{ /*  Subframe 1 info (float)  */
+    short
+        weeknum;
+    unsigned char
+        codeL2,
+        L2Pdata, SVacc_raw, SV_health;
+    short
+        IODC;
+    float
+        T_GD,
+        t_oc, a_f2, a_f1, a_f0, SVacc;
 } EPHEM_CLOCK;
 
-typedef	struct {		/*  Ephemeris info (float)  */
-	unsigned char
-	    IODE, fit_interval;
-	float
-	    C_rs, delta_n;
-	double
-	    M_0;
-	float
-	    C_uc;
-	double
-	    e;
-	float
-	    C_us;
-	double
-	    sqrt_A;
-	float
-	    t_oe, C_ic;
-	double
-	    OMEGA_0;
-	float
-	    C_is;
-	double
-	    i_0;
-	float
-	    C_rc;
-	double
-	    omega;
-	float
-	    OMEGADOT, IDOT;
-	double
-	    Axis, n, r1me2, OMEGA_n, ODOT_n;
+typedef struct
+{ /*  Ephemeris info (float)  */
+    unsigned char
+        IODE,
+        fit_interval;
+    float
+        C_rs,
+        delta_n;
+    double
+        M_0;
+    float
+        C_uc;
+    double
+        e;
+    float
+        C_us;
+    double
+        sqrt_A;
+    float
+        t_oe,
+        C_ic;
+    double
+        OMEGA_0;
+    float
+        C_is;
+    double
+        i_0;
+    float
+        C_rc;
+    double
+        omega;
+    float
+        OMEGADOT,
+        IDOT;
+    double
+        Axis,
+        n, r1me2, OMEGA_n, ODOT_n;
 } EPHEM_ORBIT;
 
-typedef struct {		/* Navigation data structure */
-	short
-	    sv_number;		/* SV number (0 = no entry) */
-	float
-	    t_ephem;		/* time of ephemeris collection */
-	EPHEM_CLOCK
-	    ephclk;		/* subframe 1 data */
-	EPHEM_ORBIT
-	    ephorb;		/* ephemeris data */
+typedef struct
+{ /* Navigation data structure */
+    short
+        sv_number; /* SV number (0 = no entry) */
+    float
+        t_ephem; /* time of ephemeris collection */
+    EPHEM_CLOCK
+    ephclk; /* subframe 1 data */
+    EPHEM_ORBIT
+    ephorb; /* ephemeris data */
 } NAV_INFO;
 
-typedef struct {
-	unsigned char
-	    bSubcode,
-	    operating_mode,
-	    dgps_mode,
-	    dyn_code,
-	    trackmode;
-	float
-	    elev_mask,
-	    cno_mask,
-	    dop_mask,
-	    dop_switch;
-	unsigned char
-	    dgps_age_limit;
+typedef struct
+{
+    unsigned char
+        bSubcode,
+        operating_mode,
+        dgps_mode,
+        dyn_code,
+        trackmode;
+    float
+        elev_mask,
+        cno_mask,
+        dop_mask,
+        dop_switch;
+    unsigned char
+        dgps_age_limit;
 } TSIP_RCVR_CFG;
 
 
 #ifdef TRIMBLE_OUTPUT_FUNC
 static char
-        *dayname[7U] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"},
-	old_baudnum[] = {0, 1, 4, 5, 6, 8, 9, 11, 28, 12},
-        *st_baud_text_app [] = {"", "", "  300", "  600", " 1200", " 2400", 
-				" 4800", " 9600", "19200", "38400"},
-	*old_parity_text[] = {"EVEN", "ODD", "", "", "NONE"},
-	*parity_text [] = {"NONE", "ODD", "EVEN"},
-	*old_input_ch[] = { "TSIP", "RTCM (6 of 8 bits)"},
-	*old_output_ch[] = { "TSIP", "No output", "", "", "", "NMEA 0183"},
-	*protocols_in_text[] = { "", "TSIP", "", ""},
-	*protocols_out_text[] =	{ "", "TSIP", "NMEA"},
-	*rcvr_port_text [] = { "Port A      ", "Port B      ", "Current Port"},
-	*dyn_text [] = {"Unchanged", "Land", "Sea", "Air", "Static"},
-	*NavModeText0xBB[] = {"automatic", "time only (0-D)", "", "2-D",
-			      "3-D", "", "", "OverDetermined Time"},
-	*PPSTimeBaseText[] = {"GPS", "UTC", "USER"},
-	*PPSPolarityText[] = {"Positive", "Negative"},
-  	*MaskText[] = { "Almanac  ", "Ephemeris", "UTC      ", "Iono     ",
-			"GPS Msg  ", "Alm Hlth ", "Time Fix ", "SV Select",
-			"Ext Event", "Pos Fix  ", "Raw Meas "};
+    *dayname[7U] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" },
+    old_baudnum[] = { 0, 1, 4, 5, 6, 8, 9, 11, 28, 12 },
+    *st_baud_text_app[] = { "", "", "  300", "  600", " 1200", " 2400",
+                            " 4800", " 9600", "19200", "38400" },
+    *old_parity_text[] = { "EVEN", "ODD", "", "", "NONE" },
+    *parity_text[] = { "NONE", "ODD", "EVEN" },
+    *old_input_ch[] = { "TSIP", "RTCM (6 of 8 bits)" },
+    *old_output_ch[] = { "TSIP", "No output", "", "", "", "NMEA 0183" },
+    *protocols_in_text[] = { "", "TSIP", "", "" },
+    *protocols_out_text[] = { "", "TSIP", "NMEA" },
+    *rcvr_port_text[] = { "Port A      ", "Port B      ", "Current Port" },
+    *dyn_text[] = { "Unchanged", "Land", "Sea", "Air", "Static" },
+    *NavModeText0xBB[] = { "automatic", "time only (0-D)", "", "2-D",
+                           "3-D", "", "", "OverDetermined Time" },
+    *PPSTimeBaseText[] = { "GPS", "UTC", "USER" },
+    *PPSPolarityText[] = { "Positive", "Negative" },
+    *MaskText[] = { "Almanac  ", "Ephemeris", "UTC      ", "Iono     ",
+                    "GPS Msg  ", "Alm Hlth ", "Time Fix ", "SV Select",
+                    "Ext Event", "Pos Fix  ", "Raw Meas " };
 
 #endif /* TRIMBLE_OUTPUT_FUNC */
 
 /*
  * Unit control structure
  */
-struct ripencc_unit {                   
-        int unit;                       /* unit number */
-        int     pollcnt;                /* poll message counter */
-        int     polled;                 /* Hand in a sample? */
-        char leapdelta;                 /* delta of next leap event */
-        unsigned char utcflags;         /* delta of next leap event */
-        l_fp    tstamp;                 /* timestamp of last poll */
-        
-        struct timespec ts;             /* last timestamp */
-        pps_params_t pps_params;        /* pps parameters */
-        pps_info_t pps_info;            /* last pps data */
-        pps_handle_t handle;            /* pps handlebars */
+struct ripencc_unit
+{
+    int unit;               /* unit number */
+    int pollcnt;            /* poll message counter */
+    int polled;             /* Hand in a sample? */
+    char leapdelta;         /* delta of next leap event */
+    unsigned char utcflags; /* delta of next leap event */
+    l_fp tstamp;            /* timestamp of last poll */
 
+    struct timespec ts;      /* last timestamp */
+    pps_params_t pps_params; /* pps parameters */
+    pps_info_t pps_info;     /* last pps data */
+    pps_handle_t handle;     /* pps handlebars */
 };
 
 
 /*******************        PROTOYPES            *****************/
 
 /*  prototypes for report parsing primitives */
-short rpt_0x3D (TSIPPKT *rpt, unsigned char *tx_baud_index,
-		unsigned char *rx_baud_index, unsigned char *char_format_index,
-		unsigned char *stop_bits, unsigned char *tx_mode_index,
-		unsigned char *rx_mode_index);
-short rpt_0x40 (TSIPPKT *rpt, unsigned char *sv_prn, short *week_num,
-		float *t_zc, float *eccentricity, float *t_oa, float *i_0,
-		float *OMEGA_dot, float *sqrt_A, float *OMEGA_0, float *omega,
-		float *M_0);
-short rpt_0x41 (TSIPPKT *rpt, float *time_of_week, float *UTC_offset,
-		short *week_num);
-short rpt_0x42 (TSIPPKT *rpt, float ECEF_pos[3], float *time_of_fix);
-short rpt_0x43 (TSIPPKT *rpt, float ECEF_vel[3], float *freq_offset,
-		float *time_of_fix);
-short rpt_0x45 (TSIPPKT *rpt, unsigned char *major_nav_version,
-		unsigned char *minor_nav_version, unsigned char *nav_day,
-		unsigned char *nav_month, unsigned char *nav_year,
-		unsigned char *major_dsp_version, unsigned char *minor_dsp_version,
-		unsigned char *dsp_day, unsigned char *dsp_month,
-		unsigned char *dsp_year);
-short rpt_0x46 (TSIPPKT *rpt, unsigned char *status1, unsigned char *status2);
-short rpt_0x47 (TSIPPKT *rpt, unsigned char *nsvs, unsigned char *sv_prn,
-		float *snr);
-short rpt_0x48 (TSIPPKT *rpt, unsigned char *message);
-short rpt_0x49 (TSIPPKT *rpt, unsigned char *sv_health);
-short rpt_0x4A (TSIPPKT *rpt, float *lat, float *lon, float *alt,
-		float *clock_bias, float *time_of_fix);
-short rpt_0x4A_2 (TSIPPKT *rpt, float *alt, float *dummy,
-		  unsigned char *alt_flag);
-short rpt_0x4B (TSIPPKT *rpt, unsigned char *machine_id,
-		unsigned char *status3, unsigned char *status4);
-short rpt_0x4C (TSIPPKT *rpt, unsigned char *dyn_code, float *el_mask,
-		float *snr_mask, float *dop_mask, float *dop_switch);
-short rpt_0x4D (TSIPPKT *rpt, float *osc_offset);
-short rpt_0x4E (TSIPPKT *rpt, unsigned char *response);
-short rpt_0x4F (TSIPPKT *rpt, double *a0, float *a1, float *time_of_data,
-		short *dt_ls, short *wn_t, short *wn_lsf, short *dn, short *dt_lsf);
-short rpt_0x54 (TSIPPKT *rpt, float *clock_bias, float *freq_offset,
-		float *time_of_fix);
-short rpt_0x55 (TSIPPKT *rpt, unsigned char *pos_code, unsigned char *vel_code,
-		unsigned char *time_code, unsigned char *aux_code);
-short rpt_0x56 (TSIPPKT *rpt, float vel_ENU[3], float *freq_offset,
-		float *time_of_fix);
-short rpt_0x57 (TSIPPKT *rpt, unsigned char *source_code,
-		unsigned char *diag_code, short *week_num, float *time_of_fix);
-short rpt_0x58 (TSIPPKT *rpt, unsigned char *op_code, unsigned char *data_type,
-		unsigned char *sv_prn, unsigned char *data_length,
-		unsigned char *data_packet);
-short rpt_0x59 (TSIPPKT *rpt, unsigned char *code_type,
-		unsigned char status_code[32]);
-short rpt_0x5A (TSIPPKT *rpt, unsigned char *sv_prn, float *sample_length,
-		float *signal_level, float *code_phase, float *Doppler,
-		double *time_of_fix);
-short rpt_0x5B (TSIPPKT *rpt, unsigned char *sv_prn, unsigned char *sv_health,
-		unsigned char *sv_iode, unsigned char *fit_interval_flag,
-		float *time_of_collection, float *time_of_eph, float *sv_accy);
-short rpt_0x5C (TSIPPKT *rpt, unsigned char *sv_prn, unsigned char *slot,
-		unsigned char *chan, unsigned char *acq_flag, unsigned char *eph_flag,
-		float *signal_level, float *time_of_last_msmt, float *elev,
-		float *azim, unsigned char *old_msmt_flag,
-		unsigned char *integer_msec_flag, unsigned char *bad_data_flag,
-		unsigned char *data_collect_flag);
-short rpt_0x6D (TSIPPKT *rpt, unsigned char *manual_mode, unsigned char *nsvs,
-		unsigned char *ndim, unsigned char sv_prn[], float *pdop,
-		float *hdop, float *vdop, float *tdop);
-short rpt_0x82 (TSIPPKT *rpt, unsigned char *diff_mode);
-short rpt_0x83 (TSIPPKT *rpt, double ECEF_pos[3], double *clock_bias,
-		float *time_of_fix);
-short rpt_0x84 (TSIPPKT *rpt, double *lat, double *lon, double *alt,
-		double *clock_bias, float *time_of_fix);
-short rpt_Paly0xBB(TSIPPKT *rpt, TSIP_RCVR_CFG *TsipxBB);
-short rpt_0xBC   (TSIPPKT *rpt, unsigned char *port_num,
-		  unsigned char *in_baud, unsigned char *out_baud,
-		  unsigned char *data_bits, unsigned char *parity,
-		  unsigned char *stop_bits, unsigned char *flow_control,
-		  unsigned char *protocols_in, unsigned char *protocols_out,
-		  unsigned char *reserved);
+short rpt_0x3D(TSIPPKT* rpt, unsigned char* tx_baud_index,
+               unsigned char* rx_baud_index, unsigned char* char_format_index,
+               unsigned char* stop_bits, unsigned char* tx_mode_index,
+               unsigned char* rx_mode_index);
+short rpt_0x40(TSIPPKT* rpt, unsigned char* sv_prn, short* week_num,
+               float* t_zc, float* eccentricity, float* t_oa, float* i_0,
+               float* OMEGA_dot, float* sqrt_A, float* OMEGA_0, float* omega,
+               float* M_0);
+short rpt_0x41(TSIPPKT* rpt, float* time_of_week, float* UTC_offset,
+               short* week_num);
+short rpt_0x42(TSIPPKT* rpt, float ECEF_pos[3], float* time_of_fix);
+short rpt_0x43(TSIPPKT* rpt, float ECEF_vel[3], float* freq_offset,
+               float* time_of_fix);
+short rpt_0x45(TSIPPKT* rpt, unsigned char* major_nav_version,
+               unsigned char* minor_nav_version, unsigned char* nav_day,
+               unsigned char* nav_month, unsigned char* nav_year,
+               unsigned char* major_dsp_version, unsigned char* minor_dsp_version,
+               unsigned char* dsp_day, unsigned char* dsp_month,
+               unsigned char* dsp_year);
+short rpt_0x46(TSIPPKT* rpt, unsigned char* status1, unsigned char* status2);
+short rpt_0x47(TSIPPKT* rpt, unsigned char* nsvs, unsigned char* sv_prn,
+               float* snr);
+short rpt_0x48(TSIPPKT* rpt, unsigned char* message);
+short rpt_0x49(TSIPPKT* rpt, unsigned char* sv_health);
+short rpt_0x4A(TSIPPKT* rpt, float* lat, float* lon, float* alt,
+               float* clock_bias, float* time_of_fix);
+short rpt_0x4A_2(TSIPPKT* rpt, float* alt, float* dummy,
+                 unsigned char* alt_flag);
+short rpt_0x4B(TSIPPKT* rpt, unsigned char* machine_id,
+               unsigned char* status3, unsigned char* status4);
+short rpt_0x4C(TSIPPKT* rpt, unsigned char* dyn_code, float* el_mask,
+               float* snr_mask, float* dop_mask, float* dop_switch);
+short rpt_0x4D(TSIPPKT* rpt, float* osc_offset);
+short rpt_0x4E(TSIPPKT* rpt, unsigned char* response);
+short rpt_0x4F(TSIPPKT* rpt, double* a0, float* a1, float* time_of_data,
+               short* dt_ls, short* wn_t, short* wn_lsf, short* dn, short* dt_lsf);
+short rpt_0x54(TSIPPKT* rpt, float* clock_bias, float* freq_offset,
+               float* time_of_fix);
+short rpt_0x55(TSIPPKT* rpt, unsigned char* pos_code, unsigned char* vel_code,
+               unsigned char* time_code, unsigned char* aux_code);
+short rpt_0x56(TSIPPKT* rpt, float vel_ENU[3], float* freq_offset,
+               float* time_of_fix);
+short rpt_0x57(TSIPPKT* rpt, unsigned char* source_code,
+               unsigned char* diag_code, short* week_num, float* time_of_fix);
+short rpt_0x58(TSIPPKT* rpt, unsigned char* op_code, unsigned char* data_type,
+               unsigned char* sv_prn, unsigned char* data_length,
+               unsigned char* data_packet);
+short rpt_0x59(TSIPPKT* rpt, unsigned char* code_type,
+               unsigned char status_code[32]);
+short rpt_0x5A(TSIPPKT* rpt, unsigned char* sv_prn, float* sample_length,
+               float* signal_level, float* code_phase, float* Doppler,
+               double* time_of_fix);
+short rpt_0x5B(TSIPPKT* rpt, unsigned char* sv_prn, unsigned char* sv_health,
+               unsigned char* sv_iode, unsigned char* fit_interval_flag,
+               float* time_of_collection, float* time_of_eph, float* sv_accy);
+short rpt_0x5C(TSIPPKT* rpt, unsigned char* sv_prn, unsigned char* slot,
+               unsigned char* chan, unsigned char* acq_flag, unsigned char* eph_flag,
+               float* signal_level, float* time_of_last_msmt, float* elev,
+               float* azim, unsigned char* old_msmt_flag,
+               unsigned char* integer_msec_flag, unsigned char* bad_data_flag,
+               unsigned char* data_collect_flag);
+short rpt_0x6D(TSIPPKT* rpt, unsigned char* manual_mode, unsigned char* nsvs,
+               unsigned char* ndim, unsigned char sv_prn[], float* pdop,
+               float* hdop, float* vdop, float* tdop);
+short rpt_0x82(TSIPPKT* rpt, unsigned char* diff_mode);
+short rpt_0x83(TSIPPKT* rpt, double ECEF_pos[3], double* clock_bias,
+               float* time_of_fix);
+short rpt_0x84(TSIPPKT* rpt, double* lat, double* lon, double* alt,
+               double* clock_bias, float* time_of_fix);
+short rpt_Paly0xBB(TSIPPKT* rpt, TSIP_RCVR_CFG* TsipxBB);
+short rpt_0xBC(TSIPPKT* rpt, unsigned char* port_num,
+               unsigned char* in_baud, unsigned char* out_baud,
+               unsigned char* data_bits, unsigned char* parity,
+               unsigned char* stop_bits, unsigned char* flow_control,
+               unsigned char* protocols_in, unsigned char* protocols_out,
+               unsigned char* reserved);
 
 /* prototypes for superpacket parsers */
 
-short rpt_0x8F0B (TSIPPKT *rpt, unsigned short *event, double *tow,
-		  unsigned char *date, unsigned char *month, short *year,
-		  unsigned char *dim_mode, short *utc_offset, double *bias, double *drift,
-		  float *bias_unc, float *dr_unc, double *lat, double *lon, double *alt,
-		  char sv_id[8]);
-short rpt_0x8F14 (TSIPPKT *rpt, short *datum_idx, double datum_coeffs[5]);
-short rpt_0x8F15 (TSIPPKT *rpt, short *datum_idx, double datum_coeffs[5]);
-short rpt_0x8F20 (TSIPPKT *rpt, unsigned char *info, double *lat,
-		  double *lon, double *alt, double vel_enu[], double *time_of_fix,
-		  short *week_num, unsigned char *nsvs, unsigned char sv_prn[], 
-		  short sv_IODC[], short *datum_index);
-short rpt_0x8F41 (TSIPPKT *rpt, unsigned char *bSearchRange,
-		  unsigned char *bBoardOptions, unsigned long *iiSerialNumber,
-		  unsigned char *bBuildYear, unsigned char *bBuildMonth,
-		  unsigned char *bBuildDay, unsigned char *bBuildHour,
-		  float *fOscOffset, unsigned short *iTestCodeId);
-short rpt_0x8F42 (TSIPPKT *rpt, unsigned char *bProdOptionsPre,
-		  unsigned char *bProdNumberExt, unsigned short *iCaseSerialNumberPre,
-		  unsigned long *iiCaseSerialNumber, unsigned long *iiProdNumber,
-		  unsigned short *iPremiumOptions, unsigned short *iMachineID,
-		  unsigned short *iKey);
-short rpt_0x8F45 (TSIPPKT *rpt, unsigned char *bSegMask);
-short rpt_0x8F4A_16 (TSIPPKT *rpt, unsigned char *pps_enabled,
-		     unsigned char *pps_timebase, unsigned char *pos_polarity,
-		     double *pps_offset, float *bias_unc_threshold);
-short rpt_0x8F4B (TSIPPKT *rpt, unsigned long *decorr_max);
-short rpt_0x8F4D (TSIPPKT *rpt, unsigned long *event_mask);
-short rpt_0x8FA5 (TSIPPKT *rpt, unsigned char *spktmask);
-short rpt_0x8FAD (TSIPPKT *rpt, unsigned short *COUNT, double *FracSec,
-		  unsigned char *Hour, unsigned char *Minute, unsigned char *Second,
-		  unsigned char *Day, unsigned char *Month, unsigned short *Year,
-		  unsigned char *Status, unsigned char *Flags);
+short rpt_0x8F0B(TSIPPKT* rpt, unsigned short* event, double* tow,
+                 unsigned char* date, unsigned char* month, short* year,
+                 unsigned char* dim_mode, short* utc_offset, double* bias, double* drift,
+                 float* bias_unc, float* dr_unc, double* lat, double* lon, double* alt,
+                 char sv_id[8]);
+short rpt_0x8F14(TSIPPKT* rpt, short* datum_idx, double datum_coeffs[5]);
+short rpt_0x8F15(TSIPPKT* rpt, short* datum_idx, double datum_coeffs[5]);
+short rpt_0x8F20(TSIPPKT* rpt, unsigned char* info, double* lat,
+                 double* lon, double* alt, double vel_enu[], double* time_of_fix,
+                 short* week_num, unsigned char* nsvs, unsigned char sv_prn[],
+                 short sv_IODC[], short* datum_index);
+short rpt_0x8F41(TSIPPKT* rpt, unsigned char* bSearchRange,
+                 unsigned char* bBoardOptions, unsigned long* iiSerialNumber,
+                 unsigned char* bBuildYear, unsigned char* bBuildMonth,
+                 unsigned char* bBuildDay, unsigned char* bBuildHour,
+                 float* fOscOffset, unsigned short* iTestCodeId);
+short rpt_0x8F42(TSIPPKT* rpt, unsigned char* bProdOptionsPre,
+                 unsigned char* bProdNumberExt, unsigned short* iCaseSerialNumberPre,
+                 unsigned long* iiCaseSerialNumber, unsigned long* iiProdNumber,
+                 unsigned short* iPremiumOptions, unsigned short* iMachineID,
+                 unsigned short* iKey);
+short rpt_0x8F45(TSIPPKT* rpt, unsigned char* bSegMask);
+short rpt_0x8F4A_16(TSIPPKT* rpt, unsigned char* pps_enabled,
+                    unsigned char* pps_timebase, unsigned char* pos_polarity,
+                    double* pps_offset, float* bias_unc_threshold);
+short rpt_0x8F4B(TSIPPKT* rpt, unsigned long* decorr_max);
+short rpt_0x8F4D(TSIPPKT* rpt, unsigned long* event_mask);
+short rpt_0x8FA5(TSIPPKT* rpt, unsigned char* spktmask);
+short rpt_0x8FAD(TSIPPKT* rpt, unsigned short* COUNT, double* FracSec,
+                 unsigned char* Hour, unsigned char* Minute, unsigned char* Second,
+                 unsigned char* Day, unsigned char* Month, unsigned short* Year,
+                 unsigned char* Status, unsigned char* Flags);
 
 /**/
 /* prototypes for command-encode primitives with suffix convention:  */
 /* c = clear, s = set, q = query, e = enable, d = disable            */
-void cmd_0x1F  (TSIPPKT *cmd);
-void cmd_0x26  (TSIPPKT *cmd);
-void cmd_0x2F  (TSIPPKT *cmd);
-void cmd_0x35s (TSIPPKT *cmd, unsigned char pos_code, unsigned char vel_code,
-		unsigned char time_code, unsigned char opts_code);
-void cmd_0x3C  (TSIPPKT *cmd, unsigned char sv_prn);
-void cmd_0x3Ds (TSIPPKT *cmd, unsigned char baud_out, unsigned char baud_inp,
-		unsigned char char_code, unsigned char stopbitcode,
-		unsigned char output_mode, unsigned char input_mode);
-void cmd_0xBBq (TSIPPKT *cmd, unsigned char subcode) ;
+void cmd_0x1F(TSIPPKT* cmd);
+void cmd_0x26(TSIPPKT* cmd);
+void cmd_0x2F(TSIPPKT* cmd);
+void cmd_0x35s(TSIPPKT* cmd, unsigned char pos_code, unsigned char vel_code,
+               unsigned char time_code, unsigned char opts_code);
+void cmd_0x3C(TSIPPKT* cmd, unsigned char sv_prn);
+void cmd_0x3Ds(TSIPPKT* cmd, unsigned char baud_out, unsigned char baud_inp,
+               unsigned char char_code, unsigned char stopbitcode,
+               unsigned char output_mode, unsigned char input_mode);
+void cmd_0xBBq(TSIPPKT* cmd, unsigned char subcode);
 
 /* prototypes 8E commands */
-void cmd_0x8E0Bq (TSIPPKT *cmd);
-void cmd_0x8E41q (TSIPPKT *cmd);
-void cmd_0x8E42q (TSIPPKT *cmd);
-void cmd_0x8E4Aq (TSIPPKT *cmd);
-void cmd_0x8E4As (TSIPPKT *cmd, unsigned char PPSOnOff, unsigned char TimeBase,
-		  unsigned char Polarity, double PPSOffset, float Uncertainty);
-void cmd_0x8E4Bq (TSIPPKT *cmd);
-void cmd_0x8E4Ds (TSIPPKT *cmd, unsigned long AutoOutputMask);
-void cmd_0x8EADq (TSIPPKT *cmd);
+void cmd_0x8E0Bq(TSIPPKT* cmd);
+void cmd_0x8E41q(TSIPPKT* cmd);
+void cmd_0x8E42q(TSIPPKT* cmd);
+void cmd_0x8E4Aq(TSIPPKT* cmd);
+void cmd_0x8E4As(TSIPPKT* cmd, unsigned char PPSOnOff, unsigned char TimeBase,
+                 unsigned char Polarity, double PPSOffset, float Uncertainty);
+void cmd_0x8E4Bq(TSIPPKT* cmd);
+void cmd_0x8E4Ds(TSIPPKT* cmd, unsigned long AutoOutputMask);
+void cmd_0x8EADq(TSIPPKT* cmd);
 
 /* header/source border XXXXXXXXXXXXXXXXXXXXXXXXXX */
 
 /* Trimble parse functions */
-static 	int	parse0x8FAD	(TSIPPKT *, struct peer *);
-static 	int	parse0x8F0B	(TSIPPKT *, struct peer *);
+static int parse0x8FAD(TSIPPKT*, struct peer*);
+static int parse0x8F0B(TSIPPKT*, struct peer*);
 #ifdef TRIMBLE_OUTPUT_FUNC
-static 	int	parseany	(TSIPPKT *, struct peer *);
-static 	void	TranslateTSIPReportToText	(TSIPPKT *, char *);
+static int parseany(TSIPPKT*, struct peer*);
+static void TranslateTSIPReportToText(TSIPPKT*, char*);
 #endif /* TRIMBLE_OUTPUT_FUNC */
-static 	int	parse0x5C	(TSIPPKT *, struct peer *);
-static 	int	parse0x4F	(TSIPPKT *, struct peer *);
-static	void	tsip_input_proc	(TSIPPKT *, int);
+static int parse0x5C(TSIPPKT*, struct peer*);
+static int parse0x4F(TSIPPKT*, struct peer*);
+static void tsip_input_proc(TSIPPKT*, int);
 
 /* Trimble helper functions */
-static	void	bPutFloat 	(float *, unsigned char *);
-static	void	bPutDouble 	(double *, unsigned char *);
-static	void	bPutULong 	(unsigned long *, unsigned char *);
-static	int	print_msg_table_header	(int rptcode, char *HdrStr, int force);
-static	char *	show_time	(float time_of_week);
+static void bPutFloat(float*, unsigned char*);
+static void bPutDouble(double*, unsigned char*);
+static void bPutULong(unsigned long*, unsigned char*);
+static int print_msg_table_header(int rptcode, char* HdrStr, int force);
+static char* show_time(float time_of_week);
 
 /* RIPE NCC functions */
-static	void	ripencc_control	(int, const struct refclockstat *,
-				 struct refclockstat *, struct peer *);
-static	int	ripencc_ppsapi	(struct peer *, int, int);
-static	int	ripencc_get_pps_ts	(struct ripencc_unit *, l_fp *);
-static	int	ripencc_start	(int, struct peer *);
-static 	void	ripencc_shutdown	(int, struct peer *);
-static 	void	ripencc_poll	(int, struct peer *);
-static 	void	ripencc_send	(struct peer *, TSIPPKT spt);
-static 	void	ripencc_receive	(struct recvbuf *);
+static void ripencc_control(int, const struct refclockstat*,
+                            struct refclockstat*, struct peer*);
+static int ripencc_ppsapi(struct peer*, int, int);
+static int ripencc_get_pps_ts(struct ripencc_unit*, l_fp*);
+static int ripencc_start(int, struct peer*);
+static void ripencc_shutdown(int, struct peer*);
+static void ripencc_poll(int, struct peer*);
+static void ripencc_send(struct peer*, TSIPPKT spt);
+static void ripencc_receive(struct recvbuf*);
 
 /* fill in reflock structure for our clock */
 struct refclock refclock_ripencc = {
-	ripencc_start,		/* start up driver */
-	ripencc_shutdown,	/* shut down driver */
-	ripencc_poll,		/* transmit poll message */
-	ripencc_control,	/* control function */
-	noentry,		/* initialize driver */
-	noentry,		/* debug info */
-	NOFLAGS			/* clock flags */
+    ripencc_start,    /* start up driver */
+    ripencc_shutdown, /* shut down driver */
+    ripencc_poll,     /* transmit poll message */
+    ripencc_control,  /* control function */
+    noentry,          /* initialize driver */
+    noentry,          /* debug info */
+    NOFLAGS           /* clock flags */
 };
 
 /*
  *  Tables to compute the ddd of year form icky dd/mm timecode. Viva la
  *  leap.
  */
-static int day1tab[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-static int day2tab[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static int day1tab[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static int day2tab[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 
 /*
  * ripencc_start - open the GPS devices and initialize data for processing
  */
 static int
-ripencc_start(int unit, struct peer *peer)
+ripencc_start(int unit, struct peer* peer)
 {
-	register struct ripencc_unit *up;
-	struct refclockproc *pp;
-	char device[40];
-	int fd;
-	struct termios tio;
-	TSIPPKT spt;
+    register struct ripencc_unit* up;
+    struct refclockproc* pp;
+    char device[40];
+    int fd;
+    struct termios tio;
+    TSIPPKT spt;
 
-	pp = peer->procptr;
+    pp = peer->procptr;
 
-	/*
-	 * Open serial port
-	 */
-	(void)snprintf(device, sizeof(device), DEVICE, unit);
-	fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_RAW);
-	if (fd <= 0) {
-		pp->io.fd = -1;
-		return (0);
-	}
+    /*
+     * Open serial port
+     */
+    (void)snprintf(device, sizeof(device), DEVICE, unit);
+    fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_RAW);
+    if (fd <= 0)
+    {
+        pp->io.fd = -1;
+        return (0);
+    }
 
-	pp->io.fd = fd;
+    pp->io.fd = fd;
 
-	/* from refclock_palisade.c */
-	if (tcgetattr(fd, &tio) < 0) {
-		msyslog(LOG_ERR, "Palisade(%d) tcgetattr(fd, &tio): %m",unit);
-		return (0);
-	}
+    /* from refclock_palisade.c */
+    if (tcgetattr(fd, &tio) < 0)
+    {
+        msyslog(LOG_ERR, "Palisade(%d) tcgetattr(fd, &tio): %m", unit);
+        return (0);
+    }
 
-	/*
-	 * set flags
-	 */
-	tio.c_cflag |= (PARENB|PARODD);
-	tio.c_iflag &= ~ICRNL;
-	if (tcsetattr(fd, TCSANOW, &tio) == -1) {
-		msyslog(LOG_ERR, "Palisade(%d) tcsetattr(fd, &tio): %m",unit);
-		return (0);
-	}
+    /*
+     * set flags
+     */
+    tio.c_cflag |= (PARENB | PARODD);
+    tio.c_iflag &= ~ICRNL;
+    if (tcsetattr(fd, TCSANOW, &tio) == -1)
+    {
+        msyslog(LOG_ERR, "Palisade(%d) tcsetattr(fd, &tio): %m", unit);
+        return (0);
+    }
 
-	/*
-	 * Allocate and initialize unit structure
-	 */
-	up = emalloc_zero(sizeof(*up));
+    /*
+     * Allocate and initialize unit structure
+     */
+    up = emalloc_zero(sizeof(*up));
 
-	pp->io.clock_recv = ripencc_receive;
-	pp->io.srcclock = peer;
-	pp->io.datalen = 0;
-	if (!io_addclock(&pp->io)) {
-		pp->io.fd = -1;
-		close(fd);
-		free(up);
-		return (0);
-	}
-	pp->unitptr = up;
+    pp->io.clock_recv = ripencc_receive;
+    pp->io.srcclock = peer;
+    pp->io.datalen = 0;
+    if (!io_addclock(&pp->io))
+    {
+        pp->io.fd = -1;
+        close(fd);
+        free(up);
+        return (0);
+    }
+    pp->unitptr = up;
 
-	/*
-	 * Initialize miscellaneous variables
-	 */
-	peer->precision = PRECISION;
-	pp->clockdesc = DESCRIPTION;
-	memcpy((char *)&pp->refid, REFID, REFID_LEN);
-	up->pollcnt = 2;
-	up->unit = unit;
-	up->leapdelta = 0;
-	up->utcflags = 0;
+    /*
+     * Initialize miscellaneous variables
+     */
+    peer->precision = PRECISION;
+    pp->clockdesc = DESCRIPTION;
+    memcpy((char*)&pp->refid, REFID, REFID_LEN);
+    up->pollcnt = 2;
+    up->unit = unit;
+    up->leapdelta = 0;
+    up->utcflags = 0;
 
-	/*
-	 * Initialize the Clock
-	 */
+    /*
+     * Initialize the Clock
+     */
 
-	/* query software versions */
-	cmd_0x1F(&spt);			
-	ripencc_send(peer, spt);          
+    /* query software versions */
+    cmd_0x1F(&spt);
+    ripencc_send(peer, spt);
 
-	/* query receiver health */
-	cmd_0x26(&spt);			
-	ripencc_send(peer, spt);
+    /* query receiver health */
+    cmd_0x26(&spt);
+    ripencc_send(peer, spt);
 
-	/* query serial numbers */	
-	cmd_0x8E42q(&spt);		
-	ripencc_send(peer, spt);  
-	
-	/* query manuf params */
-	cmd_0x8E41q(&spt);		
-	ripencc_send(peer, spt); 
+    /* query serial numbers */
+    cmd_0x8E42q(&spt);
+    ripencc_send(peer, spt);
 
-	/* i/o opts */ /* trimble manual page A30 */
-	cmd_0x35s(&spt, 
-		  0x1C, 	/* position */
-		  0x00, 	/* velocity */
-		  0x05, 	/* timing */
-		  0x0a); 	/* auxilary */
-	ripencc_send(peer, spt);
-	
-	/* turn off port A */
-	cmd_0x3Ds (&spt,
-		   0x0B,	/* baud_out */
-		   0x0B,	/* baud_inp */
-		   0x07,	/* char_code */
-		   0x07,	/* stopbitcode */
-		   0x01,	/* output_mode */
-		   0x00);	/* input_mode */
-	ripencc_send(peer, spt);
+    /* query manuf params */
+    cmd_0x8E41q(&spt);
+    ripencc_send(peer, spt);
 
-	/* set i/o options */
-	cmd_0x8E4As (&spt,
-		     0x01,	/* PPS on */
-		     0x01,	/* Timebase UTC */
-		     0x00,	/* polarity positive */
-		     0.,	/* 100 ft. cable XXX make flag */
-		     1e-6 * GPS_C); 	/* turn of biasuncert. > (1us) */
-	ripencc_send(peer,spt);
+    /* i/o opts */ /* trimble manual page A30 */
+    cmd_0x35s(&spt,
+              0x1C,  /* position */
+              0x00,  /* velocity */
+              0x05,  /* timing */
+              0x0a); /* auxilary */
+    ripencc_send(peer, spt);
 
-	/* all outomatic packet output off */
-	cmd_0x8E4Ds(&spt,
-		    0x00000000); /* AutoOutputMask */
-	ripencc_send(peer, spt);
+    /* turn off port A */
+    cmd_0x3Ds(&spt,
+              0x0B,  /* baud_out */
+              0x0B,  /* baud_inp */
+              0x07,  /* char_code */
+              0x07,  /* stopbitcode */
+              0x01,  /* output_mode */
+              0x00); /* input_mode */
+    ripencc_send(peer, spt);
 
-	cmd_0xBBq (&spt,
-		   0x00);	/* query primary configuration */
-	ripencc_send(peer,spt);
+    /* set i/o options */
+    cmd_0x8E4As(&spt,
+                0x01,          /* PPS on */
+                0x01,          /* Timebase UTC */
+                0x00,          /* polarity positive */
+                0.,            /* 100 ft. cable XXX make flag */
+                1e-6 * GPS_C); /* turn of biasuncert. > (1us) */
+    ripencc_send(peer, spt);
+
+    /* all outomatic packet output off */
+    cmd_0x8E4Ds(&spt,
+                0x00000000); /* AutoOutputMask */
+    ripencc_send(peer, spt);
+
+    cmd_0xBBq(&spt,
+              0x00); /* query primary configuration */
+    ripencc_send(peer, spt);
 
 
-	/* query PPS parameters */
-	cmd_0x8E4Aq (&spt);	/* query PPS params */
-	ripencc_send(peer,spt);
+    /* query PPS parameters */
+    cmd_0x8E4Aq(&spt); /* query PPS params */
+    ripencc_send(peer, spt);
 
-	/* query survey limit */
-	cmd_0x8E4Bq (&spt);	/* query survey limit */
-	ripencc_send(peer,spt);
+    /* query survey limit */
+    cmd_0x8E4Bq(&spt); /* query survey limit */
+    ripencc_send(peer, spt);
 
 #ifdef DEBUG_NCC
-	if (debug)
-		printf("ripencc_start: success\n");
+    if (debug)
+        printf("ripencc_start: success\n");
 #endif /* DEBUG_NCC */
 
-	/*
-	 * Start the PPSAPI interface if it is there. Default to use
-	 * the assert edge and do not enable the kernel hardpps.
-	 */
-	if (time_pps_create(fd, &up->handle) < 0) {
-		up->handle = 0;
-		msyslog(LOG_ERR, "refclock_ripencc: time_pps_create failed: %m");
-		return (1);
-	}
+    /*
+     * Start the PPSAPI interface if it is there. Default to use
+     * the assert edge and do not enable the kernel hardpps.
+     */
+    if (time_pps_create(fd, &up->handle) < 0)
+    {
+        up->handle = 0;
+        msyslog(LOG_ERR, "refclock_ripencc: time_pps_create failed: %m");
+        return (1);
+    }
 
-	return(ripencc_ppsapi(peer, 0, 0));
+    return (ripencc_ppsapi(peer, 0, 0));
 }
 
 /*
@@ -616,200 +643,210 @@ ripencc_start(int unit, struct peer *peer)
  */
 static void
 ripencc_control(
-	int unit,		/* unit (not used) */
-	const struct refclockstat *in, /* input parameters (not used) */
-	struct refclockstat *out, /* output parameters (not used) */
-	struct peer *peer	/* peer structure pointer */
-	)
+    int unit,                      /* unit (not used) */
+    const struct refclockstat* in, /* input parameters (not used) */
+    struct refclockstat* out,      /* output parameters (not used) */
+    struct peer* peer              /* peer structure pointer */
+)
 {
-	struct refclockproc *pp;
+    struct refclockproc* pp;
 
 #ifdef DEBUG_NCC
-	msyslog(LOG_INFO,"%s()",__FUNCTION__);
+    msyslog(LOG_INFO, "%s()", __FUNCTION__);
 #endif /* DEBUG_NCC */
 
-	pp = peer->procptr;
-	ripencc_ppsapi(peer, pp->sloppyclockflag & CLK_FLAG2,
-		       pp->sloppyclockflag & CLK_FLAG3);
+    pp = peer->procptr;
+    ripencc_ppsapi(peer, pp->sloppyclockflag & CLK_FLAG2,
+                   pp->sloppyclockflag & CLK_FLAG3);
 }
 
 
 /*
  * Initialize PPSAPI
  */
-int
-ripencc_ppsapi(
-	struct peer *peer,	/* peer structure pointer */
-	int enb_clear,		/* clear enable */
-	int enb_hardpps		/* hardpps enable */
-	)
+int ripencc_ppsapi(
+    struct peer* peer, /* peer structure pointer */
+    int enb_clear,     /* clear enable */
+    int enb_hardpps    /* hardpps enable */
+)
 {
-	struct refclockproc *pp;
-	struct ripencc_unit *up;
-	int capability;
+    struct refclockproc* pp;
+    struct ripencc_unit* up;
+    int capability;
 
-	pp = peer->procptr;
-	up = pp->unitptr;
-	if (time_pps_getcap(up->handle, &capability) < 0) {
-		msyslog(LOG_ERR,
-			"refclock_ripencc: time_pps_getcap failed: %m");
-		return (0);
-	}
-	memset(&up->pps_params, 0, sizeof(pps_params_t));
-	if (enb_clear)
-		up->pps_params.mode = capability & PPS_CAPTURECLEAR;
-	else
-		up->pps_params.mode = capability & PPS_CAPTUREASSERT;
-	if (!up->pps_params.mode) {
-		msyslog(LOG_ERR,
-			"refclock_ripencc: invalid capture edge %d",
-			!enb_clear);
-		return (0);
-	}
-	up->pps_params.mode |= PPS_TSFMT_TSPEC;
-	if (time_pps_setparams(up->handle, &up->pps_params) < 0) {
-		msyslog(LOG_ERR,
-			"refclock_ripencc: time_pps_setparams failed: %m");
-		return (0);
-	}
-	if (enb_hardpps) {
-		if (time_pps_kcbind(up->handle, PPS_KC_HARDPPS,
-				    up->pps_params.mode & ~PPS_TSFMT_TSPEC,
-				    PPS_TSFMT_TSPEC) < 0) {
-			msyslog(LOG_ERR,
-				"refclock_ripencc: time_pps_kcbind failed: %m");
-			return (0);
-		}
-		hardpps_enable = 1;
-	}
-	peer->precision = PPS_PRECISION;
+    pp = peer->procptr;
+    up = pp->unitptr;
+    if (time_pps_getcap(up->handle, &capability) < 0)
+    {
+        msyslog(LOG_ERR,
+                "refclock_ripencc: time_pps_getcap failed: %m");
+        return (0);
+    }
+    memset(&up->pps_params, 0, sizeof(pps_params_t));
+    if (enb_clear)
+        up->pps_params.mode = capability & PPS_CAPTURECLEAR;
+    else
+        up->pps_params.mode = capability & PPS_CAPTUREASSERT;
+    if (!up->pps_params.mode)
+    {
+        msyslog(LOG_ERR,
+                "refclock_ripencc: invalid capture edge %d",
+                !enb_clear);
+        return (0);
+    }
+    up->pps_params.mode |= PPS_TSFMT_TSPEC;
+    if (time_pps_setparams(up->handle, &up->pps_params) < 0)
+    {
+        msyslog(LOG_ERR,
+                "refclock_ripencc: time_pps_setparams failed: %m");
+        return (0);
+    }
+    if (enb_hardpps)
+    {
+        if (time_pps_kcbind(up->handle, PPS_KC_HARDPPS,
+                            up->pps_params.mode & ~PPS_TSFMT_TSPEC,
+                            PPS_TSFMT_TSPEC) < 0)
+        {
+            msyslog(LOG_ERR,
+                    "refclock_ripencc: time_pps_kcbind failed: %m");
+            return (0);
+        }
+        hardpps_enable = 1;
+    }
+    peer->precision = PPS_PRECISION;
 
 #if DEBUG_NCC
-	if (debug) {
-		time_pps_getparams(up->handle, &up->pps_params);
-		printf(
-			"refclock_ripencc: capability 0x%x version %d mode 0x%x kern %d\n",
-			capability, up->pps_params.api_version,
-			up->pps_params.mode, enb_hardpps);
-	}
+    if (debug)
+    {
+        time_pps_getparams(up->handle, &up->pps_params);
+        printf(
+            "refclock_ripencc: capability 0x%x version %d mode 0x%x kern %d\n",
+            capability, up->pps_params.api_version,
+            up->pps_params.mode, enb_hardpps);
+    }
 #endif /* DEBUG_NCC */
 
-	return (1);
+    return (1);
 }
 
 /*
  * This function is called every 64 seconds from ripencc_receive
- * It will fetch the pps time 
+ * It will fetch the pps time
  *
  * Return 0 on failure and 1 on success.
  */
 static int
 ripencc_get_pps_ts(
-	struct ripencc_unit *up,
-	l_fp *tsptr
-	)
+    struct ripencc_unit* up,
+    l_fp* tsptr)
 {
-	pps_info_t pps_info;
-	struct timespec timeout, ts;
-	double dtemp;
-	l_fp tstmp;
+    pps_info_t pps_info;
+    struct timespec timeout, ts;
+    double dtemp;
+    l_fp tstmp;
 
 #ifdef DEBUG_PPS
-	msyslog(LOG_INFO,"ripencc_get_pps_ts");
+    msyslog(LOG_INFO, "ripencc_get_pps_ts");
 #endif /* DEBUG_PPS */
 
 
-	/*
-	 * Convert the timespec nanoseconds field to ntp l_fp units.
-	 */ 
-	if (up->handle == 0)
-		return (0);
-	timeout.tv_sec = 0;
-	timeout.tv_nsec = 0;
-	memcpy(&pps_info, &up->pps_info, sizeof(pps_info_t));
-	if (time_pps_fetch(up->handle, PPS_TSFMT_TSPEC, &up->pps_info,
-			   &timeout) < 0)
-		return (0);
-	if (up->pps_params.mode & PPS_CAPTUREASSERT) {
-		if (pps_info.assert_sequence ==
-		    up->pps_info.assert_sequence)
-			return (0);
-		ts = up->pps_info.assert_timestamp;
-	} else if (up->pps_params.mode & PPS_CAPTURECLEAR) {
-		if (pps_info.clear_sequence ==
-		    up->pps_info.clear_sequence)
-			return (0);
-		ts = up->pps_info.clear_timestamp;
-	} else {
-		return (0);
-	}
-	if ((up->ts.tv_sec == ts.tv_sec) && (up->ts.tv_nsec == ts.tv_nsec))
-		return (0);
-	up->ts = ts;
+    /*
+     * Convert the timespec nanoseconds field to ntp l_fp units.
+     */
+    if (up->handle == 0)
+        return (0);
+    timeout.tv_sec = 0;
+    timeout.tv_nsec = 0;
+    memcpy(&pps_info, &up->pps_info, sizeof(pps_info_t));
+    if (time_pps_fetch(up->handle, PPS_TSFMT_TSPEC, &up->pps_info,
+                       &timeout) < 0)
+        return (0);
+    if (up->pps_params.mode & PPS_CAPTUREASSERT)
+    {
+        if (pps_info.assert_sequence ==
+            up->pps_info.assert_sequence)
+            return (0);
+        ts = up->pps_info.assert_timestamp;
+    }
+    else if (up->pps_params.mode & PPS_CAPTURECLEAR)
+    {
+        if (pps_info.clear_sequence ==
+            up->pps_info.clear_sequence)
+            return (0);
+        ts = up->pps_info.clear_timestamp;
+    }
+    else
+    {
+        return (0);
+    }
+    if ((up->ts.tv_sec == ts.tv_sec) && (up->ts.tv_nsec == ts.tv_nsec))
+        return (0);
+    up->ts = ts;
 
-	tstmp.l_ui = ts.tv_sec + JAN_1970;
-	dtemp = ts.tv_nsec * FRAC / 1e9;
-	tstmp.l_uf = (u_int32)dtemp;
+    tstmp.l_ui = ts.tv_sec + JAN_1970;
+    dtemp = ts.tv_nsec * FRAC / 1e9;
+    tstmp.l_uf = (u_int32)dtemp;
 
 #ifdef DEBUG_PPS
-	msyslog(LOG_INFO,"ts.tv_sec: %d",(int)ts.tv_sec);
-	msyslog(LOG_INFO,"ts.tv_nsec: %ld",ts.tv_nsec);
+    msyslog(LOG_INFO, "ts.tv_sec: %d", (int)ts.tv_sec);
+    msyslog(LOG_INFO, "ts.tv_nsec: %ld", ts.tv_nsec);
 #endif /* DEBUG_PPS */
 
-	*tsptr = tstmp;
-	return (1);
+    *tsptr = tstmp;
+    return (1);
 }
 
 /*
  * ripencc_shutdown - shut down a GPS clock
  */
 static void
-ripencc_shutdown(int unit, struct peer *peer)
+ripencc_shutdown(int unit, struct peer* peer)
 {
-	register struct ripencc_unit *up;
-	struct refclockproc *pp;
+    register struct ripencc_unit* up;
+    struct refclockproc* pp;
 
-	pp = peer->procptr;
-	up = pp->unitptr;
+    pp = peer->procptr;
+    up = pp->unitptr;
 
-	if (up != NULL) {
-		if (up->handle != 0)
-			time_pps_destroy(up->handle);
-		free(up);
-	}
-	if (-1 != pp->io.fd)
-		io_closeclock(&pp->io);
+    if (up != NULL)
+    {
+        if (up->handle != 0)
+            time_pps_destroy(up->handle);
+        free(up);
+    }
+    if (-1 != pp->io.fd)
+        io_closeclock(&pp->io);
 
-	return;
+    return;
 }
 
 /*
  * ripencc_poll - called by the transmit procedure
  */
 static void
-ripencc_poll(int unit, struct peer *peer)
+ripencc_poll(int unit, struct peer* peer)
 {
-	register struct ripencc_unit *up;
-	struct refclockproc *pp;
-	TSIPPKT spt;
+    register struct ripencc_unit* up;
+    struct refclockproc* pp;
+    TSIPPKT spt;
 
 #ifdef DEBUG_NCC
-	if (debug)
-		fprintf(stderr, "ripencc_poll(%d)\n", unit);
+    if (debug)
+        fprintf(stderr, "ripencc_poll(%d)\n", unit);
 #endif /* DEBUG_NCC */
-	pp = peer->procptr;
-	up = pp->unitptr;
-	if (up->pollcnt == 0)
-		refclock_report(peer, CEVNT_TIMEOUT);
-	else
-		up->pollcnt--;
+    pp = peer->procptr;
+    up = pp->unitptr;
+    if (up->pollcnt == 0)
+        refclock_report(peer, CEVNT_TIMEOUT);
+    else
+        up->pollcnt--;
 
-	pp->polls++;
-	up->polled = 1;
+    pp->polls++;
+    up->polled = 1;
 
-	/* poll for UTC superpacket */
-	cmd_0x8EADq (&spt);
-	ripencc_send(peer,spt);
+    /* poll for UTC superpacket */
+    cmd_0x8EADq(&spt);
+    ripencc_send(peer, spt);
 }
 
 /*
@@ -818,62 +855,67 @@ ripencc_poll(int unit, struct peer *peer)
  * makes the code more readable/clean
  */
 static void
-ripencc_send(struct peer *peer, TSIPPKT spt)
+ripencc_send(struct peer* peer, TSIPPKT spt)
 {
-	unsigned char *ip, *op;
-	unsigned char obuf[512];
+    unsigned char *ip, *op;
+    unsigned char obuf[512];
 
 #ifdef DEBUG_RAW
-	{
-		register struct ripencc_unit *up;
-		register struct refclockproc *pp;	
+    {
+        register struct ripencc_unit* up;
+        register struct refclockproc* pp;
 
-		pp = peer->procptr;
-		up = pp->unitptr;
-		if (debug)
-			printf("ripencc_send(%d, %02X)\n", up->unit, cmd);
-	}
+        pp = peer->procptr;
+        up = pp->unitptr;
+        if (debug)
+            printf("ripencc_send(%d, %02X)\n", up->unit, cmd);
+    }
 #endif /* DEBUG_RAW */
 
-	ip = spt.buf;
-	op = obuf;
+    ip = spt.buf;
+    op = obuf;
 
-	*op++ = 0x10;
-	*op++ = spt.code;
+    *op++ = 0x10;
+    *op++ = spt.code;
 
-	while (spt.len--) {
-		if (op-obuf > sizeof(obuf)-5) {
-			msyslog(LOG_ERR, "ripencc_send obuf overflow!");
-			refclock_report(peer, CEVNT_FAULT);
-			return;
-		}
-			
-		if (*ip == 0x10) /* byte stuffing */
-			*op++ = 0x10;
-		*op++ = *ip++;
-	}
-	
-	*op++ = 0x10;
-	*op++ = 0x03;
+    while (spt.len--)
+    {
+        if (op - obuf > sizeof(obuf) - 5)
+        {
+            msyslog(LOG_ERR, "ripencc_send obuf overflow!");
+            refclock_report(peer, CEVNT_FAULT);
+            return;
+        }
+
+        if (*ip == 0x10) /* byte stuffing */
+            *op++ = 0x10;
+        *op++ = *ip++;
+    }
+
+    *op++ = 0x10;
+    *op++ = 0x03;
 
 #ifdef DEBUG_RAW
-	if (debug) { /* print raw packet */
-		unsigned char *cp;
-		int i;
+    if (debug)
+    { /* print raw packet */
+        unsigned char* cp;
+        int i;
 
-		printf("ripencc_send: len %d\n", op-obuf);
-		for (i=1, cp=obuf; cp<op; i++, cp++) {
-			printf(" %02X", *cp);
-			if (i%10 == 0) 
-				printf("\n");
-		}
-		printf("\n");
-	}
+        printf("ripencc_send: len %d\n", op - obuf);
+        for (i = 1, cp = obuf; cp < op; i++, cp++)
+        {
+            printf(" %02X", *cp);
+            if (i % 10 == 0)
+                printf("\n");
+        }
+        printf("\n");
+    }
 #endif /* DEBUG_RAW */
 
-	if (write(peer->procptr->io.fd, obuf, op-obuf) == -1) {
-		refclock_report(peer, CEVNT_FAULT);
-	}
+    if (write(peer->procptr->io.fd, obuf, op - obuf) == -1)
+    {
+        refclock_report(peer, CEVNT_FAULT);
+    }
 }
 
 /*
@@ -884,392 +926,373 @@ ripencc_send(struct peer *peer, TSIPPKT spt)
  *
  */
 static void
-ripencc_receive(struct recvbuf *rbufp)
+ripencc_receive(struct recvbuf* rbufp)
 {
-	register struct ripencc_unit *up;
-	register struct refclockproc *pp;	
-	struct peer *peer;
-	static TSIPPKT rpt;	/* for current incoming TSIP report */ 
-	TSIPPKT spt;		/* send packet */
-	int ns_since_pps;			
-	int i;
-	char *cp;
-	/* these variables hold data until we decide it's worth keeping */
-	char    rd_lastcode[BMAX];
-	l_fp    rd_tmp;
-	u_short rd_lencode;
+    register struct ripencc_unit* up;
+    register struct refclockproc* pp;
+    struct peer* peer;
+    static TSIPPKT rpt; /* for current incoming TSIP report */
+    TSIPPKT spt;        /* send packet */
+    int ns_since_pps;
+    int i;
+    char* cp;
+    /* these variables hold data until we decide it's worth keeping */
+    char rd_lastcode[BMAX];
+    l_fp rd_tmp;
+    u_short rd_lencode;
 
-	/* msyslog(LOG_INFO, "%s",__FUNCTION__); */
+    /* msyslog(LOG_INFO, "%s",__FUNCTION__); */
 
-	/*
-	 * Initialize pointers and read the timecode and timestamp
-	 */
-	peer = rbufp->recv_peer;
-	pp = peer->procptr;
-	up = pp->unitptr;
-	rd_lencode = refclock_gtlin(rbufp, rd_lastcode, BMAX, &rd_tmp);
+    /*
+     * Initialize pointers and read the timecode and timestamp
+     */
+    peer = rbufp->recv_peer;
+    pp = peer->procptr;
+    up = pp->unitptr;
+    rd_lencode = refclock_gtlin(rbufp, rd_lastcode, BMAX, &rd_tmp);
 
 #ifdef DEBUG_RAW
-	if (debug)
-		fprintf(stderr, "ripencc_receive(%d)\n", up->unit);
+    if (debug)
+        fprintf(stderr, "ripencc_receive(%d)\n", up->unit);
 #endif /* DEBUG_RAW */
 
 #ifdef DEBUG_RAW
-	if (debug) {		/* print raw packet */
-		int i;
-		unsigned char *cp;
+    if (debug)
+    { /* print raw packet */
+        int i;
+        unsigned char* cp;
 
-		printf("ripencc_receive: len %d\n", rbufp->recv_length);
-		for (i=1, cp=(char*)&rbufp->recv_space;
-		     i <= rbufp->recv_length;
-		     i++, cp++) {
-			printf(" %02X", *cp);
-			if (i%10 == 0) 
-				printf("\n");
-		}
-		printf("\n");
-	}
+        printf("ripencc_receive: len %d\n", rbufp->recv_length);
+        for (i = 1, cp = (char*)&rbufp->recv_space;
+             i <= rbufp->recv_length;
+             i++, cp++)
+        {
+            printf(" %02X", *cp);
+            if (i % 10 == 0)
+                printf("\n");
+        }
+        printf("\n");
+    }
 #endif /* DEBUG_RAW */
 
-	cp = (char*) &rbufp->recv_space;
-	i=rbufp->recv_length;
+    cp = (char*)&rbufp->recv_space;
+    i = rbufp->recv_length;
 
-	while (i--) {		/* loop over received chars */
+    while (i--)
+    { /* loop over received chars */
 
-		tsip_input_proc(&rpt, (unsigned char) *cp++);
+        tsip_input_proc(&rpt, (unsigned char)*cp++);
 
-		if (rpt.status != TSIP_PARSED_FULL)
-			continue;
+        if (rpt.status != TSIP_PARSED_FULL)
+            continue;
 
-		switch (rpt.code) {
+        switch (rpt.code)
+        {
 
-		    case 0x8F:	/* superpacket */
+        case 0x8F: /* superpacket */
 
-			switch (rpt.buf[0U]) {
+            switch (rpt.buf[0U])
+            {
 
-			    case 0xAD:	/* UTC Time */
-				/*
-				** When polling on port B the timecode is
-				** the time of the previous PPS.  If we
-				** completed receiving the packet less than
-				** 150ms after the turn of the second, it
-				** may have the code of the previous second.
-				** We do not trust that and simply poll
-				** again without even parsing it.
-				**
-				** More elegant would be to re-schedule the
-				** poll, but I do not know (yet) how to do
-				** that cleanly.
-				**
-				*/
-				/* BLA ns_since_pps = ncc_tstmp(rbufp, &trtmp); */
-/*   if (up->polled && ns_since_pps > -1 && ns_since_pps < 150) { */
+            case 0xAD: /* UTC Time */
+                /*
+                ** When polling on port B the timecode is
+                ** the time of the previous PPS.  If we
+                ** completed receiving the packet less than
+                ** 150ms after the turn of the second, it
+                ** may have the code of the previous second.
+                ** We do not trust that and simply poll
+                ** again without even parsing it.
+                **
+                ** More elegant would be to re-schedule the
+                ** poll, but I do not know (yet) how to do
+                ** that cleanly.
+                **
+                */
+                /* BLA ns_since_pps = ncc_tstmp(rbufp, &trtmp); */
+                /*   if (up->polled && ns_since_pps > -1 && ns_since_pps < 150) { */
 
-				ns_since_pps = 200;
-				if (up->polled && ns_since_pps < 150) {
-					msyslog(LOG_INFO, "%s(): up->polled",
-						__FUNCTION__);
-					ripencc_poll(up->unit, peer);
-					break;
-				}
+                ns_since_pps = 200;
+                if (up->polled && ns_since_pps < 150)
+                {
+                    msyslog(LOG_INFO, "%s(): up->polled",
+                            __FUNCTION__);
+                    ripencc_poll(up->unit, peer);
+                    break;
+                }
 
-			        /*
- 				 * Parse primary utc time packet
-				 * and fill refclock structure 
-				 * from results. 
-				 */
-				if (parse0x8FAD(&rpt, peer) < 0) {
-					msyslog(LOG_INFO, "%s(): parse0x8FAD < 0",__FUNCTION__);
-					refclock_report(peer, CEVNT_BADREPLY);
-					break;
-				}
-				/*
-				 * If the PPSAPI is working, rather use its 
-				 * timestamps.
-				 * assume that the PPS occurs on the second 
-				 * so blow any msec
-				 */
-				if (ripencc_get_pps_ts(up, &rd_tmp) == 1) {
-					pp->lastrec = up->tstamp = rd_tmp;
-					pp->nsec = 0;
-				}
-				else
-					msyslog(LOG_INFO, "%s(): ripencc_get_pps_ts returns failure",__FUNCTION__);
+                /*
+                 * Parse primary utc time packet
+                 * and fill refclock structure
+                 * from results.
+                 */
+                if (parse0x8FAD(&rpt, peer) < 0)
+                {
+                    msyslog(LOG_INFO, "%s(): parse0x8FAD < 0", __FUNCTION__);
+                    refclock_report(peer, CEVNT_BADREPLY);
+                    break;
+                }
+                /*
+                 * If the PPSAPI is working, rather use its
+                 * timestamps.
+                 * assume that the PPS occurs on the second
+                 * so blow any msec
+                 */
+                if (ripencc_get_pps_ts(up, &rd_tmp) == 1)
+                {
+                    pp->lastrec = up->tstamp = rd_tmp;
+                    pp->nsec = 0;
+                }
+                else
+                    msyslog(LOG_INFO, "%s(): ripencc_get_pps_ts returns failure", __FUNCTION__);
 
 
-				if (!up->polled) { 
-					msyslog(LOG_INFO, "%s(): unrequested packet",__FUNCTION__);
-					/* unrequested packet */
-					break;
-				}
+                if (!up->polled)
+                {
+                    msyslog(LOG_INFO, "%s(): unrequested packet", __FUNCTION__);
+                    /* unrequested packet */
+                    break;
+                }
 
-				/* we have been polled ! */
-				up->polled = 0;
-				up->pollcnt = 2;
+                /* we have been polled ! */
+                up->polled = 0;
+                up->pollcnt = 2;
 
-				/* poll for next packet */
-				cmd_0x8E0Bq(&spt);
-				ripencc_send(peer,spt);
-				
-				if (ns_since_pps < 0) { /* no PPS */
-					msyslog(LOG_INFO, "%s(): ns_since_pps < 0",__FUNCTION__);
-					refclock_report(peer, CEVNT_BADTIME);
-					break;
-				}
+                /* poll for next packet */
+                cmd_0x8E0Bq(&spt);
+                ripencc_send(peer, spt);
 
-				/*
-				** Process the new sample in the median
-				** filter and determine the reference clock
-				** offset and dispersion.
-				*/
-				if (!refclock_process(pp)) {
-					msyslog(LOG_INFO, "%s(): !refclock_process",__FUNCTION__);
-					refclock_report(peer, CEVNT_BADTIME);
-					break;
-				}
+                if (ns_since_pps < 0)
+                { /* no PPS */
+                    msyslog(LOG_INFO, "%s(): ns_since_pps < 0", __FUNCTION__);
+                    refclock_report(peer, CEVNT_BADTIME);
+                    break;
+                }
 
-				refclock_receive(peer);
-				break;
-			
-			    case 0x0B: /* comprehensive time packet */
-				parse0x8F0B(&rpt, peer);
-				break;
+                /*
+                ** Process the new sample in the median
+                ** filter and determine the reference clock
+                ** offset and dispersion.
+                */
+                if (!refclock_process(pp))
+                {
+                    msyslog(LOG_INFO, "%s(): !refclock_process", __FUNCTION__);
+                    refclock_report(peer, CEVNT_BADTIME);
+                    break;
+                }
 
-			    default: /* other superpackets */
+                refclock_receive(peer);
+                break;
+
+            case 0x0B: /* comprehensive time packet */
+                parse0x8F0B(&rpt, peer);
+                break;
+
+            default: /* other superpackets */
 #ifdef DEBUG_NCC
-				msyslog(LOG_INFO, "%s(): calling parseany",
-					__FUNCTION__);
+                msyslog(LOG_INFO, "%s(): calling parseany",
+                        __FUNCTION__);
 #endif /* DEBUG_NCC */
 #ifdef TRIMBLE_OUTPUT_FUNC
-				parseany(&rpt, peer);
+                parseany(&rpt, peer);
 #endif /* TRIMBLE_OUTPUT_FUNC */
-				break;
-			}
-			break;
+                break;
+            }
+            break;
 
-		    case 0x4F:	/* UTC parameters, for leap info */
-			parse0x4F(&rpt, peer);
-			break;
+        case 0x4F: /* UTC parameters, for leap info */
+            parse0x4F(&rpt, peer);
+            break;
 
-		    case 0x5C:	/* sat tracking data */
-			parse0x5C(&rpt, peer);
-			break;
+        case 0x5C: /* sat tracking data */
+            parse0x5C(&rpt, peer);
+            break;
 
-		    default:	/* other packets */
+        default: /* other packets */
 #ifdef TRIMBLE_OUTPUT_FUNC
-			parseany(&rpt, peer);
+            parseany(&rpt, peer);
 #endif /* TRIMBLE_OUTPUT_FUNC */
-			break;
-		}
-   		rpt.status = TSIP_PARSED_EMPTY;
-	}
+            break;
+        }
+        rpt.status = TSIP_PARSED_EMPTY;
+    }
 }
 
-/* 
+/*
  * All trimble functions that are directly referenced from driver code
  * (so not from parseany)
  */
 
 /* request software versions */
-void
-cmd_0x1F(
-	 TSIPPKT *cmd
-	 )
+void cmd_0x1F(
+    TSIPPKT* cmd)
 {
-	cmd->len = 0;
-	cmd->code = 0x1F;
+    cmd->len = 0;
+    cmd->code = 0x1F;
 }
 
 /* request receiver health */
-void
-cmd_0x26(
-	 TSIPPKT *cmd
-	 )
+void cmd_0x26(
+    TSIPPKT* cmd)
 {
-	cmd->len = 0;
-	cmd->code = 0x26;
+    cmd->len = 0;
+    cmd->code = 0x26;
 }
 
 /* request UTC params */
-void
-cmd_0x2F(
-	 TSIPPKT *cmd
-	 )
+void cmd_0x2F(
+    TSIPPKT* cmd)
 {
-	cmd->len = 0;
-	cmd->code = 0x2F;
+    cmd->len = 0;
+    cmd->code = 0x2F;
 }
 
 /* set serial I/O options */
-void
-cmd_0x35s(
-	 TSIPPKT *cmd,
-	 unsigned char pos_code,
-	 unsigned char vel_code,
-	 unsigned char time_code,
-	 unsigned char opts_code
-	 )
+void cmd_0x35s(
+    TSIPPKT* cmd,
+    unsigned char pos_code,
+    unsigned char vel_code,
+    unsigned char time_code,
+    unsigned char opts_code)
 {
-	cmd->buf[0U] = pos_code;
-	cmd->buf[1U] = vel_code;
-	cmd->buf[2U] = time_code;
-	cmd->buf[3U] = opts_code;
-	cmd->len = 4;
-	cmd->code = 0x35;
+    cmd->buf[0U] = pos_code;
+    cmd->buf[1U] = vel_code;
+    cmd->buf[2U] = time_code;
+    cmd->buf[3U] = opts_code;
+    cmd->len = 4;
+    cmd->code = 0x35;
 }
 
 /* request tracking status */
-void
-cmd_0x3C(
-	 TSIPPKT *cmd,
-	 unsigned char sv_prn
-	 )
+void cmd_0x3C(
+    TSIPPKT* cmd,
+    unsigned char sv_prn)
 {
-	cmd->buf[0U] = sv_prn;
-	cmd->len = 1;
-	cmd->code = 0x3C;
+    cmd->buf[0U] = sv_prn;
+    cmd->len = 1;
+    cmd->code = 0x3C;
 }
 
 /* set Channel A configuration for dual-port operation */
-void
-cmd_0x3Ds(
-	  TSIPPKT *cmd,
-	  unsigned char baud_out,
-	  unsigned char baud_inp,
-	  unsigned char char_code,
-	  unsigned char stopbitcode,
-	  unsigned char output_mode,
-	  unsigned char input_mode
-	  )
+void cmd_0x3Ds(
+    TSIPPKT* cmd,
+    unsigned char baud_out,
+    unsigned char baud_inp,
+    unsigned char char_code,
+    unsigned char stopbitcode,
+    unsigned char output_mode,
+    unsigned char input_mode)
 {
-	cmd->buf[0U] = baud_out;		/* XMT baud rate */
-	cmd->buf[1U] = baud_inp;		/* RCV baud rate */
-	cmd->buf[2U] = char_code;	/* parity and #bits per byte */
-	cmd->buf[3U] = stopbitcode;	/* number of stop bits code */
-	cmd->buf[4U] = output_mode;	/* Ch. A transmission mode */
-	cmd->buf[5U] = input_mode;	/* Ch. A reception mode */
-	cmd->len = 6;
-	cmd->code = 0x3D;
+    cmd->buf[0U] = baud_out;    /* XMT baud rate */
+    cmd->buf[1U] = baud_inp;    /* RCV baud rate */
+    cmd->buf[2U] = char_code;   /* parity and #bits per byte */
+    cmd->buf[3U] = stopbitcode; /* number of stop bits code */
+    cmd->buf[4U] = output_mode; /* Ch. A transmission mode */
+    cmd->buf[5U] = input_mode;  /* Ch. A reception mode */
+    cmd->len = 6;
+    cmd->code = 0x3D;
 }
 
 
 /* query primary configuration */
-void
-cmd_0xBBq(
-	  TSIPPKT *cmd,
-	  unsigned char subcode
-	  )
+void cmd_0xBBq(
+    TSIPPKT* cmd,
+    unsigned char subcode)
 {
-	cmd->len = 1;
-	cmd->code = 0xBB;
-	cmd->buf[0U] = subcode;
+    cmd->len = 1;
+    cmd->code = 0xBB;
+    cmd->buf[0U] = subcode;
 }
 
 
 /**** Superpackets ****/
 /* 8E-0B to query 8F-0B controls */
-void
-cmd_0x8E0Bq(
-	    TSIPPKT *cmd
-	    )
+void cmd_0x8E0Bq(
+    TSIPPKT* cmd)
 {
-	cmd->len = 1;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x0B;
+    cmd->len = 1;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x0B;
 }
 
 
 /* 8F-41 to query board serial number */
-void
-cmd_0x8E41q(
-	    TSIPPKT *cmd
-	    )
+void cmd_0x8E41q(
+    TSIPPKT* cmd)
 {
-	cmd->len = 1;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x41;
+    cmd->len = 1;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x41;
 }
 
 
 /* 8F-42 to query product serial number */
-void
-cmd_0x8E42q(
-	    TSIPPKT *cmd
-	    )
+void cmd_0x8E42q(
+    TSIPPKT* cmd)
 {
-	cmd->len = 1;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x42;
+    cmd->len = 1;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x42;
 }
 
 
 /* 8F-4A to query PPS parameters */
-void
-cmd_0x8E4Aq(
-	    TSIPPKT *cmd
-	    )
+void cmd_0x8E4Aq(
+    TSIPPKT* cmd)
 {
-	cmd->len = 1;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x4A;
+    cmd->len = 1;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x4A;
 }
 
 
 /* set i/o options */
-void
-cmd_0x8E4As(
-	    TSIPPKT *cmd,
-	    unsigned char PPSOnOff,
-	    unsigned char TimeBase,
-	    unsigned char Polarity,
-	    double PPSOffset,
-	    float Uncertainty
-	    )
+void cmd_0x8E4As(
+    TSIPPKT* cmd,
+    unsigned char PPSOnOff,
+    unsigned char TimeBase,
+    unsigned char Polarity,
+    double PPSOffset,
+    float Uncertainty)
 {
-	cmd->len = 16;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x4A;
-	cmd->buf[1U] = PPSOnOff;
-	cmd->buf[2U] = TimeBase;
-	cmd->buf[3U] = Polarity;
-	bPutDouble (&PPSOffset, &cmd->buf[4U]);
-	bPutFloat (&Uncertainty, &cmd->buf[12U]);
+    cmd->len = 16;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x4A;
+    cmd->buf[1U] = PPSOnOff;
+    cmd->buf[2U] = TimeBase;
+    cmd->buf[3U] = Polarity;
+    bPutDouble(&PPSOffset, &cmd->buf[4U]);
+    bPutFloat(&Uncertainty, &cmd->buf[12U]);
 }
 
 /* 8F-4B query survey limit */
-void
-cmd_0x8E4Bq(
-	    TSIPPKT *cmd
-	    )
+void cmd_0x8E4Bq(
+    TSIPPKT* cmd)
 {
-	cmd->len = 1;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x4B;
+    cmd->len = 1;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x4B;
 }
 
 /* poll for UTC superpacket */
 /* 8E-AD to query 8F-AD controls */
-void
-cmd_0x8EADq(
-	    TSIPPKT *cmd
-	    )
+void cmd_0x8EADq(
+    TSIPPKT* cmd)
 {
-	cmd->len = 1;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0xAD;
+    cmd->len = 1;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0xAD;
 }
 
 /* all outomatic packet output off */
-void
-cmd_0x8E4Ds(
-	    TSIPPKT *cmd,
-	    unsigned long AutoOutputMask
-	    )
+void cmd_0x8E4Ds(
+    TSIPPKT* cmd,
+    unsigned long AutoOutputMask)
 {
-	cmd->len = 5;
-	cmd->code = 0x8E;
-	cmd->buf[0U] = 0x4D;
-	bPutULong (&AutoOutputMask, &cmd->buf[1U]);
+    cmd->len = 5;
+    cmd->code = 0x8E;
+    cmd->buf[0U] = 0x4D;
+    bPutULong(&AutoOutputMask, &cmd->buf[1U]);
 }
 
 
@@ -1280,109 +1303,103 @@ cmd_0x8E4Ds(
 #ifdef BYTESWAP
 static short
 bGetShort(
-	  unsigned char *bp
-	  )
+    unsigned char* bp)
 {
-	short outval;
-	unsigned char *optr;
+    short outval;
+    unsigned char* optr;
 
-	optr = (unsigned char*)&outval + 1;
-	*optr-- = *bp++;
-	*optr = *bp;
-	return outval;
+    optr = (unsigned char*)&outval + 1;
+    *optr-- = *bp++;
+    *optr = *bp;
+    return outval;
 }
 
 #ifdef TRIMBLE_OUTPUT_FUNC
 static unsigned short
 bGetUShort(
-	   unsigned char *bp
-	   )
+    unsigned char* bp)
 {
-	unsigned short outval;
-	unsigned char *optr;
+    unsigned short outval;
+    unsigned char* optr;
 
-	optr = (unsigned char*)&outval + 1;
-	*optr-- = *bp++;
-	*optr = *bp;
-	return outval;
+    optr = (unsigned char*)&outval + 1;
+    *optr-- = *bp++;
+    *optr = *bp;
+    return outval;
 }
 
 static long
 bGetLong(
-	 unsigned char *bp
-	 )
+    unsigned char* bp)
 {
-	long outval;
-	unsigned char *optr;
+    long outval;
+    unsigned char* optr;
 
-	optr = (unsigned char*)&outval + 3;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr = *bp;
-	return outval;
+    optr = (unsigned char*)&outval + 3;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr = *bp;
+    return outval;
 }
 
 static unsigned long
 bGetULong(
-	  unsigned char *bp
-	  )
+    unsigned char* bp)
 {
-	unsigned long outval;
-	unsigned char *optr;
+    unsigned long outval;
+    unsigned char* optr;
 
-	optr = (unsigned char*)&outval + 3;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr = *bp;
-	return outval;
+    optr = (unsigned char*)&outval + 3;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr = *bp;
+    return outval;
 }
 #endif /* TRIMBLE_OUTPUT_FUNC */
 
 static float
 bGetSingle(
-	   unsigned char *bp
-	   )
+    unsigned char* bp)
 {
-	float outval;
-	unsigned char *optr;
+    float outval;
+    unsigned char* optr;
 
-	optr = (unsigned char*)&outval + 3;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr = *bp;
-	return outval;
+    optr = (unsigned char*)&outval + 3;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr = *bp;
+    return outval;
 }
 
 static double
 bGetDouble(
-	   unsigned char *bp
-	   )
+    unsigned char* bp)
 {
-	double outval;
-	unsigned char *optr;
+    double outval;
+    unsigned char* optr;
 
-	optr = (unsigned char*)&outval + 7;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr-- = *bp++;
-	*optr = *bp;
-	return outval;
+    optr = (unsigned char*)&outval + 7;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr-- = *bp++;
+    *optr = *bp;
+    return outval;
 }
 
 #else /* not BYTESWAP */
 
-#define bGetShort(bp) 	(*(short*)(bp))
-#define bGetLong(bp) 	(*(long*)(bp))
-#define bGetULong(bp) 	(*(unsigned long*)(bp))
-#define bGetSingle(bp) 	(*(float*)(bp))
-#define bGetDouble(bp)	(*(double*)(bp))
+#define bGetShort(bp) (*(short*)(bp))
+#define bGetLong(bp) (*(long*)(bp))
+#define bGetULong(bp) (*(unsigned long*)(bp))
+#define bGetSingle(bp) (*(float*)(bp))
+#define bGetDouble(bp) (*(double*)(bp))
 
 #endif /* BYTESWAP */
 /*
@@ -1391,68 +1408,64 @@ bGetDouble(
  */
 #ifdef BYTESWAP
 
-void
-bPutFloat(
-	  float *in,
-	  unsigned char *out
-	  )
+void bPutFloat(
+    float* in,
+    unsigned char* out)
 {
-	unsigned char *inptr;
+    unsigned char* inptr;
 
-	inptr = (unsigned char*)in + 3;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out = *inptr;
+    inptr = (unsigned char*)in + 3;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out = *inptr;
 }
 
 static void
 bPutULong(
-	  unsigned long *in,
-	  unsigned char *out
-	  )
+    unsigned long* in,
+    unsigned char* out)
 {
-	unsigned char *inptr;
+    unsigned char* inptr;
 
-	inptr = (unsigned char*)in + 3;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out = *inptr;
+    inptr = (unsigned char*)in + 3;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out = *inptr;
 }
 
 static void
 bPutDouble(
-	   double *in,
-	   unsigned char *out
-	   )
+    double* in,
+    unsigned char* out)
 {
-	unsigned char *inptr;
+    unsigned char* inptr;
 
-	inptr = (unsigned char*)in + 7;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out++ = *inptr--;
-	*out = *inptr;
+    inptr = (unsigned char*)in + 7;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out++ = *inptr--;
+    *out = *inptr;
 }
 
-#else	/* not BYTESWAP */
+#else /* not BYTESWAP */
 
-void bPutShort (short a, unsigned char *cmdbuf) {*(short*) cmdbuf = a;}
-void bPutULong (long a, unsigned char *cmdbuf) 	{*(long*) cmdbuf = a;}
-void bPutFloat (float a, unsigned char *cmdbuf) {*(float*) cmdbuf = a;}
-void bPutDouble (double a, unsigned char *cmdbuf){*(double*) cmdbuf = a;}
+void bPutShort(short a, unsigned char* cmdbuf) { *(short*)cmdbuf = a; }
+void bPutULong(long a, unsigned char* cmdbuf) { *(long*)cmdbuf = a; }
+void bPutFloat(float a, unsigned char* cmdbuf) { *(float*)cmdbuf = a; }
+void bPutDouble(double a, unsigned char* cmdbuf) { *(double*)cmdbuf = a; }
 
 #endif /* BYTESWAP */
 
 /*
  * Parse primary utc time packet
- * and fill refclock structure 
- * from results. 
+ * and fill refclock structure
+ * from results.
  *
  * 0 = success
  * -1 = errors
@@ -1460,310 +1473,319 @@ void bPutDouble (double a, unsigned char *cmdbuf){*(double*) cmdbuf = a;}
 
 static int
 parse0x8FAD(
-	    TSIPPKT *rpt,
-	    struct peer *peer
-	    )
+    TSIPPKT* rpt,
+    struct peer* peer)
 {
-	register struct refclockproc *pp;	
-	register struct ripencc_unit *up;
+    register struct refclockproc* pp;
+    register struct ripencc_unit* up;
 
-	unsigned day, month, year;	/* data derived from received timecode */
-	unsigned hour, minute, second;
-	unsigned char trackstat, utcflags;
+    unsigned day, month, year; /* data derived from received timecode */
+    unsigned hour, minute, second;
+    unsigned char trackstat, utcflags;
 
-   	static char logbuf[1024];	/* logging string buffer */
-	int i;
-	unsigned char *buf;
-		
-	buf = rpt->buf;
-	pp = peer->procptr;
+    static char logbuf[1024]; /* logging string buffer */
+    int i;
+    unsigned char* buf;
 
-	if (rpt->len != 22) 
-		return (-1);
-	
-	if (bGetShort(&buf[1U]) != 0) {
+    buf = rpt->buf;
+    pp = peer->procptr;
+
+    if (rpt->len != 22)
+        return (-1);
+
+    if (bGetShort(&buf[1U]) != 0)
+    {
 #ifdef DEBUG_NCC
-		if (debug) 
-			printf("parse0x8FAD: event count != 0\n");
+        if (debug)
+            printf("parse0x8FAD: event count != 0\n");
 #endif /* DEBUG_NCC */
-		return(-1);
-	}
+        return (-1);
+    }
 
-	if (bGetDouble(&buf[3U]) != 0.0) {
+    if (bGetDouble(&buf[3U]) != 0.0)
+    {
 #ifdef DEBUG_NCC
-		if (debug) 
-			printf("parse0x8FAD: fracsecs != 0\n");
+        if (debug)
+            printf("parse0x8FAD: fracsecs != 0\n");
 #endif /* DEBUG_NCC */
-		return(-1);
-	}
+        return (-1);
+    }
 
-	hour =		(unsigned int) buf[11U];
-	minute =	(unsigned int) buf[12U];
-	second =	(unsigned int) buf[13U];
-	day =		(unsigned int) buf[14U];
-	month =		(unsigned int) buf[15U];
-	year =		bGetShort(&buf[16U]);
-	trackstat =	buf[18U];
-	utcflags =	buf[19U];
+    hour = (unsigned int)buf[11U];
+    minute = (unsigned int)buf[12U];
+    second = (unsigned int)buf[13U];
+    day = (unsigned int)buf[14U];
+    month = (unsigned int)buf[15U];
+    year = bGetShort(&buf[16U]);
+    trackstat = buf[18U];
+    utcflags = buf[19U];
 
 
-	sprintf(logbuf, "U1 %d.%d.%d %02d:%02d:%02d %d %02x",
-		day, month, year, hour, minute, second, trackstat, utcflags);
+    sprintf(logbuf, "U1 %d.%d.%d %02d:%02d:%02d %d %02x",
+            day, month, year, hour, minute, second, trackstat, utcflags);
 
 #ifdef DEBUG_NCC
-	if (debug) 
-   		puts(logbuf);
+    if (debug)
+        puts(logbuf);
 #endif /* DEBUG_NCC */
 
-	record_clock_stats(&peer->srcadr, logbuf);
+    record_clock_stats(&peer->srcadr, logbuf);
 
-	if (!utcflags & UTCF_UTC_AVAIL)
-		return(-1);
+    if (!utcflags & UTCF_UTC_AVAIL)
+        return (-1);
 
-	/* poll for UTC parameters once and then if UTC flag changed */
-	up = (struct ripencc_unit *) pp->unitptr;
-	if (utcflags != up->utcflags) {
-		TSIPPKT spt;	/* local structure for send packet */
-		cmd_0x2F (&spt); /* request UTC params */
-		ripencc_send(peer,spt);
-		up->utcflags = utcflags;
-	}
-	
-	/*
-	 * If we hit the leap second, we choose to skip this sample
-	 * rather than rely on other code to be perfectly correct.
-	 * No offense, just defense ;-).
-	 */
-	if (second == 60)
-		return(-1);
+    /* poll for UTC parameters once and then if UTC flag changed */
+    up = (struct ripencc_unit*)pp->unitptr;
+    if (utcflags != up->utcflags)
+    {
+        TSIPPKT spt;    /* local structure for send packet */
+        cmd_0x2F(&spt); /* request UTC params */
+        ripencc_send(peer, spt);
+        up->utcflags = utcflags;
+    }
 
-	/* now check and convert the time we received */
+    /*
+     * If we hit the leap second, we choose to skip this sample
+     * rather than rely on other code to be perfectly correct.
+     * No offense, just defense ;-).
+     */
+    if (second == 60)
+        return (-1);
 
-	pp->year = year;
-	if (month < 1 || month > 12 || day < 1 || day > 31) 
-		return(-1);
+    /* now check and convert the time we received */
 
-	if (pp->year % 4) {	/* XXX: use is_leapyear() ? */
-		if (day > day1tab[month - 1]) 
-			return(-1);
-		for (i = 0; i < month - 1; i++)
-			day += day1tab[i];
-	} else {
-		if (day > day2tab[month - 1]) 
-			return(-1);
-		for (i = 0; i < month - 1; i++)
-			day += day2tab[i];
-	}
-	pp->day = day;
-	pp->hour = hour;
-	pp->minute = minute;
-	pp-> second = second;
-	pp->nsec = 0;
+    pp->year = year;
+    if (month < 1 || month > 12 || day < 1 || day > 31)
+        return (-1);
 
-	if ((utcflags&UTCF_LEAP_PNDG) && up->leapdelta != 0) 
-		pp-> leap = (up->leapdelta > 0)
-		    ? LEAP_ADDSECOND
-		    : LEAP_DELSECOND; 
-	else
-		pp-> leap = LEAP_NOWARNING;  
+    if (pp->year % 4)
+    { /* XXX: use is_leapyear() ? */
+        if (day > day1tab[month - 1])
+            return (-1);
+        for (i = 0; i < month - 1; i++)
+            day += day1tab[i];
+    }
+    else
+    {
+        if (day > day2tab[month - 1])
+            return (-1);
+        for (i = 0; i < month - 1; i++)
+            day += day2tab[i];
+    }
+    pp->day = day;
+    pp->hour = hour;
+    pp->minute = minute;
+    pp->second = second;
+    pp->nsec = 0;
 
-	return (0);
+    if ((utcflags & UTCF_LEAP_PNDG) && up->leapdelta != 0)
+        pp->leap = (up->leapdelta > 0)
+                       ? LEAP_ADDSECOND
+                       : LEAP_DELSECOND;
+    else
+        pp->leap = LEAP_NOWARNING;
+
+    return (0);
 }
 
 /*
- * Parse comprehensive time packet 
+ * Parse comprehensive time packet
  *
  *  0 = success
  * -1 = errors
  */
 
-int
-parse0x8F0B(
-	    TSIPPKT *rpt,
-	    struct peer *peer
-	    )
+int parse0x8F0B(
+    TSIPPKT* rpt,
+    struct peer* peer)
 {
-	register struct refclockproc *pp;	
+    register struct refclockproc* pp;
 
-	unsigned day, month, year;	/* data derived from received timecode */
-	unsigned hour, minute, second;
-	unsigned utcoff;
-	unsigned char mode;
-	double  bias, rate;
-	float biasunc, rateunc;
-	double lat, lon, alt;
-	short lat_deg, lon_deg;
-	float lat_min, lon_min;
-	unsigned char north_south, east_west;
-	char sv[9];
+    unsigned day, month, year; /* data derived from received timecode */
+    unsigned hour, minute, second;
+    unsigned utcoff;
+    unsigned char mode;
+    double bias, rate;
+    float biasunc, rateunc;
+    double lat, lon, alt;
+    short lat_deg, lon_deg;
+    float lat_min, lon_min;
+    unsigned char north_south, east_west;
+    char sv[9];
 
-   	static char logbuf[1024];	/* logging string buffer */
-	unsigned char b;
-	int i;
-	unsigned char *buf;
-	double tow;
-		
-	buf = rpt->buf;
-	pp = peer->procptr;
+    static char logbuf[1024]; /* logging string buffer */
+    unsigned char b;
+    int i;
+    unsigned char* buf;
+    double tow;
 
-	if (rpt->len != 74) 
-		return (-1);
-	
-	if (bGetShort(&buf[1U]) != 0)
-		return(-1);;
+    buf = rpt->buf;
+    pp = peer->procptr;
 
-	tow =  bGetDouble(&buf[3U]);
+    if (rpt->len != 74)
+        return (-1);
 
-	if (tow == -1.0) {
-		return(-1);
-	}
-	else if ((tow >= 604800.0) || (tow < 0.0)) {
-		return(-1);
-	}
-	else
-	{
-		if (tow < 604799.9) tow = tow + .00000001;
-		second = (unsigned int) fmod(tow, 60.);
-		minute =  (unsigned int) fmod(tow/60., 60.);
-		hour = (unsigned int )fmod(tow / 3600., 24.);
-	} 
+    if (bGetShort(&buf[1U]) != 0)
+        return (-1);
+    ;
 
-	day =		(unsigned int) buf[11U];
-	month =		(unsigned int) buf[12U];
-	year =		bGetShort(&buf[13U]);
-	mode =		buf[15U];
-	utcoff =	bGetShort(&buf[16U]);
-	bias = 		bGetDouble(&buf[18U]) / GPS_C * 1e9;	/* ns */
-	rate = 		bGetDouble(&buf[26U]) / GPS_C * 1e9;	/* ppb */ 
-	biasunc = 	bGetSingle(&buf[34U]) / GPS_C * 1e9;	/* ns */
-	rateunc = 	bGetSingle(&buf[38U]) / GPS_C * 1e9;	/* ppb */
-	lat = 		bGetDouble(&buf[42U]) * R2D;
-	lon = 		bGetDouble(&buf[50U]) * R2D;
-	alt = 		bGetDouble(&buf[58U]);
+    tow = bGetDouble(&buf[3U]);
 
-	if (lat < 0.0) {
-		north_south = 'S';
-		lat = -lat;
-	}
-	else {
-		north_south = 'N';
-	}
-	lat_deg = (short)lat;
-	lat_min = (lat - lat_deg) * 60.0;
+    if (tow == -1.0)
+    {
+        return (-1);
+    }
+    else if ((tow >= 604800.0) || (tow < 0.0))
+    {
+        return (-1);
+    }
+    else
+    {
+        if (tow < 604799.9)
+            tow = tow + .00000001;
+        second = (unsigned int)fmod(tow, 60.);
+        minute = (unsigned int)fmod(tow / 60., 60.);
+        hour = (unsigned int)fmod(tow / 3600., 24.);
+    }
 
-	if (lon < 0.0) {
-		east_west = 'W';
-		lon = -lon;
-	}
-	else {
-		east_west = 'E';
-	}
+    day = (unsigned int)buf[11U];
+    month = (unsigned int)buf[12U];
+    year = bGetShort(&buf[13U]);
+    mode = buf[15U];
+    utcoff = bGetShort(&buf[16U]);
+    bias = bGetDouble(&buf[18U]) / GPS_C * 1e9;    /* ns */
+    rate = bGetDouble(&buf[26U]) / GPS_C * 1e9;    /* ppb */
+    biasunc = bGetSingle(&buf[34U]) / GPS_C * 1e9; /* ns */
+    rateunc = bGetSingle(&buf[38U]) / GPS_C * 1e9; /* ppb */
+    lat = bGetDouble(&buf[42U]) * R2D;
+    lon = bGetDouble(&buf[50U]) * R2D;
+    alt = bGetDouble(&buf[58U]);
 
-	lon_deg = (short)lon;
-	lon_min = (lon - lon_deg) * 60.0;
+    if (lat < 0.0)
+    {
+        north_south = 'S';
+        lat = -lat;
+    }
+    else
+    {
+        north_south = 'N';
+    }
+    lat_deg = (short)lat;
+    lat_min = (lat - lat_deg) * 60.0;
 
-	for (i=0; i<8; i++) {
-		sv[i] = buf[i + 66];
-		if (sv[i]) {
-			TSIPPKT spt; /* local structure for sendpacket */
-			b = (unsigned char) (sv[i]<0 ? -sv[i] : sv[i]);
-			/* request tracking status */
-			cmd_0x3C  (&spt, b);
-			ripencc_send(peer,spt);
-		}
-	}
+    if (lon < 0.0)
+    {
+        east_west = 'W';
+        lon = -lon;
+    }
+    else
+    {
+        east_west = 'E';
+    }
+
+    lon_deg = (short)lon;
+    lon_min = (lon - lon_deg) * 60.0;
+
+    for (i = 0; i < 8; i++)
+    {
+        sv[i] = buf[i + 66];
+        if (sv[i])
+        {
+            TSIPPKT spt; /* local structure for sendpacket */
+            b = (unsigned char)(sv[i] < 0 ? -sv[i] : sv[i]);
+            /* request tracking status */
+            cmd_0x3C(&spt, b);
+            ripencc_send(peer, spt);
+        }
+    }
 
 
-	sprintf(logbuf, "C1 %02d%02d%04d %02d%02d%02d %d %7.0f %.1f %.0f %.1f %d %02d%09.6f %c %02d%09.6f %c %.0f  %d %d %d %d %d %d %d %d",
-		day, month, year, hour, minute, second, mode, bias, biasunc,
-		rate, rateunc, utcoff, lat_deg, lat_min, north_south, lon_deg,
-		lon_min, east_west, alt, sv[0], sv[1], sv[2], sv[3], sv[4],
-		sv[5U], sv[6], sv[7]);
+    sprintf(logbuf, "C1 %02d%02d%04d %02d%02d%02d %d %7.0f %.1f %.0f %.1f %d %02d%09.6f %c %02d%09.6f %c %.0f  %d %d %d %d %d %d %d %d",
+            day, month, year, hour, minute, second, mode, bias, biasunc,
+            rate, rateunc, utcoff, lat_deg, lat_min, north_south, lon_deg,
+            lon_min, east_west, alt, sv[0], sv[1], sv[2], sv[3], sv[4],
+            sv[5U], sv[6], sv[7]);
 
 #ifdef DEBUG_NCC
-	if (debug) 
-   		puts(logbuf);
+    if (debug)
+        puts(logbuf);
 #endif /* DEBUG_NCC */
 
-	record_clock_stats(&peer->srcadr, logbuf);
+    record_clock_stats(&peer->srcadr, logbuf);
 
-	return (0);
+    return (0);
 }
 
 #ifdef TRIMBLE_OUTPUT_FUNC
-/* 
+/*
  * Parse any packet using Trimble machinery
  */
-int
-parseany(
-	 TSIPPKT *rpt,
-	 struct peer *peer
-	 )
+int parseany(
+    TSIPPKT* rpt,
+    struct peer* peer)
 {
-   	static char logbuf[1024];	/* logging string buffer */
+    static char logbuf[1024]; /* logging string buffer */
 
-   	TranslateTSIPReportToText (rpt, logbuf);	/* anything else */
+    TranslateTSIPReportToText(rpt, logbuf); /* anything else */
 #ifdef DEBUG_NCC
-	if (debug) 
-   		puts(&logbuf[1U]);
+    if (debug)
+        puts(&logbuf[1U]);
 #endif /* DEBUG_NCC */
-	record_clock_stats(&peer->srcadr, &logbuf[1U]);
-	return(0);
+    record_clock_stats(&peer->srcadr, &logbuf[1U]);
+    return (0);
 }
 #endif /* TRIMBLE_OUTPUT_FUNC */
 
 
 /*
  * Parse UTC Parameter Packet
- * 
+ *
  * See the IDE for documentation!
  *
  * 0 = success
  * -1 = errors
  */
 
-int
-parse0x4F(
-	  TSIPPKT *rpt,
-	  struct peer *peer
-	  )
+int parse0x4F(
+    TSIPPKT* rpt,
+    struct peer* peer)
 {
-	register struct ripencc_unit *up;
+    register struct ripencc_unit* up;
 
-	double a0;
-	float a1, tot;
-	int dt_ls, wn_t, wn_lsf, dn, dt_lsf;
+    double a0;
+    float a1, tot;
+    int dt_ls, wn_t, wn_lsf, dn, dt_lsf;
 
-   	static char logbuf[1024];	/* logging string buffer */
-	unsigned char *buf;
-		
-	buf = rpt->buf;
-	
-	if (rpt->len != 26) 
-		return (-1);
-	a0 = bGetDouble (buf);
-	a1 = bGetSingle (&buf[8U]);
-	dt_ls = bGetShort (&buf[12U]);
-	tot = bGetSingle (&buf[14U]);
-	wn_t = bGetShort (&buf[18U]);
-	wn_lsf = bGetShort (&buf[20U]);
-	dn = bGetShort (&buf[22U]);
-	dt_lsf = bGetShort (&buf[24U]);
+    static char logbuf[1024]; /* logging string buffer */
+    unsigned char* buf;
 
-	sprintf(logbuf, "L1 %d %d %d %g %g %g %d %d %d",
-		dt_lsf - dt_ls, dt_ls, dt_lsf, a0, a1, tot, wn_t, wn_lsf, dn); 
+    buf = rpt->buf;
+
+    if (rpt->len != 26)
+        return (-1);
+    a0 = bGetDouble(buf);
+    a1 = bGetSingle(&buf[8U]);
+    dt_ls = bGetShort(&buf[12U]);
+    tot = bGetSingle(&buf[14U]);
+    wn_t = bGetShort(&buf[18U]);
+    wn_lsf = bGetShort(&buf[20U]);
+    dn = bGetShort(&buf[22U]);
+    dt_lsf = bGetShort(&buf[24U]);
+
+    sprintf(logbuf, "L1 %d %d %d %g %g %g %d %d %d",
+            dt_lsf - dt_ls, dt_ls, dt_lsf, a0, a1, tot, wn_t, wn_lsf, dn);
 
 #ifdef DEBUG_NCC
-	if (debug) 
-   		puts(logbuf);
+    if (debug)
+        puts(logbuf);
 #endif /* DEBUG_NCC */
 
-	record_clock_stats(&peer->srcadr, logbuf);
+    record_clock_stats(&peer->srcadr, logbuf);
 
-	up = (struct ripencc_unit *) peer->procptr->unitptr;
-	up->leapdelta = dt_lsf - dt_ls;
+    up = (struct ripencc_unit*)peer->procptr->unitptr;
+    up->leapdelta = dt_lsf - dt_ls;
 
-	return (0);
+    return (0);
 }
 
 /*
@@ -1773,46 +1795,44 @@ parse0x4F(
  * -1 = errors
  */
 
-int
-parse0x5C(
-	  TSIPPKT *rpt,
-	  struct peer *peer
-	  )
+int parse0x5C(
+    TSIPPKT* rpt,
+    struct peer* peer)
 {
-	unsigned char prn, channel, aqflag, ephstat;
-	float snr, azinuth, elevation;
+    unsigned char prn, channel, aqflag, ephstat;
+    float snr, azinuth, elevation;
 
-   	static char logbuf[1024];	/* logging string buffer */
-	unsigned char *buf;
-		
-	buf = rpt->buf;
-	
-	if (rpt->len != 24) 
-		return(-1);
+    static char logbuf[1024]; /* logging string buffer */
+    unsigned char* buf;
 
-	prn = buf[0U];
-	channel = (unsigned char)(buf[1U] >> 3);
-	if (channel == 0x10) 
-		channel = 2;
-	else 
-		channel++;
-	aqflag = buf[2U];
-	ephstat = buf[3U];
-	snr = bGetSingle(&buf[4U]);
-	elevation = bGetSingle(&buf[12U]) * R2D;
-	azinuth = bGetSingle(&buf[16U]) * R2D;
+    buf = rpt->buf;
 
-	sprintf(logbuf, "S1 %02d %d %d %02x %4.1f %5.1f %4.1f",
-		prn, channel, aqflag, ephstat, snr, azinuth, elevation);
+    if (rpt->len != 24)
+        return (-1);
+
+    prn = buf[0U];
+    channel = (unsigned char)(buf[1U] >> 3);
+    if (channel == 0x10)
+        channel = 2;
+    else
+        channel++;
+    aqflag = buf[2U];
+    ephstat = buf[3U];
+    snr = bGetSingle(&buf[4U]);
+    elevation = bGetSingle(&buf[12U]) * R2D;
+    azinuth = bGetSingle(&buf[16U]) * R2D;
+
+    sprintf(logbuf, "S1 %02d %d %d %02x %4.1f %5.1f %4.1f",
+            prn, channel, aqflag, ephstat, snr, azinuth, elevation);
 
 #ifdef DEBUG_NCC
-	if (debug) 
-   		puts(logbuf);
+    if (debug)
+        puts(logbuf);
 #endif /* DEBUG_NCC */
 
-	record_clock_stats(&peer->srcadr, logbuf);
+    record_clock_stats(&peer->srcadr, logbuf);
 
-	return (0);
+    return (0);
 }
 
 /******* Code below is from Trimble Tsipchat *************/
@@ -1885,1278 +1905,1253 @@ parse0x5C(
  */
 static void
 tsip_input_proc(
-		TSIPPKT *rpt,
-		int inbyte
-		)
+    TSIPPKT* rpt,
+    int inbyte)
 {
-	unsigned char newbyte;
+    unsigned char newbyte;
 
-	if (inbyte < 0 || inbyte > 0xFF) return;
+    if (inbyte < 0 || inbyte > 0xFF)
+        return;
 
-	newbyte = (unsigned char)(inbyte);
-	switch (rpt->status)
-	{
-	    case TSIP_PARSED_DLE_1:
-		switch (newbyte)
-		{
-		    case 0:
-		    case ETX:
-			/* illegal TSIP IDs */
-			rpt->len = 0;
-			rpt->status = TSIP_PARSED_EMPTY;
-			break;
-		    case DLE:
-			/* try normal message start again */
-			rpt->len = 0;
-			rpt->status = TSIP_PARSED_DLE_1;
-			break;
-		    default:
-			/* legal TSIP ID; start message */
-			rpt->code = newbyte;
-			rpt->len = 0;
-			rpt->status = TSIP_PARSED_DATA;
-			break;
-		}
-		break;
-	    case TSIP_PARSED_DATA:
-		switch (newbyte) {
-		    case DLE:
-			/* expect DLE or ETX next */
-			rpt->status = TSIP_PARSED_DLE_2;
-			break;
-		    default:
-			/* normal data byte  */
-			rpt->buf[rpt->len] = newbyte;
-			rpt->len++;
-			/* no change in rpt->status */
-			break;
-		}
-		break;
-	    case TSIP_PARSED_DLE_2:
-		switch (newbyte) {
-		    case DLE:
-			/* normal data byte */
-			rpt->buf[rpt->len] = newbyte;
-			rpt->len++;
-			rpt->status = TSIP_PARSED_DATA;
-			break;
-		    case ETX:
-			/* end of message; return TRUE here. */
-			rpt->status = TSIP_PARSED_FULL;
-			break;
-		    default:
-			/* error: treat as TSIP_PARSED_DLE_1; start new report packet */
-			rpt->code = newbyte;
-			rpt->len = 0;
-			rpt->status = TSIP_PARSED_DATA;
-		}
-		break;
-	    case TSIP_PARSED_FULL:
-	    case TSIP_PARSED_EMPTY:
-	    default:
-		switch (newbyte) {
-		    case DLE:
-			/* normal message start */
-			rpt->len = 0;
-			rpt->status = TSIP_PARSED_DLE_1;
-			break;
-		    default:
-			/* error: ignore newbyte */
-			rpt->len = 0;
-			rpt->status = TSIP_PARSED_EMPTY;
-		}
-		break;
-	}
-	if (rpt->len > MAX_RPTBUF) {
-		/* error: start new report packet */
-		rpt->status = TSIP_PARSED_EMPTY;
-		rpt->len = 0;
-	}
+    newbyte = (unsigned char)(inbyte);
+    switch (rpt->status)
+    {
+    case TSIP_PARSED_DLE_1:
+        switch (newbyte)
+        {
+        case 0:
+        case ETX:
+            /* illegal TSIP IDs */
+            rpt->len = 0;
+            rpt->status = TSIP_PARSED_EMPTY;
+            break;
+        case DLE:
+            /* try normal message start again */
+            rpt->len = 0;
+            rpt->status = TSIP_PARSED_DLE_1;
+            break;
+        default:
+            /* legal TSIP ID; start message */
+            rpt->code = newbyte;
+            rpt->len = 0;
+            rpt->status = TSIP_PARSED_DATA;
+            break;
+        }
+        break;
+    case TSIP_PARSED_DATA:
+        switch (newbyte)
+        {
+        case DLE:
+            /* expect DLE or ETX next */
+            rpt->status = TSIP_PARSED_DLE_2;
+            break;
+        default:
+            /* normal data byte  */
+            rpt->buf[rpt->len] = newbyte;
+            rpt->len++;
+            /* no change in rpt->status */
+            break;
+        }
+        break;
+    case TSIP_PARSED_DLE_2:
+        switch (newbyte)
+        {
+        case DLE:
+            /* normal data byte */
+            rpt->buf[rpt->len] = newbyte;
+            rpt->len++;
+            rpt->status = TSIP_PARSED_DATA;
+            break;
+        case ETX:
+            /* end of message; return TRUE here. */
+            rpt->status = TSIP_PARSED_FULL;
+            break;
+        default:
+            /* error: treat as TSIP_PARSED_DLE_1; start new report packet */
+            rpt->code = newbyte;
+            rpt->len = 0;
+            rpt->status = TSIP_PARSED_DATA;
+        }
+        break;
+    case TSIP_PARSED_FULL:
+    case TSIP_PARSED_EMPTY:
+    default:
+        switch (newbyte)
+        {
+        case DLE:
+            /* normal message start */
+            rpt->len = 0;
+            rpt->status = TSIP_PARSED_DLE_1;
+            break;
+        default:
+            /* error: ignore newbyte */
+            rpt->len = 0;
+            rpt->status = TSIP_PARSED_EMPTY;
+        }
+        break;
+    }
+    if (rpt->len > MAX_RPTBUF)
+    {
+        /* error: start new report packet */
+        rpt->status = TSIP_PARSED_EMPTY;
+        rpt->len = 0;
+    }
 }
 
 #ifdef TRIMBLE_OUTPUT_FUNC
 
 /**/
 /* Channel A configuration for dual port operation */
-short
-rpt_0x3D(
-	 TSIPPKT *rpt,
-	 unsigned char *tx_baud_index,
-	 unsigned char *rx_baud_index,
-	 unsigned char *char_format_index,
-	 unsigned char *stop_bits,
-	 unsigned char *tx_mode_index,
-	 unsigned char *rx_mode_index
-	 )
+short rpt_0x3D(
+    TSIPPKT* rpt,
+    unsigned char* tx_baud_index,
+    unsigned char* rx_baud_index,
+    unsigned char* char_format_index,
+    unsigned char* stop_bits,
+    unsigned char* tx_mode_index,
+    unsigned char* rx_mode_index)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 6) return TRUE;
-	*tx_baud_index = buf[0U];
-	*rx_baud_index = buf[1U];
-	*char_format_index = buf[2U];
-	*stop_bits = (unsigned char)((buf[3U] == 0x07) ? 1 : 2);
-	*tx_mode_index = buf[4U];
-	*rx_mode_index = buf[5U];
-	return FALSE;
+    if (rpt->len != 6)
+        return TRUE;
+    *tx_baud_index = buf[0U];
+    *rx_baud_index = buf[1U];
+    *char_format_index = buf[2U];
+    *stop_bits = (unsigned char)((buf[3U] == 0x07) ? 1 : 2);
+    *tx_mode_index = buf[4U];
+    *rx_mode_index = buf[5U];
+    return FALSE;
 }
 
 /**/
 /* almanac data for specified satellite */
-short
-rpt_0x40(
-	 TSIPPKT *rpt,
-	 unsigned char *sv_prn,
-	 short *week_num,
-	 float *t_zc,
-	 float *eccentricity,
-	 float *t_oa,
-	 float *i_0,
-	 float *OMEGA_dot,
-	 float *sqrt_A,
-	 float *OMEGA_0,
-	 float *omega,
-	 float *M_0
-	 )
+short rpt_0x40(
+    TSIPPKT* rpt,
+    unsigned char* sv_prn,
+    short* week_num,
+    float* t_zc,
+    float* eccentricity,
+    float* t_oa,
+    float* i_0,
+    float* OMEGA_dot,
+    float* sqrt_A,
+    float* OMEGA_0,
+    float* omega,
+    float* M_0)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 39) return TRUE;
-	*sv_prn = buf[0U];
-	*t_zc = bGetSingle (&buf[1U]);
-	*week_num = bGetShort (&buf[5U]);
-	*eccentricity = bGetSingle (&buf[7U]);
-	*t_oa = bGetSingle (&buf[11U]);
-	*i_0 = bGetSingle (&buf[15U]);
-	*OMEGA_dot = bGetSingle (&buf[19U]);
-	*sqrt_A = bGetSingle (&buf[23U]);
-	*OMEGA_0 = bGetSingle (&buf[27U]);
-	*omega = bGetSingle (&buf[31U]);
-	*M_0 = bGetSingle (&buf[35U]);
-	return FALSE;
+    if (rpt->len != 39)
+        return TRUE;
+    *sv_prn = buf[0U];
+    *t_zc = bGetSingle(&buf[1U]);
+    *week_num = bGetShort(&buf[5U]);
+    *eccentricity = bGetSingle(&buf[7U]);
+    *t_oa = bGetSingle(&buf[11U]);
+    *i_0 = bGetSingle(&buf[15U]);
+    *OMEGA_dot = bGetSingle(&buf[19U]);
+    *sqrt_A = bGetSingle(&buf[23U]);
+    *OMEGA_0 = bGetSingle(&buf[27U]);
+    *omega = bGetSingle(&buf[31U]);
+    *M_0 = bGetSingle(&buf[35U]);
+    return FALSE;
 }
 
 /* GPS time */
-short
-rpt_0x41(
-	 TSIPPKT *rpt,
-	 float *time_of_week,
-	 float *UTC_offset,
-	 short *week_num
-	 )
+short rpt_0x41(
+    TSIPPKT* rpt,
+    float* time_of_week,
+    float* UTC_offset,
+    short* week_num)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 10) return TRUE;
-	*time_of_week = bGetSingle (buf);
-	*week_num = bGetShort (&buf[4U]);
-	*UTC_offset = bGetSingle (&buf[6U]);
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 10)
+        return TRUE;
+    *time_of_week = bGetSingle(buf);
+    *week_num = bGetShort(&buf[4U]);
+    *UTC_offset = bGetSingle(&buf[6U]);
+    return FALSE;
 }
 
 /* position in ECEF, single precision */
-short
-rpt_0x42(
-	 TSIPPKT *rpt,
-	 float pos_ECEF[3],
-	 float *time_of_fix
-	 )
+short rpt_0x42(
+    TSIPPKT* rpt,
+    float pos_ECEF[3],
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 16) return TRUE;
-	pos_ECEF[0U] = bGetSingle (buf);
-	pos_ECEF[1U]= bGetSingle (&buf[4U]);
-	pos_ECEF[2U]= bGetSingle (&buf[8U]);
-	*time_of_fix = bGetSingle (&buf[12U]);
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 16)
+        return TRUE;
+    pos_ECEF[0U] = bGetSingle(buf);
+    pos_ECEF[1U] = bGetSingle(&buf[4U]);
+    pos_ECEF[2U] = bGetSingle(&buf[8U]);
+    *time_of_fix = bGetSingle(&buf[12U]);
+    return FALSE;
 }
 
 /* velocity in ECEF, single precision */
-short
-rpt_0x43(
-	 TSIPPKT *rpt,
-	 float ECEF_vel[3],
-	 float *freq_offset,
-	 float *time_of_fix
-	 )
+short rpt_0x43(
+    TSIPPKT* rpt,
+    float ECEF_vel[3],
+    float* freq_offset,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 20) return TRUE;
-	ECEF_vel[0U] = bGetSingle (buf);
-	ECEF_vel[1U] = bGetSingle (&buf[4U]);
-	ECEF_vel[2U] = bGetSingle (&buf[8U]);
-	*freq_offset = bGetSingle (&buf[12U]);
-	*time_of_fix = bGetSingle (&buf[16U]);
-	return FALSE;
+    if (rpt->len != 20)
+        return TRUE;
+    ECEF_vel[0U] = bGetSingle(buf);
+    ECEF_vel[1U] = bGetSingle(&buf[4U]);
+    ECEF_vel[2U] = bGetSingle(&buf[8U]);
+    *freq_offset = bGetSingle(&buf[12U]);
+    *time_of_fix = bGetSingle(&buf[16U]);
+    return FALSE;
 }
 
-/* software versions */	
-short
-rpt_0x45(
-	 TSIPPKT *rpt,
-	 unsigned char *major_nav_version,
-	 unsigned char *minor_nav_version,
-	 unsigned char *nav_day,
-	 unsigned char *nav_month,
-	 unsigned char *nav_year,
-	 unsigned char *major_dsp_version,
-	 unsigned char *minor_dsp_version,
-	 unsigned char *dsp_day,
-	 unsigned char *dsp_month,
-	 unsigned char *dsp_year
-	 )
+/* software versions */
+short rpt_0x45(
+    TSIPPKT* rpt,
+    unsigned char* major_nav_version,
+    unsigned char* minor_nav_version,
+    unsigned char* nav_day,
+    unsigned char* nav_month,
+    unsigned char* nav_year,
+    unsigned char* major_dsp_version,
+    unsigned char* minor_dsp_version,
+    unsigned char* dsp_day,
+    unsigned char* dsp_month,
+    unsigned char* dsp_year)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 10) return TRUE;
-	*major_nav_version = buf[0U];
-	*minor_nav_version = buf[1U];
-	*nav_day = buf[2U];
-	*nav_month = buf[3U];
-	*nav_year = buf[4U];
-	*major_dsp_version = buf[5U];
-	*minor_dsp_version = buf[6U];
-	*dsp_day = buf[7U];
-	*dsp_month = buf[8U];
-	*dsp_year = buf[9U];
-	return FALSE;
+    if (rpt->len != 10)
+        return TRUE;
+    *major_nav_version = buf[0U];
+    *minor_nav_version = buf[1U];
+    *nav_day = buf[2U];
+    *nav_month = buf[3U];
+    *nav_year = buf[4U];
+    *major_dsp_version = buf[5U];
+    *minor_dsp_version = buf[6U];
+    *dsp_day = buf[7U];
+    *dsp_month = buf[8U];
+    *dsp_year = buf[9U];
+    return FALSE;
 }
 
 /* receiver health and status */
-short
-rpt_0x46(
-	 TSIPPKT *rpt,
-	 unsigned char *status1,
-	 unsigned char *status2
-	 )
+short rpt_0x46(
+    TSIPPKT* rpt,
+    unsigned char* status1,
+    unsigned char* status2)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 2) return TRUE;
-	*status1 = buf[0U];
-	*status2 = buf[1U];
-	return FALSE;
+    if (rpt->len != 2)
+        return TRUE;
+    *status1 = buf[0U];
+    *status2 = buf[1U];
+    return FALSE;
 }
 
 /* signal levels for all satellites tracked */
-short
-rpt_0x47(
-	 TSIPPKT *rpt,
-	 unsigned char *nsvs,
-	 unsigned char *sv_prn,
-	 float *snr
-	 )
+short rpt_0x47(
+    TSIPPKT* rpt,
+    unsigned char* nsvs,
+    unsigned char* sv_prn,
+    float* snr)
 {
-	short isv;
-	unsigned char *buf;
-	buf = rpt->buf;
+    short isv;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 1 + 5*buf[0U]) return TRUE;
-	*nsvs = buf[0U];
-	for (isv = 0; isv < (*nsvs); isv++) {
-		sv_prn[isv] = buf[5*isv + 1];
-		snr[isv] = bGetSingle (&buf[5*isv + 2]);
-	}
-	return FALSE;
+    if (rpt->len != 1 + 5 * buf[0U])
+        return TRUE;
+    *nsvs = buf[0U];
+    for (isv = 0; isv < (*nsvs); isv++)
+    {
+        sv_prn[isv] = buf[5 * isv + 1];
+        snr[isv] = bGetSingle(&buf[5 * isv + 2]);
+    }
+    return FALSE;
 }
 
 /* GPS system message */
-short
-rpt_0x48(
-	 TSIPPKT *rpt,
-	 unsigned char *message
-	 )
+short rpt_0x48(
+    TSIPPKT* rpt,
+    unsigned char* message)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 22) return TRUE;
-	memcpy (message, buf, 22);
-	message[22U] = 0;
-	return FALSE;
+    if (rpt->len != 22)
+        return TRUE;
+    memcpy(message, buf, 22);
+    message[22U] = 0;
+    return FALSE;
 }
 
 /* health for all satellites from almanac health page */
-short
-rpt_0x49(
-	 TSIPPKT *rpt,
-	 unsigned char *sv_health
-	 )
+short rpt_0x49(
+    TSIPPKT* rpt,
+    unsigned char* sv_health)
 {
-	short i;
-	unsigned char *buf;
-	buf = rpt->buf;
+    short i;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 32) return TRUE;
-	for (i = 0; i < 32; i++) sv_health [i]= buf[i];
-	return FALSE;
+    if (rpt->len != 32)
+        return TRUE;
+    for (i = 0; i < 32; i++)
+        sv_health[i] = buf[i];
+    return FALSE;
 }
 
 /* position in lat-lon-alt, single precision */
-short
-rpt_0x4A(
-	 TSIPPKT *rpt,
-	 float *lat,
-	 float *lon,
-	 float *alt,
-	 float *clock_bias,
-	 float *time_of_fix
-	 )
+short rpt_0x4A(
+    TSIPPKT* rpt,
+    float* lat,
+    float* lon,
+    float* alt,
+    float* clock_bias,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 20) return TRUE;
-	*lat = bGetSingle (buf);
-	*lon = bGetSingle (&buf[4U]);
-	*alt = bGetSingle (&buf[8U]);
-	*clock_bias = bGetSingle (&buf[12U]);
-	*time_of_fix = bGetSingle (&buf[16U]);
-	return FALSE;
+    if (rpt->len != 20)
+        return TRUE;
+    *lat = bGetSingle(buf);
+    *lon = bGetSingle(&buf[4U]);
+    *alt = bGetSingle(&buf[8U]);
+    *clock_bias = bGetSingle(&buf[12U]);
+    *time_of_fix = bGetSingle(&buf[16U]);
+    return FALSE;
 }
 
 /* reference altitude parameters */
-short
-rpt_0x4A_2(
-	   TSIPPKT *rpt,
-	   float *alt,
-	   float *dummy,
-	   unsigned char *alt_flag
-	   )
+short rpt_0x4A_2(
+    TSIPPKT* rpt,
+    float* alt,
+    float* dummy,
+    unsigned char* alt_flag)
 {
-	unsigned char *buf;
+    unsigned char* buf;
 
-	buf = rpt->buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 9) return TRUE;
-	*alt = bGetSingle (buf);
-	*dummy = bGetSingle (&buf[4U]);
-	*alt_flag = buf[8U];
-	return FALSE;
+    if (rpt->len != 9)
+        return TRUE;
+    *alt = bGetSingle(buf);
+    *dummy = bGetSingle(&buf[4U]);
+    *alt_flag = buf[8U];
+    return FALSE;
 }
 
 /* machine ID code, status */
-short
-rpt_0x4B(
-	 TSIPPKT *rpt,
-	 unsigned char *machine_id,
-	 unsigned char *status3,
-	 unsigned char *status4
-	 )
+short rpt_0x4B(
+    TSIPPKT* rpt,
+    unsigned char* machine_id,
+    unsigned char* status3,
+    unsigned char* status4)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 3) return TRUE;
-	*machine_id = buf[0U];
-	*status3 = buf[1U];
-	*status4 = buf[2U];
-	return FALSE;
+    if (rpt->len != 3)
+        return TRUE;
+    *machine_id = buf[0U];
+    *status3 = buf[1U];
+    *status4 = buf[2U];
+    return FALSE;
 }
 
 /* operating parameters and masks */
-short
-rpt_0x4C(
-	 TSIPPKT *rpt,
-	 unsigned char *dyn_code,
-	 float *el_mask,
-	 float *snr_mask,
-	 float *dop_mask,
-	 float *dop_switch
-	 )
+short rpt_0x4C(
+    TSIPPKT* rpt,
+    unsigned char* dyn_code,
+    float* el_mask,
+    float* snr_mask,
+    float* dop_mask,
+    float* dop_switch)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 17) return TRUE;
-	*dyn_code = buf[0U];
-	*el_mask = bGetSingle (&buf[1U]);
-	*snr_mask = bGetSingle (&buf[5U]);
-	*dop_mask = bGetSingle (&buf[9U]);
-	*dop_switch = bGetSingle (&buf[13U]);
-	return FALSE;
+    if (rpt->len != 17)
+        return TRUE;
+    *dyn_code = buf[0U];
+    *el_mask = bGetSingle(&buf[1U]);
+    *snr_mask = bGetSingle(&buf[5U]);
+    *dop_mask = bGetSingle(&buf[9U]);
+    *dop_switch = bGetSingle(&buf[13U]);
+    return FALSE;
 }
 
 /* oscillator offset */
-short
-rpt_0x4D(
-	 TSIPPKT *rpt,
-	 float *osc_offset
-	 )
+short rpt_0x4D(
+    TSIPPKT* rpt,
+    float* osc_offset)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 4) return TRUE;
-	*osc_offset = bGetSingle (buf);
-	return FALSE;
+    if (rpt->len != 4)
+        return TRUE;
+    *osc_offset = bGetSingle(buf);
+    return FALSE;
 }
 
 /* yes/no response to command to set GPS time */
-short
-rpt_0x4E(
-	 TSIPPKT *rpt,
-	 unsigned char *response
-	 )
+short rpt_0x4E(
+    TSIPPKT* rpt,
+    unsigned char* response)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 1) return TRUE;
-	*response = buf[0U];
-	return FALSE;
+    if (rpt->len != 1)
+        return TRUE;
+    *response = buf[0U];
+    return FALSE;
 }
 
 /* UTC data */
-short
-rpt_0x4F(
-	 TSIPPKT *rpt,
-	 double *a0,
-	 float *a1,
-	 float *time_of_data,
-	 short *dt_ls,
-	 short *wn_t,
-	 short *wn_lsf,
-	 short *dn,
-	 short *dt_lsf
-	 )
+short rpt_0x4F(
+    TSIPPKT* rpt,
+    double* a0,
+    float* a1,
+    float* time_of_data,
+    short* dt_ls,
+    short* wn_t,
+    short* wn_lsf,
+    short* dn,
+    short* dt_lsf)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 26) return TRUE;
-	*a0 = bGetDouble (buf);
-	*a1 = bGetSingle (&buf[8U]);
-	*dt_ls = bGetShort (&buf[12U]);
-	*time_of_data = bGetSingle (&buf[14U]);
-	*wn_t = bGetShort (&buf[18U]);
-	*wn_lsf = bGetShort (&buf[20U]);
-	*dn = bGetShort (&buf[22U]);
-	*dt_lsf = bGetShort (&buf[24U]);
-	return FALSE;
+    if (rpt->len != 26)
+        return TRUE;
+    *a0 = bGetDouble(buf);
+    *a1 = bGetSingle(&buf[8U]);
+    *dt_ls = bGetShort(&buf[12U]);
+    *time_of_data = bGetSingle(&buf[14U]);
+    *wn_t = bGetShort(&buf[18U]);
+    *wn_lsf = bGetShort(&buf[20U]);
+    *dn = bGetShort(&buf[22U]);
+    *dt_lsf = bGetShort(&buf[24U]);
+    return FALSE;
 }
 
 /**/
 /* clock offset and frequency offset in 1-SV (0-D) mode */
-short
-rpt_0x54(
-	 TSIPPKT *rpt,
-	 float *clock_bias,
-	 float *freq_offset,
-	 float *time_of_fix
-	 )
+short rpt_0x54(
+    TSIPPKT* rpt,
+    float* clock_bias,
+    float* freq_offset,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 12) return TRUE;
-	*clock_bias = bGetSingle (buf);
-	*freq_offset = bGetSingle (&buf[4U]);
-	*time_of_fix = bGetSingle (&buf[8U]);
-	return FALSE;
+    if (rpt->len != 12)
+        return TRUE;
+    *clock_bias = bGetSingle(buf);
+    *freq_offset = bGetSingle(&buf[4U]);
+    *time_of_fix = bGetSingle(&buf[8U]);
+    return FALSE;
 }
 
 /* I/O serial options */
-short
-rpt_0x55(
-	 TSIPPKT *rpt,
-	 unsigned char *pos_code,
-	 unsigned char *vel_code,
-	 unsigned char *time_code,
-	 unsigned char *aux_code
-	 )
+short rpt_0x55(
+    TSIPPKT* rpt,
+    unsigned char* pos_code,
+    unsigned char* vel_code,
+    unsigned char* time_code,
+    unsigned char* aux_code)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 4) return TRUE;
-	*pos_code = buf[0U];
-	*vel_code = buf[1U];
-	*time_code = buf[2U];
-	*aux_code = buf[3U];
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 4)
+        return TRUE;
+    *pos_code = buf[0U];
+    *vel_code = buf[1U];
+    *time_code = buf[2U];
+    *aux_code = buf[3U];
+    return FALSE;
 }
 
-/* velocity in east-north-up coordinates */	
-short
-rpt_0x56(
-	 TSIPPKT *rpt,
-	 float vel_ENU[3],
-	 float *freq_offset,
-	 float *time_of_fix
-	 )
+/* velocity in east-north-up coordinates */
+short rpt_0x56(
+    TSIPPKT* rpt,
+    float vel_ENU[3],
+    float* freq_offset,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 20) return TRUE;
-	/* east */
-	vel_ENU[0U] = bGetSingle (buf);
-	/* north */
-	vel_ENU[1U] = bGetSingle (&buf[4U]);
-	/* up */
-	vel_ENU[2U] = bGetSingle (&buf[8U]);
-	*freq_offset = bGetSingle (&buf[12U]);
-	*time_of_fix = bGetSingle (&buf[16U]);
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 20)
+        return TRUE;
+    /* east */
+    vel_ENU[0U] = bGetSingle(buf);
+    /* north */
+    vel_ENU[1U] = bGetSingle(&buf[4U]);
+    /* up */
+    vel_ENU[2U] = bGetSingle(&buf[8U]);
+    *freq_offset = bGetSingle(&buf[12U]);
+    *time_of_fix = bGetSingle(&buf[16U]);
+    return FALSE;
 }
 
 /* info about last computed fix */
-short
-rpt_0x57(
-	 TSIPPKT *rpt,
-	 unsigned char *source_code,
-	 unsigned char *diag_code,
-	 short *week_num,
-	 float *time_of_fix
-	 )
+short rpt_0x57(
+    TSIPPKT* rpt,
+    unsigned char* source_code,
+    unsigned char* diag_code,
+    short* week_num,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 8) return TRUE;
-	*source_code = buf[0U];
-	*diag_code = buf[1U];
-	*time_of_fix = bGetSingle (&buf[2U]);
-	*week_num = bGetShort (&buf[6U]);
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 8)
+        return TRUE;
+    *source_code = buf[0U];
+    *diag_code = buf[1U];
+    *time_of_fix = bGetSingle(&buf[2U]);
+    *week_num = bGetShort(&buf[6U]);
+    return FALSE;
 }
 
 /* GPS system data or acknowledgment of GPS system data load */
-short
-rpt_0x58(
-	 TSIPPKT *rpt,
-	 unsigned char *op_code,
-	 unsigned char *data_type,
-	 unsigned char *sv_prn,
-	 unsigned char *data_length,
-	 unsigned char *data_packet
-	 )
+short rpt_0x58(
+    TSIPPKT* rpt,
+    unsigned char* op_code,
+    unsigned char* data_type,
+    unsigned char* sv_prn,
+    unsigned char* data_length,
+    unsigned char* data_packet)
 {
-	unsigned char *buf, *buf4;
-	short dl;
-	ALM_INFO* alminfo;
-	ION_INFO* ioninfo;
-	UTC_INFO* utcinfo;
-	NAV_INFO* navinfo;
+    unsigned char *buf, *buf4;
+    short dl;
+    ALM_INFO* alminfo;
+    ION_INFO* ioninfo;
+    UTC_INFO* utcinfo;
+    NAV_INFO* navinfo;
 
-	buf = rpt->buf;
+    buf = rpt->buf;
 
-	if (buf[0U] == 2) {
-		if (rpt->len < 4) return TRUE;
-		if (rpt->len != 4+buf[3U]) return TRUE;
-	}
-	else if (rpt->len != 3) {
-		return TRUE;
-	}
-	*op_code = buf[0U];
-	*data_type = buf[1U];
-	*sv_prn = buf[2U];
-	if (*op_code == 2) {
-		dl = buf[3U];
-		*data_length = (unsigned char)dl;
-		buf4 = &buf[4U];
-		switch (*data_type) {
-		    case 2:
-			/* Almanac */
-			if (*data_length != sizeof (ALM_INFO)) return TRUE;
-			alminfo = (ALM_INFO*)data_packet;
-			alminfo->t_oa_raw  = buf4[0U];
-			alminfo->SV_health = buf4[1U];
-			alminfo->e         = bGetSingle(&buf4[2U]);
-			alminfo->t_oa      = bGetSingle(&buf4[6U]);
-			alminfo->i_0       = bGetSingle(&buf4[10U]);
-			alminfo->OMEGADOT  = bGetSingle(&buf4[14U]);
-			alminfo->sqrt_A    = bGetSingle(&buf4[18U]);
-			alminfo->OMEGA_0   = bGetSingle(&buf4[22U]);
-			alminfo->omega     = bGetSingle(&buf4[26U]);
-			alminfo->M_0       = bGetSingle(&buf4[30U]);
-			alminfo->a_f0      = bGetSingle(&buf4[34U]);
-			alminfo->a_f1      = bGetSingle(&buf4[38U]);
-			alminfo->Axis      = bGetSingle(&buf4[42U]);
-			alminfo->n         = bGetSingle(&buf4[46U]);
-			alminfo->OMEGA_n   = bGetSingle(&buf4[50U]);
-			alminfo->ODOT_n    = bGetSingle(&buf4[54U]);
-			alminfo->t_zc      = bGetSingle(&buf4[58U]);
-			alminfo->weeknum   = bGetShort(&buf4[62U]);
-			alminfo->wn_oa     = bGetShort(&buf4[64U]);
-			break;
+    if (buf[0U] == 2)
+    {
+        if (rpt->len < 4)
+            return TRUE;
+        if (rpt->len != 4 + buf[3U])
+            return TRUE;
+    }
+    else if (rpt->len != 3)
+    {
+        return TRUE;
+    }
+    *op_code = buf[0U];
+    *data_type = buf[1U];
+    *sv_prn = buf[2U];
+    if (*op_code == 2)
+    {
+        dl = buf[3U];
+        *data_length = (unsigned char)dl;
+        buf4 = &buf[4U];
+        switch (*data_type)
+        {
+        case 2:
+            /* Almanac */
+            if (*data_length != sizeof(ALM_INFO))
+                return TRUE;
+            alminfo = (ALM_INFO*)data_packet;
+            alminfo->t_oa_raw = buf4[0U];
+            alminfo->SV_health = buf4[1U];
+            alminfo->e = bGetSingle(&buf4[2U]);
+            alminfo->t_oa = bGetSingle(&buf4[6U]);
+            alminfo->i_0 = bGetSingle(&buf4[10U]);
+            alminfo->OMEGADOT = bGetSingle(&buf4[14U]);
+            alminfo->sqrt_A = bGetSingle(&buf4[18U]);
+            alminfo->OMEGA_0 = bGetSingle(&buf4[22U]);
+            alminfo->omega = bGetSingle(&buf4[26U]);
+            alminfo->M_0 = bGetSingle(&buf4[30U]);
+            alminfo->a_f0 = bGetSingle(&buf4[34U]);
+            alminfo->a_f1 = bGetSingle(&buf4[38U]);
+            alminfo->Axis = bGetSingle(&buf4[42U]);
+            alminfo->n = bGetSingle(&buf4[46U]);
+            alminfo->OMEGA_n = bGetSingle(&buf4[50U]);
+            alminfo->ODOT_n = bGetSingle(&buf4[54U]);
+            alminfo->t_zc = bGetSingle(&buf4[58U]);
+            alminfo->weeknum = bGetShort(&buf4[62U]);
+            alminfo->wn_oa = bGetShort(&buf4[64U]);
+            break;
 
-		    case 3:
-			/* Almanac health page */
-			if (*data_length != sizeof (ALH_PARMS) + 3) return TRUE;
+        case 3:
+            /* Almanac health page */
+            if (*data_length != sizeof(ALH_PARMS) + 3)
+                return TRUE;
 
-			/* this record is returned raw */
-			memcpy (data_packet, buf4, dl);
-			break;
+            /* this record is returned raw */
+            memcpy(data_packet, buf4, dl);
+            break;
 
-		    case 4:
-			/* Ionosphere */
-			if (*data_length != sizeof (ION_INFO) + 8) return TRUE;
-			ioninfo = (ION_INFO*)data_packet;
-			ioninfo->alpha_0   = bGetSingle (&buf4[8U]);
-			ioninfo->alpha_1   = bGetSingle (&buf4[12U]);
-			ioninfo->alpha_2   = bGetSingle (&buf4[16U]);
-			ioninfo->alpha_3   = bGetSingle (&buf4[20U]);
-			ioninfo->beta_0    = bGetSingle (&buf4[24U]);
-			ioninfo->beta_1    = bGetSingle (&buf4[28U]);
-			ioninfo->beta_2    = bGetSingle (&buf4[32U]);
-			ioninfo->beta_3    = bGetSingle (&buf4[36U]);
-			break;
+        case 4:
+            /* Ionosphere */
+            if (*data_length != sizeof(ION_INFO) + 8)
+                return TRUE;
+            ioninfo = (ION_INFO*)data_packet;
+            ioninfo->alpha_0 = bGetSingle(&buf4[8U]);
+            ioninfo->alpha_1 = bGetSingle(&buf4[12U]);
+            ioninfo->alpha_2 = bGetSingle(&buf4[16U]);
+            ioninfo->alpha_3 = bGetSingle(&buf4[20U]);
+            ioninfo->beta_0 = bGetSingle(&buf4[24U]);
+            ioninfo->beta_1 = bGetSingle(&buf4[28U]);
+            ioninfo->beta_2 = bGetSingle(&buf4[32U]);
+            ioninfo->beta_3 = bGetSingle(&buf4[36U]);
+            break;
 
-		    case 5:
-			/* UTC */
-			if (*data_length != sizeof (UTC_INFO) + 13) return TRUE;
-			utcinfo = (UTC_INFO*)data_packet;
-			utcinfo->A_0       = bGetDouble (&buf4[13U]);
-			utcinfo->A_1       = bGetSingle (&buf4[21U]);
-			utcinfo->delta_t_LS = bGetShort (&buf4[25U]);
-			utcinfo->t_ot      = bGetSingle(&buf4[27U]);
-			utcinfo->WN_t      = bGetShort (&buf4[31U]);
-			utcinfo->WN_LSF    = bGetShort (&buf4[33U]);
-			utcinfo->DN        = bGetShort (&buf4[35U]);
-			utcinfo->delta_t_LSF = bGetShort (&buf4[37U]);
-			break;
+        case 5:
+            /* UTC */
+            if (*data_length != sizeof(UTC_INFO) + 13)
+                return TRUE;
+            utcinfo = (UTC_INFO*)data_packet;
+            utcinfo->A_0 = bGetDouble(&buf4[13U]);
+            utcinfo->A_1 = bGetSingle(&buf4[21U]);
+            utcinfo->delta_t_LS = bGetShort(&buf4[25U]);
+            utcinfo->t_ot = bGetSingle(&buf4[27U]);
+            utcinfo->WN_t = bGetShort(&buf4[31U]);
+            utcinfo->WN_LSF = bGetShort(&buf4[33U]);
+            utcinfo->DN = bGetShort(&buf4[35U]);
+            utcinfo->delta_t_LSF = bGetShort(&buf4[37U]);
+            break;
 
-		    case 6:
-			/* Ephemeris */
-			if (*data_length != sizeof (NAV_INFO) - 1) return TRUE;
+        case 6:
+            /* Ephemeris */
+            if (*data_length != sizeof(NAV_INFO) - 1)
+                return TRUE;
 
-			navinfo = (NAV_INFO*)data_packet;
+            navinfo = (NAV_INFO*)data_packet;
 
-			navinfo->sv_number = buf4[0U];
-			navinfo->t_ephem = bGetSingle (&buf4[1U]);
-			navinfo->ephclk.weeknum = bGetShort (&buf4[5U]);
+            navinfo->sv_number = buf4[0U];
+            navinfo->t_ephem = bGetSingle(&buf4[1U]);
+            navinfo->ephclk.weeknum = bGetShort(&buf4[5U]);
 
-			navinfo->ephclk.codeL2 = buf4[7U];
-			navinfo->ephclk.L2Pdata = buf4[8U];
-			navinfo->ephclk.SVacc_raw = buf4[9U];
-			navinfo->ephclk.SV_health = buf4[10U];
-			navinfo->ephclk.IODC = bGetShort (&buf4[11U]);
-			navinfo->ephclk.T_GD = bGetSingle (&buf4[13U]);
-			navinfo->ephclk.t_oc = bGetSingle (&buf4[17U]);
-			navinfo->ephclk.a_f2 = bGetSingle (&buf4[21U]);
-			navinfo->ephclk.a_f1 = bGetSingle (&buf4[25U]);
-			navinfo->ephclk.a_f0 = bGetSingle (&buf4[29U]);
-			navinfo->ephclk.SVacc = bGetSingle (&buf4[33U]);
+            navinfo->ephclk.codeL2 = buf4[7U];
+            navinfo->ephclk.L2Pdata = buf4[8U];
+            navinfo->ephclk.SVacc_raw = buf4[9U];
+            navinfo->ephclk.SV_health = buf4[10U];
+            navinfo->ephclk.IODC = bGetShort(&buf4[11U]);
+            navinfo->ephclk.T_GD = bGetSingle(&buf4[13U]);
+            navinfo->ephclk.t_oc = bGetSingle(&buf4[17U]);
+            navinfo->ephclk.a_f2 = bGetSingle(&buf4[21U]);
+            navinfo->ephclk.a_f1 = bGetSingle(&buf4[25U]);
+            navinfo->ephclk.a_f0 = bGetSingle(&buf4[29U]);
+            navinfo->ephclk.SVacc = bGetSingle(&buf4[33U]);
 
-			navinfo->ephorb.IODE = buf4[37U];
-			navinfo->ephorb.fit_interval = buf4[38U];
-			navinfo->ephorb.C_rs = bGetSingle (&buf4[39U]);
-			navinfo->ephorb.delta_n = bGetSingle (&buf4[43U]);
-			navinfo->ephorb.M_0 = bGetDouble (&buf4[47U]);
-			navinfo->ephorb.C_uc = bGetSingle (&buf4[55U]);
-			navinfo->ephorb.e = bGetDouble (&buf4[59U]);
-			navinfo->ephorb.C_us = bGetSingle (&buf4[67U]);
-			navinfo->ephorb.sqrt_A = bGetDouble (&buf4[71U]);
-			navinfo->ephorb.t_oe = bGetSingle (&buf4[79U]);
-			navinfo->ephorb.C_ic = bGetSingle (&buf4[83U]);
-			navinfo->ephorb.OMEGA_0 = bGetDouble (&buf4[87U]);
-			navinfo->ephorb.C_is = bGetSingle (&buf4[95U]);
-			navinfo->ephorb.i_0 = bGetDouble (&buf4[99U]);
-			navinfo->ephorb.C_rc = bGetSingle (&buf4[107U]);
-			navinfo->ephorb.omega = bGetDouble (&buf4[111U]);
-			navinfo->ephorb.OMEGADOT=bGetSingle (&buf4[119U]);
-			navinfo->ephorb.IDOT = bGetSingle (&buf4[123U]);
-			navinfo->ephorb.Axis = bGetDouble (&buf4[127U]);
-			navinfo->ephorb.n = bGetDouble (&buf4[135U]);
-			navinfo->ephorb.r1me2 = bGetDouble (&buf4[143U]);
-			navinfo->ephorb.OMEGA_n=bGetDouble (&buf4[151U]);
-			navinfo->ephorb.ODOT_n = bGetDouble (&buf4[159U]);
-			break;
-		}
-	}
-	return FALSE;
+            navinfo->ephorb.IODE = buf4[37U];
+            navinfo->ephorb.fit_interval = buf4[38U];
+            navinfo->ephorb.C_rs = bGetSingle(&buf4[39U]);
+            navinfo->ephorb.delta_n = bGetSingle(&buf4[43U]);
+            navinfo->ephorb.M_0 = bGetDouble(&buf4[47U]);
+            navinfo->ephorb.C_uc = bGetSingle(&buf4[55U]);
+            navinfo->ephorb.e = bGetDouble(&buf4[59U]);
+            navinfo->ephorb.C_us = bGetSingle(&buf4[67U]);
+            navinfo->ephorb.sqrt_A = bGetDouble(&buf4[71U]);
+            navinfo->ephorb.t_oe = bGetSingle(&buf4[79U]);
+            navinfo->ephorb.C_ic = bGetSingle(&buf4[83U]);
+            navinfo->ephorb.OMEGA_0 = bGetDouble(&buf4[87U]);
+            navinfo->ephorb.C_is = bGetSingle(&buf4[95U]);
+            navinfo->ephorb.i_0 = bGetDouble(&buf4[99U]);
+            navinfo->ephorb.C_rc = bGetSingle(&buf4[107U]);
+            navinfo->ephorb.omega = bGetDouble(&buf4[111U]);
+            navinfo->ephorb.OMEGADOT = bGetSingle(&buf4[119U]);
+            navinfo->ephorb.IDOT = bGetSingle(&buf4[123U]);
+            navinfo->ephorb.Axis = bGetDouble(&buf4[127U]);
+            navinfo->ephorb.n = bGetDouble(&buf4[135U]);
+            navinfo->ephorb.r1me2 = bGetDouble(&buf4[143U]);
+            navinfo->ephorb.OMEGA_n = bGetDouble(&buf4[151U]);
+            navinfo->ephorb.ODOT_n = bGetDouble(&buf4[159U]);
+            break;
+        }
+    }
+    return FALSE;
 }
 
-/* satellite enable/disable or health heed/ignore list */	
-short
-rpt_0x59(
-	 TSIPPKT *rpt,
-	 unsigned char *code_type,
-	 unsigned char status_code[32]
-	 )
+/* satellite enable/disable or health heed/ignore list */
+short rpt_0x59(
+    TSIPPKT* rpt,
+    unsigned char* code_type,
+    unsigned char status_code[32])
 {
-	short iprn;
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 33) return TRUE;
-	*code_type = buf[0U];
-	for (iprn = 0; iprn < 32; iprn++)
-		status_code[iprn] = buf[iprn + 1];
-	return FALSE;
+    short iprn;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 33)
+        return TRUE;
+    *code_type = buf[0U];
+    for (iprn = 0; iprn < 32; iprn++)
+        status_code[iprn] = buf[iprn + 1];
+    return FALSE;
 }
 
 /* raw measurement data - code phase/Doppler */
-short
-rpt_0x5A(
-	 TSIPPKT *rpt,
-	 unsigned char *sv_prn,
-	 float *sample_length,
-	 float *signal_level,
-	 float *code_phase,
-	 float *Doppler,
-	 double *time_of_fix
-	 )
+short rpt_0x5A(
+    TSIPPKT* rpt,
+    unsigned char* sv_prn,
+    float* sample_length,
+    float* signal_level,
+    float* code_phase,
+    float* Doppler,
+    double* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 25) return TRUE;
-	*sv_prn = buf[0U];
-	*sample_length = bGetSingle (&buf[1U]);
-	*signal_level = bGetSingle (&buf[5U]);
-	*code_phase = bGetSingle (&buf[9U]);
-	*Doppler = bGetSingle (&buf[13U]);
-	*time_of_fix = bGetDouble (&buf[17U]);
-	return FALSE;
+    if (rpt->len != 25)
+        return TRUE;
+    *sv_prn = buf[0U];
+    *sample_length = bGetSingle(&buf[1U]);
+    *signal_level = bGetSingle(&buf[5U]);
+    *code_phase = bGetSingle(&buf[9U]);
+    *Doppler = bGetSingle(&buf[13U]);
+    *time_of_fix = bGetDouble(&buf[17U]);
+    return FALSE;
 }
 
-/* satellite ephorb status */	
-short
-rpt_0x5B(
-	 TSIPPKT *rpt,
-	 unsigned char *sv_prn,
-	 unsigned char *sv_health,
-	 unsigned char *sv_iode,
-	 unsigned char *fit_interval_flag,
-	 float *time_of_collection,
-	 float *time_of_eph,
-	 float *sv_accy
-	 )
+/* satellite ephorb status */
+short rpt_0x5B(
+    TSIPPKT* rpt,
+    unsigned char* sv_prn,
+    unsigned char* sv_health,
+    unsigned char* sv_iode,
+    unsigned char* fit_interval_flag,
+    float* time_of_collection,
+    float* time_of_eph,
+    float* sv_accy)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 16) return TRUE;
-	*sv_prn = buf[0U];
-	*time_of_collection = bGetSingle (&buf[1U]);
-	*sv_health = buf[5U];
-	*sv_iode = buf[6U];
-	*time_of_eph = bGetSingle (&buf[7U]);
-	*fit_interval_flag = buf[11U];
-	*sv_accy = bGetSingle (&buf[12U]);
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 16)
+        return TRUE;
+    *sv_prn = buf[0U];
+    *time_of_collection = bGetSingle(&buf[1U]);
+    *sv_health = buf[5U];
+    *sv_iode = buf[6U];
+    *time_of_eph = bGetSingle(&buf[7U]);
+    *fit_interval_flag = buf[11U];
+    *sv_accy = bGetSingle(&buf[12U]);
+    return FALSE;
 }
 
 /* satellite tracking status */
-short
-rpt_0x5C(
-	 TSIPPKT *rpt,
-	 unsigned char *sv_prn,
-	 unsigned char *slot,
-	 unsigned char *chan,
-	 unsigned char *acq_flag,
-	 unsigned char *eph_flag,
-	 float *signal_level,
-	 float *time_of_last_msmt,
-	 float *elev,
-	 float *azim,
-	 unsigned char *old_msmt_flag,
-	 unsigned char *integer_msec_flag,
-	 unsigned char *bad_data_flag,
-	 unsigned char *data_collect_flag
-	 )
+short rpt_0x5C(
+    TSIPPKT* rpt,
+    unsigned char* sv_prn,
+    unsigned char* slot,
+    unsigned char* chan,
+    unsigned char* acq_flag,
+    unsigned char* eph_flag,
+    float* signal_level,
+    float* time_of_last_msmt,
+    float* elev,
+    float* azim,
+    unsigned char* old_msmt_flag,
+    unsigned char* integer_msec_flag,
+    unsigned char* bad_data_flag,
+    unsigned char* data_collect_flag)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
-	
-	if (rpt->len != 24) return TRUE;
-	*sv_prn = buf[0U];
-	*slot = (unsigned char)((buf[1U] & 0x07) + 1);
-	*chan = (unsigned char)(buf[1U] >> 3);
-	if (*chan == 0x10) *chan = 2;
-	else (*chan)++;
-	*acq_flag = buf[2U];
-	*eph_flag = buf[3U];
-	*signal_level = bGetSingle (&buf[4U]);
-	*time_of_last_msmt = bGetSingle (&buf[8U]);
-	*elev = bGetSingle (&buf[12U]);
-	*azim = bGetSingle (&buf[16U]);
-	*old_msmt_flag = buf[20U];
-	*integer_msec_flag = buf[21U];
-	*bad_data_flag = buf[22U];
-	*data_collect_flag = buf[23U];
-	return FALSE;
+    unsigned char* buf;
+    buf = rpt->buf;
+
+    if (rpt->len != 24)
+        return TRUE;
+    *sv_prn = buf[0U];
+    *slot = (unsigned char)((buf[1U] & 0x07) + 1);
+    *chan = (unsigned char)(buf[1U] >> 3);
+    if (*chan == 0x10)
+        *chan = 2;
+    else
+        (*chan)++;
+    *acq_flag = buf[2U];
+    *eph_flag = buf[3U];
+    *signal_level = bGetSingle(&buf[4U]);
+    *time_of_last_msmt = bGetSingle(&buf[8U]);
+    *elev = bGetSingle(&buf[12U]);
+    *azim = bGetSingle(&buf[16U]);
+    *old_msmt_flag = buf[20U];
+    *integer_msec_flag = buf[21U];
+    *bad_data_flag = buf[22U];
+    *data_collect_flag = buf[23U];
+    return FALSE;
 }
 
 /**/
 /* over-determined satellite selection for position fixes, PDOP, fix mode */
-short
-rpt_0x6D(
-	 TSIPPKT *rpt,
-	 unsigned char *manual_mode,
-	 unsigned char *nsvs,
-	 unsigned char *ndim,
-	 unsigned char sv_prn[],
-	 float *pdop,
-	 float *hdop,
-	 float *vdop,
-	 float *tdop
-	 )
+short rpt_0x6D(
+    TSIPPKT* rpt,
+    unsigned char* manual_mode,
+    unsigned char* nsvs,
+    unsigned char* ndim,
+    unsigned char sv_prn[],
+    float* pdop,
+    float* hdop,
+    float* vdop,
+    float* tdop)
 {
-	short islot;
-	unsigned char *buf;
-	buf = rpt->buf;
+    short islot;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	*nsvs = (unsigned char)((buf[0U] & 0xF0) >> 4);
-	if ((*nsvs)>8) return TRUE;
-	if (rpt->len != 17 + (*nsvs) ) return TRUE;
+    *nsvs = (unsigned char)((buf[0U] & 0xF0) >> 4);
+    if ((*nsvs) > 8)
+        return TRUE;
+    if (rpt->len != 17 + (*nsvs))
+        return TRUE;
 
-	*manual_mode = (unsigned char)(buf[0U] & 0x08);
-	*ndim  = (unsigned char)((buf[0U] & 0x07));
-	*pdop = bGetSingle (&buf[1U]);
-	*hdop = bGetSingle (&buf[5U]);
-	*vdop = bGetSingle (&buf[9U]);
-	*tdop = bGetSingle (&buf[13U]);
-	for (islot = 0; islot < (*nsvs); islot++)
-		sv_prn[islot] = buf[islot + 17];
-	return FALSE;
+    *manual_mode = (unsigned char)(buf[0U] & 0x08);
+    *ndim = (unsigned char)((buf[0U] & 0x07));
+    *pdop = bGetSingle(&buf[1U]);
+    *hdop = bGetSingle(&buf[5U]);
+    *vdop = bGetSingle(&buf[9U]);
+    *tdop = bGetSingle(&buf[13U]);
+    for (islot = 0; islot < (*nsvs); islot++)
+        sv_prn[islot] = buf[islot + 17];
+    return FALSE;
 }
 
 /**/
 /* differential fix mode */
-short
-rpt_0x82(
-	 TSIPPKT *rpt,
-	 unsigned char *diff_mode
-	 )
+short rpt_0x82(
+    TSIPPKT* rpt,
+    unsigned char* diff_mode)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 1) return TRUE;
-	*diff_mode = buf[0U];
-	return FALSE;
+    if (rpt->len != 1)
+        return TRUE;
+    *diff_mode = buf[0U];
+    return FALSE;
 }
 
 /* position, ECEF double precision */
-short
-rpt_0x83(
-	 TSIPPKT *rpt,
-	 double ECEF_pos[3],
-	 double *clock_bias,
-	 float *time_of_fix
-	 )
+short rpt_0x83(
+    TSIPPKT* rpt,
+    double ECEF_pos[3],
+    double* clock_bias,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 36) return TRUE;
-	ECEF_pos[0U] = bGetDouble (buf);
-	ECEF_pos[1U] = bGetDouble (&buf[8U]);
-	ECEF_pos[2U] = bGetDouble (&buf[16U]);
-	*clock_bias  = bGetDouble (&buf[24U]);
-	*time_of_fix = bGetSingle (&buf[32U]);
-	return FALSE;
+    if (rpt->len != 36)
+        return TRUE;
+    ECEF_pos[0U] = bGetDouble(buf);
+    ECEF_pos[1U] = bGetDouble(&buf[8U]);
+    ECEF_pos[2U] = bGetDouble(&buf[16U]);
+    *clock_bias = bGetDouble(&buf[24U]);
+    *time_of_fix = bGetSingle(&buf[32U]);
+    return FALSE;
 }
 
-/* position, lat-lon-alt double precision */	
-short
-rpt_0x84(
-	 TSIPPKT *rpt,
-	 double *lat,
-	 double *lon,
-	 double *alt,
-	 double *clock_bias,
-	 float *time_of_fix
-	 )
+/* position, lat-lon-alt double precision */
+short rpt_0x84(
+    TSIPPKT* rpt,
+    double* lat,
+    double* lon,
+    double* alt,
+    double* clock_bias,
+    float* time_of_fix)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 36) return TRUE;
-	*lat = bGetDouble (buf);
-	*lon = bGetDouble (&buf[8U]);
-	*alt = bGetDouble (&buf[16U]);
-	*clock_bias = bGetDouble (&buf[24U]);
-	*time_of_fix = bGetSingle (&buf[32U]);
-	return FALSE;
+    if (rpt->len != 36)
+        return TRUE;
+    *lat = bGetDouble(buf);
+    *lon = bGetDouble(&buf[8U]);
+    *alt = bGetDouble(&buf[16U]);
+    *clock_bias = bGetDouble(&buf[24U]);
+    *time_of_fix = bGetSingle(&buf[32U]);
+    return FALSE;
 }
 
-short
-rpt_Paly0xBB(
-	     TSIPPKT *rpt,
-	     TSIP_RCVR_CFG *TsipxBB
-	     )
+short rpt_Paly0xBB(
+    TSIPPKT* rpt,
+    TSIP_RCVR_CFG* TsipxBB)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	/* Palisade is inconsistent with other TSIP, which has a length of 40 */
-	/* if (rpt->len != 40) return TRUE; */
-	if (rpt->len != 43) return TRUE;
+    /* Palisade is inconsistent with other TSIP, which has a length of 40 */
+    /* if (rpt->len != 40) return TRUE; */
+    if (rpt->len != 43)
+        return TRUE;
 
-	TsipxBB->bSubcode	=  buf[0U];
-	TsipxBB->operating_mode	=  buf[1U];
-	TsipxBB->dyn_code	=  buf[3U];
-	TsipxBB->elev_mask	=  bGetSingle (&buf[5U]);
-	TsipxBB->cno_mask	=  bGetSingle (&buf[9U]);
-	TsipxBB->dop_mask 	=  bGetSingle (&buf[13U]);
-	TsipxBB->dop_switch 	=  bGetSingle (&buf[17U]);
-	return FALSE;
+    TsipxBB->bSubcode = buf[0U];
+    TsipxBB->operating_mode = buf[1U];
+    TsipxBB->dyn_code = buf[3U];
+    TsipxBB->elev_mask = bGetSingle(&buf[5U]);
+    TsipxBB->cno_mask = bGetSingle(&buf[9U]);
+    TsipxBB->dop_mask = bGetSingle(&buf[13U]);
+    TsipxBB->dop_switch = bGetSingle(&buf[17U]);
+    return FALSE;
 }
 
 /* Receiver serial port configuration */
-short
-rpt_0xBC(
-	 TSIPPKT *rpt,
-	 unsigned char *port_num,
-	 unsigned char *in_baud,
-	 unsigned char *out_baud,
-	 unsigned char *data_bits,
-	 unsigned char *parity,
-	 unsigned char *stop_bits,
-	 unsigned char *flow_control,
-	 unsigned char *protocols_in,
-	 unsigned char *protocols_out,
-	 unsigned char *reserved
-	 )
+short rpt_0xBC(
+    TSIPPKT* rpt,
+    unsigned char* port_num,
+    unsigned char* in_baud,
+    unsigned char* out_baud,
+    unsigned char* data_bits,
+    unsigned char* parity,
+    unsigned char* stop_bits,
+    unsigned char* flow_control,
+    unsigned char* protocols_in,
+    unsigned char* protocols_out,
+    unsigned char* reserved)
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 10) return TRUE;
-	*port_num = buf[0U];
-	*in_baud = buf[1U];
-	*out_baud = buf[2U];
-	*data_bits = buf[3U];
-	*parity = buf[4U];
-	*stop_bits = buf[5U];
-	*flow_control = buf[6U];
-	*protocols_in = buf[7U];
-	*protocols_out = buf[8U];
-	*reserved = buf[9U];
+    if (rpt->len != 10)
+        return TRUE;
+    *port_num = buf[0U];
+    *in_baud = buf[1U];
+    *out_baud = buf[2U];
+    *data_bits = buf[3U];
+    *parity = buf[4U];
+    *stop_bits = buf[5U];
+    *flow_control = buf[6U];
+    *protocols_in = buf[7U];
+    *protocols_out = buf[8U];
+    *reserved = buf[9U];
 
-	return FALSE;
+    return FALSE;
 }
 
 /**** Superpackets ****/
 
-short
-rpt_0x8F0B(
-	   TSIPPKT *rpt,
-	   unsigned short *event,
-	   double *tow,
-	   unsigned char *date,
-	   unsigned char *month,
-	   short *year,
-	   unsigned char *dim_mode,
-	   short *utc_offset,
-	   double *bias,
-	   double *drift,
-	   float *bias_unc,
-	   float *dr_unc,
-	   double *lat,
-	   double *lon,
-	   double *alt,
-	   char sv_id[8]
-	   )
+short rpt_0x8F0B(
+    TSIPPKT* rpt,
+    unsigned short* event,
+    double* tow,
+    unsigned char* date,
+    unsigned char* month,
+    short* year,
+    unsigned char* dim_mode,
+    short* utc_offset,
+    double* bias,
+    double* drift,
+    float* bias_unc,
+    float* dr_unc,
+    double* lat,
+    double* lon,
+    double* alt,
+    char sv_id[8])
 {
-	short local_index;
-	unsigned char *buf;
+    short local_index;
+    unsigned char* buf;
 
-	buf = rpt->buf;
-	if (rpt->len != 74) return TRUE;
-	*event = bGetShort(&buf[1U]);
-	*tow = bGetDouble(&buf[3U]);
-	*date = buf[11U];
-	*month = buf[12U];
-	*year = bGetShort(&buf[13U]);
-	*dim_mode = buf[15U];
-	*utc_offset = bGetShort(&buf[16U]);
-	*bias = bGetDouble(&buf[18U]);
-	*drift = bGetDouble(&buf[26U]);
-	*bias_unc = bGetSingle(&buf[34U]);
-	*dr_unc = bGetSingle(&buf[38U]);
-	*lat = bGetDouble(&buf[42U]);
-	*lon = bGetDouble(&buf[50U]);
-	*alt = bGetDouble(&buf[58U]);
+    buf = rpt->buf;
+    if (rpt->len != 74)
+        return TRUE;
+    *event = bGetShort(&buf[1U]);
+    *tow = bGetDouble(&buf[3U]);
+    *date = buf[11U];
+    *month = buf[12U];
+    *year = bGetShort(&buf[13U]);
+    *dim_mode = buf[15U];
+    *utc_offset = bGetShort(&buf[16U]);
+    *bias = bGetDouble(&buf[18U]);
+    *drift = bGetDouble(&buf[26U]);
+    *bias_unc = bGetSingle(&buf[34U]);
+    *dr_unc = bGetSingle(&buf[38U]);
+    *lat = bGetDouble(&buf[42U]);
+    *lon = bGetDouble(&buf[50U]);
+    *alt = bGetDouble(&buf[58U]);
 
-	for (local_index=0; local_index<8; local_index++) sv_id[local_index] = buf[local_index + 66];
-	return FALSE;
+    for (local_index = 0; local_index < 8; local_index++)
+        sv_id[local_index] = buf[local_index + 66];
+    return FALSE;
 }
 
 /* datum index and coefficients  */
-short
-rpt_0x8F14(
-	   TSIPPKT *rpt,
-	   short *datum_idx,
-	   double datum_coeffs[5]
-	   )
+short rpt_0x8F14(
+    TSIPPKT* rpt,
+    short* datum_idx,
+    double datum_coeffs[5])
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 43) return TRUE;
-	*datum_idx = bGetShort(&buf[1U]);
-	datum_coeffs[0U] = bGetDouble (&buf[3U]);
-	datum_coeffs[1U] = bGetDouble (&buf[11U]);
-	datum_coeffs[2U] = bGetDouble (&buf[19U]);
-	datum_coeffs[3U] = bGetDouble (&buf[27U]);
-	datum_coeffs[4U] = bGetDouble (&buf[35U]);
-	return FALSE;
+    if (rpt->len != 43)
+        return TRUE;
+    *datum_idx = bGetShort(&buf[1U]);
+    datum_coeffs[0U] = bGetDouble(&buf[3U]);
+    datum_coeffs[1U] = bGetDouble(&buf[11U]);
+    datum_coeffs[2U] = bGetDouble(&buf[19U]);
+    datum_coeffs[3U] = bGetDouble(&buf[27U]);
+    datum_coeffs[4U] = bGetDouble(&buf[35U]);
+    return FALSE;
 }
 
 
 /* datum index and coefficients  */
-short
-rpt_0x8F15(
-	   TSIPPKT *rpt,
-	   short *datum_idx,
-	   double datum_coeffs[5]
-	   )
+short rpt_0x8F15(
+    TSIPPKT* rpt,
+    short* datum_idx,
+    double datum_coeffs[5])
 {
-	unsigned char *buf;
-	buf = rpt->buf;
+    unsigned char* buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 43) return TRUE;
-	*datum_idx = bGetShort(&buf[1U]);
-	datum_coeffs[0U] = bGetDouble (&buf[3U]);
-	datum_coeffs[1U] = bGetDouble (&buf[11U]);
-	datum_coeffs[2U] = bGetDouble (&buf[19U]);
-	datum_coeffs[3U] = bGetDouble (&buf[27U]);
-	datum_coeffs[4U] = bGetDouble (&buf[35U]);
-	return FALSE;
+    if (rpt->len != 43)
+        return TRUE;
+    *datum_idx = bGetShort(&buf[1U]);
+    datum_coeffs[0U] = bGetDouble(&buf[3U]);
+    datum_coeffs[1U] = bGetDouble(&buf[11U]);
+    datum_coeffs[2U] = bGetDouble(&buf[19U]);
+    datum_coeffs[3U] = bGetDouble(&buf[27U]);
+    datum_coeffs[4U] = bGetDouble(&buf[35U]);
+    return FALSE;
 }
 
 
-#define MAX_LONG  (2147483648.)   /* 2**31 */
+#define MAX_LONG (2147483648.) /* 2**31 */
 
-short
-rpt_0x8F20(
-	   TSIPPKT *rpt,
-	   unsigned char *info,
-	   double *lat,
-	   double *lon,
-	   double *alt,
-	   double vel_enu[],
-	   double *time_of_fix,
-	   short *week_num,
-	   unsigned char *nsvs,
-	   unsigned char sv_prn[],
-	   short sv_IODC[],
-	   short *datum_index
-	   )
+short rpt_0x8F20(
+    TSIPPKT* rpt,
+    unsigned char* info,
+    double* lat,
+    double* lon,
+    double* alt,
+    double vel_enu[],
+    double* time_of_fix,
+    short* week_num,
+    unsigned char* nsvs,
+    unsigned char sv_prn[],
+    short sv_IODC[],
+    short* datum_index)
 {
-	short
-	    isv;
-	unsigned char
-	    *buf, prnx, iode;
-	unsigned long
-	    ulongtemp;
-	long
-	    longtemp;
-	double
-	    vel_scale;
+    short
+        isv;
+    unsigned char
+        *buf,
+        prnx, iode;
+    unsigned long
+        ulongtemp;
+    long
+        longtemp;
+    double
+        vel_scale;
 
-	buf = rpt->buf;
+    buf = rpt->buf;
 
-	if (rpt->len != 56) return TRUE;
+    if (rpt->len != 56)
+        return TRUE;
 
-	vel_scale = (buf[24U]&1)? 0.020 : 0.005;
-	vel_enu[0U] = bGetShort (buf+2)*vel_scale;
-	vel_enu[1U] = bGetShort (buf+4)*vel_scale;
-	vel_enu[2U] = bGetShort (buf+6)*vel_scale;
+    vel_scale = (buf[24U] & 1) ? 0.020 : 0.005;
+    vel_enu[0U] = bGetShort(buf + 2) * vel_scale;
+    vel_enu[1U] = bGetShort(buf + 4) * vel_scale;
+    vel_enu[2U] = bGetShort(buf + 6) * vel_scale;
 
-	*time_of_fix = bGetULong (buf+8)*.001;
+    *time_of_fix = bGetULong(buf + 8) * .001;
 
-	longtemp = bGetLong (buf+12);
-	*lat = longtemp*(GPS_PI/MAX_LONG);
+    longtemp = bGetLong(buf + 12);
+    *lat = longtemp * (GPS_PI / MAX_LONG);
 
-	ulongtemp = bGetULong (buf+16);
-	*lon = ulongtemp*(GPS_PI/MAX_LONG);
-	if (*lon > GPS_PI) *lon -= 2.0*GPS_PI;
+    ulongtemp = bGetULong(buf + 16);
+    *lon = ulongtemp * (GPS_PI / MAX_LONG);
+    if (*lon > GPS_PI)
+        *lon -= 2.0 * GPS_PI;
 
-	*alt = bGetLong (buf+20)*.001;
-	/* 25 blank; 29 = UTC */
-	(*datum_index) = (short)((short)buf[26U]-1);
-	*info = buf[27U];
-	*nsvs = buf[28U];
-	*week_num = bGetShort (&buf[30U]);
-	for (isv = 0; isv < 8; isv++) {
-		prnx = buf[32+2*isv];
-		sv_prn[isv] = (unsigned char)(prnx&0x3F);
-		iode = buf[33+2*isv];
-		sv_IODC[isv] = (short)(iode | ((prnx>>6)<<8));
-	}
-	return FALSE;
+    *alt = bGetLong(buf + 20) * .001;
+    /* 25 blank; 29 = UTC */
+    (*datum_index) = (short)((short)buf[26U] - 1);
+    *info = buf[27U];
+    *nsvs = buf[28U];
+    *week_num = bGetShort(&buf[30U]);
+    for (isv = 0; isv < 8; isv++)
+    {
+        prnx = buf[32 + 2 * isv];
+        sv_prn[isv] = (unsigned char)(prnx & 0x3F);
+        iode = buf[33 + 2 * isv];
+        sv_IODC[isv] = (short)(iode | ((prnx >> 6) << 8));
+    }
+    return FALSE;
 }
 
-short
-rpt_0x8F41(
-	   TSIPPKT *rpt,
-	   unsigned char *bSearchRange,
-	   unsigned char *bBoardOptions,
-	   unsigned long *iiSerialNumber,
-	   unsigned char *bBuildYear,
-	   unsigned char *bBuildMonth,
-	   unsigned char *bBuildDay,
-	   unsigned char *bBuildHour,
-	   float *fOscOffset,
-	   unsigned short *iTestCodeId
-	   )
+short rpt_0x8F41(
+    TSIPPKT* rpt,
+    unsigned char* bSearchRange,
+    unsigned char* bBoardOptions,
+    unsigned long* iiSerialNumber,
+    unsigned char* bBuildYear,
+    unsigned char* bBuildMonth,
+    unsigned char* bBuildDay,
+    unsigned char* bBuildHour,
+    float* fOscOffset,
+    unsigned short* iTestCodeId)
 {
-	if (rpt->len != 17) return FALSE;
-	*bSearchRange = rpt->buf[1U];
-	*bBoardOptions = rpt->buf[2U];
-	*iiSerialNumber = bGetLong(&rpt->buf[3U]);
-	*bBuildYear = rpt->buf[7U];
-	*bBuildMonth = rpt->buf[8U];
-	*bBuildDay = rpt->buf[9U];
-	*bBuildHour =	rpt->buf[10U];
-	*fOscOffset = bGetSingle(&rpt->buf[11U]);
-	*iTestCodeId = bGetShort(&rpt->buf[15U]);
-/*	Tsipx8E41Data = *Tsipx8E41; */
-	return TRUE;
+    if (rpt->len != 17)
+        return FALSE;
+    *bSearchRange = rpt->buf[1U];
+    *bBoardOptions = rpt->buf[2U];
+    *iiSerialNumber = bGetLong(&rpt->buf[3U]);
+    *bBuildYear = rpt->buf[7U];
+    *bBuildMonth = rpt->buf[8U];
+    *bBuildDay = rpt->buf[9U];
+    *bBuildHour = rpt->buf[10U];
+    *fOscOffset = bGetSingle(&rpt->buf[11U]);
+    *iTestCodeId = bGetShort(&rpt->buf[15U]);
+    /*	Tsipx8E41Data = *Tsipx8E41; */
+    return TRUE;
 }
 
-short
-rpt_0x8F42(
-	   TSIPPKT *rpt,
-	   unsigned char *bProdOptionsPre,
-	   unsigned char *bProdNumberExt,
-	   unsigned short *iCaseSerialNumberPre,
-	   unsigned long *iiCaseSerialNumber,
-	   unsigned long *iiProdNumber,
-	   unsigned short *iPremiumOptions,
-	   unsigned short *iMachineID,
-	   unsigned short *iKey
-	   )
+short rpt_0x8F42(
+    TSIPPKT* rpt,
+    unsigned char* bProdOptionsPre,
+    unsigned char* bProdNumberExt,
+    unsigned short* iCaseSerialNumberPre,
+    unsigned long* iiCaseSerialNumber,
+    unsigned long* iiProdNumber,
+    unsigned short* iPremiumOptions,
+    unsigned short* iMachineID,
+    unsigned short* iKey)
 {
-	if (rpt->len != 19) return FALSE;
-	*bProdOptionsPre = rpt->buf[1U];
-	*bProdNumberExt = rpt->buf[2U];
-	*iCaseSerialNumberPre = bGetShort(&rpt->buf[3U]);
-	*iiCaseSerialNumber = bGetLong(&rpt->buf[5U]);
-	*iiProdNumber = bGetLong(&rpt->buf[9U]);
-	*iPremiumOptions = bGetShort(&rpt->buf[13U]);
-	*iMachineID = bGetShort(&rpt->buf[15U]);
-	*iKey = bGetShort(&rpt->buf[17U]);
-	return TRUE;
+    if (rpt->len != 19)
+        return FALSE;
+    *bProdOptionsPre = rpt->buf[1U];
+    *bProdNumberExt = rpt->buf[2U];
+    *iCaseSerialNumberPre = bGetShort(&rpt->buf[3U]);
+    *iiCaseSerialNumber = bGetLong(&rpt->buf[5U]);
+    *iiProdNumber = bGetLong(&rpt->buf[9U]);
+    *iPremiumOptions = bGetShort(&rpt->buf[13U]);
+    *iMachineID = bGetShort(&rpt->buf[15U]);
+    *iKey = bGetShort(&rpt->buf[17U]);
+    return TRUE;
 }
 
-short
-rpt_0x8F45(
-	   TSIPPKT *rpt,
-	   unsigned char *bSegMask
-	   )
+short rpt_0x8F45(
+    TSIPPKT* rpt,
+    unsigned char* bSegMask)
 {
-	if (rpt->len != 2) return FALSE;
-	*bSegMask = rpt->buf[1U];
-	return TRUE;
+    if (rpt->len != 2)
+        return FALSE;
+    *bSegMask = rpt->buf[1U];
+    return TRUE;
 }
 
 /* Stinger PPS definition */
-short
-rpt_0x8F4A_16(
-	      TSIPPKT *rpt,
-	      unsigned char *pps_enabled,
-	      unsigned char *pps_timebase,
-	      unsigned char *pos_polarity,
-	      double *pps_offset,
-	      float *bias_unc_threshold
-	      )
+short rpt_0x8F4A_16(
+    TSIPPKT* rpt,
+    unsigned char* pps_enabled,
+    unsigned char* pps_timebase,
+    unsigned char* pos_polarity,
+    double* pps_offset,
+    float* bias_unc_threshold)
 {
-	unsigned char
-	    *buf;
+    unsigned char* buf;
 
-	buf = rpt->buf;
-	if (rpt->len != 16) return TRUE;
-	*pps_enabled = buf[1U];
-	*pps_timebase = buf[2U];
-	*pos_polarity = buf[3U];
-	*pps_offset = bGetDouble(&buf[4U]);
-	*bias_unc_threshold = bGetSingle(&buf[12U]);
-	return FALSE;
+    buf = rpt->buf;
+    if (rpt->len != 16)
+        return TRUE;
+    *pps_enabled = buf[1U];
+    *pps_timebase = buf[2U];
+    *pos_polarity = buf[3U];
+    *pps_offset = bGetDouble(&buf[4U]);
+    *bias_unc_threshold = bGetSingle(&buf[12U]);
+    return FALSE;
 }
 
-short
-rpt_0x8F4B(
-	   TSIPPKT *rpt,
-	   unsigned long *decorr_max
-	   )
+short rpt_0x8F4B(
+    TSIPPKT* rpt,
+    unsigned long* decorr_max)
 {
-	unsigned char
-	    *buf;
+    unsigned char* buf;
 
-	buf = rpt->buf;
-	if (rpt->len != 5) return TRUE;
-	*decorr_max = bGetLong(&buf[1U]);
-	return FALSE;
+    buf = rpt->buf;
+    if (rpt->len != 5)
+        return TRUE;
+    *decorr_max = bGetLong(&buf[1U]);
+    return FALSE;
 }
 
-short
-rpt_0x8F4D(
-	   TSIPPKT *rpt,
-	   unsigned long *event_mask
-	   )
+short rpt_0x8F4D(
+    TSIPPKT* rpt,
+    unsigned long* event_mask)
 {
-	unsigned char
-	    *buf;
+    unsigned char* buf;
 
-	buf = rpt->buf;
-	if (rpt->len != 5) return TRUE;
-	*event_mask = bGetULong (&buf[1U]);
-	return FALSE;
+    buf = rpt->buf;
+    if (rpt->len != 5)
+        return TRUE;
+    *event_mask = bGetULong(&buf[1U]);
+    return FALSE;
 }
 
-short
-rpt_0x8FA5(
-	   TSIPPKT *rpt,
-	   unsigned char *spktmask
-	   )
+short rpt_0x8FA5(
+    TSIPPKT* rpt,
+    unsigned char* spktmask)
 {
-	unsigned char
-	    *buf;
+    unsigned char* buf;
 
-	buf = rpt->buf;
-	if (rpt->len != 5) return TRUE;
-	spktmask[0U] = buf[1U];
-	spktmask[1U] = buf[2U];
-	spktmask[2U] = buf[3U];
-	spktmask[3U] = buf[4U];
-	return FALSE;
+    buf = rpt->buf;
+    if (rpt->len != 5)
+        return TRUE;
+    spktmask[0U] = buf[1U];
+    spktmask[1U] = buf[2U];
+    spktmask[2U] = buf[3U];
+    spktmask[3U] = buf[4U];
+    return FALSE;
 }
 
-short
-rpt_0x8FAD(
-	   TSIPPKT *rpt,
-	   unsigned short *COUNT,
-	   double *FracSec,
-	   unsigned char *Hour,
-	   unsigned char *Minute,
-	   unsigned char *Second,
-	   unsigned char *Day,
-	   unsigned char *Month,
-	   unsigned short *Year,
-	   unsigned char *Status,
-	   unsigned char *Flags
-	   )
+short rpt_0x8FAD(
+    TSIPPKT* rpt,
+    unsigned short* COUNT,
+    double* FracSec,
+    unsigned char* Hour,
+    unsigned char* Minute,
+    unsigned char* Second,
+    unsigned char* Day,
+    unsigned char* Month,
+    unsigned short* Year,
+    unsigned char* Status,
+    unsigned char* Flags)
 {
-	if (rpt->len != 22) return TRUE;
+    if (rpt->len != 22)
+        return TRUE;
 
-	*COUNT = bGetUShort(&rpt->buf[1U]);
-	*FracSec = bGetDouble(&rpt->buf[3U]);
-	*Hour = rpt->buf[11U];
-	*Minute = rpt->buf[12U];
-	*Second = rpt->buf[13U];
-	*Day = rpt->buf[14U];
-	*Month = rpt->buf[15U];
-	*Year = bGetUShort(&rpt->buf[16U]);
-	*Status = rpt->buf[18U];
-	*Flags = rpt->buf[19U];
-	return FALSE;
+    *COUNT = bGetUShort(&rpt->buf[1U]);
+    *FracSec = bGetDouble(&rpt->buf[3U]);
+    *Hour = rpt->buf[11U];
+    *Minute = rpt->buf[12U];
+    *Second = rpt->buf[13U];
+    *Day = rpt->buf[14U];
+    *Month = rpt->buf[15U];
+    *Year = bGetUShort(&rpt->buf[16U]);
+    *Status = rpt->buf[18U];
+    *Flags = rpt->buf[19U];
+    return FALSE;
 }
 
 
@@ -3206,2045 +3201,2174 @@ rpt_0x8FAD(
 #define BADLEN_PARSE 2
 #define BADDATA_PARSE 3
 
-#define B_TSIP	0x02
-#define B_NMEA	0x04
+#define B_TSIP 0x02
+#define B_NMEA 0x04
 
 
 /* pbuf is the pointer to the current location of the text output */
-static char
-*pbuf;
+static char* pbuf;
 
 /* keep track of whether the message has been successfully parsed */
 static short
-parsed;
+    parsed;
 
 
 /* convert time of week into day-hour-minute-second and print */
-char *
-show_time(
-	  float time_of_week
-	  )
+char* show_time(
+    float time_of_week)
 {
-	short	days, hours, minutes;
-	float seconds;
-	double tow = 0;
-	static char timestring [80];
+    short days, hours, minutes;
+    float seconds;
+    double tow = 0;
+    static char timestring[80];
 
-	if (time_of_week == -1.0)
-	{
-		sprintf(timestring, "   <No time yet>   ");
-	}
-	else if ((time_of_week >= 604800.0) || (time_of_week < 0.0))
-	{
-		sprintf(timestring, "     <Bad time>     ");
-	}
-	else
-	{
-		if (time_of_week < 604799.9) 
-			tow = time_of_week + .00000001;
-		seconds = (float)fmod(tow, 60.);
-		minutes =  (short) fmod(tow/60., 60.);
-		hours = (short)fmod(tow / 3600., 24.);
-		days = (short)(tow / 86400.0);
-		sprintf(timestring, " %s %02d:%02d:%05.2f   ",
-			dayname[days], hours, minutes, seconds);
-	}
-	return timestring;
+    if (time_of_week == -1.0)
+    {
+        sprintf(timestring, "   <No time yet>   ");
+    }
+    else if ((time_of_week >= 604800.0) || (time_of_week < 0.0))
+    {
+        sprintf(timestring, "     <Bad time>     ");
+    }
+    else
+    {
+        if (time_of_week < 604799.9)
+            tow = time_of_week + .00000001;
+        seconds = (float)fmod(tow, 60.);
+        minutes = (short)fmod(tow / 60., 60.);
+        hours = (short)fmod(tow / 3600., 24.);
+        days = (short)(tow / 86400.0);
+        sprintf(timestring, " %s %02d:%02d:%05.2f   ",
+                dayname[days], hours, minutes, seconds);
+    }
+    return timestring;
 }
 
 /**/
 /* 0x3D */
 static void
 rpt_chan_A_config(
-		  TSIPPKT *rpt
-		  )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    tx_baud_index, rx_baud_index,
-	    char_format_index, stop_bits,
-	    tx_mode_index, rx_mode_index,
-	    databits, parity;
-	int
-	    i, nbaud;
+    unsigned char
+        tx_baud_index,
+        rx_baud_index,
+        char_format_index, stop_bits,
+        tx_mode_index, rx_mode_index,
+        databits, parity;
+    int
+        i,
+        nbaud;
 
-	/* unload rptbuf */
-	if (rpt_0x3D (rpt,
-		      &tx_baud_index, &rx_baud_index, &char_format_index,
-		      &stop_bits, &tx_mode_index, &rx_mode_index)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x3D(rpt,
+                 &tx_baud_index, &rx_baud_index, &char_format_index,
+                 &stop_bits, &tx_mode_index, &rx_mode_index))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nChannel A Configuration");
+    pbuf += sprintf(pbuf, "\nChannel A Configuration");
 
-	nbaud = sizeof(old_baudnum);
+    nbaud = sizeof(old_baudnum);
 
-	for (i = 0; i < nbaud; ++i) if (tx_baud_index == old_baudnum[i]) break;
-	pbuf += sprintf(pbuf, "\n   Transmit speed: %s at %s",
-			old_output_ch[tx_mode_index], st_baud_text_app[i]);
+    for (i = 0; i < nbaud; ++i)
+        if (tx_baud_index == old_baudnum[i])
+            break;
+    pbuf += sprintf(pbuf, "\n   Transmit speed: %s at %s",
+                    old_output_ch[tx_mode_index], st_baud_text_app[i]);
 
-	for (i = 0; i < nbaud; ++i) if (rx_baud_index == old_baudnum[i]) break;
-	pbuf += sprintf(pbuf, "\n   Receive speed: %s at %s",
-			old_input_ch[rx_mode_index], st_baud_text_app[i]);
+    for (i = 0; i < nbaud; ++i)
+        if (rx_baud_index == old_baudnum[i])
+            break;
+    pbuf += sprintf(pbuf, "\n   Receive speed: %s at %s",
+                    old_input_ch[rx_mode_index], st_baud_text_app[i]);
 
-	databits = (unsigned char)((char_format_index & 0x03) + 5);
+    databits = (unsigned char)((char_format_index & 0x03) + 5);
 
-	parity = (unsigned char)(char_format_index >> 2);
-	if (parity > 4) parity = 2;
+    parity = (unsigned char)(char_format_index >> 2);
+    if (parity > 4)
+        parity = 2;
 
-	pbuf += sprintf(pbuf, "\n   Character format (bits/char, parity, stop bits): %d-%s-%d",
-			databits, old_parity_text[parity], stop_bits);
+    pbuf += sprintf(pbuf, "\n   Character format (bits/char, parity, stop bits): %d-%s-%d",
+                    databits, old_parity_text[parity], stop_bits);
 }
 
 /**/
 /* 0x40 */
 static void
 rpt_almanac_data_page(
-		      TSIPPKT *rpt
-		      )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    sv_prn;
-	short
-	    week_num;
-	float
-	    t_zc,
-	    eccentricity,
-	    t_oa,
-	    i_0,
-	    OMEGA_dot,
-	    sqrt_A,
-	    OMEGA_0,
-	    omega,
-	    M_0;
+    unsigned char
+        sv_prn;
+    short
+        week_num;
+    float
+        t_zc,
+        eccentricity,
+        t_oa,
+        i_0,
+        OMEGA_dot,
+        sqrt_A,
+        OMEGA_0,
+        omega,
+        M_0;
 
-	/* unload rptbuf */
-	if (rpt_0x40 (rpt,
-		      &sv_prn, &week_num, &t_zc, &eccentricity, &t_oa,
-		      &i_0, &OMEGA_dot, &sqrt_A, &OMEGA_0, &omega, &M_0)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x40(rpt,
+                 &sv_prn, &week_num, &t_zc, &eccentricity, &t_oa,
+                 &i_0, &OMEGA_dot, &sqrt_A, &OMEGA_0, &omega, &M_0))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nAlmanac for SV %02d", sv_prn);
-	pbuf += sprintf(pbuf, "\n       Captured:%15.0f %s",
-			t_zc, show_time (t_zc));
-	pbuf += sprintf(pbuf, "\n           week:%15d", week_num);
-	pbuf += sprintf(pbuf, "\n   Eccentricity:%15g", eccentricity);
-	pbuf += sprintf(pbuf, "\n           T_oa:%15.0f %s",
-			t_oa, show_time (t_oa));
-	pbuf += sprintf(pbuf, "\n            i 0:%15g", i_0);
-	pbuf += sprintf(pbuf, "\n      OMEGA dot:%15g", OMEGA_dot);
-	pbuf += sprintf(pbuf, "\n         sqrt A:%15g", sqrt_A);
-	pbuf += sprintf(pbuf, "\n        OMEGA 0:%15g", OMEGA_0);
-	pbuf += sprintf(pbuf, "\n          omega:%15g", omega);
-	pbuf += sprintf(pbuf, "\n            M 0:%15g", M_0);
+    pbuf += sprintf(pbuf, "\nAlmanac for SV %02d", sv_prn);
+    pbuf += sprintf(pbuf, "\n       Captured:%15.0f %s",
+                    t_zc, show_time(t_zc));
+    pbuf += sprintf(pbuf, "\n           week:%15d", week_num);
+    pbuf += sprintf(pbuf, "\n   Eccentricity:%15g", eccentricity);
+    pbuf += sprintf(pbuf, "\n           T_oa:%15.0f %s",
+                    t_oa, show_time(t_oa));
+    pbuf += sprintf(pbuf, "\n            i 0:%15g", i_0);
+    pbuf += sprintf(pbuf, "\n      OMEGA dot:%15g", OMEGA_dot);
+    pbuf += sprintf(pbuf, "\n         sqrt A:%15g", sqrt_A);
+    pbuf += sprintf(pbuf, "\n        OMEGA 0:%15g", OMEGA_0);
+    pbuf += sprintf(pbuf, "\n          omega:%15g", omega);
+    pbuf += sprintf(pbuf, "\n            M 0:%15g", M_0);
 }
 
 /* 0x41 */
 static void
 rpt_GPS_time(
-	     TSIPPKT *rpt
-	     )
+    TSIPPKT* rpt)
 {
-	float
-	    time_of_week, UTC_offset;
-	short
-	    week_num;
+    float
+        time_of_week,
+        UTC_offset;
+    short
+        week_num;
 
-	/* unload rptbuf */
-	if (rpt_0x41 (rpt, &time_of_week, &UTC_offset, &week_num)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x41(rpt, &time_of_week, &UTC_offset, &week_num))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nGPS time:%s GPS week: %d   UTC offset %.1f",
-			show_time(time_of_week), week_num, UTC_offset);
-
+    pbuf += sprintf(pbuf, "\nGPS time:%s GPS week: %d   UTC offset %.1f",
+                    show_time(time_of_week), week_num, UTC_offset);
 }
 
 /* 0x42 */
 static void
 rpt_single_ECEF_position(
-			 TSIPPKT *rpt
-			 )
+    TSIPPKT* rpt)
 {
-	float
-	    ECEF_pos[3U], time_of_fix;
+    float
+        ECEF_pos[3U],
+        time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x42 (rpt, ECEF_pos, &time_of_fix)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x42(rpt, ECEF_pos, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nSXYZ:  %15.0f  %15.0f  %15.0f    %s",
-			ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2],
-			show_time(time_of_fix));
+    pbuf += sprintf(pbuf, "\nSXYZ:  %15.0f  %15.0f  %15.0f    %s",
+                    ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2],
+                    show_time(time_of_fix));
 }
 
 /* 0x43 */
 static void
 rpt_single_ECEF_velocity(
-			 TSIPPKT *rpt
-			 )
+    TSIPPKT* rpt)
 {
 
-	float
-	    ECEF_vel[3U], freq_offset, time_of_fix;
+    float
+        ECEF_vel[3U],
+        freq_offset, time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x43 (rpt, ECEF_vel, &freq_offset, &time_of_fix)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x43(rpt, ECEF_vel, &freq_offset, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nVelECEF: %11.3f  %11.3f  %11.3f  %12.3f%s",
-			ECEF_vel[0U], ECEF_vel[1], ECEF_vel[2], freq_offset,
-			show_time(time_of_fix));
+    pbuf += sprintf(pbuf, "\nVelECEF: %11.3f  %11.3f  %11.3f  %12.3f%s",
+                    ECEF_vel[0U], ECEF_vel[1], ECEF_vel[2], freq_offset,
+                    show_time(time_of_fix));
 }
 
 /*  0x45  */
 static void
 rpt_SW_version(
-	       TSIPPKT *rpt
-	       )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    major_nav_version, minor_nav_version,
-	    nav_day, nav_month, nav_year,
-	    major_dsp_version, minor_dsp_version,
-	    dsp_day, dsp_month, dsp_year;
+    unsigned char
+        major_nav_version,
+        minor_nav_version,
+        nav_day, nav_month, nav_year,
+        major_dsp_version, minor_dsp_version,
+        dsp_day, dsp_month, dsp_year;
 
-	/* unload rptbuf */
-	if (rpt_0x45 (rpt,
-		      &major_nav_version, &minor_nav_version,
-		      &nav_day, &nav_month, &nav_year,
-		      &major_dsp_version, &minor_dsp_version,
-		      &dsp_day, &dsp_month, &dsp_year)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x45(rpt,
+                 &major_nav_version, &minor_nav_version,
+                 &nav_day, &nav_month, &nav_year,
+                 &major_dsp_version, &minor_dsp_version,
+                 &dsp_day, &dsp_month, &dsp_year))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf,
-			"\nFW Versions:  Nav Proc %2d.%02d  %2d/%2d/%2d  Sig Proc %2d.%02d  %2d/%2d/%2d",
-			major_nav_version, minor_nav_version, nav_day, nav_month, nav_year,
-			major_dsp_version, minor_dsp_version, dsp_day, dsp_month, dsp_year);
+    pbuf += sprintf(pbuf,
+                    "\nFW Versions:  Nav Proc %2d.%02d  %2d/%2d/%2d  Sig Proc %2d.%02d  %2d/%2d/%2d",
+                    major_nav_version, minor_nav_version, nav_day, nav_month, nav_year,
+                    major_dsp_version, minor_dsp_version, dsp_day, dsp_month, dsp_year);
 }
 
 /* 0x46 */
 static void
 rpt_rcvr_health(
-		TSIPPKT *rpt
-		)
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    status1, status2;
-	const char
-	    *text;
-	static const char const
-	    *sc_text[] = {
-		"Doing position fixes",
-		"Don't have GPS time yet",
-		"Waiting for almanac collection",
-		"DOP too high          ",
-		"No satellites available",
-		"Only 1 satellite available",
-		"Only 2 satellites available",
-		"Only 3 satellites available",
-		"No satellites usable   ",
-		"Only 1 satellite usable",
-		"Only 2 satellites usable",
-		"Only 3 satellites usable",
-		"Chosen satellite unusable"};
+    unsigned char
+        status1,
+        status2;
+    const char* text;
+    static const char const* sc_text[] = {
+        "Doing position fixes",
+        "Don't have GPS time yet",
+        "Waiting for almanac collection",
+        "DOP too high          ",
+        "No satellites available",
+        "Only 1 satellite available",
+        "Only 2 satellites available",
+        "Only 3 satellites available",
+        "No satellites usable   ",
+        "Only 1 satellite usable",
+        "Only 2 satellites usable",
+        "Only 3 satellites usable",
+        "Chosen satellite unusable"
+    };
 
 
-	/* unload rptbuf */
-	if (rpt_0x46 (rpt, &status1, &status2))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x46(rpt, &status1, &status2))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	text = (status1 < COUNTOF(sc_text))
-	    ? sc_text[status1]
-	    : "(out of range)";
-	pbuf += sprintf(pbuf, "\nRcvr status1: %s (%02Xh); ",
-			text, status1);
+    text = (status1 < COUNTOF(sc_text))
+               ? sc_text[status1]
+               : "(out of range)";
+    pbuf += sprintf(pbuf, "\nRcvr status1: %s (%02Xh); ",
+                    text, status1);
 
-	pbuf += sprintf(pbuf, "status2: %s, %s (%02Xh)",
-			(status2 & 0x01)?"No BBRAM":"BBRAM OK",
-			(status2 & 0x10)?"No Ant":"Ant OK",
-			status2);
+    pbuf += sprintf(pbuf, "status2: %s, %s (%02Xh)",
+                    (status2 & 0x01) ? "No BBRAM" : "BBRAM OK",
+                    (status2 & 0x10) ? "No Ant" : "Ant OK",
+                    status2);
 }
 
 /* 0x47 */
 static void
 rpt_SNR_all_SVs(
-		TSIPPKT *rpt
-		)
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    nsvs, sv_prn[12];
-	short
-	    isv;
-	float
-	    snr[12U];
+    unsigned char
+        nsvs,
+        sv_prn[12];
+    short
+        isv;
+    float
+        snr[12U];
 
-	/* unload rptbuf */
-	if (rpt_0x47 (rpt, &nsvs, sv_prn, snr))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x47(rpt, &nsvs, sv_prn, snr))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nSNR for satellites: %d", nsvs);
-	for (isv = 0; isv < nsvs; isv++)
-	{
-		pbuf += sprintf(pbuf, "\n    SV %02d   %6.2f",
-				sv_prn[isv], snr[isv]);
-	}
+    pbuf += sprintf(pbuf, "\nSNR for satellites: %d", nsvs);
+    for (isv = 0; isv < nsvs; isv++)
+    {
+        pbuf += sprintf(pbuf, "\n    SV %02d   %6.2f",
+                        sv_prn[isv], snr[isv]);
+    }
 }
 
 /* 0x48 */
 static void
 rpt_GPS_system_message(
-		       TSIPPKT *rpt
-		       )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    message[23U];
+    unsigned char
+        message[23U];
 
-	/* unload rptbuf */
-	if (rpt_0x48 (rpt, message))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x48(rpt, message))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nGPS message: %s", message);
+    pbuf += sprintf(pbuf, "\nGPS message: %s", message);
 }
 
 /* 0x49 */
 static void
 rpt_almanac_health_page(
-			TSIPPKT *rpt
-			)
+    TSIPPKT* rpt)
 {
-	short
-	    iprn;
-	unsigned char
-	    sv_health [32U];
+    short
+        iprn;
+    unsigned char
+        sv_health[32U];
 
-	/* unload rptbuf */
-	if (rpt_0x49 (rpt, sv_health))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x49(rpt, sv_health))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nAlmanac health page:");
-	for (iprn = 0; iprn < 32; iprn++)
-	{
-		if (!(iprn%5)) *pbuf++ = '\n';
-		pbuf += sprintf(pbuf, "    SV%02d  %2X",
-				(iprn+1) , sv_health[iprn]);
-	}
+    pbuf += sprintf(pbuf, "\nAlmanac health page:");
+    for (iprn = 0; iprn < 32; iprn++)
+    {
+        if (!(iprn % 5))
+            *pbuf++ = '\n';
+        pbuf += sprintf(pbuf, "    SV%02d  %2X",
+                        (iprn + 1), sv_health[iprn]);
+    }
 }
 
 /* 0x4A */
 static void
 rpt_single_lla_position(
-			TSIPPKT *rpt
-			)
+    TSIPPKT* rpt)
 {
-	short
-	    lat_deg, lon_deg;
-	float
-	    lat, lon,
-	    alt, clock_bias, time_of_fix;
-	double lat_min, lon_min;
-	unsigned char
-	    north_south, east_west;
+    short
+        lat_deg,
+        lon_deg;
+    float
+        lat,
+        lon,
+        alt, clock_bias, time_of_fix;
+    double lat_min, lon_min;
+    unsigned char
+        north_south,
+        east_west;
 
-	if (rpt_0x4A (rpt,
-		      &lat, &lon, &alt, &clock_bias, &time_of_fix))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x4A(rpt,
+                 &lat, &lon, &alt, &clock_bias, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	/* convert from radians to degrees */
-	lat *= (float)R2D;
-	north_south = 'N';
-	if (lat < 0.0)
-	{
-		north_south = 'S';
-		lat = -lat;
-	}
-	lat_deg = (short)lat;
-	lat_min = (lat - lat_deg) * 60.0;
+    /* convert from radians to degrees */
+    lat *= (float)R2D;
+    north_south = 'N';
+    if (lat < 0.0)
+    {
+        north_south = 'S';
+        lat = -lat;
+    }
+    lat_deg = (short)lat;
+    lat_min = (lat - lat_deg) * 60.0;
 
-	lon *= (float)R2D;
-	east_west = 'E';
-	if (lon < 0.0)
-	{
-		east_west = 'W';
-		lon = -lon;
-	}
-	lon_deg = (short)lon;
-	lon_min = (lon - lon_deg) * 60.0;
+    lon *= (float)R2D;
+    east_west = 'E';
+    if (lon < 0.0)
+    {
+        east_west = 'W';
+        lon = -lon;
+    }
+    lon_deg = (short)lon;
+    lon_min = (lon - lon_deg) * 60.0;
 
-	pbuf += sprintf(pbuf, "\nSLLA: %4d: %06.3f  %c%5d:%06.3f  %c%10.2f  %12.2f%s",
-			lat_deg, lat_min, north_south,
-			lon_deg, lon_min, east_west,
-			alt, clock_bias,
-			show_time(time_of_fix));
+    pbuf += sprintf(pbuf, "\nSLLA: %4d: %06.3f  %c%5d:%06.3f  %c%10.2f  %12.2f%s",
+                    lat_deg, lat_min, north_south,
+                    lon_deg, lon_min, east_west,
+                    alt, clock_bias,
+                    show_time(time_of_fix));
 }
 
 /* 0x4A */
 static void
 rpt_ref_alt(
-	    TSIPPKT *rpt
-	    )
+    TSIPPKT* rpt)
 {
-	float
-	    alt, dummy;
-	unsigned char
-	    alt_flag;
+    float
+        alt,
+        dummy;
+    unsigned char
+        alt_flag;
 
-	if (rpt_0x4A_2 (rpt, &alt, &dummy, &alt_flag))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x4A_2(rpt, &alt, &dummy, &alt_flag))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nReference Alt:   %.1f m;    %s",
-			alt, alt_flag?"ON":"OFF");
+    pbuf += sprintf(pbuf, "\nReference Alt:   %.1f m;    %s",
+                    alt, alt_flag ? "ON" : "OFF");
 }
 
 /* 0x4B */
 static void
 rpt_rcvr_id_and_status(
-		       TSIPPKT *rpt
-		       )
+    TSIPPKT* rpt)
 {
 
-	unsigned char
-	    machine_id, status3, status4;
+    unsigned char
+        machine_id,
+        status3, status4;
 
-	/* unload rptbuf */
-	if (rpt_0x4B (rpt, &machine_id, &status3, &status4))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x4B(rpt, &machine_id, &status3, &status4))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nRcvr Machine ID: %d; Status3 = %s, %s (%02Xh)",
-			machine_id,
-			(status3 & 0x02)?"No RTC":"RTC OK",
-			(status3 & 0x08)?"No Alm":"Alm OK",
-			status3);
+    pbuf += sprintf(pbuf, "\nRcvr Machine ID: %d; Status3 = %s, %s (%02Xh)",
+                    machine_id,
+                    (status3 & 0x02) ? "No RTC" : "RTC OK",
+                    (status3 & 0x08) ? "No Alm" : "Alm OK",
+                    status3);
 }
 
 /* 0x4C */
 static void
 rpt_operating_parameters(
-			 TSIPPKT *rpt
-			 )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    dyn_code;
-	float
-	    el_mask, snr_mask, dop_mask, dop_switch;
+    unsigned char
+        dyn_code;
+    float
+        el_mask,
+        snr_mask, dop_mask, dop_switch;
 
-	/* unload rptbuf */
-	if (rpt_0x4C (rpt, &dyn_code, &el_mask,
-		      &snr_mask, &dop_mask, &dop_switch))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x4C(rpt, &dyn_code, &el_mask,
+                 &snr_mask, &dop_mask, &dop_switch))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nOperating Parameters:");
-	pbuf += sprintf(pbuf, "\n     Dynamics code = %d %s",
-			dyn_code, dyn_text[dyn_code]);
-	pbuf += sprintf(pbuf, "\n     Elevation mask = %.2f", el_mask * R2D);
-	pbuf += sprintf(pbuf, "\n     SNR mask = %.2f", snr_mask);
-	pbuf += sprintf(pbuf, "\n     DOP mask = %.2f", dop_mask);
-	pbuf += sprintf(pbuf, "\n     DOP switch = %.2f", dop_switch);
+    pbuf += sprintf(pbuf, "\nOperating Parameters:");
+    pbuf += sprintf(pbuf, "\n     Dynamics code = %d %s",
+                    dyn_code, dyn_text[dyn_code]);
+    pbuf += sprintf(pbuf, "\n     Elevation mask = %.2f", el_mask * R2D);
+    pbuf += sprintf(pbuf, "\n     SNR mask = %.2f", snr_mask);
+    pbuf += sprintf(pbuf, "\n     DOP mask = %.2f", dop_mask);
+    pbuf += sprintf(pbuf, "\n     DOP switch = %.2f", dop_switch);
 }
 
 /* 0x4D */
 static void
 rpt_oscillator_offset(
-		      TSIPPKT *rpt
-		      )
+    TSIPPKT* rpt)
 {
-	float
-	    osc_offset;
+    float
+        osc_offset;
 
-	/* unload rptbuf */
-	if (rpt_0x4D (rpt, &osc_offset))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x4D(rpt, &osc_offset))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nOscillator offset: %.2f Hz = %.3f PPM",
-			osc_offset, osc_offset/1575.42);
+    pbuf += sprintf(pbuf, "\nOscillator offset: %.2f Hz = %.3f PPM",
+                    osc_offset, osc_offset / 1575.42);
 }
 
 /* 0x4E */
 static void
 rpt_GPS_time_set_response(
-			  TSIPPKT *rpt
-			  )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    response;
+    unsigned char
+        response;
 
-	/* unload rptbuf */
-	if (rpt_0x4E (rpt, &response))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x4E(rpt, &response))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	switch (response)
-	{
-	    case 'Y':
-		pbuf += sprintf(pbuf, "\nTime set accepted");
-		break;
+    switch (response)
+    {
+    case 'Y':
+        pbuf += sprintf(pbuf, "\nTime set accepted");
+        break;
 
-	    case 'N':
-		pbuf += sprintf(pbuf, "\nTime set rejected or not required");
-		break;
+    case 'N':
+        pbuf += sprintf(pbuf, "\nTime set rejected or not required");
+        break;
 
-	    default:
-		parsed = BADDATA_PARSE;
-	}
+    default:
+        parsed = BADDATA_PARSE;
+    }
 }
 
 /* 0x4F */
 static void
 rpt_UTC_offset(
-	       TSIPPKT *rpt
-	       )
+    TSIPPKT* rpt)
 {
-	double
-	    a0;
-	float
-	    a1, time_of_data;
-	short
-	    dt_ls, wn_t, wn_lsf, dn, dt_lsf;
+    double
+        a0;
+    float
+        a1,
+        time_of_data;
+    short
+        dt_ls,
+        wn_t, wn_lsf, dn, dt_lsf;
 
-	/* unload rptbuf */
-	if (rpt_0x4F (rpt, &a0, &a1, &time_of_data,
-		      &dt_ls, &wn_t, &wn_lsf, &dn, &dt_lsf)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x4F(rpt, &a0, &a1, &time_of_data,
+                 &dt_ls, &wn_t, &wn_lsf, &dn, &dt_lsf))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nUTC Correction Data");
-	pbuf += sprintf(pbuf, "\n   A_0         = %g  ", a0);
-	pbuf += sprintf(pbuf, "\n   A_1         = %g  ", a1);
-	pbuf += sprintf(pbuf, "\n   delta_t_LS  = %d  ", dt_ls);
-	pbuf += sprintf(pbuf, "\n   t_ot        = %.0f  ", time_of_data);
-	pbuf += sprintf(pbuf, "\n   WN_t        = %d  ", wn_t );
-	pbuf += sprintf(pbuf, "\n   WN_LSF      = %d  ", wn_lsf );
-	pbuf += sprintf(pbuf, "\n   DN          = %d  ", dn );
-	pbuf += sprintf(pbuf, "\n   delta_t_LSF = %d  ", dt_lsf );
+    pbuf += sprintf(pbuf, "\nUTC Correction Data");
+    pbuf += sprintf(pbuf, "\n   A_0         = %g  ", a0);
+    pbuf += sprintf(pbuf, "\n   A_1         = %g  ", a1);
+    pbuf += sprintf(pbuf, "\n   delta_t_LS  = %d  ", dt_ls);
+    pbuf += sprintf(pbuf, "\n   t_ot        = %.0f  ", time_of_data);
+    pbuf += sprintf(pbuf, "\n   WN_t        = %d  ", wn_t);
+    pbuf += sprintf(pbuf, "\n   WN_LSF      = %d  ", wn_lsf);
+    pbuf += sprintf(pbuf, "\n   DN          = %d  ", dn);
+    pbuf += sprintf(pbuf, "\n   delta_t_LSF = %d  ", dt_lsf);
 }
 
 /**/
 /* 0x54 */
 static void
 rpt_1SV_bias(
-	     TSIPPKT *rpt
-	     )
+    TSIPPKT* rpt)
 {
-	float
-	    clock_bias, freq_offset, time_of_fix;
+    float
+        clock_bias,
+        freq_offset, time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x54 (rpt, &clock_bias, &freq_offset, &time_of_fix)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x54(rpt, &clock_bias, &freq_offset, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf (pbuf, "\nTime Fix   Clock Bias: %6.2f m  Freq Bias: %6.2f m/s%s",
-			 clock_bias, freq_offset, show_time (time_of_fix));
+    pbuf += sprintf(pbuf, "\nTime Fix   Clock Bias: %6.2f m  Freq Bias: %6.2f m/s%s",
+                    clock_bias, freq_offset, show_time(time_of_fix));
 }
 
 /* 0x55 */
 static void
 rpt_io_opt(
-	   TSIPPKT *rpt
-	   )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    pos_code, vel_code, time_code, aux_code;
+    unsigned char
+        pos_code,
+        vel_code, time_code, aux_code;
 
-	/* unload rptbuf */
-	if (rpt_0x55 (rpt,
-		      &pos_code, &vel_code, &time_code, &aux_code)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
-	/* rptbuf unloaded */
+    /* unload rptbuf */
+    if (rpt_0x55(rpt,
+                 &pos_code, &vel_code, &time_code, &aux_code))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
+    /* rptbuf unloaded */
 
-	pbuf += sprintf(pbuf, "\nI/O Options: %2X %2X %2X %2X",
-			pos_code, vel_code, time_code, aux_code);
+    pbuf += sprintf(pbuf, "\nI/O Options: %2X %2X %2X %2X",
+                    pos_code, vel_code, time_code, aux_code);
 
-	if (pos_code & 0x01) {
-		pbuf += sprintf(pbuf, "\n    ECEF XYZ position output");
-	}
+    if (pos_code & 0x01)
+    {
+        pbuf += sprintf(pbuf, "\n    ECEF XYZ position output");
+    }
 
-	if (pos_code & 0x02) {
-		pbuf += sprintf(pbuf, "\n    LLA position output");
-	}
+    if (pos_code & 0x02)
+    {
+        pbuf += sprintf(pbuf, "\n    LLA position output");
+    }
 
-	pbuf += sprintf(pbuf, (pos_code & 0x04)?
-			"\n    MSL altitude output (Geoid height) ":
-			"\n    WGS-84 altitude output");
+    pbuf += sprintf(pbuf, (pos_code & 0x04) ? "\n    MSL altitude output (Geoid height) " : "\n    WGS-84 altitude output");
 
-	pbuf += sprintf(pbuf, (pos_code & 0x08)?
-			"\n    MSL altitude input":
-			"\n    WGS-84 altitude input");
+    pbuf += sprintf(pbuf, (pos_code & 0x08) ? "\n    MSL altitude input" : "\n    WGS-84 altitude input");
 
-	pbuf += sprintf(pbuf, (pos_code & 0x10)?
-			"\n    Double precision":
-			"\n    Single precision");
+    pbuf += sprintf(pbuf, (pos_code & 0x10) ? "\n    Double precision" : "\n    Single precision");
 
-	if (pos_code & 0x20) {
-		pbuf += sprintf(pbuf, "\n    All Enabled Superpackets");
-	}
+    if (pos_code & 0x20)
+    {
+        pbuf += sprintf(pbuf, "\n    All Enabled Superpackets");
+    }
 
-	if (vel_code & 0x01) {
-		pbuf += sprintf(pbuf, "\n    ECEF XYZ velocity output");
-	}
+    if (vel_code & 0x01)
+    {
+        pbuf += sprintf(pbuf, "\n    ECEF XYZ velocity output");
+    }
 
-	if (vel_code & 0x02) {
-		pbuf += sprintf(pbuf, "\n    ENU velocity output");
-	}
+    if (vel_code & 0x02)
+    {
+        pbuf += sprintf(pbuf, "\n    ENU velocity output");
+    }
 
-	pbuf += sprintf(pbuf, (time_code & 0x01)?
-			"\n    Time tags in UTC":
-			"\n    Time tags in GPS time");
+    pbuf += sprintf(pbuf, (time_code & 0x01) ? "\n    Time tags in UTC" : "\n    Time tags in GPS time");
 
-	if (time_code & 0x02) {
-		pbuf += sprintf(pbuf, "\n    Fixes delayed to integer seconds");
-	}
+    if (time_code & 0x02)
+    {
+        pbuf += sprintf(pbuf, "\n    Fixes delayed to integer seconds");
+    }
 
-	if (time_code & 0x04) {
-		pbuf += sprintf(pbuf, "\n    Fixes sent only on request");
-	}
+    if (time_code & 0x04)
+    {
+        pbuf += sprintf(pbuf, "\n    Fixes sent only on request");
+    }
 
-	if (time_code & 0x08) {
-		pbuf += sprintf(pbuf, "\n    Synchronized measurements");
-	}
+    if (time_code & 0x08)
+    {
+        pbuf += sprintf(pbuf, "\n    Synchronized measurements");
+    }
 
-	if (time_code & 0x10) {
-		pbuf += sprintf(pbuf, "\n    Minimize measurement propagation");
-	}
+    if (time_code & 0x10)
+    {
+        pbuf += sprintf(pbuf, "\n    Minimize measurement propagation");
+    }
 
-	pbuf += sprintf(pbuf, (time_code & 0x20) ?
-			"\n    PPS output at all times" :
-			"\n    PPS output during fixes");
+    pbuf += sprintf(pbuf, (time_code & 0x20) ? "\n    PPS output at all times" : "\n    PPS output during fixes");
 
-	if (aux_code & 0x01) {
-		pbuf += sprintf(pbuf, "\n    Raw measurement output");
-	}
+    if (aux_code & 0x01)
+    {
+        pbuf += sprintf(pbuf, "\n    Raw measurement output");
+    }
 
-	if (aux_code & 0x02) {
-		pbuf += sprintf(pbuf, "\n    Code-phase smoothed before output");
-	}
+    if (aux_code & 0x02)
+    {
+        pbuf += sprintf(pbuf, "\n    Code-phase smoothed before output");
+    }
 
-	if (aux_code & 0x04) {
-		pbuf += sprintf(pbuf, "\n    Additional fix status");
-	}
+    if (aux_code & 0x04)
+    {
+        pbuf += sprintf(pbuf, "\n    Additional fix status");
+    }
 
-	pbuf += sprintf(pbuf, (aux_code & 0x08)?
-			"\n    Signal Strength Output as dBHz" :
-			"\n    Signal Strength Output as AMU");
+    pbuf += sprintf(pbuf, (aux_code & 0x08) ? "\n    Signal Strength Output as dBHz" : "\n    Signal Strength Output as AMU");
 }
 
 /* 0x56 */
 static void
 rpt_ENU_velocity(
-		 TSIPPKT *rpt
-		 )
+    TSIPPKT* rpt)
 {
-	float
-	    vel_ENU[3U], freq_offset, time_of_fix;
+    float
+        vel_ENU[3U],
+        freq_offset, time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x56 (rpt, vel_ENU, &freq_offset, &time_of_fix)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x56(rpt, vel_ENU, &freq_offset, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nVel ENU: %11.3f  %11.3f  %11.3f  %12.3f%s",
-			vel_ENU[0U], vel_ENU[1], vel_ENU[2], freq_offset,
-			show_time (time_of_fix));
+    pbuf += sprintf(pbuf, "\nVel ENU: %11.3f  %11.3f  %11.3f  %12.3f%s",
+                    vel_ENU[0U], vel_ENU[1], vel_ENU[2], freq_offset,
+                    show_time(time_of_fix));
 }
 
 /* 0x57 */
 static void
 rpt_last_fix_info(
-		  TSIPPKT *rpt
-		  )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    source_code, diag_code;
-	short
-	    week_num;
-	float
-	    time_of_fix;
+    unsigned char
+        source_code,
+        diag_code;
+    short
+        week_num;
+    float
+        time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x57 (rpt, &source_code, &diag_code, &week_num, &time_of_fix)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x57(rpt, &source_code, &diag_code, &week_num, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\n source code %d;   diag code: %2Xh",
-			source_code, diag_code);
-	pbuf += sprintf(pbuf, "\n    Time of last fix:%s", show_time(time_of_fix));
-	pbuf += sprintf(pbuf, "\n    Week of last fix: %d", week_num);
+    pbuf += sprintf(pbuf, "\n source code %d;   diag code: %2Xh",
+                    source_code, diag_code);
+    pbuf += sprintf(pbuf, "\n    Time of last fix:%s", show_time(time_of_fix));
+    pbuf += sprintf(pbuf, "\n    Week of last fix: %d", week_num);
 }
 
 /* 0x58 */
 static void
 rpt_GPS_system_data(
-		    TSIPPKT *rpt
-		    )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    iprn,
-	    op_code, data_type, sv_prn,
-	    data_length, data_packet[250];
-	ALM_INFO
-	    *almanac;
-	ALH_PARMS
-	    *almh;
-	UTC_INFO
-	    *utc;
-	ION_INFO
-	    *ionosphere;
-	EPHEM_CLOCK
-	    *cdata;
-	EPHEM_ORBIT
-	    *edata;
-	NAV_INFO
-	    *nav_data;
-	unsigned char
-	    curr_t_oa;
-	unsigned short
-	    curr_wn_oa;
-	static char
-	    *datname[] =
-	    {"", "", "Almanac Orbit",
-	     "Health Page & Ref Time", "Ionosphere", "UTC ",
-	     "Ephemeris"};
+    unsigned char
+        iprn,
+        op_code, data_type, sv_prn,
+        data_length, data_packet[250];
+    ALM_INFO
+    *almanac;
+    ALH_PARMS
+    *almh;
+    UTC_INFO
+    *utc;
+    ION_INFO
+    *ionosphere;
+    EPHEM_CLOCK
+    *cdata;
+    EPHEM_ORBIT
+    *edata;
+    NAV_INFO
+    *nav_data;
+    unsigned char
+        curr_t_oa;
+    unsigned short
+        curr_wn_oa;
+    static char* datname[] = { "", "", "Almanac Orbit",
+                               "Health Page & Ref Time", "Ionosphere", "UTC ",
+                               "Ephemeris" };
 
-	/* unload rptbuf */
-	if (rpt_0x58 (rpt, &op_code, &data_type, &sv_prn,
-		      &data_length, data_packet))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x58(rpt, &op_code, &data_type, &sv_prn,
+                 &data_length, data_packet))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nSystem data [%d]:  %s  SV%02d",
-			data_type, datname[data_type], sv_prn);
-	switch (op_code)
-	{
-	    case 1:
-		pbuf += sprintf(pbuf, "  Acknowledgment");
-		break;
-	    case 2:
-		pbuf += sprintf(pbuf, "  length = %d bytes", data_length);
-		switch (data_type) {
-		    case 2:
-			/* Almanac */
-			if (sv_prn == 0 || sv_prn > 32) {
-				pbuf += sprintf(pbuf, "  Binary PRN invalid");
-				return;
-			}
-			almanac = (ALM_INFO*)data_packet;
-			pbuf += sprintf(pbuf, "\n   t_oa_raw = % -12d    SV_hlth  = % -12d  ",
-					almanac->t_oa_raw , almanac->SV_health );
-			pbuf += sprintf(pbuf, "\n   e        = % -12g    t_oa     = % -12g  ",
-					almanac->e        , almanac->t_oa     );
-			pbuf += sprintf(pbuf, "\n   i_0      = % -12g    OMEGADOT = % -12g  ",
-					almanac->i_0      , almanac->OMEGADOT );
-			pbuf += sprintf(pbuf, "\n   sqrt_A   = % -12g    OMEGA_0  = % -12g  ",
-					almanac->sqrt_A   , almanac->OMEGA_0  );
-			pbuf += sprintf(pbuf, "\n   omega    = % -12g    M_0      = % -12g  ",
-					almanac->omega    , almanac->M_0      );
-			pbuf += sprintf(pbuf, "\n   a_f0     = % -12g    a_f1     = % -12g  ",
-					almanac->a_f0     , almanac->a_f1     );
-			pbuf += sprintf(pbuf, "\n   Axis     = % -12g    n        = % -12g  ",
-					almanac->Axis     , almanac->n        );
-			pbuf += sprintf(pbuf, "\n   OMEGA_n  = % -12g    ODOT_n   = % -12g  ",
-					almanac->OMEGA_n  , almanac->ODOT_n   );
-			pbuf += sprintf(pbuf, "\n   t_zc     = % -12g    weeknum  = % -12d  ",
-					almanac->t_zc     , almanac->weeknum  );
-			pbuf += sprintf(pbuf, "\n   wn_oa    = % -12d", almanac->wn_oa    );
-			break;
+    pbuf += sprintf(pbuf, "\nSystem data [%d]:  %s  SV%02d",
+                    data_type, datname[data_type], sv_prn);
+    switch (op_code)
+    {
+    case 1:
+        pbuf += sprintf(pbuf, "  Acknowledgment");
+        break;
+    case 2:
+        pbuf += sprintf(pbuf, "  length = %d bytes", data_length);
+        switch (data_type)
+        {
+        case 2:
+            /* Almanac */
+            if (sv_prn == 0 || sv_prn > 32)
+            {
+                pbuf += sprintf(pbuf, "  Binary PRN invalid");
+                return;
+            }
+            almanac = (ALM_INFO*)data_packet;
+            pbuf += sprintf(pbuf, "\n   t_oa_raw = % -12d    SV_hlth  = % -12d  ",
+                            almanac->t_oa_raw, almanac->SV_health);
+            pbuf += sprintf(pbuf, "\n   e        = % -12g    t_oa     = % -12g  ",
+                            almanac->e, almanac->t_oa);
+            pbuf += sprintf(pbuf, "\n   i_0      = % -12g    OMEGADOT = % -12g  ",
+                            almanac->i_0, almanac->OMEGADOT);
+            pbuf += sprintf(pbuf, "\n   sqrt_A   = % -12g    OMEGA_0  = % -12g  ",
+                            almanac->sqrt_A, almanac->OMEGA_0);
+            pbuf += sprintf(pbuf, "\n   omega    = % -12g    M_0      = % -12g  ",
+                            almanac->omega, almanac->M_0);
+            pbuf += sprintf(pbuf, "\n   a_f0     = % -12g    a_f1     = % -12g  ",
+                            almanac->a_f0, almanac->a_f1);
+            pbuf += sprintf(pbuf, "\n   Axis     = % -12g    n        = % -12g  ",
+                            almanac->Axis, almanac->n);
+            pbuf += sprintf(pbuf, "\n   OMEGA_n  = % -12g    ODOT_n   = % -12g  ",
+                            almanac->OMEGA_n, almanac->ODOT_n);
+            pbuf += sprintf(pbuf, "\n   t_zc     = % -12g    weeknum  = % -12d  ",
+                            almanac->t_zc, almanac->weeknum);
+            pbuf += sprintf(pbuf, "\n   wn_oa    = % -12d", almanac->wn_oa);
+            break;
 
-		    case 3:
-			/* Almanac health page */
-			almh = (ALH_PARMS*)data_packet;
-			pbuf += sprintf(pbuf, "\n   t_oa = %d, wn_oa&0xFF = %d  ",
-					almh->t_oa, almh->WN_a);
-			pbuf += sprintf(pbuf, "\nAlmanac health page:");
-			for (iprn = 0; iprn < 32; iprn++) {
-				if (!(iprn%5)) *pbuf++ = '\n';
-				pbuf += sprintf(pbuf, "    SV%02d  %2X",
-						(iprn+1) , almh->SV_health[iprn]);
-			}
-			curr_t_oa = data_packet[34U];
-			curr_wn_oa = (unsigned short)((data_packet[35U]<<8) + data_packet[36U]);
-			pbuf += sprintf(pbuf, "\n   current t_oa = %d, wn_oa = %d  ",
-					curr_t_oa, curr_wn_oa);
-			break;
+        case 3:
+            /* Almanac health page */
+            almh = (ALH_PARMS*)data_packet;
+            pbuf += sprintf(pbuf, "\n   t_oa = %d, wn_oa&0xFF = %d  ",
+                            almh->t_oa, almh->WN_a);
+            pbuf += sprintf(pbuf, "\nAlmanac health page:");
+            for (iprn = 0; iprn < 32; iprn++)
+            {
+                if (!(iprn % 5))
+                    *pbuf++ = '\n';
+                pbuf += sprintf(pbuf, "    SV%02d  %2X",
+                                (iprn + 1), almh->SV_health[iprn]);
+            }
+            curr_t_oa = data_packet[34U];
+            curr_wn_oa = (unsigned short)((data_packet[35U] << 8) + data_packet[36U]);
+            pbuf += sprintf(pbuf, "\n   current t_oa = %d, wn_oa = %d  ",
+                            curr_t_oa, curr_wn_oa);
+            break;
 
-		    case 4:
-			/* Ionosphere */
-			ionosphere = (ION_INFO*)data_packet;
-			pbuf += sprintf(pbuf, "\n   alpha_0 = % -12g  alpha_1 = % -12g ",
-					ionosphere->alpha_0, ionosphere->alpha_1);
-			pbuf += sprintf(pbuf, "\n   alpha_2 = % -12g  alpha_3 = % -12g ",
-					ionosphere->alpha_2, ionosphere->alpha_3);
-			pbuf += sprintf(pbuf, "\n   beta_0  = % -12g  beta_1  = % -12g  ",
-					ionosphere->beta_0, ionosphere->beta_1);
-			pbuf += sprintf(pbuf, "\n   beta_2  = % -12g  beta_3  = % -12g  ",
-					ionosphere->beta_2, ionosphere->beta_3);
-			break;
+        case 4:
+            /* Ionosphere */
+            ionosphere = (ION_INFO*)data_packet;
+            pbuf += sprintf(pbuf, "\n   alpha_0 = % -12g  alpha_1 = % -12g ",
+                            ionosphere->alpha_0, ionosphere->alpha_1);
+            pbuf += sprintf(pbuf, "\n   alpha_2 = % -12g  alpha_3 = % -12g ",
+                            ionosphere->alpha_2, ionosphere->alpha_3);
+            pbuf += sprintf(pbuf, "\n   beta_0  = % -12g  beta_1  = % -12g  ",
+                            ionosphere->beta_0, ionosphere->beta_1);
+            pbuf += sprintf(pbuf, "\n   beta_2  = % -12g  beta_3  = % -12g  ",
+                            ionosphere->beta_2, ionosphere->beta_3);
+            break;
 
-		    case 5:
-			/* UTC */
-			utc = (UTC_INFO*)data_packet;
-			pbuf += sprintf(pbuf, "\n   A_0         = %g  ", utc->A_0);
-			pbuf += sprintf(pbuf, "\n   A_1         = %g  ", utc->A_1);
-			pbuf += sprintf(pbuf, "\n   delta_t_LS  = %d  ", utc->delta_t_LS);
-			pbuf += sprintf(pbuf, "\n   t_ot        = %.0f  ", utc->t_ot );
-			pbuf += sprintf(pbuf, "\n   WN_t        = %d  ", utc->WN_t );
-			pbuf += sprintf(pbuf, "\n   WN_LSF      = %d  ", utc->WN_LSF );
-			pbuf += sprintf(pbuf, "\n   DN          = %d  ", utc->DN );
-			pbuf += sprintf(pbuf, "\n   delta_t_LSF = %d  ", utc->delta_t_LSF );
-			break;
+        case 5:
+            /* UTC */
+            utc = (UTC_INFO*)data_packet;
+            pbuf += sprintf(pbuf, "\n   A_0         = %g  ", utc->A_0);
+            pbuf += sprintf(pbuf, "\n   A_1         = %g  ", utc->A_1);
+            pbuf += sprintf(pbuf, "\n   delta_t_LS  = %d  ", utc->delta_t_LS);
+            pbuf += sprintf(pbuf, "\n   t_ot        = %.0f  ", utc->t_ot);
+            pbuf += sprintf(pbuf, "\n   WN_t        = %d  ", utc->WN_t);
+            pbuf += sprintf(pbuf, "\n   WN_LSF      = %d  ", utc->WN_LSF);
+            pbuf += sprintf(pbuf, "\n   DN          = %d  ", utc->DN);
+            pbuf += sprintf(pbuf, "\n   delta_t_LSF = %d  ", utc->delta_t_LSF);
+            break;
 
-		    case 6: /* Ephemeris */
-			if (sv_prn == 0 || sv_prn > 32) {
-				pbuf += sprintf(pbuf, "  Binary PRN invalid");
-				return;
-			}
-			nav_data = (NAV_INFO*)data_packet;
+        case 6: /* Ephemeris */
+            if (sv_prn == 0 || sv_prn > 32)
+            {
+                pbuf += sprintf(pbuf, "  Binary PRN invalid");
+                return;
+            }
+            nav_data = (NAV_INFO*)data_packet;
 
-			pbuf += sprintf(pbuf, "\n     SV_PRN = % -12d .  t_ephem = % -12g . ",
-					nav_data->sv_number , nav_data->t_ephem );
-			cdata = &(nav_data->ephclk);
-			pbuf += sprintf(pbuf,
-					"\n    weeknum = % -12d .   codeL2 = % -12d .  L2Pdata = % -12d",
-					cdata->weeknum , cdata->codeL2 , cdata->L2Pdata );
-			pbuf += sprintf(pbuf,
-					"\n  SVacc_raw = % -12d .SV_health = % -12d .     IODC = % -12d",
-					cdata->SVacc_raw, cdata->SV_health, cdata->IODC );
-			pbuf += sprintf(pbuf,
-					"\n       T_GD = % -12g .     t_oc = % -12g .     a_f2 = % -12g",
-					cdata->T_GD, cdata->t_oc, cdata->a_f2 );
-			pbuf += sprintf(pbuf,
-					"\n       a_f1 = % -12g .     a_f0 = % -12g .    SVacc = % -12g",
-					cdata->a_f1, cdata->a_f0, cdata->SVacc );
-			edata = &(nav_data->ephorb);
-			pbuf += sprintf(pbuf,
-					"\n       IODE = % -12d .fit_intvl = % -12d .     C_rs = % -12g",
-					edata->IODE, edata->fit_interval, edata->C_rs );
-			pbuf += sprintf(pbuf,
-					"\n    delta_n = % -12g .      M_0 = % -12g .     C_uc = % -12g",
-					edata->delta_n, edata->M_0, edata->C_uc );
-			pbuf += sprintf(pbuf,
-					"\n        ecc = % -12g .     C_us = % -12g .   sqrt_A = % -12g",
-					edata->e, edata->C_us, edata->sqrt_A );
-			pbuf += sprintf(pbuf,
-					"\n       t_oe = % -12g .     C_ic = % -12g .  OMEGA_0 = % -12g",
-					edata->t_oe, edata->C_ic, edata->OMEGA_0 );
-			pbuf += sprintf(pbuf,
-					"\n       C_is = % -12g .      i_0 = % -12g .     C_rc = % -12g",
-					edata->C_is, edata->i_0, edata->C_rc );
-			pbuf += sprintf(pbuf,
-					"\n      omega = % -12g . OMEGADOT = % -12g .     IDOT = % -12g",
-					edata->omega, edata->OMEGADOT, edata->IDOT );
-			pbuf += sprintf(pbuf,
-					"\n       Axis = % -12g .        n = % -12g .    r1me2 = % -12g",
-					edata->Axis, edata->n, edata->r1me2 );
-			pbuf += sprintf(pbuf,
-					"\n    OMEGA_n = % -12g .   ODOT_n = % -12g",
-					edata->OMEGA_n, edata->ODOT_n );
-			break;
-		}
-	}
+            pbuf += sprintf(pbuf, "\n     SV_PRN = % -12d .  t_ephem = % -12g . ",
+                            nav_data->sv_number, nav_data->t_ephem);
+            cdata = &(nav_data->ephclk);
+            pbuf += sprintf(pbuf,
+                            "\n    weeknum = % -12d .   codeL2 = % -12d .  L2Pdata = % -12d",
+                            cdata->weeknum, cdata->codeL2, cdata->L2Pdata);
+            pbuf += sprintf(pbuf,
+                            "\n  SVacc_raw = % -12d .SV_health = % -12d .     IODC = % -12d",
+                            cdata->SVacc_raw, cdata->SV_health, cdata->IODC);
+            pbuf += sprintf(pbuf,
+                            "\n       T_GD = % -12g .     t_oc = % -12g .     a_f2 = % -12g",
+                            cdata->T_GD, cdata->t_oc, cdata->a_f2);
+            pbuf += sprintf(pbuf,
+                            "\n       a_f1 = % -12g .     a_f0 = % -12g .    SVacc = % -12g",
+                            cdata->a_f1, cdata->a_f0, cdata->SVacc);
+            edata = &(nav_data->ephorb);
+            pbuf += sprintf(pbuf,
+                            "\n       IODE = % -12d .fit_intvl = % -12d .     C_rs = % -12g",
+                            edata->IODE, edata->fit_interval, edata->C_rs);
+            pbuf += sprintf(pbuf,
+                            "\n    delta_n = % -12g .      M_0 = % -12g .     C_uc = % -12g",
+                            edata->delta_n, edata->M_0, edata->C_uc);
+            pbuf += sprintf(pbuf,
+                            "\n        ecc = % -12g .     C_us = % -12g .   sqrt_A = % -12g",
+                            edata->e, edata->C_us, edata->sqrt_A);
+            pbuf += sprintf(pbuf,
+                            "\n       t_oe = % -12g .     C_ic = % -12g .  OMEGA_0 = % -12g",
+                            edata->t_oe, edata->C_ic, edata->OMEGA_0);
+            pbuf += sprintf(pbuf,
+                            "\n       C_is = % -12g .      i_0 = % -12g .     C_rc = % -12g",
+                            edata->C_is, edata->i_0, edata->C_rc);
+            pbuf += sprintf(pbuf,
+                            "\n      omega = % -12g . OMEGADOT = % -12g .     IDOT = % -12g",
+                            edata->omega, edata->OMEGADOT, edata->IDOT);
+            pbuf += sprintf(pbuf,
+                            "\n       Axis = % -12g .        n = % -12g .    r1me2 = % -12g",
+                            edata->Axis, edata->n, edata->r1me2);
+            pbuf += sprintf(pbuf,
+                            "\n    OMEGA_n = % -12g .   ODOT_n = % -12g",
+                            edata->OMEGA_n, edata->ODOT_n);
+            break;
+        }
+    }
 }
 
 
 /* 0x59: */
 static void
 rpt_SVs_enabled(
-		TSIPPKT *rpt
-		)
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    numsvs,
-	    code_type,
-	    status_code[32U];
-	short
-	    iprn;
+    unsigned char
+        numsvs,
+        code_type,
+        status_code[32U];
+    short
+        iprn;
 
-	/* unload rptbuf */
-	if (rpt_0x59 (rpt, &code_type, status_code))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
-	switch (code_type)
-	{
-	    case 3: pbuf += sprintf(pbuf, "\nSVs Disabled:\n"); break;
-	    case 6: pbuf += sprintf(pbuf, "\nSVs with Health Ignored:\n"); break;
-	    default: return;
-	}
-	numsvs = 0;
-	for (iprn = 0; iprn < 32; iprn++)
-	{
-		if (status_code[iprn])
-		{
-			pbuf += sprintf(pbuf, " %02d", iprn+1);
-			numsvs++;
-		}
-	}
-	if (numsvs == 0) pbuf += sprintf(pbuf, "None");
+    /* unload rptbuf */
+    if (rpt_0x59(rpt, &code_type, status_code))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
+    switch (code_type)
+    {
+    case 3:
+        pbuf += sprintf(pbuf, "\nSVs Disabled:\n");
+        break;
+    case 6:
+        pbuf += sprintf(pbuf, "\nSVs with Health Ignored:\n");
+        break;
+    default:
+        return;
+    }
+    numsvs = 0;
+    for (iprn = 0; iprn < 32; iprn++)
+    {
+        if (status_code[iprn])
+        {
+            pbuf += sprintf(pbuf, " %02d", iprn + 1);
+            numsvs++;
+        }
+    }
+    if (numsvs == 0)
+        pbuf += sprintf(pbuf, "None");
 }
 
 
 /* 0x5A */
 static void
 rpt_raw_msmt(
-	     TSIPPKT *rpt
-	     )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    sv_prn;
-	float
-	    sample_length, signal_level, code_phase, Doppler;
-	double
-	    time_of_fix;
+    unsigned char
+        sv_prn;
+    float
+        sample_length,
+        signal_level, code_phase, Doppler;
+    double
+        time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x5A (rpt, &sv_prn, &sample_length, &signal_level,
-		      &code_phase, &Doppler, &time_of_fix))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x5A(rpt, &sv_prn, &sample_length, &signal_level,
+                 &code_phase, &Doppler, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\n   %02d %5.0f %7.1f %10.2f %10.2f %12.3f %s",
-			sv_prn, sample_length, signal_level, code_phase, Doppler, time_of_fix,
-			show_time ((float)time_of_fix));
+    pbuf += sprintf(pbuf, "\n   %02d %5.0f %7.1f %10.2f %10.2f %12.3f %s",
+                    sv_prn, sample_length, signal_level, code_phase, Doppler, time_of_fix,
+                    show_time((float)time_of_fix));
 }
 
 /* 0x5B */
 static void
 rpt_SV_ephemeris_status(
-			TSIPPKT *rpt
-			)
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    sv_prn, sv_health, sv_iode, fit_interval_flag;
-	float
-	    time_of_collection, time_of_eph, sv_accy;
+    unsigned char
+        sv_prn,
+        sv_health, sv_iode, fit_interval_flag;
+    float
+        time_of_collection,
+        time_of_eph, sv_accy;
 
-	/* unload rptbuf */
-	if (rpt_0x5B (rpt, &sv_prn, &sv_health, &sv_iode, &fit_interval_flag,
-		      &time_of_collection, &time_of_eph, &sv_accy))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x5B(rpt, &sv_prn, &sv_health, &sv_iode, &fit_interval_flag,
+                 &time_of_collection, &time_of_eph, &sv_accy))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\n  SV%02d  %s   %2Xh     %2Xh ",
-			sv_prn, show_time (time_of_collection), sv_health, sv_iode);
-	/* note: cannot use show_time twice in same call */
-	pbuf += sprintf(pbuf, "%s   %1d   %4.1f",
-			show_time (time_of_eph), fit_interval_flag, sv_accy);
+    pbuf += sprintf(pbuf, "\n  SV%02d  %s   %2Xh     %2Xh ",
+                    sv_prn, show_time(time_of_collection), sv_health, sv_iode);
+    /* note: cannot use show_time twice in same call */
+    pbuf += sprintf(pbuf, "%s   %1d   %4.1f",
+                    show_time(time_of_eph), fit_interval_flag, sv_accy);
 }
 
 /* 0x5C */
 static void
 rpt_SV_tracking_status(
-		       TSIPPKT *rpt
-		       )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    sv_prn, chan, slot, acq_flag, eph_flag,
-	    old_msmt_flag, integer_msec_flag, bad_data_flag,
-	    data_collect_flag;
-	float
-	    signal_level, time_of_last_msmt,
-	    elev, azim;
+    unsigned char
+        sv_prn,
+        chan, slot, acq_flag, eph_flag,
+        old_msmt_flag, integer_msec_flag, bad_data_flag,
+        data_collect_flag;
+    float
+        signal_level,
+        time_of_last_msmt,
+        elev, azim;
 
-	/* unload rptbuf */
-	if (rpt_0x5C (rpt,
-		      &sv_prn, &slot, &chan, &acq_flag, &eph_flag,
-		      &signal_level, &time_of_last_msmt, &elev, &azim,
-		      &old_msmt_flag, &integer_msec_flag, &bad_data_flag,
-		      &data_collect_flag))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x5C(rpt,
+                 &sv_prn, &slot, &chan, &acq_flag, &eph_flag,
+                 &signal_level, &time_of_last_msmt, &elev, &azim,
+                 &old_msmt_flag, &integer_msec_flag, &bad_data_flag,
+                 &data_collect_flag))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf,
-			"\n SV%2d  %1d   %1d   %1d   %4.1f  %s  %5.1f  %5.1f",
-			sv_prn, chan,
-			acq_flag, eph_flag, signal_level,
-			show_time(time_of_last_msmt),
-			elev*R2D, azim*R2D);
+    pbuf += sprintf(pbuf,
+                    "\n SV%2d  %1d   %1d   %1d   %4.1f  %s  %5.1f  %5.1f",
+                    sv_prn, chan,
+                    acq_flag, eph_flag, signal_level,
+                    show_time(time_of_last_msmt),
+                    elev * R2D, azim * R2D);
 }
 
 /**/
 /* 0x6D */
 static void
 rpt_allSV_selection(
-		    TSIPPKT *rpt
-		    )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    manual_mode, nsvs, sv_prn[8], ndim;
-	short
-	    islot;
-	float
-	    pdop, hdop, vdop, tdop;
+    unsigned char
+        manual_mode,
+        nsvs, sv_prn[8], ndim;
+    short
+        islot;
+    float
+        pdop,
+        hdop, vdop, tdop;
 
-	/* unload rptbuf */
-	if (rpt_0x6D (rpt,
-		      &manual_mode, &nsvs, &ndim, sv_prn,
-		      &pdop, &hdop, &vdop, &tdop))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x6D(rpt,
+                 &manual_mode, &nsvs, &ndim, sv_prn,
+                 &pdop, &hdop, &vdop, &tdop))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	switch (ndim)
-	{
-	    case 0:
-		pbuf += sprintf(pbuf, "\nMode: Searching, %d-SV:", nsvs);
-		break;
-	    case 1:
-		pbuf += sprintf(pbuf, "\nMode: One-SV Timing:");
-		break;
-	    case 3: case 4:
-		pbuf += sprintf(pbuf, "\nMode: %c-%dD, %d-SV:",
-				manual_mode ? 'M' : 'A', ndim - 1,  nsvs);
-		break;
-	    case 5:
-		pbuf += sprintf(pbuf, "\nMode: Timing, %d-SV:", nsvs);
-		break;
-	    default:
-		pbuf += sprintf(pbuf, "\nMode: Unknown = %d:", ndim);
-		break;
-	}
+    switch (ndim)
+    {
+    case 0:
+        pbuf += sprintf(pbuf, "\nMode: Searching, %d-SV:", nsvs);
+        break;
+    case 1:
+        pbuf += sprintf(pbuf, "\nMode: One-SV Timing:");
+        break;
+    case 3:
+    case 4:
+        pbuf += sprintf(pbuf, "\nMode: %c-%dD, %d-SV:",
+                        manual_mode ? 'M' : 'A', ndim - 1, nsvs);
+        break;
+    case 5:
+        pbuf += sprintf(pbuf, "\nMode: Timing, %d-SV:", nsvs);
+        break;
+    default:
+        pbuf += sprintf(pbuf, "\nMode: Unknown = %d:", ndim);
+        break;
+    }
 
-	for (islot = 0; islot < nsvs; islot++)
-	{
-		if (sv_prn[islot]) pbuf += sprintf(pbuf, " %02d", sv_prn[islot]);
-	}
-	if (ndim == 3 || ndim == 4)
-	{
-		pbuf += sprintf(pbuf, ";  DOPs: P %.1f H %.1f V %.1f T %.1f",
-				pdop, hdop, vdop, tdop);
-	}
+    for (islot = 0; islot < nsvs; islot++)
+    {
+        if (sv_prn[islot])
+            pbuf += sprintf(pbuf, " %02d", sv_prn[islot]);
+    }
+    if (ndim == 3 || ndim == 4)
+    {
+        pbuf += sprintf(pbuf, ";  DOPs: P %.1f H %.1f V %.1f T %.1f",
+                        pdop, hdop, vdop, tdop);
+    }
 }
 
 /**/
 /* 0x82 */
 static void
 rpt_DGPS_position_mode(
-		       TSIPPKT *rpt
-		       )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    diff_mode;
+    unsigned char
+        diff_mode;
 
-	/* unload rptbuf */
-	if (rpt_0x82 (rpt, &diff_mode)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x82(rpt, &diff_mode))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nFix is%s DGPS-corrected (%s mode)  (%d)",
-			(diff_mode&1) ? "" : " not",
-			(diff_mode&2) ? "auto" : "manual",
-			diff_mode);
+    pbuf += sprintf(pbuf, "\nFix is%s DGPS-corrected (%s mode)  (%d)",
+                    (diff_mode & 1) ? "" : " not",
+                    (diff_mode & 2) ? "auto" : "manual",
+                    diff_mode);
 }
 
 /* 0x83 */
 static void
 rpt_double_ECEF_position(
-			 TSIPPKT *rpt
-			 )
+    TSIPPKT* rpt)
 {
-	double
-	    ECEF_pos[3U], clock_bias;
-	float
-	    time_of_fix;
+    double
+        ECEF_pos[3U],
+        clock_bias;
+    float
+        time_of_fix;
 
-	/* unload rptbuf */
-	if (rpt_0x83 (rpt, ECEF_pos, &clock_bias, &time_of_fix))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x83(rpt, ECEF_pos, &clock_bias, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nDXYZ:%12.2f  %13.2f  %13.2f %12.2f%s",
-			ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2], clock_bias,
-			show_time(time_of_fix));
+    pbuf += sprintf(pbuf, "\nDXYZ:%12.2f  %13.2f  %13.2f %12.2f%s",
+                    ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2], clock_bias,
+                    show_time(time_of_fix));
 }
 
 /* 0x84 */
 static void
 rpt_double_lla_position(
-			TSIPPKT *rpt
-			)
+    TSIPPKT* rpt)
 {
-	short
-	    lat_deg, lon_deg;
-	double
-	    lat, lon, lat_min, lon_min,
-	    alt, clock_bias;
-	float
-	    time_of_fix;
-	unsigned char
-	    north_south, east_west;
+    short
+        lat_deg,
+        lon_deg;
+    double
+        lat,
+        lon, lat_min, lon_min,
+        alt, clock_bias;
+    float
+        time_of_fix;
+    unsigned char
+        north_south,
+        east_west;
 
-	/* unload rptbuf */
-	if (rpt_0x84 (rpt,
-		      &lat, &lon, &alt, &clock_bias, &time_of_fix))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x84(rpt,
+                 &lat, &lon, &alt, &clock_bias, &time_of_fix))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	lat *= R2D;
-	lon *= R2D;
-	if (lat < 0.0) {
-		north_south = 'S';
-		lat = -lat;
-	} else {
-		north_south = 'N';
-	}
-	lat_deg = (short)lat;
-	lat_min = (lat - lat_deg) * 60.0;
+    lat *= R2D;
+    lon *= R2D;
+    if (lat < 0.0)
+    {
+        north_south = 'S';
+        lat = -lat;
+    }
+    else
+    {
+        north_south = 'N';
+    }
+    lat_deg = (short)lat;
+    lat_min = (lat - lat_deg) * 60.0;
 
-	if (lon < 0.0) {
-		east_west = 'W';
-		lon = -lon;
-	} else {
-		east_west = 'E';
-	}
-	lon_deg = (short)lon;
-	lon_min = (lon - lon_deg) * 60.0;
-	pbuf += sprintf(pbuf, "\nDLLA: %2d:%08.5f %c; %3d:%08.5f %c; %10.2f %12.2f%s",
-			lat_deg, lat_min, north_south,
-			lon_deg, lon_min, east_west,
-			alt, clock_bias,
-			show_time(time_of_fix));
+    if (lon < 0.0)
+    {
+        east_west = 'W';
+        lon = -lon;
+    }
+    else
+    {
+        east_west = 'E';
+    }
+    lon_deg = (short)lon;
+    lon_min = (lon - lon_deg) * 60.0;
+    pbuf += sprintf(pbuf, "\nDLLA: %2d:%08.5f %c; %3d:%08.5f %c; %10.2f %12.2f%s",
+                    lat_deg, lat_min, north_south,
+                    lon_deg, lon_min, east_west,
+                    alt, clock_bias,
+                    show_time(time_of_fix));
 }
 
 /* 0xBB */
 static void
 rpt_complete_rcvr_config(
-			 TSIPPKT *rpt
-			 )
+    TSIPPKT* rpt)
 {
-	TSIP_RCVR_CFG TsipxBB ;
-	/* unload rptbuf */
-	if (rpt_Paly0xBB (rpt, &TsipxBB))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    TSIP_RCVR_CFG TsipxBB;
+    /* unload rptbuf */
+    if (rpt_Paly0xBB(rpt, &TsipxBB))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\n   operating mode:      %s",
-			NavModeText0xBB[TsipxBB.operating_mode]);
-	pbuf += sprintf(pbuf, "\n   dynamics:            %s",
-			dyn_text[TsipxBB.dyn_code]);
-	pbuf += sprintf(pbuf, "\n   elev angle mask:     %g deg",
-			TsipxBB.elev_mask * R2D);
-	pbuf += sprintf(pbuf, "\n   SNR mask:            %g AMU",
-			TsipxBB.cno_mask);
-	pbuf += sprintf(pbuf, "\n   DOP mask:            %g",
-			TsipxBB.dop_mask);
-	pbuf += sprintf(pbuf, "\n   DOP switch:          %g",
-			TsipxBB.dop_switch);
-	return ;
+    pbuf += sprintf(pbuf, "\n   operating mode:      %s",
+                    NavModeText0xBB[TsipxBB.operating_mode]);
+    pbuf += sprintf(pbuf, "\n   dynamics:            %s",
+                    dyn_text[TsipxBB.dyn_code]);
+    pbuf += sprintf(pbuf, "\n   elev angle mask:     %g deg",
+                    TsipxBB.elev_mask * R2D);
+    pbuf += sprintf(pbuf, "\n   SNR mask:            %g AMU",
+                    TsipxBB.cno_mask);
+    pbuf += sprintf(pbuf, "\n   DOP mask:            %g",
+                    TsipxBB.dop_mask);
+    pbuf += sprintf(pbuf, "\n   DOP switch:          %g",
+                    TsipxBB.dop_switch);
+    return;
 }
 
 /* 0xBC */
 static void
 rpt_rcvr_serial_port_config(
-			    TSIPPKT *rpt
-			    )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    port_num, in_baud, out_baud, data_bits, parity, stop_bits, flow_control,
-	    protocols_in, protocols_out, reserved;
-	unsigned char known;
+    unsigned char
+        port_num,
+        in_baud, out_baud, data_bits, parity, stop_bits, flow_control,
+        protocols_in, protocols_out, reserved;
+    unsigned char known;
 
-	/* unload rptbuf */
-	if (rpt_0xBC (rpt, &port_num, &in_baud, &out_baud, &data_bits, &parity,
-		      &stop_bits, &flow_control, &protocols_in, &protocols_out, &reserved)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
-	/* rptbuf unloaded */
+    /* unload rptbuf */
+    if (rpt_0xBC(rpt, &port_num, &in_baud, &out_baud, &data_bits, &parity,
+                 &stop_bits, &flow_control, &protocols_in, &protocols_out, &reserved))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
+    /* rptbuf unloaded */
 
-	pbuf += sprintf(pbuf, "\n   RECEIVER serial port %s config:",
-			rcvr_port_text[port_num]);
+    pbuf += sprintf(pbuf, "\n   RECEIVER serial port %s config:",
+                    rcvr_port_text[port_num]);
 
-	pbuf += sprintf(pbuf, "\n             I/O Baud %s/%s, %d - %s - %d",
-			st_baud_text_app[in_baud],
-			st_baud_text_app[out_baud],
-			data_bits+5,
-			parity_text[parity],
-			stop_bits=1);
-	pbuf += sprintf(pbuf, "\n             Input protocols: ");
-	known = FALSE;
-	if (protocols_in&B_TSIP)
-	{
-		pbuf += sprintf(pbuf, "%s ", protocols_in_text[1U]);
-		known = TRUE;
-	}
-	if (known == FALSE) pbuf += sprintf(pbuf, "No known");
+    pbuf += sprintf(pbuf, "\n             I/O Baud %s/%s, %d - %s - %d",
+                    st_baud_text_app[in_baud],
+                    st_baud_text_app[out_baud],
+                    data_bits + 5,
+                    parity_text[parity],
+                    stop_bits = 1);
+    pbuf += sprintf(pbuf, "\n             Input protocols: ");
+    known = FALSE;
+    if (protocols_in & B_TSIP)
+    {
+        pbuf += sprintf(pbuf, "%s ", protocols_in_text[1U]);
+        known = TRUE;
+    }
+    if (known == FALSE)
+        pbuf += sprintf(pbuf, "No known");
 
-	pbuf += sprintf(pbuf, "\n             Output protocols: ");
-	known = FALSE;
-	if (protocols_out&B_TSIP)
-	{
-		pbuf += sprintf(pbuf, "%s ", protocols_out_text[1U]);
-		known = TRUE;
-	}
-	if (protocols_out&B_NMEA)
-	{
-		pbuf += sprintf(pbuf, "%s ", protocols_out_text[2U]);
-		known = TRUE;
-	}
-	if (known == FALSE) pbuf += sprintf(pbuf, "No known");
-	reserved = reserved;
-
+    pbuf += sprintf(pbuf, "\n             Output protocols: ");
+    known = FALSE;
+    if (protocols_out & B_TSIP)
+    {
+        pbuf += sprintf(pbuf, "%s ", protocols_out_text[1U]);
+        known = TRUE;
+    }
+    if (protocols_out & B_NMEA)
+    {
+        pbuf += sprintf(pbuf, "%s ", protocols_out_text[2U]);
+        known = TRUE;
+    }
+    if (known == FALSE)
+        pbuf += sprintf(pbuf, "No known");
+    reserved = reserved;
 }
 
 /* 0x8F */
 /* 8F0B */
 static void
 rpt_8F0B(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	const char
-	    *oprtng_dim[7U] = {
-		"horizontal (2-D)",
-		"full position (3-D)",
-		"single satellite (0-D)",
-		"automatic",
-		"N/A",
-		"N/A",
-		"overdetermined clock"};
-	char
-	    sv_id[8U];
-	unsigned char
-	    month,
-	    date,
-	    dim_mode,
-	    north_south,
-	    east_west;
-	unsigned short
-	    event;
-	short
-	    utc_offset,
-	    year,
-	    local_index;
-	short
-	    lat_deg,
-	    lon_deg;
-	float
-	    bias_unc,
-	    dr_unc;
-	double
-	    tow,
-	    bias,
-	    drift,
-	    lat,
-	    lon,
-	    alt,
-	    lat_min,
-	    lon_min;
-	int
-	    numfix,
-	    numnotfix;
+    const char* oprtng_dim[7U] = {
+        "horizontal (2-D)",
+        "full position (3-D)",
+        "single satellite (0-D)",
+        "automatic",
+        "N/A",
+        "N/A",
+        "overdetermined clock"
+    };
+    char
+        sv_id[8U];
+    unsigned char
+        month,
+        date,
+        dim_mode,
+        north_south,
+        east_west;
+    unsigned short
+        event;
+    short
+        utc_offset,
+        year,
+        local_index;
+    short
+        lat_deg,
+        lon_deg;
+    float
+        bias_unc,
+        dr_unc;
+    double
+        tow,
+        bias,
+        drift,
+        lat,
+        lon,
+        alt,
+        lat_min,
+        lon_min;
+    int
+        numfix,
+        numnotfix;
 
-	if (rpt_0x8F0B(rpt,
-		       &event,
-		       &tow,
-		       &date,
-		       &month,
-		       &year,
-		       &dim_mode,
-		       &utc_offset,
-		       &bias,
-		       &drift,
-		       &bias_unc,
-		       &dr_unc,
-		       &lat,
-		       &lon,
-		       &alt,
-		       sv_id))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x8F0B(rpt,
+                   &event,
+                   &tow,
+                   &date,
+                   &month,
+                   &year,
+                   &dim_mode,
+                   &utc_offset,
+                   &bias,
+                   &drift,
+                   &bias_unc,
+                   &dr_unc,
+                   &lat,
+                   &lon,
+                   &alt,
+                   sv_id))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	if (event == 0)
-	{
-		pbuf += sprintf(pbuf, "\nNew partial+full meas");
-	}
-	else
-	{
-		pbuf += sprintf(pbuf, "\nEvent count: %5d", event);
-	}
+    if (event == 0)
+    {
+        pbuf += sprintf(pbuf, "\nNew partial+full meas");
+    }
+    else
+    {
+        pbuf += sprintf(pbuf, "\nEvent count: %5d", event);
+    }
 
-	pbuf += sprintf(pbuf, "\nGPS time  : %s %2d/%2d/%2d (DMY)",
-			show_time(tow), date, month, year);
-	pbuf += sprintf(pbuf, "\nMode      : %s", oprtng_dim[dim_mode]);
-	pbuf += sprintf(pbuf, "\nUTC offset: %2d", utc_offset);
-	pbuf += sprintf(pbuf, "\nClock Bias: %6.2f m", bias);
-	pbuf += sprintf(pbuf, "\nFreq bias : %6.2f m/s", drift);
-	pbuf += sprintf(pbuf, "\nBias unc  : %6.2f m", bias_unc);
-	pbuf += sprintf(pbuf, "\nFreq unc  : %6.2f m/s", dr_unc);
+    pbuf += sprintf(pbuf, "\nGPS time  : %s %2d/%2d/%2d (DMY)",
+                    show_time(tow), date, month, year);
+    pbuf += sprintf(pbuf, "\nMode      : %s", oprtng_dim[dim_mode]);
+    pbuf += sprintf(pbuf, "\nUTC offset: %2d", utc_offset);
+    pbuf += sprintf(pbuf, "\nClock Bias: %6.2f m", bias);
+    pbuf += sprintf(pbuf, "\nFreq bias : %6.2f m/s", drift);
+    pbuf += sprintf(pbuf, "\nBias unc  : %6.2f m", bias_unc);
+    pbuf += sprintf(pbuf, "\nFreq unc  : %6.2f m/s", dr_unc);
 
-	lat *= R2D; /* convert from radians to degrees */
-	lon *= R2D;
-	if (lat < 0.0)
-	{
-		north_south = 'S';
-		lat = -lat;
-	}
-	else
-	{
-		north_south = 'N';
-	}
+    lat *= R2D; /* convert from radians to degrees */
+    lon *= R2D;
+    if (lat < 0.0)
+    {
+        north_south = 'S';
+        lat = -lat;
+    }
+    else
+    {
+        north_south = 'N';
+    }
 
-	lat_deg = (short)lat;
-	lat_min = (lat - lat_deg) * 60.0;
-	if (lon < 0.0)
-	{
-		east_west = 'W';
-		lon = -lon;
-	}
-	else
-	{
-		east_west = 'E';
-	}
+    lat_deg = (short)lat;
+    lat_min = (lat - lat_deg) * 60.0;
+    if (lon < 0.0)
+    {
+        east_west = 'W';
+        lon = -lon;
+    }
+    else
+    {
+        east_west = 'E';
+    }
 
-	lon_deg = (short)lon;
-	lon_min = (lon - lon_deg) * 60.0;
-	pbuf += sprintf(pbuf, "\nPosition  :");
-	pbuf += sprintf(pbuf, " %4d %6.3f %c", lat_deg, lat_min, north_south);
-	pbuf += sprintf(pbuf, " %5d %6.3f %c", lon_deg, lon_min, east_west);
-	pbuf += sprintf(pbuf, " %10.2f", alt);
+    lon_deg = (short)lon;
+    lon_min = (lon - lon_deg) * 60.0;
+    pbuf += sprintf(pbuf, "\nPosition  :");
+    pbuf += sprintf(pbuf, " %4d %6.3f %c", lat_deg, lat_min, north_south);
+    pbuf += sprintf(pbuf, " %5d %6.3f %c", lon_deg, lon_min, east_west);
+    pbuf += sprintf(pbuf, " %10.2f", alt);
 
-	numfix = numnotfix = 0;
-	for (local_index=0; local_index<8; local_index++)
-	{
-		if (sv_id[local_index] < 0) numnotfix++;
-		if (sv_id[local_index] > 0) numfix++;
-	}
-	if (numfix > 0)
-	{
-		pbuf += sprintf(pbuf, "\nSVs used in fix  : ");
-		for (local_index=0; local_index<8; local_index++)
-		{
-			if (sv_id[local_index] > 0)
-			{
-				pbuf += sprintf(pbuf, "%2d ", sv_id[local_index]);
-			}
-		}
-	}
-	if (numnotfix > 0)
-	{
-		pbuf += sprintf(pbuf, "\nOther SVs tracked: ");
-		for (local_index=0; local_index<8; local_index++)
-		{
-			if (sv_id[local_index] < 0)
-			{
-				pbuf += sprintf(pbuf, "%2d ", sv_id[local_index]);
-			}
-		}
-	}
+    numfix = numnotfix = 0;
+    for (local_index = 0; local_index < 8; local_index++)
+    {
+        if (sv_id[local_index] < 0)
+            numnotfix++;
+        if (sv_id[local_index] > 0)
+            numfix++;
+    }
+    if (numfix > 0)
+    {
+        pbuf += sprintf(pbuf, "\nSVs used in fix  : ");
+        for (local_index = 0; local_index < 8; local_index++)
+        {
+            if (sv_id[local_index] > 0)
+            {
+                pbuf += sprintf(pbuf, "%2d ", sv_id[local_index]);
+            }
+        }
+    }
+    if (numnotfix > 0)
+    {
+        pbuf += sprintf(pbuf, "\nOther SVs tracked: ");
+        for (local_index = 0; local_index < 8; local_index++)
+        {
+            if (sv_id[local_index] < 0)
+            {
+                pbuf += sprintf(pbuf, "%2d ", sv_id[local_index]);
+            }
+        }
+    }
 }
 
 /* 0x8F14 */
 /* Datum parameters */
 static void
 rpt_8F14(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	double
-	    datum_coeffs[5U];
-	short
-	    datum_idx;
+    double
+        datum_coeffs[5U];
+    short
+        datum_idx;
 
-	/* unload rptbuf */
-	if (rpt_0x8F14 (rpt, &datum_idx, datum_coeffs))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x8F14(rpt, &datum_idx, datum_coeffs))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	if (datum_idx == -1)
-	{
-		pbuf += sprintf(pbuf, "\nUser-Entered Datum:");
-		pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0U]);
-		pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1U]);
-		pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2U]);
-		pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3U]);
-		pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4U]);
-	}
-	else if (datum_idx == 0)
-	{
-		pbuf += sprintf(pbuf, "\nWGS-84 datum, Index 0 ");
-	}
-	else
-	{
-		pbuf += sprintf(pbuf, "\nStandard Datum, Index %3d ", datum_idx);
-	}
+    if (datum_idx == -1)
+    {
+        pbuf += sprintf(pbuf, "\nUser-Entered Datum:");
+        pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0U]);
+        pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1U]);
+        pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2U]);
+        pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3U]);
+        pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4U]);
+    }
+    else if (datum_idx == 0)
+    {
+        pbuf += sprintf(pbuf, "\nWGS-84 datum, Index 0 ");
+    }
+    else
+    {
+        pbuf += sprintf(pbuf, "\nStandard Datum, Index %3d ", datum_idx);
+    }
 }
 
 /* 0x8F15 */
 /* Datum parameters */
 static void
 rpt_8F15(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	double
-	    datum_coeffs[5U];
-	short
-	    datum_idx;
+    double
+        datum_coeffs[5U];
+    short
+        datum_idx;
 
-	/* unload rptbuf */
-	if (rpt_0x8F15 (rpt, &datum_idx, datum_coeffs)) {
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    /* unload rptbuf */
+    if (rpt_0x8F15(rpt, &datum_idx, datum_coeffs))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	if (datum_idx == -1)
-	{
-		pbuf += sprintf(pbuf, "\nUser-Entered Datum:");
-		pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0U]);
-		pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1U]);
-		pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2U]);
-		pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3U]);
-		pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4U]);
-	}
-	else if (datum_idx == 0)
-	{
-		pbuf += sprintf(pbuf, "\nWGS-84 datum, Index 0 ");
-	}
-	else
-	{
-		pbuf += sprintf(pbuf, "\nStandard Datum, Index %3d ", datum_idx);
-	}
+    if (datum_idx == -1)
+    {
+        pbuf += sprintf(pbuf, "\nUser-Entered Datum:");
+        pbuf += sprintf(pbuf, "\n   dx        = %6.1f", datum_coeffs[0U]);
+        pbuf += sprintf(pbuf, "\n   dy        = %6.1f", datum_coeffs[1U]);
+        pbuf += sprintf(pbuf, "\n   dz        = %6.1f", datum_coeffs[2U]);
+        pbuf += sprintf(pbuf, "\n   a-axis    = %10.3f", datum_coeffs[3U]);
+        pbuf += sprintf(pbuf, "\n   e-squared = %16.14f", datum_coeffs[4U]);
+    }
+    else if (datum_idx == 0)
+    {
+        pbuf += sprintf(pbuf, "\nWGS-84 datum, Index 0 ");
+    }
+    else
+    {
+        pbuf += sprintf(pbuf, "\nStandard Datum, Index %3d ", datum_idx);
+    }
 }
 
 /* 0x8F20 */
-#define INFO_DGPS       0x02
-#define INFO_2D         0x04
-#define INFO_ALTSET     0x08
-#define INFO_FILTERED   0x10
+#define INFO_DGPS 0x02
+#define INFO_2D 0x04
+#define INFO_ALTSET 0x08
+#define INFO_FILTERED 0x10
 static void
 rpt_8F20(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    info, nsvs, sv_prn[32];
-	short
-	    week_num, datum_index, sv_IODC[32];
-	double
-	    lat, lon, alt, time_of_fix;
-	double
-	    londeg, latdeg, vel[3];
-	short
-	    isv;
-	char
-	    datum_string[20U];
+    unsigned char
+        info,
+        nsvs, sv_prn[32];
+    short
+        week_num,
+        datum_index, sv_IODC[32];
+    double
+        lat,
+        lon, alt, time_of_fix;
+    double
+        londeg,
+        latdeg, vel[3];
+    short
+        isv;
+    char
+        datum_string[20U];
 
-	/* unload rptbuf */
-	if (rpt_0x8F20 (rpt,
-			&info, &lat, &lon, &alt, vel,
-			&time_of_fix,
-			&week_num, &nsvs, sv_prn, sv_IODC, &datum_index))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
-	pbuf += sprintf(pbuf,
-			"\nFix at: %04d:%3s:%02d:%02d:%06.3f GPS (=UTC+%2ds)  FixType: %s%s%s",
-			week_num,
-			dayname[(short)(time_of_fix/86400.0)],
-			(short)fmod(time_of_fix/3600., 24.),
-			(short)fmod(time_of_fix/60., 60.),
-			fmod(time_of_fix, 60.),
-			(char)rpt->buf[29U],		/* UTC offset */
-			(info & INFO_DGPS)?"Diff":"",
-			(info & INFO_2D)?"2D":"3D",
-			(info & INFO_FILTERED)?"-Filtrd":"");
+    /* unload rptbuf */
+    if (rpt_0x8F20(rpt,
+                   &info, &lat, &lon, &alt, vel,
+                   &time_of_fix,
+                   &week_num, &nsvs, sv_prn, sv_IODC, &datum_index))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
+    pbuf += sprintf(pbuf,
+                    "\nFix at: %04d:%3s:%02d:%02d:%06.3f GPS (=UTC+%2ds)  FixType: %s%s%s",
+                    week_num,
+                    dayname[(short)(time_of_fix / 86400.0)],
+                    (short)fmod(time_of_fix / 3600., 24.),
+                    (short)fmod(time_of_fix / 60., 60.),
+                    fmod(time_of_fix, 60.),
+                    (char)rpt->buf[29U], /* UTC offset */
+                    (info & INFO_DGPS) ? "Diff" : "",
+                    (info & INFO_2D) ? "2D" : "3D",
+                    (info & INFO_FILTERED) ? "-Filtrd" : "");
 
-	if (datum_index > 0)
-	{
-		sprintf(datum_string, "Datum%3d", datum_index);
-	}
-	else if (datum_index)
-	{
-		sprintf(datum_string, "Unknown ");
-	}
-	else
-	{
-		sprintf(datum_string, "WGS-84");
-	}
+    if (datum_index > 0)
+    {
+        sprintf(datum_string, "Datum%3d", datum_index);
+    }
+    else if (datum_index)
+    {
+        sprintf(datum_string, "Unknown ");
+    }
+    else
+    {
+        sprintf(datum_string, "WGS-84");
+    }
 
-	/* convert from radians to degrees */
-	latdeg = R2D * fabs(lat);
-	londeg = R2D * fabs(lon);
-	pbuf += sprintf(pbuf,
-			"\n   Pos: %4d:%09.6f %c %5d:%09.6f %c %10.2f m HAE (%s)",
-			(short)latdeg, fmod (latdeg, 1.)*60.0,
-			(lat<0.0)?'S':'N',
-			(short)londeg, fmod (londeg, 1.)*60.0,
-			(lon<0.0)?'W':'E',
-			alt,
-			datum_string);
-	pbuf += sprintf(pbuf,
-			"\n   Vel:    %9.3f E       %9.3f N      %9.3f U   (m/sec)",
-			vel[0U], vel[1], vel[2]);
+    /* convert from radians to degrees */
+    latdeg = R2D * fabs(lat);
+    londeg = R2D * fabs(lon);
+    pbuf += sprintf(pbuf,
+                    "\n   Pos: %4d:%09.6f %c %5d:%09.6f %c %10.2f m HAE (%s)",
+                    (short)latdeg, fmod(latdeg, 1.) * 60.0,
+                    (lat < 0.0) ? 'S' : 'N',
+                    (short)londeg, fmod(londeg, 1.) * 60.0,
+                    (lon < 0.0) ? 'W' : 'E',
+                    alt,
+                    datum_string);
+    pbuf += sprintf(pbuf,
+                    "\n   Vel:    %9.3f E       %9.3f N      %9.3f U   (m/sec)",
+                    vel[0U], vel[1], vel[2]);
 
-	pbuf += sprintf(pbuf,
-			"\n   SVs: ");
-	for (isv = 0; isv < nsvs; isv++) {
-		pbuf += sprintf(pbuf, " %02d", sv_prn[isv]);
-	}
-	pbuf += sprintf(pbuf, "     (IODEs:");
-	for (isv = 0; isv < nsvs; isv++) {
-		pbuf += sprintf(pbuf, " %02X", sv_IODC[isv]&0xFF);
-	}
-	pbuf += sprintf(pbuf, ")");
+    pbuf += sprintf(pbuf,
+                    "\n   SVs: ");
+    for (isv = 0; isv < nsvs; isv++)
+    {
+        pbuf += sprintf(pbuf, " %02d", sv_prn[isv]);
+    }
+    pbuf += sprintf(pbuf, "     (IODEs:");
+    for (isv = 0; isv < nsvs; isv++)
+    {
+        pbuf += sprintf(pbuf, " %02X", sv_IODC[isv] & 0xFF);
+    }
+    pbuf += sprintf(pbuf, ")");
 }
 
 /* 0x8F41 */
 static void
 rpt_8F41(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    bSearchRange,
-	    bBoardOptions,
-	    bBuildYear,
-	    bBuildMonth,
-	    bBuildDay,
-	    bBuildHour;
-	float
-	    fOscOffset;
-	unsigned short
-	    iTestCodeId;
-	unsigned long
-	    iiSerialNumber;
+    unsigned char
+        bSearchRange,
+        bBoardOptions,
+        bBuildYear,
+        bBuildMonth,
+        bBuildDay,
+        bBuildHour;
+    float
+        fOscOffset;
+    unsigned short
+        iTestCodeId;
+    unsigned long
+        iiSerialNumber;
 
-	if (!rpt_0x8F41(rpt,
-			&bSearchRange,
-			&bBoardOptions,
-			&iiSerialNumber,
-			&bBuildYear,
-			&bBuildMonth,
-			&bBuildDay,
-			&bBuildHour,
-			&fOscOffset,
-			&iTestCodeId))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (!rpt_0x8F41(rpt,
+                    &bSearchRange,
+                    &bBoardOptions,
+                    &iiSerialNumber,
+                    &bBuildYear,
+                    &bBuildMonth,
+                    &bBuildDay,
+                    &bBuildHour,
+                    &fOscOffset,
+                    &iTestCodeId))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\n  search range:          %d",
-			bSearchRange);
-	pbuf += sprintf(pbuf, "\n  board options:         %d",
-			bBoardOptions);
-	pbuf += sprintf(pbuf, "\n  board serial #:        %ld",
-			iiSerialNumber);
-	pbuf += sprintf(pbuf, "\n  build date/hour:       %02d/%02d/%02d %02d:00",
-			bBuildDay, bBuildMonth, bBuildYear, bBuildHour);
-	pbuf += sprintf(pbuf, "\n  osc offset:            %.3f PPM (%.0f Hz)",
-			fOscOffset/1575.42, fOscOffset);
-	pbuf += sprintf(pbuf, "\n  test code:             %d",
-			iTestCodeId);
+    pbuf += sprintf(pbuf, "\n  search range:          %d",
+                    bSearchRange);
+    pbuf += sprintf(pbuf, "\n  board options:         %d",
+                    bBoardOptions);
+    pbuf += sprintf(pbuf, "\n  board serial #:        %ld",
+                    iiSerialNumber);
+    pbuf += sprintf(pbuf, "\n  build date/hour:       %02d/%02d/%02d %02d:00",
+                    bBuildDay, bBuildMonth, bBuildYear, bBuildHour);
+    pbuf += sprintf(pbuf, "\n  osc offset:            %.3f PPM (%.0f Hz)",
+                    fOscOffset / 1575.42, fOscOffset);
+    pbuf += sprintf(pbuf, "\n  test code:             %d",
+                    iTestCodeId);
 }
 
 /* 0x8F42 */
 static void
 rpt_8F42(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    bProdOptionsPre,
-	    bProdNumberExt;
-	unsigned short
-	    iCaseSerialNumberPre,
-	    iPremiumOptions,
-	    iMachineID,
-	    iKey;
-	unsigned long
-	    iiCaseSerialNumber,
-	    iiProdNumber;
+    unsigned char
+        bProdOptionsPre,
+        bProdNumberExt;
+    unsigned short
+        iCaseSerialNumberPre,
+        iPremiumOptions,
+        iMachineID,
+        iKey;
+    unsigned long
+        iiCaseSerialNumber,
+        iiProdNumber;
 
-	if (!rpt_0x8F42(rpt,
-			&bProdOptionsPre,
-			&bProdNumberExt,
-			&iCaseSerialNumberPre,
-			&iiCaseSerialNumber,
-			&iiProdNumber,
-			&iPremiumOptions,
-			&iMachineID,
-			&iKey))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (!rpt_0x8F42(rpt,
+                    &bProdOptionsPre,
+                    &bProdNumberExt,
+                    &iCaseSerialNumberPre,
+                    &iiCaseSerialNumber,
+                    &iiProdNumber,
+                    &iPremiumOptions,
+                    &iMachineID,
+                    &iKey))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nProduct ID 8F42");
-	pbuf += sprintf(pbuf, "\n   extension:            %d", bProdNumberExt);
-	pbuf += sprintf(pbuf, "\n   case serial # prefix: %d", iCaseSerialNumberPre);
-	pbuf += sprintf(pbuf, "\n   case serial #:        %ld", iiCaseSerialNumber);
-	pbuf += sprintf(pbuf, "\n   prod. #:              %ld", iiProdNumber);
-	pbuf += sprintf(pbuf, "\n   premium options:      %Xh", iPremiumOptions);
-	pbuf += sprintf(pbuf, "\n   machine ID:           %d", iMachineID);
-	pbuf += sprintf(pbuf, "\n   key:                  %Xh", iKey);
+    pbuf += sprintf(pbuf, "\nProduct ID 8F42");
+    pbuf += sprintf(pbuf, "\n   extension:            %d", bProdNumberExt);
+    pbuf += sprintf(pbuf, "\n   case serial # prefix: %d", iCaseSerialNumberPre);
+    pbuf += sprintf(pbuf, "\n   case serial #:        %ld", iiCaseSerialNumber);
+    pbuf += sprintf(pbuf, "\n   prod. #:              %ld", iiProdNumber);
+    pbuf += sprintf(pbuf, "\n   premium options:      %Xh", iPremiumOptions);
+    pbuf += sprintf(pbuf, "\n   machine ID:           %d", iMachineID);
+    pbuf += sprintf(pbuf, "\n   key:                  %Xh", iKey);
 }
 
 /* 0x8F45 */
 static void
 rpt_8F45(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned char bSegMask;
+    unsigned char bSegMask;
 
-	if (!rpt_0x8F45(rpt,
-			&bSegMask))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
-	pbuf += sprintf(pbuf, "\nCleared Segment Mask: %Xh", bSegMask);
+    if (!rpt_0x8F45(rpt,
+                    &bSegMask))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
+    pbuf += sprintf(pbuf, "\nCleared Segment Mask: %Xh", bSegMask);
 }
 
 /* Stinger PPS def */
 static void
 rpt_8F4A(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    pps_enabled,
-	    pps_timebase,
-	    pps_polarity;
-	float
-	    bias_unc_threshold;
-	double
-	    pps_offset;
+    unsigned char
+        pps_enabled,
+        pps_timebase,
+        pps_polarity;
+    float
+        bias_unc_threshold;
+    double
+        pps_offset;
 
-  	if (rpt_0x8F4A_16 (rpt,
-			   &pps_enabled,
-			   &pps_timebase,
-			   &pps_polarity,
-			   &pps_offset,
-			   &bias_unc_threshold))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x8F4A_16(rpt,
+                      &pps_enabled,
+                      &pps_timebase,
+                      &pps_polarity,
+                      &pps_offset,
+                      &bias_unc_threshold))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nPPS is         %s",	pps_enabled?"enabled":"disabled");
-	pbuf += sprintf(pbuf, "\n   timebase:   %s", PPSTimeBaseText[pps_timebase]);
-	pbuf += sprintf(pbuf, "\n   polarity:   %s", PPSPolarityText[pps_polarity]);
-	pbuf += sprintf(pbuf, "\n   offset:     %.1f ns, ", pps_offset*1.e9);
-	pbuf += sprintf(pbuf, "\n   biasunc:    %.1f ns", bias_unc_threshold/GPS_C*1.e9);
+    pbuf += sprintf(pbuf, "\nPPS is         %s", pps_enabled ? "enabled" : "disabled");
+    pbuf += sprintf(pbuf, "\n   timebase:   %s", PPSTimeBaseText[pps_timebase]);
+    pbuf += sprintf(pbuf, "\n   polarity:   %s", PPSPolarityText[pps_polarity]);
+    pbuf += sprintf(pbuf, "\n   offset:     %.1f ns, ", pps_offset * 1.e9);
+    pbuf += sprintf(pbuf, "\n   biasunc:    %.1f ns", bias_unc_threshold / GPS_C * 1.e9);
 }
 
 /* fast-SA decorrolation time for self-survey */
 static void
 rpt_8F4B(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned long
-	    decorr_max;
+    unsigned long
+        decorr_max;
 
-	if (rpt_0x8F4B(rpt, &decorr_max))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x8F4B(rpt, &decorr_max))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf,
-			"\nMax # of position fixes for self-survey : %ld",
-			decorr_max);
+    pbuf += sprintf(pbuf,
+                    "\nMax # of position fixes for self-survey : %ld",
+                    decorr_max);
 }
 
 static void
 rpt_8F4D(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	static char
-	    *linestart;
-	unsigned long
-	    OutputMask;
-	static unsigned long
-	    MaskBit[] = {
-		0x00000001, 0x00000002, 0x00000004, 0x00000008, 0x00000010,
-		0x00000020,
-		0x00000100L, 0x00000800L, 0x00001000L,
-		0x40000000L, 0x80000000L};
-	int
-	    ichoice,
-	    numchoices;
+    static char* linestart;
+    unsigned long
+        OutputMask;
+    static unsigned long
+        MaskBit[] = {
+            0x00000001, 0x00000002, 0x00000004, 0x00000008, 0x00000010,
+            0x00000020,
+            0x00000100L, 0x00000800L, 0x00001000L,
+            0x40000000L, 0x80000000L
+        };
+    int
+        ichoice,
+        numchoices;
 
-	if (rpt_0x8F4D(rpt, &OutputMask))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x8F4D(rpt, &OutputMask))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nAuto-Report Mask: %02X %02X %02X %02X",
-			(unsigned char)(OutputMask>>24),
-			(unsigned char)(OutputMask>>16),
-			(unsigned char)(OutputMask>>8),
-			(unsigned char)OutputMask);
+    pbuf += sprintf(pbuf, "\nAuto-Report Mask: %02X %02X %02X %02X",
+                    (unsigned char)(OutputMask >> 24),
+                    (unsigned char)(OutputMask >> 16),
+                    (unsigned char)(OutputMask >> 8),
+                    (unsigned char)OutputMask);
 
-	numchoices = sizeof(MaskText)/sizeof(char*);
-	pbuf += sprintf(pbuf, "\nAuto-Reports scheduled for Output:");
-	linestart = pbuf;
-	for (ichoice = 0; ichoice < numchoices; ichoice++)
-	{
-		if (OutputMask&MaskBit[ichoice])
-		{
-			pbuf += sprintf(pbuf, "%s %s",
-					(pbuf==linestart)?"\n     ":",",
-					MaskText[ichoice]);
-			if (pbuf-linestart > 60) linestart = pbuf;
-		}
-	}
+    numchoices = sizeof(MaskText) / sizeof(char*);
+    pbuf += sprintf(pbuf, "\nAuto-Reports scheduled for Output:");
+    linestart = pbuf;
+    for (ichoice = 0; ichoice < numchoices; ichoice++)
+    {
+        if (OutputMask & MaskBit[ichoice])
+        {
+            pbuf += sprintf(pbuf, "%s %s",
+                            (pbuf == linestart) ? "\n     " : ",",
+                            MaskText[ichoice]);
+            if (pbuf - linestart > 60)
+                linestart = pbuf;
+        }
+    }
 
-	pbuf += sprintf(pbuf, "\nAuto-Reports NOT scheduled for Output:");
-	linestart = pbuf;
-	for (ichoice = 0; ichoice < numchoices; ichoice++)
-	{
-		if (OutputMask&MaskBit[ichoice]) continue;
-	     	pbuf += sprintf(pbuf, "%s %s",
-				(pbuf==linestart)?"\n     ":",",
-				MaskText[ichoice]);
-		if (pbuf-linestart > 60) linestart = pbuf;
-	}
+    pbuf += sprintf(pbuf, "\nAuto-Reports NOT scheduled for Output:");
+    linestart = pbuf;
+    for (ichoice = 0; ichoice < numchoices; ichoice++)
+    {
+        if (OutputMask & MaskBit[ichoice])
+            continue;
+        pbuf += sprintf(pbuf, "%s %s",
+                        (pbuf == linestart) ? "\n     " : ",",
+                        MaskText[ichoice]);
+        if (pbuf - linestart > 60)
+            linestart = pbuf;
+    }
 }
 
 static void
 rpt_8FA5(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned char
-	    spktmask[4U];
+    unsigned char
+        spktmask[4U];
 
-	if (rpt_0x8FA5(rpt, spktmask))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x8FA5(rpt, spktmask))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf, "\nSuperpacket auto-output mask: %02X %02X %02X %02X",
-			spktmask[0U], spktmask[1], spktmask[2], spktmask[3]);
+    pbuf += sprintf(pbuf, "\nSuperpacket auto-output mask: %02X %02X %02X %02X",
+                    spktmask[0U], spktmask[1], spktmask[2], spktmask[3]);
 
-	if (spktmask[0U]&0x01) pbuf+= sprintf (pbuf, "\n    PPS   8F-0B");
-	if (spktmask[0U]&0x02) pbuf+= sprintf (pbuf, "\n    Event 8F-0B");
-	if (spktmask[0U]&0x10) pbuf+= sprintf (pbuf, "\n    PPS   8F-AD");
-	if (spktmask[0U]&0x20) pbuf+= sprintf (pbuf, "\n    Event 8F-AD");
-	if (spktmask[2U]&0x01) pbuf+= sprintf (pbuf, "\n    ppos Fix 8F-20");
+    if (spktmask[0U] & 0x01)
+        pbuf += sprintf(pbuf, "\n    PPS   8F-0B");
+    if (spktmask[0U] & 0x02)
+        pbuf += sprintf(pbuf, "\n    Event 8F-0B");
+    if (spktmask[0U] & 0x10)
+        pbuf += sprintf(pbuf, "\n    PPS   8F-AD");
+    if (spktmask[0U] & 0x20)
+        pbuf += sprintf(pbuf, "\n    Event 8F-AD");
+    if (spktmask[2U] & 0x01)
+        pbuf += sprintf(pbuf, "\n    ppos Fix 8F-20");
 }
 
 static void
 rpt_8FAD(
-	 TSIPPKT *rpt
-	 )
+    TSIPPKT* rpt)
 {
-	unsigned short
-	    Count,
-	    Year;
-	double
-	    FracSec;
-	unsigned char
-	    Hour,
-	    Minute,
-	    Second,
-	    Day,
-	    Month,
-	    Status,
-	    Flags;
-	static char* Status8FADText[] = {
-		"CODE_DOING_FIXES",
-		"CODE_GOOD_1_SV",
-		"CODE_APPX_1SV",
-		"CODE_NEED_TIME",
-		"CODE_NEED_INITIALIZATION",
-		"CODE_PDOP_HIGH",
-		"CODE_BAD_1SV",
-		"CODE_0SVS",
-		"CODE_1SV",
-		"CODE_2SVS",
-		"CODE_3SVS",
-		"CODE_NO_INTEGRITY",
-		"CODE_DCORR_GEN",
-		"CODE_OVERDET_CLK",
-		"Invalid Status"},
-	    *LeapStatusText[] = {
-		    " UTC Avail", " ", " ", " ",
-		    " Scheduled", " Pending", " Warning", " In Progress"};
-	int i;
+    unsigned short
+        Count,
+        Year;
+    double
+        FracSec;
+    unsigned char
+        Hour,
+        Minute,
+        Second,
+        Day,
+        Month,
+        Status,
+        Flags;
+    static char *Status8FADText[] = {
+        "CODE_DOING_FIXES",
+        "CODE_GOOD_1_SV",
+        "CODE_APPX_1SV",
+        "CODE_NEED_TIME",
+        "CODE_NEED_INITIALIZATION",
+        "CODE_PDOP_HIGH",
+        "CODE_BAD_1SV",
+        "CODE_0SVS",
+        "CODE_1SV",
+        "CODE_2SVS",
+        "CODE_3SVS",
+        "CODE_NO_INTEGRITY",
+        "CODE_DCORR_GEN",
+        "CODE_OVERDET_CLK",
+        "Invalid Status"
+    },
+                *LeapStatusText[] = { " UTC Avail", " ", " ", " ", " Scheduled", " Pending", " Warning", " In Progress" };
+    int i;
 
-	if (rpt_0x8FAD (rpt,
-			&Count,
-			&FracSec,
-			&Hour,
-			&Minute,
-			&Second,
-			&Day,
-			&Month,
-			&Year,
-			&Status,
-			&Flags))
-	{
-		parsed = BADLEN_PARSE;
-		return;
-	}
+    if (rpt_0x8FAD(rpt,
+                   &Count,
+                   &FracSec,
+                   &Hour,
+                   &Minute,
+                   &Second,
+                   &Day,
+                   &Month,
+                   &Year,
+                   &Status,
+                   &Flags))
+    {
+        parsed = BADLEN_PARSE;
+        return;
+    }
 
-	pbuf += sprintf(pbuf,    "\n8FAD   Count: %d   Status: %s",
-			Count, Status8FADText[Status]);
+    pbuf += sprintf(pbuf, "\n8FAD   Count: %d   Status: %s",
+                    Count, Status8FADText[Status]);
 
-	pbuf += sprintf(pbuf, "\n   Leap Flags:");
-	if (Flags)
-	{
-		for (i=0; i<8; i++)
-		{
-			if (Flags&(1<<i)) pbuf += sprintf(pbuf, LeapStatusText[i]);
-		}
-	}
-	else
-	{
-		pbuf += sprintf(pbuf, "  UTC info not available");
-	}
+    pbuf += sprintf(pbuf, "\n   Leap Flags:");
+    if (Flags)
+    {
+        for (i = 0; i < 8; i++)
+        {
+            if (Flags & (1 << i))
+                pbuf += sprintf(pbuf, LeapStatusText[i]);
+        }
+    }
+    else
+    {
+        pbuf += sprintf(pbuf, "  UTC info not available");
+    }
 
-	pbuf += sprintf(pbuf,     "\n      %02d/%02d/%04d (DMY)  %02d:%02d:%02d.%09ld UTC",
-			Day, Month, Year, Hour, Minute, Second, (long)(FracSec*1.e9));
+    pbuf += sprintf(pbuf, "\n      %02d/%02d/%04d (DMY)  %02d:%02d:%02d.%09ld UTC",
+                    Day, Month, Year, Hour, Minute, Second, (long)(FracSec * 1.e9));
 }
 
 
-int
-print_msg_table_header(
-		       int rptcode,
-		       char *HdrStr,
-		       int force
-		       )
+int print_msg_table_header(
+    int rptcode,
+    char* HdrStr,
+    int force)
 {
-	/* force header is to help auto-output function */
-	/* last_rptcode is to determine whether to print a header */
-	/* for the first occurrence of a series of reports */
-	static int
-	    last_rptcode = 0;
-	int
-	    numchars;
+    /* force header is to help auto-output function */
+    /* last_rptcode is to determine whether to print a header */
+    /* for the first occurrence of a series of reports */
+    static int
+        last_rptcode = 0;
+    int
+        numchars;
 
-	numchars = 0;
-	if (force || rptcode!=last_rptcode)
-	{
-		/* supply a header in console output */
-		switch (rptcode)
-		{
-		    case 0x5A:
-			numchars = sprintf(HdrStr, "\nRaw Measurement Data");
-			numchars += sprintf(HdrStr+numchars,
-					    "\n   SV  Sample   SNR  Code Phase   Doppler    Seconds     Time of Meas");
-			break;
+    numchars = 0;
+    if (force || rptcode != last_rptcode)
+    {
+        /* supply a header in console output */
+        switch (rptcode)
+        {
+        case 0x5A:
+            numchars = sprintf(HdrStr, "\nRaw Measurement Data");
+            numchars += sprintf(HdrStr + numchars,
+                                "\n   SV  Sample   SNR  Code Phase   Doppler    Seconds     Time of Meas");
+            break;
 
-		    case 0x5B:
-			numchars = sprintf(HdrStr, "\nEphemeris Status");
-			numchars += sprintf(HdrStr+numchars,
-					    "\n    SV     Time collected     Health  IODE        t oe         Fit   URA");
-			break;
+        case 0x5B:
+            numchars = sprintf(HdrStr, "\nEphemeris Status");
+            numchars += sprintf(HdrStr + numchars,
+                                "\n    SV     Time collected     Health  IODE        t oe         Fit   URA");
+            break;
 
-		    case 0x5C:
-			numchars = sprintf(HdrStr, "\nTracking Info");
-			numchars += sprintf(HdrStr+numchars,
-					    "\n   SV  C Acq Eph   SNR     Time of Meas       Elev  Azim   ");
-			break;
-
-		}
-	}
-	last_rptcode = rptcode;
-	return (short)numchars;
+        case 0x5C:
+            numchars = sprintf(HdrStr, "\nTracking Info");
+            numchars += sprintf(HdrStr + numchars,
+                                "\n   SV  C Acq Eph   SNR     Time of Meas       Elev  Azim   ");
+            break;
+        }
+    }
+    last_rptcode = rptcode;
+    return (short)numchars;
 }
 
 static void
 unknown_rpt(
-	    TSIPPKT *rpt
-	    )
+    TSIPPKT* rpt)
 {
-	int i;
+    int i;
 
-	/* app-specific rpt packets */
-	if (parsed == BADLEN_PARSE)
-	{
-		pbuf += sprintf(pbuf, "\nTSIP report packet ID %2Xh, length %d: Bad length",
-				rpt->code, rpt->len);
-	}
-	if (parsed == BADID_PARSE)
-	{
-		pbuf += sprintf(pbuf,
-				"\nTSIP report packet ID %2Xh, length %d: translation not supported",
-				rpt->code, rpt->len);
-	}
+    /* app-specific rpt packets */
+    if (parsed == BADLEN_PARSE)
+    {
+        pbuf += sprintf(pbuf, "\nTSIP report packet ID %2Xh, length %d: Bad length",
+                        rpt->code, rpt->len);
+    }
+    if (parsed == BADID_PARSE)
+    {
+        pbuf += sprintf(pbuf,
+                        "\nTSIP report packet ID %2Xh, length %d: translation not supported",
+                        rpt->code, rpt->len);
+    }
 
-	if (parsed == BADDATA_PARSE)
-	{
-		pbuf += sprintf(pbuf,
-				"\nTSIP report packet ID %2Xh, length %d: data content incorrect",
-				rpt->code, rpt->len);
-	}
+    if (parsed == BADDATA_PARSE)
+    {
+        pbuf += sprintf(pbuf,
+                        "\nTSIP report packet ID %2Xh, length %d: data content incorrect",
+                        rpt->code, rpt->len);
+    }
 
-	for (i = 0; i < rpt->len; i++) {
-		if ((i % 20) == 0) *pbuf++ = '\n';
-		pbuf += sprintf(pbuf, " %02X", rpt->buf[i]);
-	}
+    for (i = 0; i < rpt->len; i++)
+    {
+        if ((i % 20) == 0)
+            *pbuf++ = '\n';
+        pbuf += sprintf(pbuf, " %02X", rpt->buf[i]);
+    }
 }
 /**/
 
 /*
 ** main subroutine, called from ProcessInputBytesWhileWaitingForKBHit()
 */
-void
-TranslateTSIPReportToText(
-			  TSIPPKT *rpt,
-			  char *TextOutputBuffer
-			  )
+void TranslateTSIPReportToText(
+    TSIPPKT* rpt,
+    char* TextOutputBuffer)
 {
 
-	/* pbuf is the pointer to the current location of the text output */
-	pbuf = TextOutputBuffer;
+    /* pbuf is the pointer to the current location of the text output */
+    pbuf = TextOutputBuffer;
 
-	/* keep track of whether the message has been successfully parsed */
-	parsed = GOOD_PARSE;
+    /* keep track of whether the message has been successfully parsed */
+    parsed = GOOD_PARSE;
 
-	/* print a header if this is the first of a series of messages */
-	pbuf += print_msg_table_header (rpt->code, pbuf, FALSE);
+    /* print a header if this is the first of a series of messages */
+    pbuf += print_msg_table_header(rpt->code, pbuf, FALSE);
 
-	/* process incoming TSIP report according to code */
-	switch (rpt->code)
-	{
-	    case 0x3D: rpt_chan_A_config (rpt); break;
-	    case 0x40: rpt_almanac_data_page (rpt); break;
-	    case 0x41: rpt_GPS_time (rpt); break;
-	    case 0x42: rpt_single_ECEF_position (rpt); break;
-	    case 0x43: rpt_single_ECEF_velocity (rpt); break;
-	    case 0x45: rpt_SW_version (rpt); break;
-	    case 0x46: rpt_rcvr_health (rpt); break;
-	    case 0x47: rpt_SNR_all_SVs (rpt); break;
-	    case 0x48: rpt_GPS_system_message (rpt); break;
-	    case 0x49: rpt_almanac_health_page (rpt); break;
-	    case 0x4A: switch (rpt->len) {
-			/*
-			** special case (=slip-up) in the TSIP protocol;
-			** parsing method depends on length
-			*/
-		    case 20: rpt_single_lla_position (rpt); break;
-		    case  9: rpt_ref_alt (rpt); break;
-		} break;
-	    case 0x4B: rpt_rcvr_id_and_status (rpt);break;
-	    case 0x4C: rpt_operating_parameters (rpt); break;
-	    case 0x4D: rpt_oscillator_offset (rpt); break;
-	    case 0x4E: rpt_GPS_time_set_response (rpt); break;
-	    case 0x4F: rpt_UTC_offset (rpt); break;
-	    case 0x54: rpt_1SV_bias (rpt); break;
-	    case 0x55: rpt_io_opt (rpt); break;
-	    case 0x56: rpt_ENU_velocity (rpt); break;
-	    case 0x57: rpt_last_fix_info (rpt); break;
-	    case 0x58: rpt_GPS_system_data (rpt); break;
-	    case 0x59: rpt_SVs_enabled (rpt); break;
-	    case 0x5A: rpt_raw_msmt (rpt); break;
-	    case 0x5B: rpt_SV_ephemeris_status (rpt); break;
-	    case 0x5C: rpt_SV_tracking_status (rpt); break;
-	    case 0x6D: rpt_allSV_selection (rpt); break;
-	    case 0x82: rpt_DGPS_position_mode (rpt); break;
-	    case 0x83: rpt_double_ECEF_position (rpt); break;
-	    case 0x84: rpt_double_lla_position (rpt); break;
-	    case 0xBB: rpt_complete_rcvr_config (rpt); break;
-	    case 0xBC: rpt_rcvr_serial_port_config (rpt); break;
+    /* process incoming TSIP report according to code */
+    switch (rpt->code)
+    {
+    case 0x3D:
+        rpt_chan_A_config(rpt);
+        break;
+    case 0x40:
+        rpt_almanac_data_page(rpt);
+        break;
+    case 0x41:
+        rpt_GPS_time(rpt);
+        break;
+    case 0x42:
+        rpt_single_ECEF_position(rpt);
+        break;
+    case 0x43:
+        rpt_single_ECEF_velocity(rpt);
+        break;
+    case 0x45:
+        rpt_SW_version(rpt);
+        break;
+    case 0x46:
+        rpt_rcvr_health(rpt);
+        break;
+    case 0x47:
+        rpt_SNR_all_SVs(rpt);
+        break;
+    case 0x48:
+        rpt_GPS_system_message(rpt);
+        break;
+    case 0x49:
+        rpt_almanac_health_page(rpt);
+        break;
+    case 0x4A:
+        switch (rpt->len)
+        {
+        /*
+        ** special case (=slip-up) in the TSIP protocol;
+        ** parsing method depends on length
+        */
+        case 20:
+            rpt_single_lla_position(rpt);
+            break;
+        case 9:
+            rpt_ref_alt(rpt);
+            break;
+        }
+        break;
+    case 0x4B:
+        rpt_rcvr_id_and_status(rpt);
+        break;
+    case 0x4C:
+        rpt_operating_parameters(rpt);
+        break;
+    case 0x4D:
+        rpt_oscillator_offset(rpt);
+        break;
+    case 0x4E:
+        rpt_GPS_time_set_response(rpt);
+        break;
+    case 0x4F:
+        rpt_UTC_offset(rpt);
+        break;
+    case 0x54:
+        rpt_1SV_bias(rpt);
+        break;
+    case 0x55:
+        rpt_io_opt(rpt);
+        break;
+    case 0x56:
+        rpt_ENU_velocity(rpt);
+        break;
+    case 0x57:
+        rpt_last_fix_info(rpt);
+        break;
+    case 0x58:
+        rpt_GPS_system_data(rpt);
+        break;
+    case 0x59:
+        rpt_SVs_enabled(rpt);
+        break;
+    case 0x5A:
+        rpt_raw_msmt(rpt);
+        break;
+    case 0x5B:
+        rpt_SV_ephemeris_status(rpt);
+        break;
+    case 0x5C:
+        rpt_SV_tracking_status(rpt);
+        break;
+    case 0x6D:
+        rpt_allSV_selection(rpt);
+        break;
+    case 0x82:
+        rpt_DGPS_position_mode(rpt);
+        break;
+    case 0x83:
+        rpt_double_ECEF_position(rpt);
+        break;
+    case 0x84:
+        rpt_double_lla_position(rpt);
+        break;
+    case 0xBB:
+        rpt_complete_rcvr_config(rpt);
+        break;
+    case 0xBC:
+        rpt_rcvr_serial_port_config(rpt);
+        break;
 
-	    case 0x8F: switch (rpt->buf[0U])
-		{
-			/* superpackets; parsed according to subcodes */
-		    case 0x0B: rpt_8F0B(rpt); break;
-		    case 0x14: rpt_8F14(rpt); break;
-		    case 0x15: rpt_8F15(rpt); break;
-		    case 0x20: rpt_8F20(rpt); break;
-		    case 0x41: rpt_8F41(rpt); break;
-		    case 0x42: rpt_8F42(rpt); break;
-		    case 0x45: rpt_8F45(rpt); break;
-		    case 0x4A: rpt_8F4A(rpt); break;
-		    case 0x4B: rpt_8F4B(rpt); break;
-		    case 0x4D: rpt_8F4D(rpt); break;
-		    case 0xA5: rpt_8FA5(rpt); break;
-		    case 0xAD: rpt_8FAD(rpt); break;
-		    default: parsed = BADID_PARSE; break;
-		}
-		break;
+    case 0x8F:
+        switch (rpt->buf[0U])
+        {
+        /* superpackets; parsed according to subcodes */
+        case 0x0B:
+            rpt_8F0B(rpt);
+            break;
+        case 0x14:
+            rpt_8F14(rpt);
+            break;
+        case 0x15:
+            rpt_8F15(rpt);
+            break;
+        case 0x20:
+            rpt_8F20(rpt);
+            break;
+        case 0x41:
+            rpt_8F41(rpt);
+            break;
+        case 0x42:
+            rpt_8F42(rpt);
+            break;
+        case 0x45:
+            rpt_8F45(rpt);
+            break;
+        case 0x4A:
+            rpt_8F4A(rpt);
+            break;
+        case 0x4B:
+            rpt_8F4B(rpt);
+            break;
+        case 0x4D:
+            rpt_8F4D(rpt);
+            break;
+        case 0xA5:
+            rpt_8FA5(rpt);
+            break;
+        case 0xAD:
+            rpt_8FAD(rpt);
+            break;
+        default:
+            parsed = BADID_PARSE;
+            break;
+        }
+        break;
 
-	    default: parsed = BADID_PARSE; break;
-	}
+    default:
+        parsed = BADID_PARSE;
+        break;
+    }
 
-	if (parsed != GOOD_PARSE)
-	{
-		/*
-		**The message has TSIP structure (DLEs, etc.)
-		** but could not be parsed by above routines
-		*/
-		unknown_rpt (rpt);
-	}
+    if (parsed != GOOD_PARSE)
+    {
+        /*
+        **The message has TSIP structure (DLEs, etc.)
+        ** but could not be parsed by above routines
+        */
+        unknown_rpt(rpt);
+    }
 
-	/* close TextOutputBuffer */
-	pbuf = '\0';
+    /* close TextOutputBuffer */
+    pbuf = '\0';
 }
 
 #endif /* TRIMBLE_OUTPUT_FUNC */
@@ -5252,4 +5376,3 @@ TranslateTSIPReportToText(
 #else  /* defined(REFCLOCK) && defined(CLOCK_RIPENCC) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* defined(REFCLOCK) && defined(CLOCK_RIPENCC) */
-

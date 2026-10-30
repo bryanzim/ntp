@@ -2,22 +2,21 @@
  * ntpq.h - definitions of interest to ntpq
  */
 #ifdef HAVE_UNISTD_H
-# include <unistd.h>
+#include <unistd.h>
 #endif
-#include "ntp_fp.h"
 #include "ntp.h"
-#include "ntp_stdlib.h"
-#include "ntp_string.h"
-#include "ntp_malloc.h"
 #include "ntp_assert.h"
 #include "ntp_control.h"
-
+#include "ntp_fp.h"
+#include "ntp_malloc.h"
+#include "ntp_stdlib.h"
+#include "ntp_string.h"
 #include "ntpq-opts.h"
 
 /*
  * Maximum number of arguments
  */
-#define	MAXARGS	4
+#define MAXARGS 4
 
 /*
  * Limit on packets in a single response.  Increasing this value to
@@ -38,50 +37,52 @@
  * needs.  In contrast, the "mrulist" command is implemented as a series
  * of requests and multipacket responses to each.
  */
-#define	MAXFRAGS	32
+#define MAXFRAGS 32
 
 /*
  * Error codes for internal use
  */
-#define	ERR_UNSPEC		256
-#define	ERR_INCOMPLETE		257
-#define	ERR_TIMEOUT		258
-#define	ERR_TOOMUCH		259
+#define ERR_UNSPEC 256
+#define ERR_INCOMPLETE 257
+#define ERR_TIMEOUT 258
+#define ERR_TOOMUCH 259
 
 /*
  * Flags for forming descriptors.
  */
-#define	OPT		0x80	/* this argument is optional, or'd with type */
+#define OPT 0x80 /* this argument is optional, or'd with type */
 
-#define	NO		0x0
-#define	NTP_STR		0x1	/* string argument */
-#define	NTP_UINT	0x2	/* unsigned integer */
-#define	NTP_INT		0x3	/* signed integer */
-#define	NTP_ADD		0x4	/* IP network address */
-#define IP_VERSION	0x5	/* IP version */
-#define	NTP_ADP		0x6	/* IP address and port */
-#define NTP_LFP		0x7	/* NTP timestamp */
-#define NTP_MODE	0x8	/* peer mode */
-#define NTP_2BIT	0x9	/* leap bits */
-#define NTP_REFID	0xA	/* RefID */
+#define NO 0x0
+#define NTP_STR 0x1    /* string argument */
+#define NTP_UINT 0x2   /* unsigned integer */
+#define NTP_INT 0x3    /* signed integer */
+#define NTP_ADD 0x4    /* IP network address */
+#define IP_VERSION 0x5 /* IP version */
+#define NTP_ADP 0x6    /* IP address and port */
+#define NTP_LFP 0x7    /* NTP timestamp */
+#define NTP_MODE 0x8   /* peer mode */
+#define NTP_2BIT 0x9   /* leap bits */
+#define NTP_REFID 0xA  /* RefID */
 
 /*
  * Arguments are returned in a union
  */
-typedef union {
-	const char *string;
-	long ival;
-	u_long uval;
-	sockaddr_u netnum;
+typedef union
+{
+    const char* string;
+    long ival;
+    u_long uval;
+    sockaddr_u netnum;
 } arg_v;
 
 /*
  * Structure for passing parsed command line
  */
-struct parse {
-	const char *keyword;
-	arg_v argval[MAXARGS];
-	size_t nargs;
+struct parse
+{
+    const char* keyword;
+    arg_v argval[MAXARGS];
+    size_t nargs;
 };
 
 /*
@@ -89,33 +90,36 @@ struct parse {
  * crude.  The following structure is used to define the command
  * syntax.
  */
-struct xcmd {
-  const char *keyword;		/* command key word */
-	void (*handler)	(struct parse *, FILE *);	/* command handler */
-	u_char arg[MAXARGS];	/* descriptors for arguments */
-  const char *desc[MAXARGS];	/* descriptions for arguments */
-  const char *comment;
+struct xcmd
+{
+    const char* keyword;                   /* command key word */
+    void (*handler)(struct parse*, FILE*); /* command handler */
+    u_char arg[MAXARGS];                   /* descriptors for arguments */
+    const char* desc[MAXARGS];             /* descriptions for arguments */
+    const char* comment;
 };
 
 /*
  * Structure to hold association data
  */
-struct association {
-	associd_t assid;
-	u_short status;
+struct association
+{
+    associd_t assid;
+    u_short status;
 };
 
 /*
  * mrulist terminal status interval
  */
-#define	MRU_REPORT_SECS	5
+#define MRU_REPORT_SECS 5
 
 /*
  * var_format is used to override cooked formatting for selected vars.
  */
-typedef struct var_format_tag {
-	const char *	varname;
-	u_short		fmt;
+typedef struct var_format_tag
+{
+    const char* varname;
+    u_short fmt;
 } var_format;
 
 
@@ -125,50 +129,52 @@ typedef struct var_format_tag {
  * want byte pointers.
  */
 #define DIGEST_TEST_BUF_LEN (MIN_V4_PKT_LEN + MAX_MAC_LEN)
-typedef union pay_u_tag {
-	u_int32	ui[DIGEST_TEST_BUF_LEN / sizeof(u_int32)];
-	u_char	c[DIGEST_TEST_BUF_LEN];
+typedef union pay_u_tag
+{
+    u_int32 ui[DIGEST_TEST_BUF_LEN / sizeof(u_int32)];
+    u_char c[DIGEST_TEST_BUF_LEN];
 } pay_u;
 #undef DIGEST_TEST_BUF_LEN
 
 typedef struct chost_tag chost;
-struct chost_tag {
-	const char *name;
-	int 	    fam;
+struct chost_tag
+{
+    const char* name;
+    int fam;
 };
 
-extern chost	chosts[];
+extern chost chosts[];
 
-extern int	interactive;	/* are we prompting? */
-extern int	old_rv;		/* use old rv behavior? --old-rv */
-extern te_Refid	drefid;		/* How should we display a refid? */
-extern u_int	assoc_cache_slots;/* count of allocated array entries */
-extern u_int	numassoc;	/* number of cached associations */
-extern u_int	numhosts;
+extern int interactive;         /* are we prompting? */
+extern int old_rv;              /* use old rv behavior? --old-rv */
+extern te_Refid drefid;         /* How should we display a refid? */
+extern u_int assoc_cache_slots; /* count of allocated array entries */
+extern u_int numassoc;          /* number of cached associations */
+extern u_int numhosts;
 
-extern	void	grow_assoc_cache(void);
-extern	void	asciize		(int, char *, FILE *);
-extern	int	getnetnum	(const char *, sockaddr_u *, char *, int);
-extern	void	sortassoc	(void);
-extern	void	show_error_msg	(int, associd_t);
-extern	int	dogetassoc	(FILE *);
-extern	int	doquery		(int, associd_t, int, size_t, const char *,
-				 u_short *, size_t *, const char **);
-extern	int	doqueryex	(int, associd_t, int, size_t, const char *,
-				 u_short *, size_t *, const char **, int);
-extern	const char * nntohost	(sockaddr_u *);
-extern	const char * nntohost_col (sockaddr_u *, size_t, int);
-extern	const char * nntohostp	(sockaddr_u *);
-extern	int	decodets	(char *, l_fp *);
-extern	int	decodeuint	(char *, u_long *);
-extern	int	nextvar		(size_t *, const char **, char **, char **);
-extern	int	decodetime	(char *, l_fp *);
-extern	void	printvars	(size_t, const char *, int, int, int, FILE *);
-extern	int	decodeint	(char *, long *);
-extern	void	makeascii	(size_t, const char *, FILE *);
-extern	const char * trunc_left	(const char *, size_t);
-extern	const char * trunc_right(const char *, size_t);
+extern void grow_assoc_cache(void);
+extern void asciize(int, char*, FILE*);
+extern int getnetnum(const char*, sockaddr_u*, char*, int);
+extern void sortassoc(void);
+extern void show_error_msg(int, associd_t);
+extern int dogetassoc(FILE*);
+extern int doquery(int, associd_t, int, size_t, const char*,
+                   u_short*, size_t*, const char**);
+extern int doqueryex(int, associd_t, int, size_t, const char*,
+                     u_short*, size_t*, const char**, int);
+extern const char* nntohost(sockaddr_u*);
+extern const char* nntohost_col(sockaddr_u*, size_t, int);
+extern const char* nntohostp(sockaddr_u*);
+extern int decodets(char*, l_fp*);
+extern int decodeuint(char*, u_long*);
+extern int nextvar(size_t*, const char**, char**, char**);
+extern int decodetime(char*, l_fp*);
+extern void printvars(size_t, const char*, int, int, int, FILE*);
+extern int decodeint(char*, long*);
+extern void makeascii(size_t, const char*, FILE*);
+extern const char* trunc_left(const char*, size_t);
+extern const char* trunc_right(const char*, size_t);
 
-typedef	int/*BOOL*/ (*Ctrl_C_Handler)(void);
-extern	int/*BOOL*/ 	push_ctrl_c_handler(Ctrl_C_Handler);
-extern	int/*BOOL*/ 	pop_ctrl_c_handler(Ctrl_C_Handler);
+typedef int /*BOOL*/ (*Ctrl_C_Handler)(void);
+extern int /*BOOL*/ push_ctrl_c_handler(Ctrl_C_Handler);
+extern int /*BOOL*/ pop_ctrl_c_handler(Ctrl_C_Handler);

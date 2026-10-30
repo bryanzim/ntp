@@ -7,19 +7,19 @@
  */
 
 #if defined(OPENSSL) && defined(SYS_WINNT)
-# ifdef _MSC_VER
-#  pragma warning(push)
-#  pragma warning(disable: 4152)
-#  ifndef OPENSSL_NO_AUTOLINK
-#   include "msvc_ssl_autolib.h"
-#  endif
-# endif
-# if OPENSSL_VERSION_NUMBER < 0x10100000L || OPENSSL_VERSION_NUMBER >= 0x10101000L
-#  include <openssl/applink.c>
-# endif
-# ifdef _MSC_VER
-#  pragma warning(pop)
-# endif
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4152)
+#ifndef OPENSSL_NO_AUTOLINK
+#include "msvc_ssl_autolib.h"
+#endif
+#endif
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || OPENSSL_VERSION_NUMBER >= 0x10101000L
+#include <openssl/applink.c>
+#endif
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 #endif
 
 #if defined(OPENSSL) && defined(_MSC_VER) && defined(_DEBUG)
@@ -27,10 +27,10 @@
 #endif
 
 #ifdef WRAP_DBG_MALLOC
-static void *wrap_dbg_malloc(size_t s, const char *f, int l);
-static void *wrap_dbg_realloc(void *p, size_t s, const char *f, int l);
-static void wrap_dbg_free(void *p);
-static void wrap_dbg_free_ex(void *p, const char *f, int l);
+static void* wrap_dbg_malloc(size_t s, const char* f, int l);
+static void* wrap_dbg_realloc(void* p, size_t s, const char* f, int l);
+static void wrap_dbg_free(void* p);
+static void wrap_dbg_free_ex(void* p, const char* f, int l);
 #endif
 
 
@@ -38,29 +38,31 @@ static void wrap_dbg_free_ex(void *p, const char *f, int l);
 
 void ssl_applink(void);
 
-void
-ssl_applink(void)
+void ssl_applink(void)
 {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000L
 
-#   ifdef WRAP_DBG_MALLOC
-	CRYPTO_set_mem_functions(wrap_dbg_malloc, wrap_dbg_realloc, wrap_dbg_free_ex);
-#   else
-	OPENSSL_malloc_init();
-#   endif
+#ifdef WRAP_DBG_MALLOC
+    CRYPTO_set_mem_functions(wrap_dbg_malloc, wrap_dbg_realloc, wrap_dbg_free_ex);
+#else
+    OPENSSL_malloc_init();
+#endif
 
-#  else
+#else
 
-#   ifdef WRAP_DBG_MALLOC
-	CRYPTO_set_mem_ex_functions(wrap_dbg_malloc, wrap_dbg_realloc, wrap_dbg_free);
-#   else
-	CRYPTO_malloc_init();
-#   endif
+#ifdef WRAP_DBG_MALLOC
+    CRYPTO_set_mem_ex_functions(wrap_dbg_malloc, wrap_dbg_realloc, wrap_dbg_free);
+#else
+    CRYPTO_malloc_init();
+#endif
 
 #endif /* OpenSSL version cascade */
 }
-#else	/* !OPENSSL || !SYS_WINNT */
-#define ssl_applink()	do {} while (0)
+#else /* !OPENSSL || !SYS_WINNT */
+#define ssl_applink() \
+    do                \
+    {                 \
+    } while (0)
 #endif
 
 
@@ -70,31 +72,31 @@ ssl_applink(void)
  * for DEBUG malloc/realloc/free (lacking block type).
  * Simple wrappers convert.
  */
-static void *wrap_dbg_malloc(size_t s, const char *f, int l)
+static void* wrap_dbg_malloc(size_t s, const char* f, int l)
 {
-	void *ret;
+    void* ret;
 
-	ret = _malloc_dbg(s, _NORMAL_BLOCK, f, l);
-	return ret;
+    ret = _malloc_dbg(s, _NORMAL_BLOCK, f, l);
+    return ret;
 }
 
-static void *wrap_dbg_realloc(void *p, size_t s, const char *f, int l)
+static void* wrap_dbg_realloc(void* p, size_t s, const char* f, int l)
 {
-	void *ret;
+    void* ret;
 
-	ret = _realloc_dbg(p, s, _NORMAL_BLOCK, f, l);
-	return ret;
+    ret = _realloc_dbg(p, s, _NORMAL_BLOCK, f, l);
+    return ret;
 }
 
-static void wrap_dbg_free(void *p)
+static void wrap_dbg_free(void* p)
 {
-	_free_dbg(p, _NORMAL_BLOCK);
+    _free_dbg(p, _NORMAL_BLOCK);
 }
 
-static void wrap_dbg_free_ex(void *p, const char *f, int l)
+static void wrap_dbg_free_ex(void* p, const char* f, int l)
 {
-	(void)f;
-	(void)l;
-	_free_dbg(p, _NORMAL_BLOCK);
+    (void)f;
+    (void)l;
+    _free_dbg(p, _NORMAL_BLOCK);
 }
-#endif	/* WRAP_DBG_MALLOC */
+#endif /* WRAP_DBG_MALLOC */

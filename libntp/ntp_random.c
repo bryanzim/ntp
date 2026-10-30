@@ -39,15 +39,16 @@ static char sccsid[] = "@(#)random.c	8.2 (Berkeley) 5/19/95";
 #endif /* LIBC_SCCS and not lint */
 
 #include "config.h"
+
 #include <sys/types.h>
 #ifdef HAVE_UNISTD_H
-# include <unistd.h>
+#include <unistd.h>
 #endif
-#include <stdio.h>
-
 #include <l_stdlib.h>
 #include <ntp_random.h>
 #include <ntp_unixtime.h>
+
+#include <stdio.h>
 
 /*
  * random.c:
@@ -115,32 +116,32 @@ static char sccsid[] = "@(#)random.c	8.2 (Berkeley) 5/19/95";
  * for the polynomial (actually a trinomial) that the R.N.G. is based on, and
  * the separation between the two lower order coefficients of the trinomial.
  */
-#define	TYPE_0		0		/* linear congruential */
-#define	BREAK_0		8
-#define	DEG_0		0
-#define	SEP_0		0
+#define TYPE_0 0 /* linear congruential */
+#define BREAK_0 8
+#define DEG_0 0
+#define SEP_0 0
 
-#define	TYPE_1		1		/* x**7 + x**3 + 1 */
-#define	BREAK_1		32
-#define	DEG_1		7
-#define	SEP_1		3
+#define TYPE_1 1 /* x**7 + x**3 + 1 */
+#define BREAK_1 32
+#define DEG_1 7
+#define SEP_1 3
 
-#define	TYPE_2		2		/* x**15 + x + 1 */
-#define	BREAK_2		64
-#define	DEG_2		15
-#define	SEP_2		1
+#define TYPE_2 2 /* x**15 + x + 1 */
+#define BREAK_2 64
+#define DEG_2 15
+#define SEP_2 1
 
-#define	TYPE_3		3		/* x**31 + x**3 + 1 */
-#define	BREAK_3		128
-#define	DEG_3		31
-#define	SEP_3		3
+#define TYPE_3 3 /* x**31 + x**3 + 1 */
+#define BREAK_3 128
+#define DEG_3 31
+#define SEP_3 3
 
-#define	TYPE_4		4		/* x**63 + x + 1 */
-#define	BREAK_4		256
-#define	DEG_4		63
-#define	SEP_4		1
+#define TYPE_4 4 /* x**63 + x + 1 */
+#define BREAK_4 256
+#define DEG_4 63
+#define SEP_4 1
 
-#define	MAX_TYPES	5		/* max number of types above */
+#define MAX_TYPES 5 /* max number of types above */
 
 /*
  * Initially, everything is set up as if from:
@@ -157,24 +158,49 @@ static char sccsid[] = "@(#)random.c	8.2 (Berkeley) 5/19/95";
  */
 
 static unsigned long randtbl[DEG_3 + 1] = {
-	TYPE_3,
-#ifdef  USE_WEAK_SEEDING
-/* Historic implementation compatibility */
-/* The random sequences do not vary much with the seed */
-	0x9a319039, 0x32d9c024, 0x9b663182, 0x5da1f342, 0xde3b81e0, 0xdf0a6fb5,
-	0xf103bc02, 0x48f340fb, 0x7449e56b, 0xbeb1dbb0, 0xab5c5918, 0x946554fd,
-	0x8c2e680f, 0xeb3d799f, 0xb11ee0b7, 0x2d436b86, 0xda672e2a, 0x1588ca88,
-	0xe369735d, 0x904f35f7, 0xd7158fd6, 0x6fa6f051, 0x616e6b96, 0xac94efdc,
-	0x36413f93, 0xc622c298, 0xf5a42ab8, 0x8a88d77b, 0xf5ad9d0e, 0x8999220b,
-	0x27fb47b9,
-#else   /* !USE_WEAK_SEEDING */
-	0x991539b1, 0x16a5bce3, 0x6774a4cd, 0x3e01511e, 0x4e508aaa, 0x61048c05,
-	0xf5500617, 0x846b7115, 0x6a19892c, 0x896a97af, 0xdb48f936, 0x14898454,
-	0x37ffd106, 0xb58bff9c, 0x59e17104, 0xcf918a49, 0x09378c83, 0x52c7a471,
-	0x8d293ea9, 0x1f4fc301, 0xc3db71be, 0x39b44e1c, 0xf8a44ef9, 0x4c8b80b1,
-	0x19edc328, 0x87bf4bdd, 0xc9b240e5, 0xe9ee4b1b, 0x4382aee7, 0x535b6b41,
-	0xf3bec5da
-#endif  /* !USE_WEAK_SEEDING */
+    TYPE_3,
+#ifdef USE_WEAK_SEEDING
+    /* Historic implementation compatibility */
+    /* The random sequences do not vary much with the seed */
+    0x9a319039,
+    0x32d9c024,
+    0x9b663182,
+    0x5da1f342,
+    0xde3b81e0,
+    0xdf0a6fb5,
+    0xf103bc02,
+    0x48f340fb,
+    0x7449e56b,
+    0xbeb1dbb0,
+    0xab5c5918,
+    0x946554fd,
+    0x8c2e680f,
+    0xeb3d799f,
+    0xb11ee0b7,
+    0x2d436b86,
+    0xda672e2a,
+    0x1588ca88,
+    0xe369735d,
+    0x904f35f7,
+    0xd7158fd6,
+    0x6fa6f051,
+    0x616e6b96,
+    0xac94efdc,
+    0x36413f93,
+    0xc622c298,
+    0xf5a42ab8,
+    0x8a88d77b,
+    0xf5ad9d0e,
+    0x8999220b,
+    0x27fb47b9,
+#else  /* !USE_WEAK_SEEDING */
+    0x991539b1, 0x16a5bce3, 0x6774a4cd, 0x3e01511e, 0x4e508aaa, 0x61048c05,
+    0xf5500617, 0x846b7115, 0x6a19892c, 0x896a97af, 0xdb48f936, 0x14898454,
+    0x37ffd106, 0xb58bff9c, 0x59e17104, 0xcf918a49, 0x09378c83, 0x52c7a471,
+    0x8d293ea9, 0x1f4fc301, 0xc3db71be, 0x39b44e1c, 0xf8a44ef9, 0x4c8b80b1,
+    0x19edc328, 0x87bf4bdd, 0xc9b240e5, 0xe9ee4b1b, 0x4382aee7, 0x535b6b41,
+    0xf3bec5da
+#endif /* !USE_WEAK_SEEDING */
 };
 
 /*
@@ -191,8 +217,8 @@ static unsigned long randtbl[DEG_3 + 1] = {
  * in the initialization of randtbl) because the state table pointer is set
  * to point to randtbl[1] (as explained below).
  */
-static unsigned long *fptr = &randtbl[SEP_3 + 1];
-static unsigned long *rptr = &randtbl[1U];
+static unsigned long* fptr = &randtbl[SEP_3 + 1];
+static unsigned long* rptr = &randtbl[1U];
 
 /*
  * The following things are the pointer to the state information table, the
@@ -204,44 +230,43 @@ static unsigned long *rptr = &randtbl[1U];
  * this is more efficient than indexing every time to find the address of
  * the last element to see if the front and rear pointers have wrapped.
  */
-static unsigned long *state = &randtbl[1U];
+static unsigned long* state = &randtbl[1U];
 static long rand_type = TYPE_3;
 static long rand_deg = DEG_3;
 static long rand_sep = SEP_3;
-static unsigned long *end_ptr = &randtbl[DEG_3 + 1];
+static unsigned long* end_ptr = &randtbl[DEG_3 + 1];
 
-static inline long good_rand (long);
+static inline long good_rand(long);
 
 static inline long
-good_rand (
-	register long x
-	)
+good_rand(
+    register long x)
 {
-#ifdef  USE_WEAK_SEEDING
-/*
- * Historic implementation compatibility.
- * The random sequences do not vary much with the seed,
- * even with overflowing.
- */
-	return (1103515245 * x + 12345);
-#else   /* !USE_WEAK_SEEDING */
-/*
- * Compute x = (7^5 * x) mod (2^31 - 1)
- * wihout overflowing 31 bits:
- *      (2^31 - 1) = 127773 * (7^5) + 2836
- * From "Random number generators: good ones are hard to find",
- * Park and Miller, Communications of the ACM, vol. 31, no. 10,
- * October 1988, p. 1195.
- */
-	register long hi, lo;
+#ifdef USE_WEAK_SEEDING
+    /*
+     * Historic implementation compatibility.
+     * The random sequences do not vary much with the seed,
+     * even with overflowing.
+     */
+    return (1103515245 * x + 12345);
+#else  /* !USE_WEAK_SEEDING */
+    /*
+     * Compute x = (7^5 * x) mod (2^31 - 1)
+     * wihout overflowing 31 bits:
+     *      (2^31 - 1) = 127773 * (7^5) + 2836
+     * From "Random number generators: good ones are hard to find",
+     * Park and Miller, Communications of the ACM, vol. 31, no. 10,
+     * October 1988, p. 1195.
+     */
+    register long hi, lo;
 
-	hi = x / 127773;
-	lo = x % 127773;
-	x = 16807 * lo - 2836 * hi;
-	if (x <= 0)
-		x += 0x7fffffff;
-	return (x);
-#endif  /* !USE_WEAK_SEEDING */
+    hi = x / 127773;
+    lo = x % 127773;
+    x = 16807 * lo - 2836 * hi;
+    if (x <= 0)
+        x += 0x7fffffff;
+    return (x);
+#endif /* !USE_WEAK_SEEDING */
 }
 
 /*
@@ -256,27 +281,28 @@ good_rand (
  * introduced by the L.C.R.N.G.  Note that the initialization of randtbl[]
  * for default usage relies on values produced by this routine.
  */
-void
-ntp_srandom(
-	unsigned long x
-	)
+void ntp_srandom(
+    unsigned long x)
 {
-	long i;
+    long i;
 
-	if (rand_type == TYPE_0) {
-		state[0U] = x;
-	} else {
-		state[0U] = x;
-		for (i = 1; i < rand_deg; i++)
-			state[i] = good_rand(state[i - 1]);
-		fptr = &state[rand_sep];
-		rptr = &state[0U];
-		for (i = 0; i < 10 * rand_deg; i++)
-			x = ntp_random();
-	}
+    if (rand_type == TYPE_0)
+    {
+        state[0U] = x;
+    }
+    else
+    {
+        state[0U] = x;
+        for (i = 1; i < rand_deg; i++)
+            state[i] = good_rand(state[i - 1]);
+        fptr = &state[rand_sep];
+        rptr = &state[0U];
+        for (i = 0; i < 10 * rand_deg; i++)
+            x = ntp_random();
+    }
 
-	/* seed the likely faster (and poorer) rand() as well */
-	srand((u_int)x);
+    /* seed the likely faster (and poorer) rand() as well */
+    srand((u_int)x);
 }
 
 /*
@@ -291,15 +317,14 @@ ntp_srandom(
  * a fixed seed.
  */
 #ifdef NEED_SRANDOMDEV
-void
-ntp_srandomdev( void )
+void ntp_srandomdev(void)
 {
-	struct timeval tv;
-	unsigned long junk;	/* Purposely used uninitialized */
+    struct timeval tv;
+    unsigned long junk; /* Purposely used uninitialized */
 
-	GETTIMEOFDAY(&tv, NULL);
-	ntp_srandom(getpid() ^ tv.tv_sec ^ tv.tv_usec ^ junk);
-	return;
+    GETTIMEOFDAY(&tv, NULL);
+    ntp_srandom(getpid() ^ tv.tv_sec ^ tv.tv_usec ^ junk);
+    return;
 }
 #endif
 
@@ -316,10 +341,10 @@ ntp_srandomdev( void )
  * Array versions of the above information to make code run faster --
  * relies on fact that TYPE_i == i.
  */
-#define	MAX_TYPES	5		/* max number of types above */
+#define MAX_TYPES 5 /* max number of types above */
 
-static long degrees[MAX_TYPES] =	{ DEG_0, DEG_1, DEG_2, DEG_3, DEG_4 };
-static long seps [MAX_TYPES] =	{ SEP_0, SEP_1, SEP_2, SEP_3, SEP_4 };
+static long degrees[MAX_TYPES] = { DEG_0, DEG_1, DEG_2, DEG_3, DEG_4 };
+static long seps[MAX_TYPES] = { SEP_0, SEP_1, SEP_2, SEP_3, SEP_4 };
 
 /*
  * initstate:
@@ -344,54 +369,63 @@ static long seps [MAX_TYPES] =	{ SEP_0, SEP_1, SEP_2, SEP_3, SEP_4 };
  * word boundary; otherwise a bus error will occur. Even so, lint will
  * complain about mis-alignment, but you should disregard these messages.
  */
-char *
-ntp_initstate(
-	unsigned long seed,		/* seed for R.N.G. */
-	char *arg_state,		/* pointer to state array */
-	long n				/* # bytes of state info */
-	)
+char* ntp_initstate(
+    unsigned long seed, /* seed for R.N.G. */
+    char* arg_state,    /* pointer to state array */
+    long n              /* # bytes of state info */
+)
 {
-	register char *ostate = (char *)(&state[-1]);
-	register long *long_arg_state = (long *) arg_state;
+    register char* ostate = (char*)(&state[-1]);
+    register long* long_arg_state = (long*)arg_state;
 
-	if (rand_type == TYPE_0)
-		state[-1] = rand_type;
-	else
-		state[-1] = MAX_TYPES * (rptr - state) + rand_type;
-	if (n < BREAK_0) {
-		(void)fprintf(stderr,
-		    "random: not enough state (%ld bytes); ignored.\n", n);
-		return(0);
-	}
-	if (n < BREAK_1) {
-		rand_type = TYPE_0;
-		rand_deg = DEG_0;
-		rand_sep = SEP_0;
-	} else if (n < BREAK_2) {
-		rand_type = TYPE_1;
-		rand_deg = DEG_1;
-		rand_sep = SEP_1;
-	} else if (n < BREAK_3) {
-		rand_type = TYPE_2;
-		rand_deg = DEG_2;
-		rand_sep = SEP_2;
-	} else if (n < BREAK_4) {
-		rand_type = TYPE_3;
-		rand_deg = DEG_3;
-		rand_sep = SEP_3;
-	} else {
-		rand_type = TYPE_4;
-		rand_deg = DEG_4;
-		rand_sep = SEP_4;
-	}
-	state = (unsigned long *) (long_arg_state + 1); /* first location */
-	end_ptr = &state[rand_deg];	/* must set end_ptr before srandom */
-	ntp_srandom(seed);
-	if (rand_type == TYPE_0)
-		long_arg_state[0U] = rand_type;
-	else
-		long_arg_state[0U] = MAX_TYPES * (rptr - state) + rand_type;
-	return(ostate);
+    if (rand_type == TYPE_0)
+        state[-1] = rand_type;
+    else
+        state[-1] = MAX_TYPES * (rptr - state) + rand_type;
+    if (n < BREAK_0)
+    {
+        (void)fprintf(stderr,
+                      "random: not enough state (%ld bytes); ignored.\n", n);
+        return (0);
+    }
+    if (n < BREAK_1)
+    {
+        rand_type = TYPE_0;
+        rand_deg = DEG_0;
+        rand_sep = SEP_0;
+    }
+    else if (n < BREAK_2)
+    {
+        rand_type = TYPE_1;
+        rand_deg = DEG_1;
+        rand_sep = SEP_1;
+    }
+    else if (n < BREAK_3)
+    {
+        rand_type = TYPE_2;
+        rand_deg = DEG_2;
+        rand_sep = SEP_2;
+    }
+    else if (n < BREAK_4)
+    {
+        rand_type = TYPE_3;
+        rand_deg = DEG_3;
+        rand_sep = SEP_3;
+    }
+    else
+    {
+        rand_type = TYPE_4;
+        rand_deg = DEG_4;
+        rand_sep = SEP_4;
+    }
+    state = (unsigned long*)(long_arg_state + 1); /* first location */
+    end_ptr = &state[rand_deg];                   /* must set end_ptr before srandom */
+    ntp_srandom(seed);
+    if (rand_type == TYPE_0)
+        long_arg_state[0U] = rand_type;
+    else
+        long_arg_state[0U] = MAX_TYPES * (rptr - state) + rand_type;
+    return (ostate);
 }
 
 /*
@@ -413,43 +447,44 @@ ntp_initstate(
  * word boundary; otherwise a bus error will occur. Even so, lint will
  * complain about mis-alignment, but you should disregard these messages.
  */
-char *
-ntp_setstate(
-	char *arg_state			/* pointer to state array */
-	)
+char* ntp_setstate(
+    char* arg_state /* pointer to state array */
+)
 {
-	register unsigned long *new_state = (unsigned long *) arg_state;
-	register long type = new_state[0U] % MAX_TYPES;
-	register long rear = new_state[0U] / MAX_TYPES;
-	char *ostate = (char *)(&state[-1]);
+    register unsigned long* new_state = (unsigned long*)arg_state;
+    register long type = new_state[0U] % MAX_TYPES;
+    register long rear = new_state[0U] / MAX_TYPES;
+    char* ostate = (char*)(&state[-1]);
 
-	if (rand_type == TYPE_0)
-		state[-1] = rand_type;
-	else
-		state[-1] = MAX_TYPES * (rptr - state) + rand_type;
-	switch(type) {
-	case TYPE_0:
-	case TYPE_1:
-	case TYPE_2:
-	case TYPE_3:
-	case TYPE_4:
-		rand_type = type;
-		rand_deg = degrees[type];
-		rand_sep = seps[type];
-		break;
-	default:
-		(void)fprintf(stderr,
-		    "random: state info corrupted; not changed.\n");
-	}
-	state = (new_state + 1);
-	if (rand_type != TYPE_0) {
-		rptr = &state[rear];
-		fptr = &state[(rear + rand_sep) % rand_deg];
-	}
-	end_ptr = &state[rand_deg];		/* set end_ptr too */
-	return(ostate);
+    if (rand_type == TYPE_0)
+        state[-1] = rand_type;
+    else
+        state[-1] = MAX_TYPES * (rptr - state) + rand_type;
+    switch (type)
+    {
+    case TYPE_0:
+    case TYPE_1:
+    case TYPE_2:
+    case TYPE_3:
+    case TYPE_4:
+        rand_type = type;
+        rand_deg = degrees[type];
+        rand_sep = seps[type];
+        break;
+    default:
+        (void)fprintf(stderr,
+                      "random: state info corrupted; not changed.\n");
+    }
+    state = (new_state + 1);
+    if (rand_type != TYPE_0)
+    {
+        rptr = &state[rear];
+        fptr = &state[(rear + rand_sep) % rand_deg];
+    }
+    end_ptr = &state[rand_deg]; /* set end_ptr too */
+    return (ostate);
 }
-#endif	/* COMPILE_UNUSED_FUNCTIONS */
+#endif /* COMPILE_UNUSED_FUNCTIONS */
 
 
 /*
@@ -469,33 +504,39 @@ ntp_setstate(
  *
  * Returns a 31-bit random number.
  */
-int32
-ntp_random( void )
+int32 ntp_random(void)
 {
-	register long i;
-	register unsigned long *f, *r;
+    register long i;
+    register unsigned long *f, *r;
 
-	if (rand_type == TYPE_0) {
-		i = state[0U];
-		state[0U] = i = (good_rand(i)) & 0x7fffffff;
-	} else {
-		/*
-		 * Use local variables rather than static variables for speed.
-		 */
-		f = fptr; r = rptr;
-		*f += *r;
-		i = (*f >> 1) & 0x7fffffff;	/* chucking least random bit */
-		if (++f >= end_ptr) {
-			f = state;
-			++r;
-		}
-		else if (++r >= end_ptr) {
-			r = state;
-		}
+    if (rand_type == TYPE_0)
+    {
+        i = state[0U];
+        state[0U] = i = (good_rand(i)) & 0x7fffffff;
+    }
+    else
+    {
+        /*
+         * Use local variables rather than static variables for speed.
+         */
+        f = fptr;
+        r = rptr;
+        *f += *r;
+        i = (*f >> 1) & 0x7fffffff; /* chucking least random bit */
+        if (++f >= end_ptr)
+        {
+            f = state;
+            ++r;
+        }
+        else if (++r >= end_ptr)
+        {
+            r = state;
+        }
 
-		fptr = f; rptr = r;
-	}
-	return (int32)i;
+        fptr = f;
+        rptr = r;
+    }
+    return (int32)i;
 }
 
 /*
@@ -508,7 +549,7 @@ ntp_random( void )
  * returns a number in [0.0 .. 1.0], both ends inclusive
  */
 double
-ntp_uurandom( void )
+ntp_uurandom(void)
 {
-	return (double)ntp_random() / 0x7FFFFFFFu;
+    return (double)ntp_random() / 0x7FFFFFFFu;
 }

@@ -5,87 +5,89 @@
  * Moved from ntpd/ntp_crypto.c crypto_setup()
  */
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
-#include <ctype.h>
+#include <lib_strbuf.h>
 #include <ntp.h>
 #include <ntp_debug.h>
-#include <lib_strbuf.h>
+
+#include <ctype.h>
 
 #ifdef OPENSSL
-# include <openssl/crypto.h>
-# include <openssl/err.h>
-# include <openssl/evp.h>
-# include <openssl/opensslv.h>
-# include "libssl_compat.h"
-# ifdef HAVE_OPENSSL_CMAC_H
-#  include <openssl/cmac.h>
-#  define CMAC_LENGTH	16
-#  define CMAC		"AES128CMAC"
-# endif /*HAVE_OPENSSL_CMAC_H*/
+#include "libssl_compat.h"
+
+#include <openssl/crypto.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
+#include <openssl/opensslv.h>
+#ifdef HAVE_OPENSSL_CMAC_H
+#include <openssl/cmac.h>
+#define CMAC_LENGTH 16
+#define CMAC "AES128CMAC"
+#endif /*HAVE_OPENSSL_CMAC_H*/
 
 /* Break apart OpenSSL version number */
-#define SSLV_MAJOR(vn)	(((vn) & 0xf0000000) >> 28)
-#define SSLV_MINOR(vn)	(((vn) & 0x0ff00000) >> 20)
-#define SSLV_PATCH(vn)	(((vn) & 0x00000ff0) >> 4)
+#define SSLV_MAJOR(vn) (((vn) & 0xf0000000) >> 28)
+#define SSLV_MINOR(vn) (((vn) & 0x0ff00000) >> 20)
+#define SSLV_PATCH(vn) (((vn) & 0x00000ff0) >> 4)
 
-EVP_MD_CTX *digest_ctx;
+EVP_MD_CTX* digest_ctx;
 
 
 static void
 atexit_ssl_cleanup(void)
 {
-	if (NULL == digest_ctx) {
-		return;
-	}
-	EVP_MD_CTX_free(digest_ctx);
-	digest_ctx = NULL;
+    if (NULL == digest_ctx)
+    {
+        return;
+    }
+    EVP_MD_CTX_free(digest_ctx);
+    digest_ctx = NULL;
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-	EVP_cleanup();
-	ERR_free_strings();
-#endif	/* OpenSSL < 1.1 */
+    EVP_cleanup();
+    ERR_free_strings();
+#endif /* OpenSSL < 1.1 */
 }
 
 
-void
-ssl_init(void)
+void ssl_init(void)
 {
-	init_lib();
+    init_lib();
 
-	if (NULL == digest_ctx) {
+    if (NULL == digest_ctx)
+    {
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
-		ERR_load_crypto_strings();
-		OpenSSL_add_all_algorithms();
-#endif	/* OpenSSL < 1.1 */
-		digest_ctx = EVP_MD_CTX_new();
-		INSIST(digest_ctx != NULL);
-		atexit(&atexit_ssl_cleanup);
-	}
+        ERR_load_crypto_strings();
+        OpenSSL_add_all_algorithms();
+#endif /* OpenSSL < 1.1 */
+        digest_ctx = EVP_MD_CTX_new();
+        INSIST(digest_ctx != NULL);
+        atexit(&atexit_ssl_cleanup);
+    }
 }
 
 
-void
-ssl_check_version(void)
+void ssl_check_version(void)
 {
-	const u_long	bv = OPENSSL_VERSION_NUMBER;
-	u_long		rv = OpenSSL_version_num();
-	char *		buf;
+    const u_long bv = OPENSSL_VERSION_NUMBER;
+    u_long rv = OpenSSL_version_num();
+    char* buf;
 
-	if (   SSLV_MAJOR(bv) != SSLV_MAJOR(rv)
-	    || SSLV_MINOR(bv) != SSLV_MINOR(rv)) {
+    if (SSLV_MAJOR(bv) != SSLV_MAJOR(rv) || SSLV_MINOR(bv) != SSLV_MINOR(rv))
+    {
 
-		buf = lib_getbuf();
-		snprintf(buf, LIB_BUFLENGTH,
-			"Using libcrypto %lu.%lu.%lu,"
-			" built for %lu.%lu.%lu.\n",
-			SSLV_MAJOR(rv), SSLV_MINOR(rv), SSLV_PATCH(rv),
-			SSLV_MAJOR(bv), SSLV_MINOR(bv), SSLV_PATCH(bv));
-		msyslog(LOG_WARNING, "%s", buf);
-		fputs(buf, stderr);
-	}
-	INIT_SSL();
+        buf = lib_getbuf();
+        snprintf(buf, LIB_BUFLENGTH,
+                 "Using libcrypto %lu.%lu.%lu,"
+                 " built for %lu.%lu.%lu.\n",
+                 SSLV_MAJOR(rv), SSLV_MINOR(rv), SSLV_PATCH(rv),
+                 SSLV_MAJOR(bv), SSLV_MINOR(bv), SSLV_PATCH(bv));
+        msyslog(LOG_WARNING, "%s", buf);
+        fputs(buf, stderr);
+    }
+    INIT_SSL();
 }
-#endif	/* OPENSSL */
+#endif /* OPENSSL */
 
 
 /*
@@ -94,82 +96,92 @@ ssl_check_version(void)
  *
  * Used by ntpd authreadkeys(), ntpq and ntpdc keytype()
  */
-int
-keytype_from_text(
-	const char *	text,
-	size_t *	pdigest_len
-	)
+int keytype_from_text(
+    const char* text,
+    size_t* pdigest_len)
 {
-	int		key_type;
-	u_int		digest_len;
+    int key_type;
+    u_int digest_len;
 #ifdef OPENSSL
-	char *		upcased;
-	EVP_MD const *	md;
+    char* upcased;
+    EVP_MD const* md;
 
-	/*
-	 * If key type string is not recognized but matches our CMAC string
-	 * use NID_cmac, or if it begins with 'M' or 'm' use NID_md5.  The
-	 * single-letter alias M has long been used by ntp-keygen for MD5
-	 * when generating ntp.keys.
-	 * When built with OpenSSL MD5 may not be available for symmetric
-	 * authentication due to FIPS hardening or OpenSSL deprecation,
-	 * though we'll still have it available for IPv6 refid derivation
-	 * and mode 6 nonces, where other concerns outweigh the reasons
-	 * for its deprecation.
-	 */
-	INIT_SSL();
+    /*
+     * If key type string is not recognized but matches our CMAC string
+     * use NID_cmac, or if it begins with 'M' or 'm' use NID_md5.  The
+     * single-letter alias M has long been used by ntp-keygen for MD5
+     * when generating ntp.keys.
+     * When built with OpenSSL MD5 may not be available for symmetric
+     * authentication due to FIPS hardening or OpenSSL deprecation,
+     * though we'll still have it available for IPv6 refid derivation
+     * and mode 6 nonces, where other concerns outweigh the reasons
+     * for its deprecation.
+     */
+    INIT_SSL();
 
-	if ('m' == tolower(text[0U]) && '\0' == text[1U]) {
-		upcased = strdup("MD5");
-	} else {
-		upcased = _strupr(strdup(text));
-	}
-	key_type = OBJ_sn2nid(upcased);
+    if ('m' == tolower(text[0U]) && '\0' == text[1U])
+    {
+        upcased = strdup("MD5");
+    }
+    else
+    {
+        upcased = _strupr(strdup(text));
+    }
+    key_type = OBJ_sn2nid(upcased);
 
-# ifdef ENABLE_CMAC
-	if (!key_type && !strcmp(CMAC, upcased)) {
-		key_type = NID_cmac;
-	}
-# endif
-	free(upcased);
-	upcased = NULL;
-
-#else	/* !OPENSSL follows */
-	if ('m' == tolower(text[0U])) {
-		key_type = NID_md5;
-	} else {
-		key_type = 0;
-	}
+#ifdef ENABLE_CMAC
+    if (!key_type && !strcmp(CMAC, upcased))
+    {
+        key_type = NID_cmac;
+    }
 #endif
-	if (0 == key_type) {
-		return 0;
-	}
+    free(upcased);
+    upcased = NULL;
 
-	if (NULL != pdigest_len) {
+#else /* !OPENSSL follows */
+    if ('m' == tolower(text[0U]))
+    {
+        key_type = NID_md5;
+    }
+    else
+    {
+        key_type = 0;
+    }
+#endif
+    if (0 == key_type)
+    {
+        return 0;
+    }
+
+    if (NULL != pdigest_len)
+    {
 #ifdef OPENSSL
-		md = EVP_get_digestbynid(key_type);
-		digest_len = (md) ? EVP_MD_size(md) : 0;
+        md = EVP_get_digestbynid(key_type);
+        digest_len = (md) ? EVP_MD_size(md) : 0;
 
-		if (NULL == md || 0 == digest_len) {
-# ifdef ENABLE_CMAC
-			if (NID_cmac == key_type) {
-				digest_len = CMAC_LENGTH;
-			} else
-# endif
-			{
-				msyslog(LOG_ERR,
-					"key type %s is not supported by OpenSSL\n",
-					keytype_name(key_type));
-				return 0;
-			}
-		}
-#else	/* !OPENSSL follows */
-		digest_len = MD5_LENGTH;
+        if (NULL == md || 0 == digest_len)
+        {
+#ifdef ENABLE_CMAC
+            if (NID_cmac == key_type)
+            {
+                digest_len = CMAC_LENGTH;
+            }
+            else
 #endif
-		*pdigest_len = min(digest_len, MAX_MDG_LEN);
-	}
+            {
+                msyslog(LOG_ERR,
+                        "key type %s is not supported by OpenSSL\n",
+                        keytype_name(key_type));
+                return 0;
+            }
+        }
+#else /* !OPENSSL follows */
+        digest_len = MD5_LENGTH;
+#endif
+        *pdigest_len = min(digest_len, MAX_MDG_LEN);
+    }
 
-	return key_type;
+    return key_type;
 }
 
 
@@ -178,33 +190,35 @@ keytype_from_text(
  *
  * Used by ntpq and ntpdc keytype()
  */
-const char *
+const char*
 keytype_name(
-	int type
-	)
+    int type)
 {
-	static const char unknown_type[] = "(unknown key type)";
-	const char *name;
+    static const char unknown_type[] = "(unknown key type)";
+    const char* name;
 
 #ifdef OPENSSL
-	INIT_SSL();
-	name = OBJ_nid2sn(type);
+    INIT_SSL();
+    name = OBJ_nid2sn(type);
 
-#   ifdef ENABLE_CMAC
-	if (NID_cmac == type) {
-		name = CMAC;
-	} else
-#   endif /*ENABLE_CMAC*/
-	if (NULL == name) {
-		name = unknown_type;
-	}
-#else	/* !OPENSSL follows */
-	if (NID_md5 == type)
-		name = "MD5";
-	else
-		name = unknown_type;
+#ifdef ENABLE_CMAC
+    if (NID_cmac == type)
+    {
+        name = CMAC;
+    }
+    else
+#endif /*ENABLE_CMAC*/
+        if (NULL == name)
+        {
+            name = unknown_type;
+        }
+#else /* !OPENSSL follows */
+    if (NID_md5 == type)
+        name = "MD5";
+    else
+        name = unknown_type;
 #endif
-	return name;
+    return name;
 }
 
 
@@ -213,23 +227,20 @@ keytype_name(
  * have it truncate the password in getpass() to 8 characters.
  */
 #ifdef HAVE_GETPASSPHRASE
-# define	getpass(str)	getpassphrase(str)
+#define getpass(str) getpassphrase(str)
 #endif
 
 /*
  * getpass_keytype() -- shared between ntpq and ntpdc, only vaguely
  *			related to the rest of ssl_init.c.
  */
-char *
-getpass_keytype(
-	int	type
-	)
+char* getpass_keytype(
+    int type)
 {
-	char	pass_prompt[64 + 11 + 1]; /* 11 for " Password: " */
+    char pass_prompt[64 + 11 + 1]; /* 11 for " Password: " */
 
-	snprintf(pass_prompt, sizeof(pass_prompt),
-		 "%.64s Password: ", keytype_name(type));
+    snprintf(pass_prompt, sizeof(pass_prompt),
+             "%.64s Password: ", keytype_name(type));
 
-	return getpass(pass_prompt);
+    return getpass(pass_prompt);
 }
-

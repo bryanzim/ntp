@@ -14,17 +14,18 @@
  */
 #include <config.h>
 #ifdef _WIN32
-# include <wincrypt.h>
-# include <process.h>
+#include <process.h>
+#include <wincrypt.h>
 #else
-# error this is currently a pure windows port
+#error this is currently a pure windows port
 #endif
+
+#include "ntp_stdlib.h"
+#include "ntp_types.h"
 
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
-#include "ntp_types.h"
-#include "ntp_stdlib.h"
 
 /* ARCFOUR implementation glue */
 /* export type is empty, since this goes into a static library*/
@@ -41,10 +42,10 @@
 
 static void
 evutil_memclear_(
-	void  *buf,
-	size_t len)
+    void* buf,
+    size_t len)
 {
-	memset(buf, 0, len);
+    memset(buf, 0, len);
 }
 
 /* locking uses a manual thread-safe ONCE pattern. There's no static
@@ -52,32 +53,33 @@ evutil_memclear_(
  * we must make sure we do the creation exactly once on the first call.
  */
 
-static long             once_ = 0;
+static long once_ = 0;
 static CRITICAL_SECTION csec_;
 
 static void
 private_lock_(void)
 {
 again:
-	switch (InterlockedCompareExchange(&once_, 1, 0)) {
-	case 0:
-		InitializeCriticalSection(&csec_);
-		InterlockedExchange(&once_, 2);
-	case 2:
-		EnterCriticalSection(&csec_);
-		break;
+    switch (InterlockedCompareExchange(&once_, 1, 0))
+    {
+    case 0:
+        InitializeCriticalSection(&csec_);
+        InterlockedExchange(&once_, 2);
+    case 2:
+        EnterCriticalSection(&csec_);
+        break;
 
-	default:
-		YieldProcessor();
-		goto again;
-	}
+    default:
+        YieldProcessor();
+        goto again;
+    }
 }
 
 static void
 private_unlock_(void)
 {
-	if (InterlockedExchangeAdd(&once_, 0) == 2)
-		LeaveCriticalSection(&csec_);
+    if (InterlockedExchangeAdd(&once_, 0) == 2)
+        LeaveCriticalSection(&csec_);
 }
 
 #pragma warning(disable : 4244)

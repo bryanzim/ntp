@@ -41,15 +41,14 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE)
 
+#include "ntp_calendar.h"
 #include "ntp_fp.h"
 #include "ntp_unixtime.h"
-#include "ntp_calendar.h"
-
 #include "parse.h"
 
 #ifdef CLOCK_SCHMID
@@ -103,51 +102,51 @@ extern clockformat_t clock_sel240x;
 /*
  * format definitions
  */
-clockformat_t *clockformats[] =
-{
+clockformat_t* clockformats[] = {
 #ifdef CLOCK_MEINBERG
-	&clock_meinberg[0U],
-	&clock_meinberg[1U],
-	&clock_meinberg[2U],
+    &clock_meinberg[0U],
+    &clock_meinberg[1U],
+    &clock_meinberg[2U],
 #endif
 #ifdef CLOCK_DCF7000
-	&clock_dcf7000,
+    &clock_dcf7000,
 #endif
 #ifdef CLOCK_SCHMID
-	&clock_schmid,
+    &clock_schmid,
 #endif
 #ifdef CLOCK_RAWDCF
-	&clock_rawdcf,
+    &clock_rawdcf,
 #endif
 #ifdef CLOCK_TRIMTAIP
-	&clock_trimtaip,
+    &clock_trimtaip,
 #endif
 #ifdef CLOCK_TRIMTSIP
-	&clock_trimtsip,
+    &clock_trimtsip,
 #endif
 #ifdef CLOCK_RCC8000
-	&clock_rcc8000,
+    &clock_rcc8000,
 #endif
 #ifdef CLOCK_HOPF6021
-	&clock_hopf6021,
+    &clock_hopf6021,
 #endif
 #ifdef CLOCK_COMPUTIME
-	&clock_computime,
+    &clock_computime,
 #endif
 #ifdef CLOCK_WHARTON_400A
-	&clock_wharton_400a,
+    &clock_wharton_400a,
 #endif
 #ifdef CLOCK_VARITEXT
-        &clock_varitext,
+    &clock_varitext,
 #endif
 #ifdef CLOCK_SEL240X
-        &clock_sel240x,
+    &clock_sel240x,
 #endif
-	0};
+    0
+};
 
 unsigned short nformats = sizeof(clockformats) / sizeof(clockformats[0U]) - 1;
 
-#else /* not (REFCLOCK && CLOCK_PARSE) */
+#else  /* not (REFCLOCK && CLOCK_PARSE) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE) */
 

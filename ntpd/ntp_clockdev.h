@@ -11,15 +11,17 @@
 #ifndef NTP_CLOCKDEV_H
 #define NTP_CLOCKDEV_H
 
+#include "ntp_net.h"
+
 extern void clockdev_clear(void);
 
 extern int clockdev_remove(
-	const sockaddr_u *addr_sock);
+    const sockaddr_u* addr_sock);
 
 extern int clockdev_update(
-	const sockaddr_u *addr_sock, const char *ttyName, const char *ppsName);
+    const sockaddr_u* addr_sock, const char* ttyName, const char* ppsName);
 
-extern const char *clockdev_lookup(
-	const sockaddr_u * addr_sock, int getPps);
+extern const char* clockdev_lookup(
+    const sockaddr_u* addr_sock, int getPps);
 
 #endif /*!defined(NTP_CLOCKDEV_H)*/

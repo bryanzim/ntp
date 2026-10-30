@@ -10,13 +10,13 @@
 #include <stdio.h>
 /* Prevent inclusion of winsock.h in windows.h */
 #ifndef _WINSOCKAPI_
-#define _WINSOCKAPI_  
+#define _WINSOCKAPI_
 #endif
 #include <windows.h>
 typedef DWORD u_int32;
-#include "sys/time.h"
 #include "../../include/timepps.h"
+#include "sys/time.h"
 
 #ifndef UNUSED
-#define UNUSED(item)	((void)(item))
+#define UNUSED(item) ((void)(item))
 #endif

@@ -52,67 +52,69 @@ Juergen Perlinger (perlinger@ntp.org) Feb 2012
 -----------------------------------------------------------------------
 */
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #ifdef HAVE_IO_COMPLETION_PORT
 
-#include <stddef.h>
-#include <stdio.h>
-#include <process.h>
-#include <syslog.h>
-
-#include "ntpd.h"
-#include "ntp_request.h"
-#include <isc/win32os.h>
-
 #include "ntp_iocompletionport.h"
 #include "ntp_iocplmem.h"
 #include "ntp_iocpltypes.h"
+#include "ntp_request.h"
+#include "ntpd.h"
+
+#include <isc/win32os.h>
+#include <syslog.h>
+
+#include <process.h>
+
+#include <stddef.h>
+#include <stdio.h>
 
 
 #define CONTAINEROF(p, type, member) \
-	((type *)((char *)(p) - offsetof(type, member)))
+    ((type*)((char*)(p) - offsetof(type, member)))
 
-enum io_packet_handling {
-	PKT_OK,
-	PKT_DROP,
-	PKT_SOCKET_ERROR
+enum io_packet_handling
+{
+    PKT_OK,
+    PKT_DROP,
+    PKT_SOCKET_ERROR
 };
 
 
 
 #ifdef DEBUG
-static const char * const st_packet_handling[3] = {
-	"accepted",
-	"dropped",
-	"error"
+static const char* const st_packet_handling[3] = {
+    "accepted",
+    "dropped",
+    "error"
 };
 #endif
 
 /*
  * local function definitions
  */
-static	void ntpd_addremove_semaphore(sem_ref, int);
-static	void set_serial_recv_time    (recvbuf_t *, IoCtx_t *);
+static void ntpd_addremove_semaphore(sem_ref, int);
+static void set_serial_recv_time(recvbuf_t*, IoCtx_t*);
 
 /* Initiate/Request async IO operations */
-static	BOOL __fastcall QueueSerialWait   (IoCtx_t *, recvbuf_t *);
-static	BOOL __fastcall QueueSerialRead(IoCtx_t *, recvbuf_t *);
-static	BOOL __fastcall QueueRawSerialRead(IoCtx_t *, recvbuf_t *);
-static  BOOL __fastcall QueueSocketRecv(IoCtx_t *, recvbuf_t *);
+static BOOL __fastcall QueueSerialWait(IoCtx_t*, recvbuf_t*);
+static BOOL __fastcall QueueSerialRead(IoCtx_t*, recvbuf_t*);
+static BOOL __fastcall QueueRawSerialRead(IoCtx_t*, recvbuf_t*);
+static BOOL __fastcall QueueSocketRecv(IoCtx_t*, recvbuf_t*);
 
 
 /* High-level IO callback functions */
-static	void OnSocketRecv           (ULONG_PTR, IoCtx_t *);
-static	void OnSocketSend           (ULONG_PTR, IoCtx_t *);
-static	void OnSerialWaitComplete   (ULONG_PTR, IoCtx_t *);
-static	void OnSerialReadComplete   (ULONG_PTR, IoCtx_t *);
-static	void OnRawSerialReadComplete(ULONG_PTR, IoCtx_t *);
-static	void OnSerialWriteComplete  (ULONG_PTR, IoCtx_t *);
+static void OnSocketRecv(ULONG_PTR, IoCtx_t*);
+static void OnSocketSend(ULONG_PTR, IoCtx_t*);
+static void OnSerialWaitComplete(ULONG_PTR, IoCtx_t*);
+static void OnSerialReadComplete(ULONG_PTR, IoCtx_t*);
+static void OnRawSerialReadComplete(ULONG_PTR, IoCtx_t*);
+static void OnSerialWriteComplete(ULONG_PTR, IoCtx_t*);
 
 /* worker pool offload functions */
-static DWORD WINAPI OnSerialReadWorker(void * ctx);
+static DWORD WINAPI OnSerialReadWorker(void* ctx);
 
 
 /* keep a list to traverse to free memory on debug builds */
@@ -121,16 +123,16 @@ static void free_io_completion_port_mem(void);
 #endif
 
 
-	HANDLE	WaitableExitEventHandle;
-	HANDLE	WaitableIoEventHandle;
-static	HANDLE	hndIOCPLPort;
-static	HANDLE	hMainThread;
-static	HANDLE	hMainRpcDone;
+HANDLE WaitableExitEventHandle;
+HANDLE WaitableIoEventHandle;
+static HANDLE hndIOCPLPort;
+static HANDLE hMainThread;
+static HANDLE hMainRpcDone;
 
-DWORD	ActiveWaitHandles;
-HANDLE	WaitHandles[4];
+DWORD ActiveWaitHandles;
+HANDLE WaitHandles[4];
 
-NotifyIpInterfaceChange_ptr	pNotifyIpInterfaceChange;
+NotifyIpInterfaceChange_ptr pNotifyIpInterfaceChange;
 
 
 
@@ -146,7 +148,7 @@ NotifyIpInterfaceChange_ptr	pNotifyIpInterfaceChange;
  * an issue. Testing this might be tricky -- who runs a Win2k system
  * in the year 2016?
  */
-static size_t	s_SockRecvSched = 1;	/* possibly adjusted later */
+static size_t s_SockRecvSched = 1; /* possibly adjusted later */
 
 
 /*
@@ -159,7 +161,7 @@ static size_t	s_SockRecvSched = 1;	/* possibly adjusted later */
  * -------------------------------------------------------------------
  */
 static HANDLE hIoCompletionThread;
-static UINT   tidCompletionThread;
+static UINT tidCompletionThread;
 
 /*
  * - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -173,152 +175,155 @@ static UINT   tidCompletionThread;
  */
 static unsigned WINAPI
 iocompletionthread(
-	void *NotUsed
-	)
+    void* NotUsed)
 {
-	DWORD		err;
-	DWORD		octets;
-	ULONG_PTR	key;
-	OVERLAPPED *	pol;
-	IoCtx_t *	lpo;
+    DWORD err;
+    DWORD octets;
+    ULONG_PTR key;
+    OVERLAPPED* pol;
+    IoCtx_t* lpo;
 
-	UNUSED_ARG(NotUsed);
+    UNUSED_ARG(NotUsed);
 
-	/* Socket and refclock receive call gettimeofday() so the I/O
-	 * thread needs to be on the same processor as the main and
-	 * timing threads to ensure consistent QueryPerformanceCounter()
-	 * results, if we are interpolating the clock (pre-Win8).
-	 *
-	 * This gets seriously into the way of efficient thread pooling
-	 * on multi-core systems.
-	 */
-	lock_thread_to_processor(GetCurrentThread());
+    /* Socket and refclock receive call gettimeofday() so the I/O
+     * thread needs to be on the same processor as the main and
+     * timing threads to ensure consistent QueryPerformanceCounter()
+     * results, if we are interpolating the clock (pre-Win8).
+     *
+     * This gets seriously into the way of efficient thread pooling
+     * on multi-core systems.
+     */
+    lock_thread_to_processor(GetCurrentThread());
 
-	/* Set the thread priority high enough so I/O will pre-empt
-	 * normal recv packet processing, but not higher than the timer
-	 * sync thread.
-	 */
-	if (!SetThreadPriority(GetCurrentThread(),
-			       THREAD_PRIORITY_ABOVE_NORMAL))
-		msyslog(LOG_ERR, "Can't set thread priority: %m");
+    /* Set the thread priority high enough so I/O will pre-empt
+     * normal recv packet processing, but not higher than the timer
+     * sync thread.
+     */
+    if (!SetThreadPriority(GetCurrentThread(),
+                           THREAD_PRIORITY_ABOVE_NORMAL))
+        msyslog(LOG_ERR, "Can't set thread priority: %m");
 
-	for(;;) {
-		if (GetQueuedCompletionStatus(
-					hndIOCPLPort, 
-					&octets, 
-					&key, 
-					&pol, 
-					INFINITE)) {
-			err = ERROR_SUCCESS;
-		} else {
-			err = GetLastError();
-		}
-		if (pol == NULL) {
-			DPRINTF(2, ("Overlapped IO Thread Exiting\n"));
-			break; /* fail */
-		}
-		lpo = CONTAINEROF(pol, IoCtx_t, ol);
-		get_systime(&lpo->aux.RecvTime);
-		lpo->byteCount = octets;
-		lpo->errCode = err;
-		handler_calls++;
-		(*lpo->onIoDone)(key, lpo);
-	}
+    for (;;)
+    {
+        if (GetQueuedCompletionStatus(
+                hndIOCPLPort,
+                &octets,
+                &key,
+                &pol,
+                INFINITE))
+        {
+            err = ERROR_SUCCESS;
+        }
+        else
+        {
+            err = GetLastError();
+        }
+        if (pol == NULL)
+        {
+            DPRINTF(2, ("Overlapped IO Thread Exiting\n"));
+            break; /* fail */
+        }
+        lpo = CONTAINEROF(pol, IoCtx_t, ol);
+        get_systime(&lpo->aux.RecvTime);
+        lpo->byteCount = octets;
+        lpo->errCode = err;
+        handler_calls++;
+        (*lpo->onIoDone)(key, lpo);
+    }
 
-	return 0;
+    return 0;
 }
 
 /*
  * -------------------------------------------------------------------
  * Create/initialise the I/O creation port
  */
-void
-init_io_completion_port(void)
+void init_io_completion_port(void)
 {
-	FARPROC		pfn;
-	HANDLE		hNotify;
-	HANDLE		hDll;
+    FARPROC pfn;
+    HANDLE hNotify;
+    HANDLE hDll;
 
-#   ifdef DEBUG
-	atexit(&free_io_completion_port_mem);
-#   endif
+#ifdef DEBUG
+    atexit(&free_io_completion_port_mem);
+#endif
 
-	/* For Windows Vista and above, schedule more than one receive */
-	if (isc_win32os_versioncheck(6, 0, 0, 0) >= 0) {
-		s_SockRecvSched = 4;
-	}
+    /* For Windows Vista and above, schedule more than one receive */
+    if (isc_win32os_versioncheck(6, 0, 0, 0) >= 0)
+    {
+        s_SockRecvSched = 4;
+    }
 
-	/* Create the context pool first. */
-	IOCPLPoolInit(20);
+    /* Create the context pool first. */
+    IOCPLPoolInit(20);
 
-	/* Signal I/O ready */
-	WaitableIoEventHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
+    /* Signal I/O ready */
+    WaitableIoEventHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	/* Signal an exit request */
-	WaitableExitEventHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
+    /* Signal an exit request */
+    WaitableExitEventHandle = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	/* Signal a pps wakeup for attaching */
-	hMainRpcDone = CreateEvent(NULL, FALSE, FALSE, NULL);
+    /* Signal a pps wakeup for attaching */
+    hMainRpcDone = CreateEvent(NULL, FALSE, FALSE, NULL);
 
-	/* Create the IO completion port */
-	hndIOCPLPort = CreateIoCompletionPort(
-		INVALID_HANDLE_VALUE, NULL, 0, 0);
+    /* Create the IO completion port */
+    hndIOCPLPort = CreateIoCompletionPort(
+        INVALID_HANDLE_VALUE, NULL, 0, 0);
 
-	INSIST(    NULL != WaitableIoEventHandle
-		&& NULL != WaitableExitEventHandle
-		&& NULL != hMainRpcDone
-		&& NULL != hndIOCPLPort);
+    INSIST(NULL != WaitableIoEventHandle && NULL != WaitableExitEventHandle && NULL != hMainRpcDone && NULL != hndIOCPLPort);
 
-	/* Initialize the Wait Handles table */
-	WaitHandles[0U] = WaitableTimerHandle;
-	WaitHandles[1U] = WaitableExitEventHandle; /* exit request */
-	WaitHandles[2U] = WaitableIoEventHandle;
-	ActiveWaitHandles = 3;
+    /* Initialize the Wait Handles table */
+    WaitHandles[0U] = WaitableTimerHandle;
+    WaitHandles[1U] = WaitableExitEventHandle; /* exit request */
+    WaitHandles[2U] = WaitableIoEventHandle;
+    ActiveWaitHandles = 3;
 
-	/* Supply ntp_worker.c with function to add or remove a
-	 * semaphore to the ntpd I/O loop which is signalled by a worker
-	 * when a response is ready.  The callback is invoked in the
-	 * parent.
-	 */
-	addremove_io_semaphore = &ntpd_addremove_semaphore;
+    /* Supply ntp_worker.c with function to add or remove a
+     * semaphore to the ntpd I/O loop which is signalled by a worker
+     * when a response is ready.  The callback is invoked in the
+     * parent.
+     */
+    addremove_io_semaphore = &ntpd_addremove_semaphore;
 
-	/* Avoid periodic endpoint scans if we are getting change notifications */
-	hDll = LoadLibrary("iphlpapi");
-	pfn = GetProcAddress(hDll, "NotifyIpInterfaceChange");
-	if (NULL != pfn) {
-		pNotifyIpInterfaceChange = (NotifyIpInterfaceChange_ptr)pfn;
-		hNotify = NULL;
-		(*pNotifyIpInterfaceChange)(
-			AF_UNSPEC,
-			&IpInterfaceChangedCallback,
-			NULL,
-			FALSE,
-			&hNotify
-			);
-		if (NULL != hNotify) {
-			/* some systems get notifications minutes to hours late */
-			/* no_periodic_scan = TRUE; */
-		}
-	}
+    /* Avoid periodic endpoint scans if we are getting change notifications */
+    hDll = LoadLibrary("iphlpapi");
+    pfn = GetProcAddress(hDll, "NotifyIpInterfaceChange");
+    if (NULL != pfn)
+    {
+        pNotifyIpInterfaceChange = (NotifyIpInterfaceChange_ptr)pfn;
+        hNotify = NULL;
+        (*pNotifyIpInterfaceChange)(
+            AF_UNSPEC,
+            &IpInterfaceChangedCallback,
+            NULL,
+            FALSE,
+            &hNotify);
+        if (NULL != hNotify)
+        {
+            /* some systems get notifications minutes to hours late */
+            /* no_periodic_scan = TRUE; */
+        }
+    }
 
-	/* Create a true handle for the main thread (APC processing) */
-	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
-		GetCurrentProcess(), &hMainThread,
-		0, FALSE, DUPLICATE_SAME_ACCESS);
+    /* Create a true handle for the main thread (APC processing) */
+    DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+                    GetCurrentProcess(), &hMainThread,
+                    0, FALSE, DUPLICATE_SAME_ACCESS);
 
-	/* Have one thread servicing I/O. See rationale in front matter. */
-	hIoCompletionThread = (HANDLE)_beginthreadex(
-		NULL, 
-		0, 
-		iocompletionthread, 
-		NULL, 
-		CREATE_SUSPENDED,
-		&tidCompletionThread);
-	if (NULL != pSetThreadDescription) {
-		(*pSetThreadDescription)(hIoCompletionThread, L"ntp_iocp");
-		(*pSetThreadDescription)(hMainThread, L"ntp_main");
-	}
-	ResumeThread(hIoCompletionThread);
+    /* Have one thread servicing I/O. See rationale in front matter. */
+    hIoCompletionThread = (HANDLE)_beginthreadex(
+        NULL,
+        0,
+        iocompletionthread,
+        NULL,
+        CREATE_SUSPENDED,
+        &tidCompletionThread);
+    if (NULL != pSetThreadDescription)
+    {
+        (*pSetThreadDescription)(hIoCompletionThread, L"ntp_iocp");
+        (*pSetThreadDescription)(hMainThread, L"ntp_main");
+    }
+    ResumeThread(hIoCompletionThread);
 }
 
 
@@ -326,47 +331,48 @@ init_io_completion_port(void)
  * -------------------------------------------------------------------
  * completion port teardown
  */
-void
-uninit_io_completion_port(
-	void
-	)
+void uninit_io_completion_port(
+    void)
 {
-	DWORD	rc;
+    DWORD rc;
 
-	/* do noting if completion port already gone. */
-	if (hndIOCPLPort == NULL)
-		return;
+    /* do noting if completion port already gone. */
+    if (hndIOCPLPort == NULL)
+        return;
 
-	/* Service thread seems running. Terminate him with grace
-	 * first and force later...
-	 */
-	if (tidCompletionThread != GetCurrentThreadId()) {
-		PostQueuedCompletionStatus(hndIOCPLPort, 0, 0, 0);
-		rc = WaitForSingleObject(hIoCompletionThread, 5000);
-		if (rc == WAIT_TIMEOUT) {
-			/* Thread lost. Kill off with TerminateThread. */
-			msyslog(LOG_ERR,
-				"IO completion thread refuses to terminate");
-			TerminateThread(hIoCompletionThread, 0);
-		}
-	}
+    /* Service thread seems running. Terminate him with grace
+     * first and force later...
+     */
+    if (tidCompletionThread != GetCurrentThreadId())
+    {
+        PostQueuedCompletionStatus(hndIOCPLPort, 0, 0, 0);
+        rc = WaitForSingleObject(hIoCompletionThread, 5000);
+        if (rc == WAIT_TIMEOUT)
+        {
+            /* Thread lost. Kill off with TerminateThread. */
+            msyslog(LOG_ERR,
+                    "IO completion thread refuses to terminate");
+            TerminateThread(hIoCompletionThread, 0);
+        }
+    }
 
-	/* close the additional main thread handle */
-	if (hMainThread) {
-		CloseHandle(hMainThread);
-		hMainThread = NULL;
-	}
+    /* close the additional main thread handle */
+    if (hMainThread)
+    {
+        CloseHandle(hMainThread);
+        hMainThread = NULL;
+    }
 
-	/* stop using the memory pool */
-	IOCPLPoolDone();
+    /* stop using the memory pool */
+    IOCPLPoolDone();
 
-	/* now reap all handles... */
-	CloseHandle(hIoCompletionThread);
-	hIoCompletionThread = NULL;
-	CloseHandle(hndIOCPLPort);
-	hndIOCPLPort = NULL;
-	CloseHandle(hMainRpcDone);
-	hMainRpcDone = NULL;
+    /* now reap all handles... */
+    CloseHandle(hIoCompletionThread);
+    hIoCompletionThread = NULL;
+    CloseHandle(hndIOCPLPort);
+    hndIOCPLPort = NULL;
+    CloseHandle(hMainRpcDone);
+    hMainRpcDone = NULL;
 }
 
 
@@ -377,16 +383,15 @@ uninit_io_completion_port(
  */
 void WINAPI
 IpInterfaceChangedCallback(
-	PVOID ctx,
-	PVOID row,
-	MIB_NOTIF_TYPE type
-)
+    PVOID ctx,
+    PVOID row,
+    MIB_NOTIF_TYPE type)
 {
-	UNUSED_ARG(ctx);
-	UNUSED_ARG(row);
-	UNUSED_ARG(type);
+    UNUSED_ARG(ctx);
+    UNUSED_ARG(row);
+    UNUSED_ARG(type);
 
-	QueueUserAPC(&ip_interface_changed, hMainThread, 0);
+    QueueUserAPC(&ip_interface_changed, hMainThread, 0);
 }
 
 
@@ -399,17 +404,20 @@ IpInterfaceChangedCallback(
 void WINAPI
 ip_interface_changed(ULONG_PTR ctx)
 {
-	static u_long last_scan;
+    static u_long last_scan;
 
-	UNUSED_ARG(ctx);
+    UNUSED_ARG(ctx);
 
-	/* delay by a few seconds if we just rescanned */
-	if (current_time - last_scan > 1) {
-		endpt_scan_timer = current_time + 1;
-	} else {
-		endpt_scan_timer = current_time + 3;
-	}
-	last_scan = current_time;
+    /* delay by a few seconds if we just rescanned */
+    if (current_time - last_scan > 1)
+    {
+        endpt_scan_timer = current_time + 1;
+    }
+    else
+    {
+        endpt_scan_timer = current_time + 3;
+    }
+    last_scan = current_time;
 }
 
 
@@ -422,48 +430,52 @@ ip_interface_changed(ULONG_PTR ctx)
  *  - This function must only be called from the main thread. Changing
  *    a set of wait handles while someone is waiting on it creates
  *    undefined behaviour. Also there's no provision for mutual
- *    exclusion when accessing global values. 
+ *    exclusion when accessing global values.
  *
  *  - It's not possible to register a handle that is already in the table.
  */
 static void
 ntpd_addremove_semaphore(
-	sem_ref	sem,
-	int	remove
-	)
+    sem_ref sem,
+    int remove)
 {
-	DWORD	hi;
-	HANDLE	hnd;
+    DWORD hi;
+    HANDLE hnd;
 
-	INSIST(NULL != sem);
-	hnd = sem->shnd;
+    INSIST(NULL != sem);
+    hnd = sem->shnd;
 
-	/* search for a matching entry first. */
-	for (hi = 3; hi < ActiveWaitHandles; hi++)
-		if (hnd == WaitHandles[hi])
-			break;
+    /* search for a matching entry first. */
+    for (hi = 3; hi < ActiveWaitHandles; hi++)
+        if (hnd == WaitHandles[hi])
+            break;
 
-	if (remove) {
-		/* If found, eventually swap with last entry to keep
-		 * the table dense.
-		 */
-		if (hi < ActiveWaitHandles) {
-			ActiveWaitHandles--;
-			if (hi < ActiveWaitHandles)
-				WaitHandles[hi] =
-				    WaitHandles[ActiveWaitHandles];
-			WaitHandles[ActiveWaitHandles] = NULL;
-		}
-	} else {
-		/* Make sure the entry is not found and there is enough
-		 * room, then append to the table array.
-		 */
-		if (hi >= ActiveWaitHandles) {
-			INSIST(ActiveWaitHandles < COUNTOF(WaitHandles));
-			WaitHandles[ActiveWaitHandles] = hnd;
-			ActiveWaitHandles++;
-		}
-	}
+    if (remove)
+    {
+        /* If found, eventually swap with last entry to keep
+         * the table dense.
+         */
+        if (hi < ActiveWaitHandles)
+        {
+            ActiveWaitHandles--;
+            if (hi < ActiveWaitHandles)
+                WaitHandles[hi] =
+                    WaitHandles[ActiveWaitHandles];
+            WaitHandles[ActiveWaitHandles] = NULL;
+        }
+    }
+    else
+    {
+        /* Make sure the entry is not found and there is enough
+         * room, then append to the table array.
+         */
+        if (hi >= ActiveWaitHandles)
+        {
+            INSIST(ActiveWaitHandles < COUNTOF(WaitHandles));
+            WaitHandles[ActiveWaitHandles] = hnd;
+            ActiveWaitHandles++;
+        }
+    }
 }
 
 
@@ -471,32 +483,30 @@ ntpd_addremove_semaphore(
 static void
 free_io_completion_port_mem(void)
 {
-	/* At the moment, do absolutely nothing. Returning memory here
-	 * requires NO PENDING OVERLAPPED OPERATIONS AT ALL at this
-	 * point in time, and as long we cannot be reasonable sure about
-	 * that the simple advice is:
-	 *
-	 * HANDS OFF!
-	 */
+    /* At the moment, do absolutely nothing. Returning memory here
+     * requires NO PENDING OVERLAPPED OPERATIONS AT ALL at this
+     * point in time, and as long we cannot be reasonable sure about
+     * that the simple advice is:
+     *
+     * HANDS OFF!
+     */
 }
-#endif	/* DEBUG */
+#endif /* DEBUG */
 
-void
-iocpl_notify(
-	IoHndPad_T *	iopad,
-	IoCompleteFunc	pfunc,
-	UINT_PTR	fdn
-	)
+void iocpl_notify(
+    IoHndPad_T* iopad,
+    IoCompleteFunc pfunc,
+    UINT_PTR fdn)
 {
-	IoCtx_t	xf;
+    IoCtx_t xf;
 
-	memset(&xf, 0, sizeof(xf));
-	xf.iopad    = iopad;
-	xf.ppswake  = hMainRpcDone;
-	xf.onIoDone = pfunc;
-	xf.io.sfd   = fdn;
-	PostQueuedCompletionStatus(hndIOCPLPort, 1, 0, &xf.ol);
-	WaitForSingleObject(xf.ppswake, INFINITE);
+    memset(&xf, 0, sizeof(xf));
+    xf.iopad = iopad;
+    xf.ppswake = hMainRpcDone;
+    xf.onIoDone = pfunc;
+    xf.io.sfd = fdn;
+    PostQueuedCompletionStatus(hndIOCPLPort, 1, 0, &xf.ol);
+    WaitForSingleObject(xf.ppswake, INFINITE);
 }
 
 /*
@@ -509,18 +519,18 @@ iocpl_notify(
  */
 static void WINAPI
 apcOnUnexpectedNetworkError(
-	ULONG_PTR arg
-	)
+    ULONG_PTR arg)
 {
-	static u_long earliest_rescan_time;
+    static u_long earliest_rescan_time;
 
-	UNUSED_ARG(arg);
+    UNUSED_ARG(arg);
 
-	if (earliest_rescan_time < current_time) {
-		endpt_scan_timer = current_time;
-		earliest_rescan_time = current_time + SECSPERMIN - 1;
-	}
-	DPRINTF(4, ("UnexpectedNetworkError: interface may be down\n"));
+    if (earliest_rescan_time < current_time)
+    {
+        endpt_scan_timer = current_time;
+        earliest_rescan_time = current_time + SECSPERMIN - 1;
+    }
+    DPRINTF(4, ("UnexpectedNetworkError: interface may be down\n"));
 }
 
 
@@ -530,31 +540,30 @@ apcOnUnexpectedNetworkError(
  *
  * -------------------------------------------------------------------
  */
-extern char * NTstrerror(int err, BOOL *bfreebuf);
+extern char* NTstrerror(int err, BOOL* bfreebuf);
 
 static void
 LogIoError(
-	const char *	msg,
-	HANDLE		hnd,
-	DWORD		err
-	)
+    const char* msg,
+    HANDLE hnd,
+    DWORD err)
 {
-	static const char * const rmsg =
-		"LogIoError (unknown source)";
+    static const char* const rmsg =
+        "LogIoError (unknown source)";
 
-	/* -*- format & print the error message -*-
-	 * We have to resort to the low level error formatting functions
-	 * here, since the error code can come from an overlapped result.
-	 * Relying the value to be the same as the 'GetLastError()'
-	 * result at this point of execution is shaky at best, and using
-	 * 'SetLastError()' to force it seems too nasty.
-	 */
-	BOOL   dynbuf = FALSE;
-	char * msgbuf = NTstrerror(err, &dynbuf);
-	msyslog(LOG_ERR, "%s: hnd=%p, err=%u, '%s'",
-		(msg ? msg : rmsg), hnd, err, msgbuf);
-	if (dynbuf)
-		LocalFree(msgbuf);
+    /* -*- format & print the error message -*-
+     * We have to resort to the low level error formatting functions
+     * here, since the error code can come from an overlapped result.
+     * Relying the value to be the same as the 'GetLastError()'
+     * result at this point of execution is shaky at best, and using
+     * 'SetLastError()' to force it seems too nasty.
+     */
+    BOOL dynbuf = FALSE;
+    char* msgbuf = NTstrerror(err, &dynbuf);
+    msyslog(LOG_ERR, "%s: hnd=%p, err=%u, '%s'",
+            (msg ? msg : rmsg), hnd, err, msgbuf);
+    if (dynbuf)
+        LocalFree(msgbuf);
 }
 
 /* -------------------------------------------------------------------
@@ -563,39 +572,40 @@ LogIoError(
  */
 static BOOL
 IoResultCheck(
-	DWORD		err,
-	IoCtx_t * 	ctx,
-	const char *	msg
-	)
+    DWORD err,
+    IoCtx_t* ctx,
+    const char* msg)
 {
-	DPRINTF(6, ("in IoResultCheck err = %d\n", err));
+    DPRINTF(6, ("in IoResultCheck err = %d\n", err));
 
-	switch (err) {
-		/* The first ones are no real errors. */
-	case ERROR_SUCCESS:	/* all is good */
-	case ERROR_IO_PENDING:	/* callback pending */
-		break;
+    switch (err)
+    {
+        /* The first ones are no real errors. */
+    case ERROR_SUCCESS:    /* all is good */
+    case ERROR_IO_PENDING: /* callback pending */
+        break;
 
-		/* this defers the error processing to the main thread
-		 * and continues silently.
-		 */
-	case ERROR_UNEXP_NET_ERR:
-		if (hMainThread) {
-			QueueUserAPC(apcOnUnexpectedNetworkError,
-				hMainThread, ctx->io.sfd);
-		}
-		IoCtxRelease(ctx);
-		return FALSE;
+        /* this defers the error processing to the main thread
+         * and continues silently.
+         */
+    case ERROR_UNEXP_NET_ERR:
+        if (hMainThread)
+        {
+            QueueUserAPC(apcOnUnexpectedNetworkError,
+                         hMainThread, ctx->io.sfd);
+        }
+        IoCtxRelease(ctx);
+        return FALSE;
 
-	default:
-		LogIoError(msg, ctx->io.hnd, err);
-		/* the next ones go silently -- only clean-up is done */
-	case ERROR_INVALID_PARAMETER:	/* handle already closed (clock)*/
-	case WSAENOTSOCK	    :	/* handle already closed (socket)*/
-		IoCtxRelease(ctx);
-		return FALSE;
-	}
-	return TRUE;
+    default:
+        LogIoError(msg, ctx->io.hnd, err);
+        /* the next ones go silently -- only clean-up is done */
+    case ERROR_INVALID_PARAMETER: /* handle already closed (clock)*/
+    case WSAENOTSOCK:             /* handle already closed (socket)*/
+        IoCtxRelease(ctx);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 /* -------------------------------------------------------------------
@@ -606,41 +616,43 @@ IoResultCheck(
  */
 static RIO_t*
 getRioFromIoCtx(
-	IoCtx_t *	ctx,
-	ULONG_PTR	key,
-	const char *	msg
-	)
+    IoCtx_t* ctx,
+    ULONG_PTR key,
+    const char* msg)
 {
-	/* Make sure the key matches the context info in the shared
-	 * lock, the check for errors. If the error indicates the
-	 * operation was cancelled, let the operation fail silently.
-	 */
-	RIO_t *		rio   = NULL;
-	IoHndPad_T *	iopad = ctx->iopad;
-	if (NULL != iopad) {
-		rio = iopad->rsrc.rio;
-		if (key != iopad->rsrc.key)
-			rio = NULL;
-		else if (ctx->io.hnd != iopad->handles[0U])
-			rio = NULL;
-	}
-	if (rio != NULL) switch (ctx->errCode) {
-		/* When we got cancelled, don't spill messages */
-	case ERROR_INVALID_PARAMETER:	/* handle already closed (clock) */
-	case ERROR_OPERATION_ABORTED:	/* handle closed while wait      */
-	case WSAENOTSOCK:	/* handle already closed (sock?) */
-		ctx->errCode = ERROR_SUCCESS;
-		rio = NULL;
-	case ERROR_SUCCESS:		/* all is good */
-		break;
-	default:
-		/* log error, but return -- caller has to handle this! */
-		LogIoError(msg, ctx->io.hnd, ctx->errCode);
-		break;
-	}
-	if (rio == NULL)
-		IoCtxRelease(ctx);
-	return rio;
+    /* Make sure the key matches the context info in the shared
+     * lock, the check for errors. If the error indicates the
+     * operation was cancelled, let the operation fail silently.
+     */
+    RIO_t* rio = NULL;
+    IoHndPad_T* iopad = ctx->iopad;
+    if (NULL != iopad)
+    {
+        rio = iopad->rsrc.rio;
+        if (key != iopad->rsrc.key)
+            rio = NULL;
+        else if (ctx->io.hnd != iopad->handles[0U])
+            rio = NULL;
+    }
+    if (rio != NULL)
+        switch (ctx->errCode)
+        {
+            /* When we got cancelled, don't spill messages */
+        case ERROR_INVALID_PARAMETER: /* handle already closed (clock) */
+        case ERROR_OPERATION_ABORTED: /* handle closed while wait      */
+        case WSAENOTSOCK:             /* handle already closed (sock?) */
+            ctx->errCode = ERROR_SUCCESS;
+            rio = NULL;
+        case ERROR_SUCCESS: /* all is good */
+            break;
+        default:
+            /* log error, but return -- caller has to handle this! */
+            LogIoError(msg, ctx->io.hnd, ctx->errCode);
+            break;
+        }
+    if (rio == NULL)
+        IoCtxRelease(ctx);
+    return rio;
 }
 
 /* -------------------------------------------------------------------
@@ -651,99 +663,99 @@ getRioFromIoCtx(
  */
 static endpt*
 getEndptFromIoCtx(
-	IoCtx_t *	ctx,
-	ULONG_PTR	key
-	)
+    IoCtx_t* ctx,
+    ULONG_PTR key)
 {
-	/* Make sure the key matches the context info in the shared
-	 * lock, then check for errors. If the error indicates the
-	 * operation was cancelled, let the operation fail silently.
-	 *
-	 * !Note! Since we use the lowest bit of the key to distinguish
-	 * between regular and broadcast socket, we must make sure the
-	 * LSB is not used in the reverse-link check. Hence we shift
-	 * it out in both the input key and the registered source.
-	 */
-	endpt *		ep    = NULL;
-	IoHndPad_T *	iopad = ctx->iopad;
-	if (iopad != NULL) {
-		ep = iopad->rsrc.ept;
-		if ((key >> 1) != (iopad->rsrc.key >> 1))
-			ep = NULL;
-		else if (ctx->io.hnd != iopad->handles[key & 1])
-			ep = NULL;
-	}
-	if (ep == NULL)
-		IoCtxRelease(ctx);
-	return ep;
+    /* Make sure the key matches the context info in the shared
+     * lock, then check for errors. If the error indicates the
+     * operation was cancelled, let the operation fail silently.
+     *
+     * !Note! Since we use the lowest bit of the key to distinguish
+     * between regular and broadcast socket, we must make sure the
+     * LSB is not used in the reverse-link check. Hence we shift
+     * it out in both the input key and the registered source.
+     */
+    endpt* ep = NULL;
+    IoHndPad_T* iopad = ctx->iopad;
+    if (iopad != NULL)
+    {
+        ep = iopad->rsrc.ept;
+        if ((key >> 1) != (iopad->rsrc.key >> 1))
+            ep = NULL;
+        else if (ctx->io.hnd != iopad->handles[key & 1])
+            ep = NULL;
+    }
+    if (ep == NULL)
+        IoCtxRelease(ctx);
+    return ep;
 }
 
 
 static int
 socketErrorCheck(
-	IoCtx_t *	ctx,
-	const char *	msg
-	)
+    IoCtx_t* ctx,
+    const char* msg)
 {
-	int oval, olen; /* getsockopt params */
-	int retCode;
+    int oval, olen; /* getsockopt params */
+    int retCode;
 
-	switch (ctx->errCode) {
-	case ERROR_SUCCESS:		/* all is good */
-		retCode = PKT_OK;
-		break;
-	case ERROR_UNEXP_NET_ERR:
-		if (hMainThread)
-			QueueUserAPC(apcOnUnexpectedNetworkError,
-				hMainThread, ctx->io.sfd);
-	case ERROR_INVALID_PARAMETER:	/* handle already closed (clock?)*/
-	case ERROR_OPERATION_ABORTED:	/* handle closed while wait      */
-	case WSAENOTSOCK            :	/* handle already closed (sock)  */
-		retCode = PKT_SOCKET_ERROR;
-		break;
+    switch (ctx->errCode)
+    {
+    case ERROR_SUCCESS: /* all is good */
+        retCode = PKT_OK;
+        break;
+    case ERROR_UNEXP_NET_ERR:
+        if (hMainThread)
+            QueueUserAPC(apcOnUnexpectedNetworkError,
+                         hMainThread, ctx->io.sfd);
+    case ERROR_INVALID_PARAMETER: /* handle already closed (clock?)*/
+    case ERROR_OPERATION_ABORTED: /* handle closed while wait      */
+    case WSAENOTSOCK:             /* handle already closed (sock)  */
+        retCode = PKT_SOCKET_ERROR;
+        break;
 
-	/* [Bug 3019] is hard to squash.
-	 * We should not get this, but we do, unfortunately. Obviously
-	 * Windows insists in terminating one overlapped I/O request
-	 * when it receives a TTL-expired ICMP message, and since the
-	 * write that caused it is long finished, this unfortunately
-	 * hits the pending receive.
-	 *
-	 * The only way out seems to be to silently ignore this error
-	 * and restart another round, in the hope this condition does
-	 * not prevail. Clear any pending socket level errors, too.
-	 */
-	case ERROR_HOST_UNREACHABLE:
-		oval = 0;
-		olen = sizeof(oval);
-		getsockopt(ctx->io.sfd, SOL_SOCKET, SO_ERROR, (void *)&oval, &olen);
-		retCode = PKT_DROP;
-		break;
+    /* [Bug 3019] is hard to squash.
+     * We should not get this, but we do, unfortunately. Obviously
+     * Windows insists in terminating one overlapped I/O request
+     * when it receives a TTL-expired ICMP message, and since the
+     * write that caused it is long finished, this unfortunately
+     * hits the pending receive.
+     *
+     * The only way out seems to be to silently ignore this error
+     * and restart another round, in the hope this condition does
+     * not prevail. Clear any pending socket level errors, too.
+     */
+    case ERROR_HOST_UNREACHABLE:
+        oval = 0;
+        olen = sizeof(oval);
+        getsockopt(ctx->io.sfd, SOL_SOCKET, SO_ERROR, (void*)&oval, &olen);
+        retCode = PKT_DROP;
+        break;
 
-	/* [Bug 3110] On POSIX systems, reading UDP data into too small
-	 * a buffers silently truncates the message. Under Windows the
-	 * data is also truncated, but it blarts loudly about that.
-	 * Just pretend all is well, and all will be well.
-	 *
-	 * Note: We accept the truncated packet -- this is consistent with the
-	 * POSIX / UNIX case where we have no notification about this at all.
-	 */
-	case ERROR_MORE_DATA:		/* Too Much data for Buffer	 */
-	case WSAEMSGSIZE:
-		retCode = PKT_OK; /* or PKT_DROP ??? */
-		break;
+    /* [Bug 3110] On POSIX systems, reading UDP data into too small
+     * a buffers silently truncates the message. Under Windows the
+     * data is also truncated, but it blarts loudly about that.
+     * Just pretend all is well, and all will be well.
+     *
+     * Note: We accept the truncated packet -- this is consistent with the
+     * POSIX / UNIX case where we have no notification about this at all.
+     */
+    case ERROR_MORE_DATA: /* Too Much data for Buffer	 */
+    case WSAEMSGSIZE:
+        retCode = PKT_OK; /* or PKT_DROP ??? */
+        break;
 
-	/* For any other error, log the error, clear the byte count, but
-	 * return the endpoint. This prevents processing the packet and
-	 * keeps the read-chain running -- otherwise NTPD will play
-	 * dead duck!
-	 */
-	default:
-		LogIoError(msg, ctx->io.hnd, ctx->errCode);
-		retCode = PKT_DROP;
-		break;
-	}
-	return retCode;
+    /* For any other error, log the error, clear the byte count, but
+     * return the endpoint. This prevents processing the packet and
+     * keeps the read-chain running -- otherwise NTPD will play
+     * dead duck!
+     */
+    default:
+        LogIoError(msg, ctx->io.hnd, ctx->errCode);
+        retCode = PKT_DROP;
+        break;
+    }
+    return retCode;
 }
 
 /*
@@ -777,134 +789,145 @@ socketErrorCheck(
 
 static BOOL __fastcall
 QueueSerialWait(
-	IoCtx_t *	lpo,
-	recvbuf_t *	buff
-	)
+    IoCtx_t* lpo,
+    recvbuf_t* buff)
 {
-	static const char * const msgh =
-		"QueueSerialWait: cannot wait for COM event";
+    static const char* const msgh =
+        "QueueSerialWait: cannot wait for COM event";
 
-	BOOL	rc;
+    BOOL rc;
 
-	lpo->onIoDone = OnSerialWaitComplete;
-	lpo->recv_buf = buff;
-	lpo->flRawMem = 0;
+    lpo->onIoDone = OnSerialWaitComplete;
+    lpo->recv_buf = buff;
+    lpo->flRawMem = 0;
 
-	buff->fd = lpo->iopad->riofd;
-	/* keep receive position for continuation of partial lines! */
-	rc  = WaitCommEvent(lpo->io.hnd, &lpo->aux.com_events, &lpo->ol);
-	return rc || IoResultCheck(GetLastError(), lpo, msgh);
+    buff->fd = lpo->iopad->riofd;
+    /* keep receive position for continuation of partial lines! */
+    rc = WaitCommEvent(lpo->io.hnd, &lpo->aux.com_events, &lpo->ol);
+    return rc || IoResultCheck(GetLastError(), lpo, msgh);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - */
 
-static void 
+static void
 OnSerialWaitComplete(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	static const char * const msgh =
-		"OnSerialWaitComplete: wait for COM event failed";
+    static const char* const msgh =
+        "OnSerialWaitComplete: wait for COM event failed";
 
-	DevCtx_t *	dev;
-	PPSDataEx_t *	ppsbuf;
-	DWORD 		modem_status;
-	u_long		covc;
+    DevCtx_t* dev;
+    PPSDataEx_t* ppsbuf;
+    DWORD modem_status;
+    u_long covc;
 
-	/* Make sure this RIO is not closed. */
-	if (NULL == getRioFromIoCtx(lpo, key, msgh))
-		return;
+    /* Make sure this RIO is not closed. */
+    if (NULL == getRioFromIoCtx(lpo, key, msgh))
+        return;
 
-	/* start next IO and leave if we hit an error */
-	if (lpo->errCode != ERROR_SUCCESS) {
-		memset(&lpo->aux, 0, sizeof(lpo->aux));
-		IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
-		return;
-	}
+    /* start next IO and leave if we hit an error */
+    if (lpo->errCode != ERROR_SUCCESS)
+    {
+        memset(&lpo->aux, 0, sizeof(lpo->aux));
+        IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
+        return;
+    }
 
 #ifdef DEBUG
-	if (~(EV_RXFLAG | EV_RLSD | EV_RXCHAR) & lpo->aux.com_events) {
-		msyslog(LOG_ERR, "WaitCommEvent returned unexpected mask %x",
-			lpo->aux.com_events);
-		exit(-1);
-	}
+    if (~(EV_RXFLAG | EV_RLSD | EV_RXCHAR) & lpo->aux.com_events)
+    {
+        msyslog(LOG_ERR, "WaitCommEvent returned unexpected mask %x",
+                lpo->aux.com_events);
+        exit(-1);
+    }
 #endif
-	/* Take note of changes on DCD; 'user mode PPS hack'.
-	 * perlinger@ntp.org suggested a way of solving several problems
-	 * with this code that makes a lot of sense: move to a putative
-	 * dcdpps-ppsapi-provider.dll.
-	 *
-	 * perlinger@ntp.org: It came out as loopback-ppsapi-provider
-	 * (because it loops back into NTPD), but I had to maintain the
-	 * old hack for backward compatibility.
-	 */
-	if (EV_RLSD & lpo->aux.com_events) {
-		modem_status = 0;
-		GetCommModemStatus(lpo->io.hnd, &modem_status);
-		if (NULL != (dev = lpo->devCtx)) {
-			/* PPS-context available -- use it! */
-			if (MS_RLSD_ON & modem_status) {
-				dev->pps_data.cc_assert++;
-				dev->pps_data.ts_assert = lpo->aux.RecvTime;
-				DPRINTF(2, ("upps-real: fd %d DCD PPS Rise at %s\n",
-					lpo->iopad->rsrc.rio->fd,
-					ulfptoa(&lpo->aux.RecvTime, 6)));
-			} else {
-				dev->pps_data.cc_clear++;
-				dev->pps_data.ts_clear = lpo->aux.RecvTime;
-				DPRINTF(2, ("upps-real: fd %d DCD PPS Fall at %s\n",
-					lpo->iopad->rsrc.rio->fd,
-					ulfptoa(&lpo->aux.RecvTime, 6)));
-			}
-			/* Update PPS buffer, writing from low to high, with index
-			 * update as last action. We use interlocked ops and a
-			 * volatile data destination to avoid reordering on compiler
-			 * and CPU level. The interlocked instruction act as full
-			 * barriers -- we need only release semantics, but we don't
-			 * have them before VS2010.
-			 */
-			covc   = dev->cov_count + 1u;
-			ppsbuf = dev->pps_buff + (covc & PPS_QUEUE_MSK);
-			InterlockedExchange((PLONG)&ppsbuf->cov_count, covc);
-			ppsbuf->data = dev->pps_data;
-			InterlockedExchange((PLONG)&dev->cov_count, covc);
-		}
-		/* perlinger@ntp.org, 2012-11-19
-		 * It can be argued that once you have the PPS API active, you can
-		 * disable the old pps hack. This would give a behaviour that's much
-		 * more like the behaviour under a UN*Xish OS. On the other hand, it
-		 * will give a nasty surprise for people which have until now happily
-		 * taken the pps hack for granted, and after the first complaint, I have
-		 * decided to keep the old implementation.
-		 *
-		 * perlinger@ntp.org, 2017-03-04
-		 * If the loopback PPS API provider is active on this channel, the
-		 * PPS hack will be *disabled*.
-		 *
-		 * backward compat: 'usermode-pps-hack'
-		 */
-		if ((MS_RLSD_ON & modem_status) && !(dev && dev->pps_active)) {
-			lpo->aux.DCDSTime = lpo->aux.RecvTime;
-			lpo->aux.flTsDCDS = 1;
-			DPRINTF(2, ("upps-hack: fd %d DCD PPS Rise at %s\n",
-				lpo->iopad->rsrc.rio->fd,
-				ulfptoa(&lpo->aux.RecvTime, 6)));
-		}
-	}
+    /* Take note of changes on DCD; 'user mode PPS hack'.
+     * perlinger@ntp.org suggested a way of solving several problems
+     * with this code that makes a lot of sense: move to a putative
+     * dcdpps-ppsapi-provider.dll.
+     *
+     * perlinger@ntp.org: It came out as loopback-ppsapi-provider
+     * (because it loops back into NTPD), but I had to maintain the
+     * old hack for backward compatibility.
+     */
+    if (EV_RLSD & lpo->aux.com_events)
+    {
+        modem_status = 0;
+        GetCommModemStatus(lpo->io.hnd, &modem_status);
+        if (NULL != (dev = lpo->devCtx))
+        {
+            /* PPS-context available -- use it! */
+            if (MS_RLSD_ON & modem_status)
+            {
+                dev->pps_data.cc_assert++;
+                dev->pps_data.ts_assert = lpo->aux.RecvTime;
+                DPRINTF(2, ("upps-real: fd %d DCD PPS Rise at %s\n",
+                            lpo->iopad->rsrc.rio->fd,
+                            ulfptoa(&lpo->aux.RecvTime, 6)));
+            }
+            else
+            {
+                dev->pps_data.cc_clear++;
+                dev->pps_data.ts_clear = lpo->aux.RecvTime;
+                DPRINTF(2, ("upps-real: fd %d DCD PPS Fall at %s\n",
+                            lpo->iopad->rsrc.rio->fd,
+                            ulfptoa(&lpo->aux.RecvTime, 6)));
+            }
+            /* Update PPS buffer, writing from low to high, with index
+             * update as last action. We use interlocked ops and a
+             * volatile data destination to avoid reordering on compiler
+             * and CPU level. The interlocked instruction act as full
+             * barriers -- we need only release semantics, but we don't
+             * have them before VS2010.
+             */
+            covc = dev->cov_count + 1u;
+            ppsbuf = dev->pps_buff + (covc & PPS_QUEUE_MSK);
+            InterlockedExchange((PLONG)&ppsbuf->cov_count, covc);
+            ppsbuf->data = dev->pps_data;
+            InterlockedExchange((PLONG)&dev->cov_count, covc);
+        }
+        /* perlinger@ntp.org, 2012-11-19
+         * It can be argued that once you have the PPS API active, you can
+         * disable the old pps hack. This would give a behaviour that's much
+         * more like the behaviour under a UN*Xish OS. On the other hand, it
+         * will give a nasty surprise for people which have until now happily
+         * taken the pps hack for granted, and after the first complaint, I have
+         * decided to keep the old implementation.
+         *
+         * perlinger@ntp.org, 2017-03-04
+         * If the loopback PPS API provider is active on this channel, the
+         * PPS hack will be *disabled*.
+         *
+         * backward compat: 'usermode-pps-hack'
+         */
+        if ((MS_RLSD_ON & modem_status) && !(dev && dev->pps_active))
+        {
+            lpo->aux.DCDSTime = lpo->aux.RecvTime;
+            lpo->aux.flTsDCDS = 1;
+            DPRINTF(2, ("upps-hack: fd %d DCD PPS Rise at %s\n",
+                        lpo->iopad->rsrc.rio->fd,
+                        ulfptoa(&lpo->aux.RecvTime, 6)));
+        }
+    }
 
-	/* If IO ready, read data. Go back waiting else. */
-	if (EV_RXFLAG & lpo->aux.com_events) {		/* line discipline */
-		lpo->aux.FlagTime = lpo->aux.RecvTime;
-		lpo->aux.flTsFlag = 1;
-		IoCtxStartChecked(lpo, QueueSerialRead, lpo->recv_buf);
-	} else if (EV_RXCHAR & lpo->aux.com_events) {	/* raw discipline */
-		lpo->aux.FlagTime = lpo->aux.RecvTime;
-		lpo->aux.flTsFlag = 1;
-		IoCtxStartChecked(lpo, QueueRawSerialRead, lpo->recv_buf);
-	} else {					/* idle... */
-		IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
-	}
+    /* If IO ready, read data. Go back waiting else. */
+    if (EV_RXFLAG & lpo->aux.com_events)
+    { /* line discipline */
+        lpo->aux.FlagTime = lpo->aux.RecvTime;
+        lpo->aux.flTsFlag = 1;
+        IoCtxStartChecked(lpo, QueueSerialRead, lpo->recv_buf);
+    }
+    else if (EV_RXCHAR & lpo->aux.com_events)
+    { /* raw discipline */
+        lpo->aux.FlagTime = lpo->aux.RecvTime;
+        lpo->aux.flTsFlag = 1;
+        IoCtxStartChecked(lpo, QueueRawSerialRead, lpo->recv_buf);
+    }
+    else
+    { /* idle... */
+        IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
+    }
 }
 
 /*
@@ -916,30 +939,29 @@ OnSerialWaitComplete(
  */
 static BOOL __fastcall
 QueueSerialReadCommon(
-	IoCtx_t *	lpo,
-	recvbuf_t *	buff
-	)
+    IoCtx_t* lpo,
+    recvbuf_t* buff)
 {
-	static const char * const msgh =
-		"QueueSerialRead: cannot schedule device read";
+    static const char* const msgh =
+        "QueueSerialRead: cannot schedule device read";
 
-	BOOL	rc;
+    BOOL rc;
 
-	/* 'lpo->onIoDone' must be set already! */
-	lpo->recv_buf = buff;
-	lpo->flRawMem = 0;
+    /* 'lpo->onIoDone' must be set already! */
+    lpo->recv_buf = buff;
+    lpo->flRawMem = 0;
 
-	/* 'buff->recv_length' must be set already! */
-	buff->fd        = lpo->iopad->riofd;
-	buff->dstadr    = NULL;
-	buff->receiver  = &process_refclock_packet;
-	buff->recv_peer = lpo->iopad->rsrc.rio->srcclock;
+    /* 'buff->recv_length' must be set already! */
+    buff->fd = lpo->iopad->riofd;
+    buff->dstadr = NULL;
+    buff->receiver = &process_refclock_packet;
+    buff->recv_peer = lpo->iopad->rsrc.rio->srcclock;
 
-	rc = ReadFile(lpo->io.hnd,
-		(char *)buff->recv_buffer + buff->recv_length,
-		sizeof(buff->recv_buffer) - buff->recv_length,
-		NULL, &lpo->ol);
-	return rc || IoResultCheck(GetLastError(), lpo, msgh);
+    rc = ReadFile(lpo->io.hnd,
+                  (char*)buff->recv_buffer + buff->recv_length,
+                  sizeof(buff->recv_buffer) - buff->recv_length,
+                  NULL, &lpo->ol);
+    return rc || IoResultCheck(GetLastError(), lpo, msgh);
 }
 
 /*
@@ -958,13 +980,12 @@ QueueSerialReadCommon(
  */
 static BOOL __fastcall
 QueueSerialRead(
-	IoCtx_t *	lpo,
-	recvbuf_t *	buff
-	)
+    IoCtx_t* lpo,
+    recvbuf_t* buff)
 {
-	lpo->onIoDone = &OnSerialReadComplete;
-	/* keep 'buff->recv_length' for line continuation! */
-	return QueueSerialReadCommon(lpo, buff);
+    lpo->onIoDone = &OnSerialReadComplete;
+    /* keep 'buff->recv_length' for line continuation! */
+    return QueueSerialReadCommon(lpo, buff);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -973,36 +994,35 @@ QueueSerialRead(
  */
 static void
 OnSerialReadComplete(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	static const char * const msgh =
-		"OnSerialReadComplete: read from device failed";
+    static const char* const msgh =
+        "OnSerialReadComplete: read from device failed";
 
-	/* Make sure this RIO is not closed. */
-	if (NULL == getRioFromIoCtx(lpo, key, msgh))
-		return;
+    /* Make sure this RIO is not closed. */
+    if (NULL == getRioFromIoCtx(lpo, key, msgh))
+        return;
 
-	/* start next IO and leave if we hit an error */
-	if (lpo->errCode != ERROR_SUCCESS)
-		goto wait_again;
+    /* start next IO and leave if we hit an error */
+    if (lpo->errCode != ERROR_SUCCESS)
+        goto wait_again;
 
-	/* Offload to worker pool, if there is data */
-	if (lpo->byteCount == 0)
-		goto wait_again;
+    /* Offload to worker pool, if there is data */
+    if (lpo->byteCount == 0)
+        goto wait_again;
 
-	if (QueueUserWorkItem(&OnSerialReadWorker, lpo, WT_EXECUTEDEFAULT))
-		return;	/* successful regular exit! */
+    if (QueueUserWorkItem(&OnSerialReadWorker, lpo, WT_EXECUTEDEFAULT))
+        return; /* successful regular exit! */
 
-	/* croak as we're throwing away data */
-	msyslog(LOG_ERR,
-		"Can't offload to worker thread, will skip data: %m");
+    /* croak as we're throwing away data */
+    msyslog(LOG_ERR,
+            "Can't offload to worker thread, will skip data: %m");
 
 wait_again:
-	/* make sure the read is issued again */
-	memset(&lpo->aux, 0, sizeof(lpo->aux));
-	IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
+    /* make sure the read is issued again */
+    memset(&lpo->aux, 0, sizeof(lpo->aux));
+    IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
 }
 
 
@@ -1036,11 +1056,10 @@ wait_again:
  */
 static void
 OnDeferredStartWait(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	IoCtxStartChecked(lpo, &QueueSerialWait, lpo->recv_buf);
+    IoCtxStartChecked(lpo, &QueueSerialWait, lpo->recv_buf);
 }
 
 /* -------------------------------------------------------------------
@@ -1050,27 +1069,29 @@ OnDeferredStartWait(
  */
 static void WINAPI
 OnEnqueAPC(
-	ULONG_PTR arg
-	)
+    ULONG_PTR arg)
 {
-	recvbuf_t *	buff  = (recvbuf_t *)arg;
-	IoHndPad_T *	iopad = (IoHndPad_T *)buff->recv_peer;
-	RIO_t *		rio   = iopad->rsrc.rio;
+    recvbuf_t* buff = (recvbuf_t*)arg;
+    IoHndPad_T* iopad = (IoHndPad_T*)buff->recv_peer;
+    RIO_t* rio = iopad->rsrc.rio;
 
-	/* Down below we make a nasty hack to transport the iopad
-	 * pointer in the buffer so we can avoid another temporary
-	 * allocation. We must undo this here.
-	*/
-	if (NULL != rio) {
-		/* OK, refclock still attached */
-		buff->recv_peer = rio->srcclock;
-		if (iohpQueueLocked(iopad, &iohpRefClockOK, buff))
-			++rio->srcclock->received;
-	} else {
-		/* refclock detached while in flight... */
-		freerecvbuf(buff);
-	}
-	iohpDetach(iopad); /* one unit owned by this callback! */
+    /* Down below we make a nasty hack to transport the iopad
+     * pointer in the buffer so we can avoid another temporary
+     * allocation. We must undo this here.
+     */
+    if (NULL != rio)
+    {
+        /* OK, refclock still attached */
+        buff->recv_peer = rio->srcclock;
+        if (iohpQueueLocked(iopad, &iohpRefClockOK, buff))
+            ++rio->srcclock->received;
+    }
+    else
+    {
+        /* refclock detached while in flight... */
+        freerecvbuf(buff);
+    }
+    iohpDetach(iopad); /* one unit owned by this callback! */
 }
 
 /* -------------------------------------------------------------------
@@ -1078,127 +1099,131 @@ OnEnqueAPC(
  */
 static DWORD WINAPI
 OnSerialReadWorker(
-	void *	ctx
-	)
+    void* ctx)
 {
-	IoCtx_t *	lpo  = (IoCtx_t*)ctx;
-	IoHndPad_T *	iop  = lpo->iopad;
-	recvbuf_t *	buff = lpo->recv_buf;
-	recvbuf_t *	obuf = NULL;
-	char		*sptr, *send, *dptr;
-	BOOL		eol;
-	int		ch;
+    IoCtx_t* lpo = (IoCtx_t*)ctx;
+    IoHndPad_T* iop = lpo->iopad;
+    recvbuf_t* buff = lpo->recv_buf;
+    recvbuf_t* obuf = NULL;
+    char *sptr, *send, *dptr;
+    BOOL eol;
+    int ch;
 
-	/* We should never gat a zero-byte read here. If we do, nothing
-	 * really bad happens, just a useless rescan of data we have
-	 * already processed. But something's not quite right in logic
-	 * and we croak loudly in debug builds.
-	 */
-	DEBUG_INSIST(lpo->byteCount > 0);
+    /* We should never gat a zero-byte read here. If we do, nothing
+     * really bad happens, just a useless rescan of data we have
+     * already processed. But something's not quite right in logic
+     * and we croak loudly in debug builds.
+     */
+    DEBUG_INSIST(lpo->byteCount > 0);
 
-	/* Account for additional input and then mimic the UNIX line
-	 * discipline. This is an implict state machine -- the
-	 * implementation is very low-level to gather speed.
-	 */
-	buff->recv_length += (int)lpo->byteCount;
-	sptr = (char *)buff->recv_buffer;
-	send = sptr + buff->recv_length;
-	if (sptr == send)
-		goto st_read_fresh;
+    /* Account for additional input and then mimic the UNIX line
+     * discipline. This is an implict state machine -- the
+     * implementation is very low-level to gather speed.
+     */
+    buff->recv_length += (int)lpo->byteCount;
+    sptr = (char*)buff->recv_buffer;
+    send = sptr + buff->recv_length;
+    if (sptr == send)
+        goto st_read_fresh;
 
 st_new_obuf:
-	/* Get new receive buffer to store the line. */
-	obuf = get_free_recv_buffer_alloc(TRUE);
-	if (!obuf) {
-		++packets_dropped; /* maybe atomic? */
-		buff->recv_length = 0;
-		goto st_read_fresh;
-	}
-	obuf->fd	= buff->fd;
-	obuf->receiver	= buff->receiver;
-	obuf->dstadr	= NULL;
-	obuf->recv_peer	= buff->recv_peer;
-	set_serial_recv_time(obuf, lpo);
+    /* Get new receive buffer to store the line. */
+    obuf = get_free_recv_buffer_alloc(TRUE);
+    if (!obuf)
+    {
+        ++packets_dropped; /* maybe atomic? */
+        buff->recv_length = 0;
+        goto st_read_fresh;
+    }
+    obuf->fd = buff->fd;
+    obuf->receiver = buff->receiver;
+    obuf->dstadr = NULL;
+    obuf->recv_peer = buff->recv_peer;
+    set_serial_recv_time(obuf, lpo);
 
 st_copy_start:
-	/* Copy data to new buffer, convert CR to LF on the fly.
-	 * Stop after either.
-	 */
-	dptr = (char *)obuf->recv_buffer;
-	do {
-		ch = *sptr++;
-		if ('\r' == ch)
-			ch = '\n';
-		*dptr++ = ch;
-		eol = ('\n' == ch);
-	} while (!(eol || sptr == send));
-	obuf->recv_length = (int)(dptr - (char *)obuf->recv_buffer);
+    /* Copy data to new buffer, convert CR to LF on the fly.
+     * Stop after either.
+     */
+    dptr = (char*)obuf->recv_buffer;
+    do
+    {
+        ch = *sptr++;
+        if ('\r' == ch)
+            ch = '\n';
+        *dptr++ = ch;
+        eol = ('\n' == ch);
+    } while (!(eol || sptr == send));
+    obuf->recv_length = (int)(dptr - (char*)obuf->recv_buffer);
 
-	/* If we're not at EOL, we need more data to continue the line.
-	 * But this can only be done if there's more room in the buffer;
-	 * if we have already reached the maximum size, treat the whole
-	 * buffer as part of a mega-line and pass it on.
-	 */
-	if (!eol) {
-		if (obuf->recv_length < sizeof(obuf->recv_buffer))
-			goto st_read_more;
-		else
-			goto st_pass_buffer;
-	}
+    /* If we're not at EOL, we need more data to continue the line.
+     * But this can only be done if there's more room in the buffer;
+     * if we have already reached the maximum size, treat the whole
+     * buffer as part of a mega-line and pass it on.
+     */
+    if (!eol)
+    {
+        if (obuf->recv_length < sizeof(obuf->recv_buffer))
+            goto st_read_more;
+        else
+            goto st_pass_buffer;
+    }
 
-	/* if we should drop empty lines, do it here. */
-	if (obuf->recv_length < 2 && iop->flDropEmpty) {
-		obuf->recv_length = 0;
-		if (sptr != send)
-			goto st_copy_start;
-		else
-			goto st_read_more;
-	}
+    /* if we should drop empty lines, do it here. */
+    if (obuf->recv_length < 2 && iop->flDropEmpty)
+    {
+        obuf->recv_length = 0;
+        if (sptr != send)
+            goto st_copy_start;
+        else
+            goto st_read_more;
+    }
 
-	if ( ! iop->flFirstSeen) {
-		iop->flFirstSeen = 1;
-		obuf->recv_length = 0;
-		if (sptr != send)
-			goto st_copy_start;
-		else
-			goto st_read_more;
-	}
+    if (!iop->flFirstSeen)
+    {
+        iop->flFirstSeen = 1;
+        obuf->recv_length = 0;
+        if (sptr != send)
+            goto st_copy_start;
+        else
+            goto st_read_more;
+    }
 
 st_pass_buffer:
-	/* if we arrive here, we can spin off another text line to the
-	 * receive queue. We use a hack to supplant the RIO pointer in
-	 * the receive buffer with the IOPAD to save us a temporary
-	 * workspace allocation. Note the callback owns one refcount
-	 * unit to keep the IOPAD alive! Also checking that the RIO in
-	 * the IOPAD matches the RIO in the buffer is dangerous: That
-	 * pointer is manipulated by the other threads!
-	 */
-	obuf->recv_peer = (struct peer *)iohpAttach(lpo->iopad);
-	QueueUserAPC(&OnEnqueAPC, hMainThread, (ULONG_PTR)obuf);
-	if (sptr != send)
-		goto st_new_obuf;
-	buff->recv_length = 0;
-	goto st_read_fresh;
+    /* if we arrive here, we can spin off another text line to the
+     * receive queue. We use a hack to supplant the RIO pointer in
+     * the receive buffer with the IOPAD to save us a temporary
+     * workspace allocation. Note the callback owns one refcount
+     * unit to keep the IOPAD alive! Also checking that the RIO in
+     * the IOPAD matches the RIO in the buffer is dangerous: That
+     * pointer is manipulated by the other threads!
+     */
+    obuf->recv_peer = (struct peer*)iohpAttach(lpo->iopad);
+    QueueUserAPC(&OnEnqueAPC, hMainThread, (ULONG_PTR)obuf);
+    if (sptr != send)
+        goto st_new_obuf;
+    buff->recv_length = 0;
+    goto st_read_fresh;
 
 st_read_more:
-	/* read more data into current OBUF, which is valid and will
-	 * replace BUFF.
-	 */
-	lpo->recv_buf = obuf;
-	freerecvbuf(buff);
+    /* read more data into current OBUF, which is valid and will
+     * replace BUFF.
+     */
+    lpo->recv_buf = obuf;
+    freerecvbuf(buff);
 
 st_read_fresh:
-	/* Start next round. This is deferred to the IOCPL thread, as
-	 * read access to the IOPAD is unsafe from a worker thread
-	 * for anything but the flags. If the IOCPL handle is gone,
-	 * just mop up the pieces.
-	 */
-	lpo->onIoDone = OnDeferredStartWait;
-	if (   NULL == hndIOCPLPort
-	    || !PostQueuedCompletionStatus(hndIOCPLPort, 1, 0, &lpo->ol)) {
-		IoCtxRelease(lpo);
-	}
-	return 0;
+    /* Start next round. This is deferred to the IOCPL thread, as
+     * read access to the IOPAD is unsafe from a worker thread
+     * for anything but the flags. If the IOCPL handle is gone,
+     * just mop up the pieces.
+     */
+    lpo->onIoDone = OnDeferredStartWait;
+    if (NULL == hndIOCPLPort || !PostQueuedCompletionStatus(hndIOCPLPort, 1, 0, &lpo->ol))
+    {
+        IoCtxRelease(lpo);
+    }
+    return 0;
 }
 
 
@@ -1215,13 +1240,12 @@ st_read_fresh:
 
 static BOOL __fastcall
 QueueRawSerialRead(
-	IoCtx_t *	lpo,
-	recvbuf_t *	buff
-	)
+    IoCtx_t* lpo,
+    recvbuf_t* buff)
 {
-	lpo->onIoDone     = OnRawSerialReadComplete;
-	buff->recv_length = 0;
-	return QueueSerialReadCommon(lpo, buff);
+    lpo->onIoDone = OnRawSerialReadComplete;
+    buff->recv_length = 0;
+    return QueueSerialReadCommon(lpo, buff);
 }
 
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1230,56 +1254,58 @@ QueueRawSerialRead(
  */
 static void
 OnRawSerialReadComplete(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	static const char * const msgh =
-		"OnRawSerialReadComplete: read from device failed";
+    static const char* const msgh =
+        "OnRawSerialReadComplete: read from device failed";
 
-	recvbuf_t *	buff = lpo->recv_buf;
-	RIO_t *		rio  = getRioFromIoCtx(lpo, key, msgh);
-	/* Make sure this RIO is not closed. */
-	if (rio == NULL)
-		return;
+    recvbuf_t* buff = lpo->recv_buf;
+    RIO_t* rio = getRioFromIoCtx(lpo, key, msgh);
+    /* Make sure this RIO is not closed. */
+    if (rio == NULL)
+        return;
 
-	/* start next IO and leave if we hit an error */
-	if (lpo->errCode == ERROR_SUCCESS && lpo->byteCount > 0) {
-		buff->recv_length = (int)lpo->byteCount;
-		set_serial_recv_time(buff, lpo);
-		lpo->recv_buf = get_free_recv_buffer_alloc(TRUE);
-		if (lpo->recv_buf) {
-			iohpQueueLocked(lpo->iopad, iohpRefClockOK, buff);
-		} else {
-			++packets_dropped; /* maybe atomic? */
-			buff->recv_length = 0;
-			lpo->recv_buf = buff;
-		}
-	}
-	IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
+    /* start next IO and leave if we hit an error */
+    if (lpo->errCode == ERROR_SUCCESS && lpo->byteCount > 0)
+    {
+        buff->recv_length = (int)lpo->byteCount;
+        set_serial_recv_time(buff, lpo);
+        lpo->recv_buf = get_free_recv_buffer_alloc(TRUE);
+        if (lpo->recv_buf)
+        {
+            iohpQueueLocked(lpo->iopad, iohpRefClockOK, buff);
+        }
+        else
+        {
+            ++packets_dropped; /* maybe atomic? */
+            buff->recv_length = 0;
+            lpo->recv_buf = buff;
+        }
+    }
+    IoCtxStartChecked(lpo, QueueSerialWait, lpo->recv_buf);
 }
 
 
 static void
 set_serial_recv_time(
-	recvbuf_t *	obuf,
-	IoCtx_t *	lpo
-	)
+    recvbuf_t* obuf,
+    IoCtx_t* lpo)
 {
-	/* Time stamp assignment is interesting.  If we
-	 * have a DCD stamp, we use it, otherwise we use
-	 * the FLAG char event time, and if that is also
-	 * not / no longer available we use the arrival
-	 * time.
-	 */
-	if (lpo->aux.flTsDCDS)
-		obuf->recv_time = lpo->aux.DCDSTime;
-	else if (lpo->aux.flTsFlag)
-		obuf->recv_time = lpo->aux.FlagTime;
-	else
-		obuf->recv_time = lpo->aux.RecvTime;
+    /* Time stamp assignment is interesting.  If we
+     * have a DCD stamp, we use it, otherwise we use
+     * the FLAG char event time, and if that is also
+     * not / no longer available we use the arrival
+     * time.
+     */
+    if (lpo->aux.flTsDCDS)
+        obuf->recv_time = lpo->aux.DCDSTime;
+    else if (lpo->aux.flTsFlag)
+        obuf->recv_time = lpo->aux.FlagTime;
+    else
+        obuf->recv_time = lpo->aux.RecvTime;
 
-	lpo->aux.flTsDCDS = lpo->aux.flTsFlag = 0; /* use only once! */
+    lpo->aux.flTsDCDS = lpo->aux.flTsFlag = 0; /* use only once! */
 }
 
 
@@ -1296,65 +1322,62 @@ set_serial_recv_time(
 /*
  * async_write, clone of write(), used by some reflock drivers
  */
-int	
-async_write(
-	int		fd,
-	const void *	data,
-	unsigned int	count
-	)
+int async_write(
+    int fd,
+    const void* data,
+    unsigned int count)
 {
-	static const char * const msgh =
-		"async_write: cannot schedule device write";
-	static const char * const dmsg =
-		"overlapped IO data buffer";
+    static const char* const msgh =
+        "async_write: cannot schedule device write";
+    static const char* const dmsg =
+        "overlapped IO data buffer";
 
-	IoCtx_t *	lpo  = NULL;
-	void *		buff = NULL;
-	HANDLE		hnd  = NULL;
-	BOOL		rc;
+    IoCtx_t* lpo = NULL;
+    void* buff = NULL;
+    HANDLE hnd = NULL;
+    BOOL rc;
 
-	hnd = (HANDLE)_get_osfhandle(fd);
-	if (hnd == INVALID_HANDLE_VALUE)
-		goto fail;
-	if (NULL == (buff = IOCPLPoolMemDup(data, count, dmsg)))
-		goto fail;
-	if (NULL == (lpo = IoCtxAlloc(NULL, NULL)))
-		goto fail;
+    hnd = (HANDLE)_get_osfhandle(fd);
+    if (hnd == INVALID_HANDLE_VALUE)
+        goto fail;
+    if (NULL == (buff = IOCPLPoolMemDup(data, count, dmsg)))
+        goto fail;
+    if (NULL == (lpo = IoCtxAlloc(NULL, NULL)))
+        goto fail;
 
-	lpo->io.hnd    = hnd;
-	lpo->onIoDone  = OnSerialWriteComplete;
-	lpo->trans_buf = buff;
-	lpo->flRawMem  = 1;
+    lpo->io.hnd = hnd;
+    lpo->onIoDone = OnSerialWriteComplete;
+    lpo->trans_buf = buff;
+    lpo->flRawMem = 1;
 
-	rc = WriteFile(lpo->io.hnd, lpo->trans_buf, count,
-		       NULL, &lpo->ol);
-	if (rc || IoResultCheck(GetLastError(), lpo, msgh))
-		return count;	/* normal/success return */
+    rc = WriteFile(lpo->io.hnd, lpo->trans_buf, count,
+                   NULL, &lpo->ol);
+    if (rc || IoResultCheck(GetLastError(), lpo, msgh))
+        return count; /* normal/success return */
 
-	errno = EBADF;
-	return -1;
+    errno = EBADF;
+    return -1;
 
 fail:
-	IoCtxFree(lpo);
-	IOCPLPoolFree(buff, dmsg);
-	return -1;
+    IoCtxFree(lpo);
+    IOCPLPoolFree(buff, dmsg);
+    return -1;
 }
 
 static void
 OnSerialWriteComplete(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	/* This is really trivial: Let 'getRioFromIoCtx()' do all the
-	 * error processing, and it returns with a valid RIO, just
-	 * drop the complete context.
-	 */
-	static const char * const msgh =
-		"OnSerialWriteComplete: serial output failed";
+    /* This is really trivial: Let 'getRioFromIoCtx()' do all the
+     * error processing, and it returns with a valid RIO, just
+     * drop the complete context.
+     */
+    static const char* const msgh =
+        "OnSerialWriteComplete: serial output failed";
 
-	if (NULL != getRioFromIoCtx(lpo, key, msgh))
-		IoCtxRelease(lpo);
+    if (NULL != getRioFromIoCtx(lpo, key, msgh))
+        IoCtxRelease(lpo);
 }
 
 
@@ -1369,68 +1392,69 @@ OnSerialWriteComplete(
 
 __declspec(dllexport) void* __stdcall
 ntp_pps_attach_device(
-	HANDLE	hndIo
-	)
+    HANDLE hndIo)
 {
-	DevCtx_t *	dev = NULL;
+    DevCtx_t* dev = NULL;
 
-	dev = DevCtxAttach(serial_devctx(hndIo));
-	if (NULL == dev)
-		SetLastError(ERROR_INVALID_HANDLE);
-	return dev;
+    dev = DevCtxAttach(serial_devctx(hndIo));
+    if (NULL == dev)
+        SetLastError(ERROR_INVALID_HANDLE);
+    return dev;
 }
 
 __declspec(dllexport) void __stdcall
 ntp_pps_detach_device(
-	DevCtx_t *	dev
-	)
+    DevCtx_t* dev)
 {
-	DevCtxDetach(dev);
+    DevCtxDetach(dev);
 }
 
 __declspec(dllexport) BOOL __stdcall
 ntp_pps_read(
-	DevCtx_t *	dev,
-	PPSData_t *	data,
-	size_t		dlen
-	)
+    DevCtx_t* dev,
+    PPSData_t* data,
+    size_t dlen)
 {
-	u_long		guard, covc;
-	int		repc;
-	PPSDataEx_t *	ppsbuf;
+    u_long guard, covc;
+    int repc;
+    PPSDataEx_t* ppsbuf;
 
 
-	if (dev == NULL) {
-		SetLastError(ERROR_INVALID_HANDLE);
-		return FALSE;
-	}
-	if (data == NULL || dlen != sizeof(PPSData_t)) {
-		SetLastError(ERROR_INVALID_PARAMETER);
-		return FALSE;
-	}
-	/* Reading from shared memory in a lock-free fashion can be
-	 * a bit tricky, since we have to read the components in the
-	 * opposite direction from the write, and the compiler must
-	 * not reorder the read sequence.
-	 * We use interlocked ops and a volatile data source to avoid
-	 * reordering on compiler and CPU level. The interlocked
-	 * instruction act as full barriers -- we need only acquire
-	 * semantics, but we don't have them before VS2010.
-	 */
-	repc = 3;
-	do {
-		covc = InterlockedExchangeAdd((PLONG)&dev->cov_count, 0);
-		ppsbuf = dev->pps_buff + (covc & PPS_QUEUE_MSK);
-		*data = ppsbuf->data;
-		guard = InterlockedExchangeAdd((PLONG)&ppsbuf->cov_count, 0);
-		guard ^= covc;
-	} while (guard && ~guard && --repc);
+    if (dev == NULL)
+    {
+        SetLastError(ERROR_INVALID_HANDLE);
+        return FALSE;
+    }
+    if (data == NULL || dlen != sizeof(PPSData_t))
+    {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return FALSE;
+    }
+    /* Reading from shared memory in a lock-free fashion can be
+     * a bit tricky, since we have to read the components in the
+     * opposite direction from the write, and the compiler must
+     * not reorder the read sequence.
+     * We use interlocked ops and a volatile data source to avoid
+     * reordering on compiler and CPU level. The interlocked
+     * instruction act as full barriers -- we need only acquire
+     * semantics, but we don't have them before VS2010.
+     */
+    repc = 3;
+    do
+    {
+        covc = InterlockedExchangeAdd((PLONG)&dev->cov_count, 0);
+        ppsbuf = dev->pps_buff + (covc & PPS_QUEUE_MSK);
+        *data = ppsbuf->data;
+        guard = InterlockedExchangeAdd((PLONG)&ppsbuf->cov_count, 0);
+        guard ^= covc;
+    } while (guard && ~guard && --repc);
 
-	if (guard) {
-		SetLastError(ERROR_INVALID_DATA);
-		return FALSE;
-	}
-	return TRUE;
+    if (guard)
+    {
+        SetLastError(ERROR_INVALID_DATA);
+        return FALSE;
+    }
+    return TRUE;
 }
 
 /* --------------------------------------------------------------------
@@ -1441,104 +1465,106 @@ ntp_pps_read(
 /* Add a reference clock data structures I/O handles to
  * the I/O completion port. Return FALSE if any error,
  * TRUE on success
- */  
-BOOL
-io_completion_port_add_clock_io(
-	RIO_t *rio
-	)
+ */
+BOOL io_completion_port_add_clock_io(
+    RIO_t* rio)
 {
-	static const char * const msgh =
-		"io_completion_port_add_clock_io";
+    static const char* const msgh =
+        "io_completion_port_add_clock_io";
 
-	IoCtx_t *	lpo;
-	HANDLE		h;
-	IoHndPad_T *	iopad = NULL;
-	recvbuf_t *	rbuf;
+    IoCtx_t* lpo;
+    HANDLE h;
+    IoHndPad_T* iopad = NULL;
+    recvbuf_t* rbuf;
 
-	/* preset to clear state for error cleanup:*/
-	rio->ioreg_ctx  = NULL;
-	rio->device_ctx = NULL;
+    /* preset to clear state for error cleanup:*/
+    rio->ioreg_ctx = NULL;
+    rio->device_ctx = NULL;
 
-	h = (HANDLE)_get_osfhandle(rio->fd);
-	if (h == INVALID_HANDLE_VALUE) {
-		msyslog(LOG_ERR, "%s: COM port FD not valid",
-			msgh);
-		goto fail;
-	}
+    h = (HANDLE)_get_osfhandle(rio->fd);
+    if (h == INVALID_HANDLE_VALUE)
+    {
+        msyslog(LOG_ERR, "%s: COM port FD not valid",
+                msgh);
+        goto fail;
+    }
 
-	if (NULL == (rio->ioreg_ctx = iopad = iohpCreate(rio))) {
-		msyslog(LOG_ERR, "%s: Failed to create shared lock",
-			msgh);
-		goto fail;
-	}
-	iopad->handles[0U] = h;
-	iopad->riofd      = rio->fd;
-	iopad->rsrc.rio   = rio;
+    if (NULL == (rio->ioreg_ctx = iopad = iohpCreate(rio)))
+    {
+        msyslog(LOG_ERR, "%s: Failed to create shared lock",
+                msgh);
+        goto fail;
+    }
+    iopad->handles[0U] = h;
+    iopad->riofd = rio->fd;
+    iopad->rsrc.rio = rio;
 
-	if (NULL == (rio->device_ctx = DevCtxAttach(serial_devctx(h)))) {
-		msyslog(LOG_ERR, "%s: Failed to allocate device context",
-			msgh);
-		goto fail;
-	}
+    if (NULL == (rio->device_ctx = DevCtxAttach(serial_devctx(h))))
+    {
+        msyslog(LOG_ERR, "%s: Failed to allocate device context",
+                msgh);
+        goto fail;
+    }
 
-	if (NULL == (lpo = IoCtxAlloc(iopad, rio->device_ctx))) {
-		msyslog(LOG_ERR, "%s: no IO context: %m", msgh);
-		goto fail;
-	}
+    if (NULL == (lpo = IoCtxAlloc(iopad, rio->device_ctx)))
+    {
+        msyslog(LOG_ERR, "%s: no IO context: %m", msgh);
+        goto fail;
+    }
 
-	if ( ! CreateIoCompletionPort(h, hndIOCPLPort, (ULONG_PTR)rio, 0)) {
-		msyslog(LOG_ERR, "%s: Can't add COM port to i/o completion port: %m",
-			msgh);
-		goto fail;
-	}
-	lpo->io.hnd = h;
-	memset(&lpo->aux, 0, sizeof(lpo->aux));
-	if (NULL == (rbuf = get_free_recv_buffer_alloc(TRUE))) {
-		msyslog(LOG_ERR, "%s: no receive buffer: %m", msgh);
-		goto fail;
-	}
-	return QueueSerialWait(lpo, rbuf);
+    if (!CreateIoCompletionPort(h, hndIOCPLPort, (ULONG_PTR)rio, 0))
+    {
+        msyslog(LOG_ERR, "%s: Can't add COM port to i/o completion port: %m",
+                msgh);
+        goto fail;
+    }
+    lpo->io.hnd = h;
+    memset(&lpo->aux, 0, sizeof(lpo->aux));
+    if (NULL == (rbuf = get_free_recv_buffer_alloc(TRUE)))
+    {
+        msyslog(LOG_ERR, "%s: no receive buffer: %m", msgh);
+        goto fail;
+    }
+    return QueueSerialWait(lpo, rbuf);
 
 fail:
-	rio->ioreg_ctx  = iohpDetach(rio->ioreg_ctx);
-	rio->device_ctx = DevCtxDetach(rio->device_ctx);
-	return FALSE;
+    rio->ioreg_ctx = iohpDetach(rio->ioreg_ctx);
+    rio->device_ctx = DevCtxDetach(rio->device_ctx);
+    return FALSE;
 }
 
 /* ----------------------------------------------------------------- */
 static void
 OnSerialDetach(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	/* Make sure the key matches the context info in the shared
-	* lock, the check for errors. If the error indicates the
-	* operation was cancelled, let the operation fail silently.
-	*/
-	IoHndPad_T *	iopad = lpo->iopad;
+    /* Make sure the key matches the context info in the shared
+     * lock, the check for errors. If the error indicates the
+     * operation was cancelled, let the operation fail silently.
+     */
+    IoHndPad_T* iopad = lpo->iopad;
 
-	INSIST(NULL != iopad);
-	if (iopad->handles[0U] == lpo->io.hnd) {
-		iopad->handles[0U] = INVALID_HANDLE_VALUE;
-		iopad->handles[1U] = INVALID_HANDLE_VALUE;
-		iopad->rsrc.rio   = NULL;
-		iopad->riofd      = -1;
-	}
-	SetEvent(lpo->ppswake);
+    INSIST(NULL != iopad);
+    if (iopad->handles[0U] == lpo->io.hnd)
+    {
+        iopad->handles[0U] = INVALID_HANDLE_VALUE;
+        iopad->handles[1U] = INVALID_HANDLE_VALUE;
+        iopad->rsrc.rio = NULL;
+        iopad->riofd = -1;
+    }
+    SetEvent(lpo->ppswake);
 }
 
 
-void
-io_completion_port_remove_clock_io(
-	RIO_t *rio
-	)
+void io_completion_port_remove_clock_io(
+    RIO_t* rio)
 {
-	IoHndPad_T *	iopad = (IoHndPad_T*)rio->ioreg_ctx;
+    IoHndPad_T* iopad = (IoHndPad_T*)rio->ioreg_ctx;
 
-	INSIST(hndIOCPLPort && hMainRpcDone);
-	if (iopad)
-		iocpl_notify(iopad, OnSerialDetach, _get_osfhandle(rio->fd));
+    INSIST(hndIOCPLPort && hMainRpcDone);
+    if (iopad)
+        iocpl_notify(iopad, OnSerialDetach, _get_osfhandle(rio->fd));
 }
 
 /*
@@ -1547,7 +1573,7 @@ io_completion_port_remove_clock_io(
  * -------------------------------------------------------------------
  */
 
-/* Queue a receiver on a socket. Returns 0 if no buffer can be queued 
+/* Queue a receiver on a socket. Returns 0 if no buffer can be queued
  *
  *  Note: As per the WINSOCK documentation, we use WSARecvFrom. Using
  *	  ReadFile() is less efficient. Also, WSARecvFrom delivers
@@ -1556,152 +1582,161 @@ io_completion_port_remove_clock_io(
  */
 static BOOL __fastcall
 QueueSocketRecv(
-	IoCtx_t *	lpo,
-	recvbuf_t *	buff
-	)
+    IoCtx_t* lpo,
+    recvbuf_t* buff)
 {
-	static const char * const msgh =
-		"QueueSocketRecv: cannot schedule socket receive";
+    static const char* const msgh =
+        "QueueSocketRecv: cannot schedule socket receive";
 
-	WSABUF	wsabuf;
-	DWORD	err;
-	int	rc;
+    WSABUF wsabuf;
+    DWORD err;
+    int rc;
 
-	lpo->onIoDone = OnSocketRecv;
-	lpo->recv_buf = buff;
-	lpo->flRawMem = 0;
-	lpo->ioFlags  = 0;
+    lpo->onIoDone = OnSocketRecv;
+    lpo->recv_buf = buff;
+    lpo->flRawMem = 0;
+    lpo->ioFlags = 0;
 
-	buff->fd              = lpo->io.sfd;
-	buff->recv_srcadr_len = sizeof(buff->recv_srcadr);
-	buff->receiver        = receive;
-	buff->dstadr          = lpo->iopad->rsrc.ept;
+    buff->fd = lpo->io.sfd;
+    buff->recv_srcadr_len = sizeof(buff->recv_srcadr);
+    buff->receiver = receive;
+    buff->dstadr = lpo->iopad->rsrc.ept;
 
-	wsabuf.buf = (char *)buff->recv_buffer;
-	wsabuf.len = sizeof(buff->recv_buffer);
+    wsabuf.buf = (char*)buff->recv_buffer;
+    wsabuf.len = sizeof(buff->recv_buffer);
 
-	do {
-		rc = WSARecvFrom(lpo->io.sfd, &wsabuf, 1, NULL, &lpo->ioFlags,
-			&buff->recv_srcadr.sa, &buff->recv_srcadr_len,
-			&lpo->ol, NULL);
-		if (!rc) {
-			return TRUE;
-		}
-		err = (DWORD)WSAGetLastError();
-	} while (WSAENETRESET == err);	/* [Bug 3784] ICMP TTL exceeded */
+    do
+    {
+        rc = WSARecvFrom(lpo->io.sfd, &wsabuf, 1, NULL, &lpo->ioFlags,
+                         &buff->recv_srcadr.sa, &buff->recv_srcadr_len,
+                         &lpo->ol, NULL);
+        if (!rc)
+        {
+            return TRUE;
+        }
+        err = (DWORD)WSAGetLastError();
+    } while (WSAENETRESET == err); /* [Bug 3784] ICMP TTL exceeded */
 
-	return IoResultCheck(err, lpo, msgh);
+    return IoResultCheck(err, lpo, msgh);
 }
 
 /* ----------------------------------------------------------------- */
 static void
 OnSocketRecv(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	static const char * const msgh =
-		"OnSocketRecv: receive from socket failed";
+    static const char* const msgh =
+        "OnSocketRecv: receive from socket failed";
 
-	recvbuf_t *	buff	= NULL;
-	IoHndPad_T *	iopad	= NULL;
-	endpt *		ep	= NULL;
-	int		rc;
+    recvbuf_t* buff = NULL;
+    IoHndPad_T* iopad = NULL;
+    endpt* ep = NULL;
+    int rc;
 
-	/* order is important -- check first, then get endpoint! */
-	rc = socketErrorCheck(lpo, msgh);
-	ep = getEndptFromIoCtx(lpo, key);
+    /* order is important -- check first, then get endpoint! */
+    rc = socketErrorCheck(lpo, msgh);
+    ep = getEndptFromIoCtx(lpo, key);
 
-	/* Make sure this endpoint is not closed. */
-	if (ep == NULL)
-		return;
+    /* Make sure this endpoint is not closed. */
+    if (ep == NULL)
+        return;
 
-	/* We want to start a new read before we process the buffer.
-	 * Since we must not use the context object once it is in
-	 * another IO, we go through some pains to read everything
-	 * before going out for another read request.
-	 * We also need an extra hold to the IOPAD structure.
-	 */
-	iopad = iohpAttach(lpo->iopad);
-	if (rc == PKT_OK && lpo->byteCount > 0) {
-		/* keep input buffer, create new one for IO */
-		buff              = lpo->recv_buf;
-		lpo->recv_buf     = get_free_recv_buffer_alloc(FALSE);
-		if (lpo->recv_buf) {
-			buff->recv_time   = lpo->aux.RecvTime;
-			buff->recv_length = (int)lpo->byteCount;
-		} else {
-			lpo->recv_buf = buff;
-			buff = NULL;
-			++packets_dropped; /* maybe atomic? */
-		}
+    /* We want to start a new read before we process the buffer.
+     * Since we must not use the context object once it is in
+     * another IO, we go through some pains to read everything
+     * before going out for another read request.
+     * We also need an extra hold to the IOPAD structure.
+     */
+    iopad = iohpAttach(lpo->iopad);
+    if (rc == PKT_OK && lpo->byteCount > 0)
+    {
+        /* keep input buffer, create new one for IO */
+        buff = lpo->recv_buf;
+        lpo->recv_buf = get_free_recv_buffer_alloc(FALSE);
+        if (lpo->recv_buf)
+        {
+            buff->recv_time = lpo->aux.RecvTime;
+            buff->recv_length = (int)lpo->byteCount;
+        }
+        else
+        {
+            lpo->recv_buf = buff;
+            buff = NULL;
+            ++packets_dropped; /* maybe atomic? */
+        }
 
-	} /* Note: else we use the current buffer again */
+    } /* Note: else we use the current buffer again */
 
-	if (rc != PKT_SOCKET_ERROR) {
-		IoCtxStartChecked(lpo, QueueSocketRecv, lpo->recv_buf);
-	}  else {
-		freerecvbuf(lpo->recv_buf);
-		IoCtxFree(lpo);
-	}
-	/* below this, any usage of 'lpo' is invalid! */
+    if (rc != PKT_SOCKET_ERROR)
+    {
+        IoCtxStartChecked(lpo, QueueSocketRecv, lpo->recv_buf);
+    }
+    else
+    {
+        freerecvbuf(lpo->recv_buf);
+        IoCtxFree(lpo);
+    }
+    /* below this, any usage of 'lpo' is invalid! */
 
-	/* If we have a buffer, do some bookkeeping and other chores,
-	 * then feed it to the input queue. And we can be sure we have
-	 * a packet here, so we can update the stats.
-	 */
-	if (buff) {
-		INSIST(buff->recv_srcadr_len <= sizeof(buff->recv_srcadr));
-		DPRINTF(4, ("%sfd %d %s recv packet mode is %d\n",
-			(MODE_BROADCAST == get_packet_mode(buff))
-			? " **** Broadcast "
-			: "",
-			(int)buff->fd, stoa(&buff->recv_srcadr),
-			get_packet_mode(buff)));
+    /* If we have a buffer, do some bookkeeping and other chores,
+     * then feed it to the input queue. And we can be sure we have
+     * a packet here, so we can update the stats.
+     */
+    if (buff)
+    {
+        INSIST(buff->recv_srcadr_len <= sizeof(buff->recv_srcadr));
+        DPRINTF(4, ("%sfd %d %s recv packet mode is %d\n",
+                    (MODE_BROADCAST == get_packet_mode(buff))
+                        ? " **** Broadcast "
+                        : "",
+                    (int)buff->fd, stoa(&buff->recv_srcadr),
+                    get_packet_mode(buff)));
 
-		if (iohpEndPointOK(iopad)) {
-			InterlockedIncrement(&ep->received);
-			InterlockedIncrement((PLONG)&packets_received);
-			InterlockedIncrement((PLONG)&handler_pkts);
-		}
+        if (iohpEndPointOK(iopad))
+        {
+            InterlockedIncrement(&ep->received);
+            InterlockedIncrement((PLONG)&packets_received);
+            InterlockedIncrement((PLONG)&handler_pkts);
+        }
 
-		DPRINTF(2, ("Received %d bytes fd %d in buffer %p from %s, state = %s\n",
-			buff->recv_length, (int)buff->fd, buff,
-			stoa(&buff->recv_srcadr), st_packet_handling[rc]));
-		iohpQueueLocked(iopad, iohpEndPointOK, buff);
-	}
-	iohpDetach(iopad);
+        DPRINTF(2, ("Received %d bytes fd %d in buffer %p from %s, state = %s\n",
+                    buff->recv_length, (int)buff->fd, buff,
+                    stoa(&buff->recv_srcadr), st_packet_handling[rc]));
+        iohpQueueLocked(iopad, iohpEndPointOK, buff);
+    }
+    iohpDetach(iopad);
 }
 
 /* ----------------------------------------------------------------- */
 static void
 OnSocketSend(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	/* this is somewhat easier: */
-	static const char * const msgh =
-		"OnSocketSend: send to socket failed";
+    /* this is somewhat easier: */
+    static const char* const msgh =
+        "OnSocketSend: send to socket failed";
 
-	endpt *		ep	= NULL;
-	int		rc;
+    endpt* ep = NULL;
+    int rc;
 
-	/* order is important -- check first, then get endpoint! */
-	rc = socketErrorCheck(lpo, msgh);
-	ep = getEndptFromIoCtx(lpo, key);
+    /* order is important -- check first, then get endpoint! */
+    rc = socketErrorCheck(lpo, msgh);
+    ep = getEndptFromIoCtx(lpo, key);
 
-	/* Make sure this endpoint is not closed. */
-	if (ep == NULL)
-		return;
+    /* Make sure this endpoint is not closed. */
+    if (ep == NULL)
+        return;
 
-	if (rc != PKT_OK) {
-		InterlockedIncrement(&ep->notsent);
-		InterlockedDecrement(&ep->sent);
-		InterlockedIncrement((PLONG)&packets_notsent);
-		InterlockedDecrement((PLONG)&packets_sent);
-	}
-	IoCtxRelease(lpo);
+    if (rc != PKT_OK)
+    {
+        InterlockedIncrement(&ep->notsent);
+        InterlockedDecrement(&ep->sent);
+        InterlockedIncrement((PLONG)&packets_notsent);
+        InterlockedDecrement((PLONG)&packets_sent);
+    }
+    IoCtxRelease(lpo);
 }
 
 /* --------------------------------------------------------------------
@@ -1710,48 +1745,43 @@ OnSocketSend(
  */
 static void
 OnInterfaceDetach(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	IoHndPad_T *	iopad = lpo->iopad;
+    IoHndPad_T* iopad = lpo->iopad;
 
-	INSIST(NULL != iopad);
-	iopad->handles[0U] = INVALID_HANDLE_VALUE;
-	iopad->handles[1U] = INVALID_HANDLE_VALUE;
-	iopad->rsrc.ept = NULL;
+    INSIST(NULL != iopad);
+    iopad->handles[0U] = INVALID_HANDLE_VALUE;
+    iopad->handles[1U] = INVALID_HANDLE_VALUE;
+    iopad->rsrc.ept = NULL;
 
-	SetEvent(lpo->ppswake);
+    SetEvent(lpo->ppswake);
 }
 
 /* ----------------------------------------------------------------- */
-BOOL
-io_completion_port_add_interface(
-	endpt *	ep
-	)
+BOOL io_completion_port_add_interface(
+    endpt* ep)
 {
-	/* Registering an endpoint is simple: allocate a shared lock for
-	 * the enpoint and return if the allocation was successful.
-	 */
-	ep->ioreg_ctx = iohpCreate(ep);
-	return ep->ioreg_ctx != NULL;
+    /* Registering an endpoint is simple: allocate a shared lock for
+     * the enpoint and return if the allocation was successful.
+     */
+    ep->ioreg_ctx = iohpCreate(ep);
+    return ep->ioreg_ctx != NULL;
 }
 /* ----------------------------------------------------------------- */
-void
-io_completion_port_remove_interface(
-	endpt *	ep
-	)
+void io_completion_port_remove_interface(
+    endpt* ep)
 {
-	/* Removing an endpoint is simple, too: Lock the shared lock
-	 * for write access, then invalidate the handles and the
-	 * endpoint pointer. Do an additional detach and leave the
-	 * write lock.
-	 */
-	IoHndPad_T *	iopad = (IoHndPad_T*)ep->ioreg_ctx;
+    /* Removing an endpoint is simple, too: Lock the shared lock
+     * for write access, then invalidate the handles and the
+     * endpoint pointer. Do an additional detach and leave the
+     * write lock.
+     */
+    IoHndPad_T* iopad = (IoHndPad_T*)ep->ioreg_ctx;
 
-	INSIST(hndIOCPLPort && hMainRpcDone);
-	if (iopad)
-		iocpl_notify(iopad, OnInterfaceDetach, (UINT_PTR)-1);
+    INSIST(hndIOCPLPort && hMainRpcDone);
+    if (iopad)
+        iocpl_notify(iopad, OnInterfaceDetach, (UINT_PTR)-1);
 }
 
 /* --------------------------------------------------------------------
@@ -1761,95 +1791,96 @@ io_completion_port_remove_interface(
 
 static void
 OnSocketDetach(
-	ULONG_PTR	key,
-	IoCtx_t *	lpo
-	)
+    ULONG_PTR key,
+    IoCtx_t* lpo)
 {
-	IoHndPad_T *	iopad = lpo->iopad;
+    IoHndPad_T* iopad = lpo->iopad;
 
-	INSIST(NULL != iopad);
-	if (iopad->handles[0U] == lpo->io.hnd)
-		iopad->handles[0U] = INVALID_HANDLE_VALUE;
-	if (iopad->handles[1U] == lpo->io.hnd)
-		iopad->handles[1U] = INVALID_HANDLE_VALUE;
+    INSIST(NULL != iopad);
+    if (iopad->handles[0U] == lpo->io.hnd)
+        iopad->handles[0U] = INVALID_HANDLE_VALUE;
+    if (iopad->handles[1U] == lpo->io.hnd)
+        iopad->handles[1U] = INVALID_HANDLE_VALUE;
 
-	SetEvent(lpo->ppswake);
+    SetEvent(lpo->ppswake);
 }
 
 /* Add a socket handle to the I/O completion port, and send
  * NTP_RECVS_PER_SOCKET receive requests to the kernel.
  */
-BOOL
-io_completion_port_add_socket(
-	SOCKET	sfd,
-	endpt *	ep,
-	BOOL	bcast
-	)
+BOOL io_completion_port_add_socket(
+    SOCKET sfd,
+    endpt* ep,
+    BOOL bcast)
 {
-	/* Assume the endpoint is already registered. Set the socket
-	 * handle into the proper slot, and then start up the IO engine.
-	 */
-	static const char * const msgh =
-		"Can't add socket to i/o completion port";
+    /* Assume the endpoint is already registered. Set the socket
+     * handle into the proper slot, and then start up the IO engine.
+     */
+    static const char* const msgh =
+        "Can't add socket to i/o completion port";
 
-	IoCtx_t *	lpo;
-	size_t		n;
-	ULONG_PTR	key;
-	IoHndPad_T *	iopad = NULL;
-	recvbuf_t *	rbuf;
+    IoCtx_t* lpo;
+    size_t n;
+    ULONG_PTR key;
+    IoHndPad_T* iopad = NULL;
+    recvbuf_t* rbuf;
 
-	key = ((ULONG_PTR)ep & ~(ULONG_PTR)1u) + !!bcast;
+    key = ((ULONG_PTR)ep & ~(ULONG_PTR)1u) + !!bcast;
 
-	if (NULL == (iopad = (IoHndPad_T*)ep->ioreg_ctx)) {
-		msyslog(LOG_CRIT, "io_completion_port_add_socket: endpt = %p not registered, exiting",
-			ep);
-		exit(1);
-	} else {
-		endpt *	rep = iopad->rsrc.ept;
-		iopad->handles[!!bcast] = (HANDLE)sfd;
-		INSIST(rep == ep);
-	}
+    if (NULL == (iopad = (IoHndPad_T*)ep->ioreg_ctx))
+    {
+        msyslog(LOG_CRIT, "io_completion_port_add_socket: endpt = %p not registered, exiting",
+                ep);
+        exit(1);
+    }
+    else
+    {
+        endpt* rep = iopad->rsrc.ept;
+        iopad->handles[!!bcast] = (HANDLE)sfd;
+        INSIST(rep == ep);
+    }
 
-	if (NULL == CreateIoCompletionPort((HANDLE)sfd,
-		hndIOCPLPort, key, 0))
-	{
-		msyslog(LOG_ERR, "%s: %m", msgh);
-		goto fail;
-	}
-	for (n = s_SockRecvSched; n > 0; --n) {
-		if (NULL == (lpo = IoCtxAlloc(ep->ioreg_ctx, NULL))) {
-			msyslog(LOG_ERR, "%s: no IO context: %m", msgh);
-			goto fail;
-		}
-		lpo->io.sfd = sfd;
-		if (NULL == (rbuf = get_free_recv_buffer_alloc(FALSE))) {
-			msyslog(LOG_ERR, "%s: no receive buffer: %m", msgh);
-			goto fail;
-		}
-		if (!QueueSocketRecv(lpo, rbuf))
-			goto fail;
-	}
-	return TRUE;
+    if (NULL == CreateIoCompletionPort((HANDLE)sfd,
+                                       hndIOCPLPort, key, 0))
+    {
+        msyslog(LOG_ERR, "%s: %m", msgh);
+        goto fail;
+    }
+    for (n = s_SockRecvSched; n > 0; --n)
+    {
+        if (NULL == (lpo = IoCtxAlloc(ep->ioreg_ctx, NULL)))
+        {
+            msyslog(LOG_ERR, "%s: no IO context: %m", msgh);
+            goto fail;
+        }
+        lpo->io.sfd = sfd;
+        if (NULL == (rbuf = get_free_recv_buffer_alloc(FALSE)))
+        {
+            msyslog(LOG_ERR, "%s: no receive buffer: %m", msgh);
+            goto fail;
+        }
+        if (!QueueSocketRecv(lpo, rbuf))
+            goto fail;
+    }
+    return TRUE;
 
 fail:
-	ep->ioreg_ctx = iohpDetach(ep->ioreg_ctx);
-	return FALSE;
+    ep->ioreg_ctx = iohpDetach(ep->ioreg_ctx);
+    return FALSE;
 }
 /* ----------------------------------------------------------------- */
-void
-io_completion_port_remove_socket(
-	SOCKET	fd,
-	endpt *	ep
-	)
+void io_completion_port_remove_socket(
+    SOCKET fd,
+    endpt* ep)
 {
-	/* Lock the shared lock for write, then search the given
-	 * socket handle and replace it with an invalid handle value.
-	 */
-	IoHndPad_T *	iopad = (IoHndPad_T*)ep->ioreg_ctx;
+    /* Lock the shared lock for write, then search the given
+     * socket handle and replace it with an invalid handle value.
+     */
+    IoHndPad_T* iopad = (IoHndPad_T*)ep->ioreg_ctx;
 
-	INSIST(hndIOCPLPort && hMainRpcDone);
-	if (iopad)
-		iocpl_notify(iopad, OnSocketDetach, fd);
+    INSIST(hndIOCPLPort && hMainRpcDone);
+    if (iopad)
+        iocpl_notify(iopad, OnSocketDetach, fd);
 }
 
 
@@ -1864,58 +1895,56 @@ io_completion_port_remove_socket(
  * Returns -1 for any error, with the error code available via
  *	msyslog() %m, or GetLastError().
  */
-int
-io_completion_port_sendto(
-	endpt *		ep,
-	SOCKET		sfd,
-	void  *		pkt,
-	size_t		len,
-	sockaddr_u *	dest
-	)
+int io_completion_port_sendto(
+    endpt* ep,
+    SOCKET sfd,
+    void* pkt,
+    size_t len,
+    sockaddr_u* dest)
 {
-	static const char * const msgh =
-		"sendto: cannot schedule socket send";
-	static const char * const dmsg =
-		"overlapped IO data buffer";
+    static const char* const msgh =
+        "sendto: cannot schedule socket send";
+    static const char* const dmsg =
+        "overlapped IO data buffer";
 
-	IoCtx_t *	lpo  = NULL;
-	void *		dbuf = NULL;
-	WSABUF		wsabuf;
-	int		rc;
+    IoCtx_t* lpo = NULL;
+    void* dbuf = NULL;
+    WSABUF wsabuf;
+    int rc;
 
-	if (len > INT_MAX)
-		len = INT_MAX;
+    if (len > INT_MAX)
+        len = INT_MAX;
 
-	if (NULL == (dbuf = IOCPLPoolMemDup(pkt, len, dmsg)))
-		goto fail;
-	/* We register the IO operation against the shared lock here.
-	 * This is not strictly necessary, since the callback does not
-	 * access the endpoint structure in any way...
-	 */
-	if (NULL == (lpo = IoCtxAlloc(ep->ioreg_ctx, NULL)))
-		goto fail;
+    if (NULL == (dbuf = IOCPLPoolMemDup(pkt, len, dmsg)))
+        goto fail;
+    /* We register the IO operation against the shared lock here.
+     * This is not strictly necessary, since the callback does not
+     * access the endpoint structure in any way...
+     */
+    if (NULL == (lpo = IoCtxAlloc(ep->ioreg_ctx, NULL)))
+        goto fail;
 
-	lpo->onIoDone  = OnSocketSend;
-	lpo->trans_buf = dbuf;
-	lpo->flRawMem  = 1;
-	lpo->io.sfd    = sfd;
+    lpo->onIoDone = OnSocketSend;
+    lpo->trans_buf = dbuf;
+    lpo->flRawMem = 1;
+    lpo->io.sfd = sfd;
 
-	wsabuf.buf = (void*)lpo->trans_buf;
-	wsabuf.len = (DWORD)len;
+    wsabuf.buf = (void*)lpo->trans_buf;
+    wsabuf.len = (DWORD)len;
 
-	rc  = WSASendTo(sfd, &wsabuf, 1, NULL, 0,
-			&dest->sa, SOCKLEN(dest),
-			&lpo->ol, NULL);
-	if (!rc || IoResultCheck((DWORD)WSAGetLastError(), lpo, msgh))
-		return (int)len;	/* normal/success return */
+    rc = WSASendTo(sfd, &wsabuf, 1, NULL, 0,
+                   &dest->sa, SOCKLEN(dest),
+                   &lpo->ol, NULL);
+    if (!rc || IoResultCheck((DWORD)WSAGetLastError(), lpo, msgh))
+        return (int)len; /* normal/success return */
 
-	errno = EBADF;
-	return -1;
+    errno = EBADF;
+    return -1;
 
 fail:
-	IoCtxFree(lpo);
-	IOCPLPoolFree(dbuf, dmsg);
-	return -1;
+    IoCtxFree(lpo);
+    IOCPLPoolFree(dbuf, dmsg);
+    return -1;
 }
 
 /* --------------------------------------------------------------------
@@ -1923,58 +1952,59 @@ fail:
  * Note that this is in effect the main loop for processing requests
  * both send and receive.  Executed on the main thread.
  */
-int
-GetReceivedBuffers(void)
+int GetReceivedBuffers(void)
 {
-	DWORD	index;
-	HANDLE	ready;
-	BOOL	have_packet;
+    DWORD index;
+    HANDLE ready;
+    BOOL have_packet;
 
-	have_packet = FALSE;
-	while (!have_packet) {
-		index = WaitForMultipleObjectsEx(
-			ActiveWaitHandles, WaitHandles,
-			FALSE, INFINITE, TRUE);
-		switch (index) {
+    have_packet = FALSE;
+    while (!have_packet)
+    {
+        index = WaitForMultipleObjectsEx(
+            ActiveWaitHandles, WaitHandles,
+            FALSE, INFINITE, TRUE);
+        switch (index)
+        {
 
-		case WAIT_OBJECT_0 + 0: /* timer */
-			timer();
-			break;
+        case WAIT_OBJECT_0 + 0: /* timer */
+            timer();
+            break;
 
-		case WAIT_OBJECT_0 + 1: /* exit request */
-			exit(0);
-			break;
+        case WAIT_OBJECT_0 + 1: /* exit request */
+            exit(0);
+            break;
 
-		case WAIT_OBJECT_0 + 2: /* Io event */
-			DPRINTF(7, ("IoEvent occurred\n"));
-			have_packet = TRUE;
-			break;
+        case WAIT_OBJECT_0 + 2: /* Io event */
+            DPRINTF(7, ("IoEvent occurred\n"));
+            have_packet = TRUE;
+            break;
 
-		case WAIT_IO_COMPLETION: /* there might be something after APC */
-			have_packet = !!full_recvbuffs();
-			break;
+        case WAIT_IO_COMPLETION: /* there might be something after APC */
+            have_packet = !!full_recvbuffs();
+            break;
 
-		case WAIT_TIMEOUT:
-			DEBUG_INVARIANT(!"INFINITE wait timed out");
-			break;
+        case WAIT_TIMEOUT:
+            DEBUG_INVARIANT(!"INFINITE wait timed out");
+            break;
 
-		case WAIT_FAILED:
-			DEBUG_INVARIANT(!"IOCP wait failed");
-			break;
+        case WAIT_FAILED:
+            DEBUG_INVARIANT(!"IOCP wait failed");
+            break;
 
-		default:
-			DEBUG_INSIST((index - WAIT_OBJECT_0) <
-				     ActiveWaitHandles);
-			ready = WaitHandles[index - WAIT_OBJECT_0];
-			handle_blocking_resp_sem(ready);
-			break;
-				
-		} /* switch */
-	}
+        default:
+            DEBUG_INSIST((index - WAIT_OBJECT_0) <
+                         ActiveWaitHandles);
+            ready = WaitHandles[index - WAIT_OBJECT_0];
+            handle_blocking_resp_sem(ready);
+            break;
 
-	return (full_recvbuffs());	/* get received buffers */
+        } /* switch */
+    }
+
+    return (full_recvbuffs()); /* get received buffers */
 }
 
-#else /*defined(HAVE_IO_COMPLETION_PORT) */
-  static int NonEmptyCompilationUnit;
-#endif  /*!defined(HAVE_IO_COMPLETION_PORT) */
+#else  /*defined(HAVE_IO_COMPLETION_PORT) */
+static int NonEmptyCompilationUnit;
+#endif /*!defined(HAVE_IO_COMPLETION_PORT) */

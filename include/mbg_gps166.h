@@ -38,6 +38,8 @@
 #ifndef MBG_GPS166_H
 #define MBG_GPS166_H
 
+#include "ntp_fp.h"
+
 
 /***************************************************************************
  *
@@ -81,44 +83,55 @@
  *
  * time_t t = ( gps_week * ::SECS_PER_WEEK ) + sec_of_week + ::GPS_SEC_BIAS
  */
-#define GPS_SEC_BIAS   315964800U     // ( ( ( 10UL * 365UL ) + 2 + 5 ) * SECS_PER_DAY )
+#define GPS_SEC_BIAS 315964800U // ( ( ( 10UL * 365UL ) + 2 + 5 ) * SECS_PER_DAY )
 
 
 #ifndef _COM_HS_DEFINED
-  /**
-   * @brief Enumeration of handshake modes
-   */
-  enum COM_HANSHAKE_MODES { HS_NONE, HS_XONXOFF, HS_RTSCTS, N_COM_HS };
-  #define _COM_HS_DEFINED
+/**
+ * @brief Enumeration of handshake modes
+ */
+enum COM_HANSHAKE_MODES
+{
+    HS_NONE,
+    HS_XONXOFF,
+    HS_RTSCTS,
+    N_COM_HS
+};
+#define _COM_HS_DEFINED
 #endif
 
 #ifndef _COM_PARM_DEFINED
-  /**
-   * @brief A data type to configure a serial port's baud rate
-   *
-   * @see ::MBG_BAUD_RATES
-   */
-  typedef int32_t BAUD_RATE;
+/**
+ * @brief A data type to configure a serial port's baud rate
+ *
+ * @see ::MBG_BAUD_RATES
+ */
+typedef int32_t BAUD_RATE;
 
-  /**
-   * @brief Indices used to identify a parameter in the framing string
-   *
-   * @see ::MBG_FRAMING_STRS
-   */
-  enum MBG_FRAMING_STR_IDXS { F_DBITS, F_PRTY, F_STBITS };
+/**
+ * @brief Indices used to identify a parameter in the framing string
+ *
+ * @see ::MBG_FRAMING_STRS
+ */
+enum MBG_FRAMING_STR_IDXS
+{
+    F_DBITS,
+    F_PRTY,
+    F_STBITS
+};
 
-  /**
-   * @brief A structure to store the configuration of a serial port
-   */
-  typedef struct
-  {
-    BAUD_RATE baud_rate;  ///< transmission speed, e.g. 19200L, see ::MBG_BAUD_RATES
-    char framing[4];      ///< ASCIIZ framing string, e.g. "8N1" or "7E2", see ::MBG_FRAMING_STRS
-    int16_t handshake;    ///< handshake mode, yet only ::HS_NONE supported
+/**
+ * @brief A structure to store the configuration of a serial port
+ */
+typedef struct
+{
+    BAUD_RATE baud_rate; ///< transmission speed, e.g. 19200L, see ::MBG_BAUD_RATES
+    char framing[4];     ///< ASCIIZ framing string, e.g. "8N1" or "7E2", see ::MBG_FRAMING_STRS
+    int16_t handshake;   ///< handshake mode, yet only ::HS_NONE supported
 
-  } COM_PARM;
+} COM_PARM;
 
-  #define _COM_PARM_DEFINED
+#define _COM_PARM_DEFINED
 #endif
 
 
@@ -133,12 +146,12 @@
  */
 enum STR_MODES
 {
-  STR_ON_REQ,     ///< transmission on request by received '?' character only
-  STR_PER_SEC,    ///< transmission automatically if second changes
-  STR_PER_MIN,    ///< transmission automatically if minute changes
-  STR_AUTO,       ///< transmission automatically if required, e.g. on capture event
-  STR_ON_REQ_SEC, ///< transmission if second changes and a request has been received before
-  N_STR_MODE      ///< the number of known modes
+    STR_ON_REQ,     ///< transmission on request by received '?' character only
+    STR_PER_SEC,    ///< transmission automatically if second changes
+    STR_PER_MIN,    ///< transmission automatically if minute changes
+    STR_AUTO,       ///< transmission automatically if required, e.g. on capture event
+    STR_ON_REQ_SEC, ///< transmission if second changes and a request has been received before
+    N_STR_MODE      ///< the number of known modes
 };
 
 
@@ -148,7 +161,7 @@ enum STR_MODES
  * a ::RECEIVER_INFO structure the number of provided COM ports
  * is available in ::RECEIVER_INFO::n_com_ports.
  */
-#define DEFAULT_N_COM   2
+#define DEFAULT_N_COM 2
 
 
 /**
@@ -159,8 +172,8 @@ enum STR_MODES
  */
 typedef struct
 {
-  COM_PARM com[DEFAULT_N_COM];    ///< COM0 and COM1 settings
-  uint8_t mode[DEFAULT_N_COM];    ///< COM0 and COM1 output mode
+    COM_PARM com[DEFAULT_N_COM]; ///< COM0 and COM1 settings
+    uint8_t mode[DEFAULT_N_COM]; ///< COM0 and COM1 output mode
 
 } PORT_PARM;
 
@@ -178,12 +191,12 @@ typedef uint16_t GPS_CMD;
  */
 enum GPS_CMD_CTRL_CODES
 {
-  GPS_REQACK = 0x8000,   ///< to device: request acknowledge
-  GPS_ACK    = 0x4000,   ///< from device: acknowledge a command
-  GPS_NACK   = 0x2000,   ///< from device: error evaluating a command
+    GPS_REQACK = 0x8000, ///< to device: request acknowledge
+    GPS_ACK = 0x4000,    ///< from device: acknowledge a command
+    GPS_NACK = 0x2000,   ///< from device: error evaluating a command
 };
 
-#define GPS_CTRL_MSK  0xF000   ///< bit mask of all ::GPS_CMD_CTRL_CODES
+#define GPS_CTRL_MSK 0xF000 ///< bit mask of all ::GPS_CMD_CTRL_CODES
 
 
 /**
@@ -213,33 +226,33 @@ enum GPS_CMD_CTRL_CODES
  * @see ::GPS_CMD_CODES_TABLE
  */
 enum GPS_CMD_CODES
-{ /* system data */
-  GPS_AUTO_ON = 0x000,  ///< (-w-) no data, enable auto-msgs from device
-  GPS_AUTO_OFF,         ///< (-w-) no data, disable auto-msgs from device
-  GPS_SW_REV,           ///< (r--) deprecated, ::SW_REV, software revision, use only if ::GPS_RECEIVER_INFO not supp.
-  GPS_BVAR_STAT,        ///< (r--) ::BVAR_STAT, status of buffered variables, only if ::GPS_MODEL_HAS_BVAR_STAT
-  GPS_TIME,             ///< (-wa) ::TTM, current time or capture, or init board time
-  GPS_POS_XYZ,          ///< (rw-) ::XYZ, current position in ECEF coordinates, only if ::GPS_MODEL_HAS_POS_XYZ
-  GPS_POS_LLA,          ///< (rw-) ::LLA, current position in geographic coordinates, only if ::GPS_MODEL_HAS_POS_LLA
-  GPS_TZDL,             ///< (rw-) ::TZDL, time zone / daylight saving, only if ::GPS_MODEL_HAS_TZDL
-  GPS_PORT_PARM,        ///< (rw-) deprecated, ::PORT_PARM, use ::PORT_SETTINGS etc. if ::GPS_RECEIVER_INFO supported
-  GPS_SYNTH,            ///< (rw-) ::SYNTH, synthesizer settings, only if ::GPS_HAS_SYNTH
-  GPS_ANT_INFO,         ///< (r-a) ::ANT_INFO, time diff after antenna disconnect, only if ::GPS_MODEL_HAS_ANT_INFO
-  GPS_UCAP,             ///< (r-a) ::TTM, user capture events, only if ::RECEIVER_INFO::n_ucaps > 0
+{                      /* system data */
+  GPS_AUTO_ON = 0x000, ///< (-w-) no data, enable auto-msgs from device
+  GPS_AUTO_OFF,        ///< (-w-) no data, disable auto-msgs from device
+  GPS_SW_REV,          ///< (r--) deprecated, ::SW_REV, software revision, use only if ::GPS_RECEIVER_INFO not supp.
+  GPS_BVAR_STAT,       ///< (r--) ::BVAR_STAT, status of buffered variables, only if ::GPS_MODEL_HAS_BVAR_STAT
+  GPS_TIME,            ///< (-wa) ::TTM, current time or capture, or init board time
+  GPS_POS_XYZ,         ///< (rw-) ::XYZ, current position in ECEF coordinates, only if ::GPS_MODEL_HAS_POS_XYZ
+  GPS_POS_LLA,         ///< (rw-) ::LLA, current position in geographic coordinates, only if ::GPS_MODEL_HAS_POS_LLA
+  GPS_TZDL,            ///< (rw-) ::TZDL, time zone / daylight saving, only if ::GPS_MODEL_HAS_TZDL
+  GPS_PORT_PARM,       ///< (rw-) deprecated, ::PORT_PARM, use ::PORT_SETTINGS etc. if ::GPS_RECEIVER_INFO supported
+  GPS_SYNTH,           ///< (rw-) ::SYNTH, synthesizer settings, only if ::GPS_HAS_SYNTH
+  GPS_ANT_INFO,        ///< (r-a) ::ANT_INFO, time diff after antenna disconnect, only if ::GPS_MODEL_HAS_ANT_INFO
+  GPS_UCAP,            ///< (r-a) ::TTM, user capture events, only if ::RECEIVER_INFO::n_ucaps > 0
 
   /* GPS data */
-  GPS_CFGH = 0x100,     ///< (rw-) ::CFGH, SVs' configuration and health codes
-  GPS_ALM,              ///< (rw-) req: uint16_t SV num, ::SV_ALM, one SV's almanac
-  GPS_EPH,              ///< (rw-) req: uint16_t SV num, ::SV_EPH, one SV's ephemeris
-  GPS_UTC,              ///< (rw-) ::UTC, GPS %UTC correction parameters
-  GPS_IONO,             ///< (rw-) ::IONO, GPS ionospheric correction parameters
-  GPS_ASCII_MSG         ///< (r--) ::ASCII_MSG, the GPS ASCII message
+  GPS_CFGH = 0x100, ///< (rw-) ::CFGH, SVs' configuration and health codes
+  GPS_ALM,          ///< (rw-) req: uint16_t SV num, ::SV_ALM, one SV's almanac
+  GPS_EPH,          ///< (rw-) req: uint16_t SV num, ::SV_EPH, one SV's ephemeris
+  GPS_UTC,          ///< (rw-) ::UTC, GPS %UTC correction parameters
+  GPS_IONO,         ///< (rw-) ::IONO, GPS ionospheric correction parameters
+  GPS_ASCII_MSG     ///< (r--) ::ASCII_MSG, the GPS ASCII message
 };
 
 
 #ifndef _CSUM_DEFINED
-  typedef uint16_t CSUM;  /* checksum used by some structures stored in non-volatile memory */
-  #define _CSUM_DEFINED
+typedef uint16_t CSUM; /* checksum used by some structures stored in non-volatile memory */
+#define _CSUM_DEFINED
 #endif
 
 
@@ -248,16 +261,16 @@ enum GPS_CMD_CODES
  */
 typedef struct
 {
-  GPS_CMD cmd;      ///< see ::GPS_CMD_CODES
-  uint16_t len;     ///< length of the data portion appended after the header
-  CSUM data_csum;   ///< checksum of the data portion appended after the header
-  CSUM hdr_csum;    ///< checksum of the preceding header bytes
+    GPS_CMD cmd;    ///< see ::GPS_CMD_CODES
+    uint16_t len;   ///< length of the data portion appended after the header
+    CSUM data_csum; ///< checksum of the data portion appended after the header
+    CSUM hdr_csum;  ///< checksum of the preceding header bytes
 
 } GPS_MSG_HDR;
 
 
-#define GPS_ID_STR_LEN      16
-#define GPS_ID_STR_SIZE     ( GPS_ID_STR_LEN + 1 )
+#define GPS_ID_STR_LEN 16
+#define GPS_ID_STR_SIZE (GPS_ID_STR_LEN + 1)
 
 /**
  * @brief Software revision information
@@ -267,9 +280,9 @@ typedef struct
  */
 typedef struct
 {
-  uint16_t code;               ///< Version number, e.g. 0x0120 means v1.20
-  char name[GPS_ID_STR_SIZE];  ///< Optional string identifying a customized version
-  uint8_t reserved;            ///< Reserved field to yield even structure size
+    uint16_t code;              ///< Version number, e.g. 0x0120 means v1.20
+    char name[GPS_ID_STR_SIZE]; ///< Optional string identifying a customized version
+    uint8_t reserved;           ///< Reserved field to yield even structure size
 
 } SW_REV;
 
@@ -282,24 +295,24 @@ typedef struct
  */
 enum GNSS_SVNOS
 {
-  MIN_SVNO_GPS = 1,       ///< min. GPS satellite PRN number
-  MAX_SVNO_GPS = 32,      ///< max. GPS satellite PRN number
-  N_SVNO_GPS = 32,        ///< max. number of active GPS satellites
+    MIN_SVNO_GPS = 1,  ///< min. GPS satellite PRN number
+    MAX_SVNO_GPS = 32, ///< max. GPS satellite PRN number
+    N_SVNO_GPS = 32,   ///< max. number of active GPS satellites
 
-  MIN_SVNO_WAAS = 33,     ///< min. WAAS satellite number
-  MAX_SVNO_WAAS = 64,     ///< max. WAAS satellite number
-  N_SVNO_WAAS = 32,       ///< max. number of active WAAS satellites
+    MIN_SVNO_WAAS = 33, ///< min. WAAS satellite number
+    MAX_SVNO_WAAS = 64, ///< max. WAAS satellite number
+    N_SVNO_WAAS = 32,   ///< max. number of active WAAS satellites
 
-  MIN_SVNO_GLONASS = 65,  ///< min. Glonass satellite number (64 + sat slot ID)
-  MAX_SVNO_GLONASS = 95,  ///< max. Glonass satellite number (64 + sat slot ID)
-  N_SVNO_GLONASS = 31     ///< max. number of active Glonass satellites
+    MIN_SVNO_GLONASS = 65, ///< min. Glonass satellite number (64 + sat slot ID)
+    MAX_SVNO_GLONASS = 95, ///< max. Glonass satellite number (64 + sat slot ID)
+    N_SVNO_GLONASS = 31    ///< max. number of active Glonass satellites
 };
 
 
-typedef uint16_t SVNO;    ///< the number of an SV (Space Vehicle, i.e. satellite)
-typedef uint16_t HEALTH;  ///< an SV's 6 bit health code
-typedef uint16_t CFG;     ///< an SV's 4 bit configuration code
-typedef uint16_t IOD;     ///< Issue-Of-Data code
+typedef uint16_t SVNO;   ///< the number of an SV (Space Vehicle, i.e. satellite)
+typedef uint16_t HEALTH; ///< an SV's 6 bit health code
+typedef uint16_t CFG;    ///< an SV's 4 bit configuration code
+typedef uint16_t IOD;    ///< Issue-Of-Data code
 
 
 /**
@@ -314,7 +327,7 @@ typedef uint16_t IOD;     ///< Issue-Of-Data code
  */
 typedef uint16_t BVAR_STAT;
 
-#define _mbg_swab_bvar_stat( _p )  _mbg_swab16( (_p) )
+#define _mbg_swab_bvar_stat(_p) _mbg_swab16((_p))
 
 
 /**
@@ -333,12 +346,12 @@ typedef uint16_t BVAR_STAT;
  */
 enum BVAR_FLAG_BITS
 {
-  BVAR_BIT_CFGH_INVALID,      ///< Satellite configuration and health parameters incomplete
-  BVAR_BIT_ALM_NOT_COMPLETE,  ///< Almanac parameters incomplete
-  BVAR_BIT_UTC_INVALID,       ///< %UTC offset parameters incomplete
-  BVAR_BIT_IONO_INVALID,      ///< Ionospheric correction parameters incomplete
-  BVAR_BIT_RCVR_POS_INVALID,  ///< No valid receiver position available
-  N_BVAR_BIT                  ///< number of defined ::BVAR_STAT bits
+    BVAR_BIT_CFGH_INVALID,     ///< Satellite configuration and health parameters incomplete
+    BVAR_BIT_ALM_NOT_COMPLETE, ///< Almanac parameters incomplete
+    BVAR_BIT_UTC_INVALID,      ///< %UTC offset parameters incomplete
+    BVAR_BIT_IONO_INVALID,     ///< Ionospheric correction parameters incomplete
+    BVAR_BIT_RCVR_POS_INVALID, ///< No valid receiver position available
+    N_BVAR_BIT                 ///< number of defined ::BVAR_STAT bits
 };
 
 
@@ -353,11 +366,11 @@ enum BVAR_FLAG_BITS
  */
 enum BVAR_FLAGS
 {
-  BVAR_CFGH_INVALID     = ( 1UL << BVAR_BIT_CFGH_INVALID ),      ///< see ::BVAR_BIT_CFGH_INVALID
-  BVAR_ALM_NOT_COMPLETE = ( 1UL << BVAR_BIT_ALM_NOT_COMPLETE ),  ///< see ::BVAR_BIT_ALM_NOT_COMPLETE
-  BVAR_UTC_INVALID      = ( 1UL << BVAR_BIT_UTC_INVALID ),       ///< see ::BVAR_BIT_UTC_INVALID
-  BVAR_IONO_INVALID     = ( 1UL << BVAR_BIT_IONO_INVALID ),      ///< see ::BVAR_BIT_IONO_INVALID
-  BVAR_RCVR_POS_INVALID = ( 1UL << BVAR_BIT_RCVR_POS_INVALID ),  ///< see ::BVAR_BIT_RCVR_POS_INVALID
+    BVAR_CFGH_INVALID = (1UL << BVAR_BIT_CFGH_INVALID),         ///< see ::BVAR_BIT_CFGH_INVALID
+    BVAR_ALM_NOT_COMPLETE = (1UL << BVAR_BIT_ALM_NOT_COMPLETE), ///< see ::BVAR_BIT_ALM_NOT_COMPLETE
+    BVAR_UTC_INVALID = (1UL << BVAR_BIT_UTC_INVALID),           ///< see ::BVAR_BIT_UTC_INVALID
+    BVAR_IONO_INVALID = (1UL << BVAR_BIT_IONO_INVALID),         ///< see ::BVAR_BIT_IONO_INVALID
+    BVAR_RCVR_POS_INVALID = (1UL << BVAR_BIT_RCVR_POS_INVALID), ///< see ::BVAR_BIT_RCVR_POS_INVALID
 };
 
 
@@ -380,9 +393,9 @@ enum BVAR_FLAGS
  */
 typedef struct
 {
-  uint16_t wn;     ///< the week number since GPS has been installed
-  uint32_t sec;    ///< the second of that week
-  uint32_t tick;   ///< fractions of a second, 1/::RECEIVER_INFO::ticks_per_sec units
+    uint16_t wn;   ///< the week number since GPS has been installed
+    uint32_t sec;  ///< the second of that week
+    uint32_t tick; ///< fractions of a second, 1/::RECEIVER_INFO::ticks_per_sec units
 
 } T_GPS;
 
@@ -402,17 +415,17 @@ typedef struct
  */
 typedef struct
 {
-  int16_t year;           ///< year number, 0..9999
-  int8_t month;           ///< month, 1..12
-  int8_t mday;            ///< day of month, 1..31
-  int16_t yday;           ///< day of year, 1..365, or 366 in case of leap year
-  int8_t wday;            ///< day of week, 0..6 == Sun..Sat
-  int8_t hour;            ///< hours, 0..23
-  int8_t min;             ///< minutes, 0..59
-  int8_t sec;             ///< seconds, 0..59, or 60 in case of inserted leap second
-  int32_t frac;           ///< fractions of a second, 1/::RECEIVER_INFO::ticks_per_sec units
-  int32_t offs_from_utc;  ///< local time offset from %UTC [sec]
-  uint16_t status;        ///< status flags, see ::TM_GPS_STATUS_BIT_MASKS
+    int16_t year;          ///< year number, 0..9999
+    int8_t month;          ///< month, 1..12
+    int8_t mday;           ///< day of month, 1..31
+    int16_t yday;          ///< day of year, 1..365, or 366 in case of leap year
+    int8_t wday;           ///< day of week, 0..6 == Sun..Sat
+    int8_t hour;           ///< hours, 0..23
+    int8_t min;            ///< minutes, 0..59
+    int8_t sec;            ///< seconds, 0..59, or 60 in case of inserted leap second
+    int32_t frac;          ///< fractions of a second, 1/::RECEIVER_INFO::ticks_per_sec units
+    int32_t offs_from_utc; ///< local time offset from %UTC [sec]
+    uint16_t status;       ///< status flags, see ::TM_GPS_STATUS_BIT_MASKS
 
 } TM_GPS;
 
@@ -428,23 +441,23 @@ typedef struct
  */
 enum TM_GPS_STATUS_BITS
 {
-  TM_BIT_UTC,          ///< %UTC correction has been made
-  TM_BIT_LOCAL,        ///< %UTC has been converted to local time according to ::TZDL settings
-  TM_BIT_DL_ANN,       ///< state of daylight saving is going to change
-  TM_BIT_DL_ENB,       ///< daylight saving is in effect
-  TM_BIT_LS_ANN,       ///< leap second pending
-  TM_BIT_LS_ENB,       ///< current second is leap second
-  TM_BIT_LS_ANN_NEG,   ///< set in addition to ::TM_BIT_LS_ANN if leap sec is negative
-  TM_BIT_INVT,         ///< invalid time, e.g. if RTC battery bas been empty
+    TM_BIT_UTC,        ///< %UTC correction has been made
+    TM_BIT_LOCAL,      ///< %UTC has been converted to local time according to ::TZDL settings
+    TM_BIT_DL_ANN,     ///< state of daylight saving is going to change
+    TM_BIT_DL_ENB,     ///< daylight saving is in effect
+    TM_BIT_LS_ANN,     ///< leap second pending
+    TM_BIT_LS_ENB,     ///< current second is leap second
+    TM_BIT_LS_ANN_NEG, ///< set in addition to ::TM_BIT_LS_ANN if leap sec is negative
+    TM_BIT_INVT,       ///< invalid time, e.g. if RTC battery bas been empty
 
-  TM_BIT_EXT_SYNC,     ///< synchronized externally
-  TM_BIT_HOLDOVER,     ///< in holdover mode after previous synchronization
-  TM_BIT_ANT_SHORT,    ///< antenna cable short circuited
-  TM_BIT_NO_WARM,      ///< OCXO has not warmed up
-  TM_BIT_ANT_DISCONN,  ///< antenna currently disconnected
-  TM_BIT_SYN_FLAG,     ///< TIME_SYN output is low
-  TM_BIT_NO_SYNC,      ///< time sync actually not verified
-  TM_BIT_NO_POS        ///< position actually not verified, LOCK LED off
+    TM_BIT_EXT_SYNC,    ///< synchronized externally
+    TM_BIT_HOLDOVER,    ///< in holdover mode after previous synchronization
+    TM_BIT_ANT_SHORT,   ///< antenna cable short circuited
+    TM_BIT_NO_WARM,     ///< OCXO has not warmed up
+    TM_BIT_ANT_DISCONN, ///< antenna currently disconnected
+    TM_BIT_SYN_FLAG,    ///< TIME_SYN output is low
+    TM_BIT_NO_SYNC,     ///< time sync actually not verified
+    TM_BIT_NO_POS       ///< position actually not verified, LOCK LED off
 };
 
 
@@ -458,23 +471,23 @@ enum TM_GPS_STATUS_BITS
  */
 enum TM_GPS_STATUS_BIT_MASKS
 {
-  TM_UTC         = ( 1UL << TM_BIT_UTC ),          ///< see ::TM_BIT_UTC
-  TM_LOCAL       = ( 1UL << TM_BIT_LOCAL ),        ///< see ::TM_BIT_LOCAL
-  TM_DL_ANN      = ( 1UL << TM_BIT_DL_ANN ),       ///< see ::TM_BIT_DL_ANN
-  TM_DL_ENB      = ( 1UL << TM_BIT_DL_ENB ),       ///< see ::TM_BIT_DL_ENB
-  TM_LS_ANN      = ( 1UL << TM_BIT_LS_ANN ),       ///< see ::TM_BIT_LS_ANN
-  TM_LS_ENB      = ( 1UL << TM_BIT_LS_ENB ),       ///< see ::TM_BIT_LS_ENB
-  TM_LS_ANN_NEG  = ( 1UL << TM_BIT_LS_ANN_NEG ),   ///< see ::TM_BIT_LS_ANN_NEG
-  TM_INVT        = ( 1UL << TM_BIT_INVT ),         ///< see ::TM_BIT_INVT
+    TM_UTC = (1UL << TM_BIT_UTC),               ///< see ::TM_BIT_UTC
+    TM_LOCAL = (1UL << TM_BIT_LOCAL),           ///< see ::TM_BIT_LOCAL
+    TM_DL_ANN = (1UL << TM_BIT_DL_ANN),         ///< see ::TM_BIT_DL_ANN
+    TM_DL_ENB = (1UL << TM_BIT_DL_ENB),         ///< see ::TM_BIT_DL_ENB
+    TM_LS_ANN = (1UL << TM_BIT_LS_ANN),         ///< see ::TM_BIT_LS_ANN
+    TM_LS_ENB = (1UL << TM_BIT_LS_ENB),         ///< see ::TM_BIT_LS_ENB
+    TM_LS_ANN_NEG = (1UL << TM_BIT_LS_ANN_NEG), ///< see ::TM_BIT_LS_ANN_NEG
+    TM_INVT = (1UL << TM_BIT_INVT),             ///< see ::TM_BIT_INVT
 
-  TM_EXT_SYNC    = ( 1UL << TM_BIT_EXT_SYNC ),     ///< see ::TM_BIT_EXT_SYNC
-  TM_HOLDOVER    = ( 1UL << TM_BIT_HOLDOVER ),     ///< see ::TM_BIT_HOLDOVER
-  TM_ANT_SHORT   = ( 1UL << TM_BIT_ANT_SHORT ),    ///< see ::TM_BIT_ANT_SHORT
-  TM_NO_WARM     = ( 1UL << TM_BIT_NO_WARM ),      ///< see ::TM_BIT_NO_WARM
-  TM_ANT_DISCONN = ( 1UL << TM_BIT_ANT_DISCONN ),  ///< see ::TM_BIT_ANT_DISCONN
-  TM_SYN_FLAG    = ( 1UL << TM_BIT_SYN_FLAG ),     ///< see ::TM_BIT_SYN_FLAG
-  TM_NO_SYNC     = ( 1UL << TM_BIT_NO_SYNC ),      ///< see ::TM_BIT_NO_SYNC
-  TM_NO_POS      = ( 1UL << TM_BIT_NO_POS )        ///< see ::TM_BIT_NO_POS
+    TM_EXT_SYNC = (1UL << TM_BIT_EXT_SYNC),       ///< see ::TM_BIT_EXT_SYNC
+    TM_HOLDOVER = (1UL << TM_BIT_HOLDOVER),       ///< see ::TM_BIT_HOLDOVER
+    TM_ANT_SHORT = (1UL << TM_BIT_ANT_SHORT),     ///< see ::TM_BIT_ANT_SHORT
+    TM_NO_WARM = (1UL << TM_BIT_NO_WARM),         ///< see ::TM_BIT_NO_WARM
+    TM_ANT_DISCONN = (1UL << TM_BIT_ANT_DISCONN), ///< see ::TM_BIT_ANT_DISCONN
+    TM_SYN_FLAG = (1UL << TM_BIT_SYN_FLAG),       ///< see ::TM_BIT_SYN_FLAG
+    TM_NO_SYNC = (1UL << TM_BIT_NO_SYNC),         ///< see ::TM_BIT_NO_SYNC
+    TM_NO_POS = (1UL << TM_BIT_NO_POS)            ///< see ::TM_BIT_NO_POS
 };
 
 
@@ -488,9 +501,9 @@ enum TM_GPS_STATUS_BIT_MASKS
  */
 typedef struct
 {
-  int16_t channel;  ///< -1: the current on-board time; >= 0 the capture channel number
-  T_GPS t;          ///< time in GPS scale and format
-  TM_GPS tm;        ///< time converted to %UTC and/or local time according to ::TZDL settings
+    int16_t channel; ///< -1: the current on-board time; >= 0 the capture channel number
+    T_GPS t;         ///< time in GPS scale and format
+    TM_GPS tm;       ///< time converted to %UTC and/or local time according to ::TZDL settings
 
 } TTM;
 
@@ -505,7 +518,13 @@ typedef struct
 /**
  * @brief Sequence and number of components of a cartesian position
  */
-enum XYZ_FIELDS { XP, YP, ZP, N_XYZ };  // x, y, z
+enum XYZ_FIELDS
+{
+    XP,
+    YP,
+    ZP,
+    N_XYZ
+}; // x, y, z
 
 /**
  * @brief A position in cartesian coordinates
@@ -523,7 +542,13 @@ typedef l_fp XYZ[N_XYZ];
 /**
  * @brief Sequence and number of components of a geographic position
  */
-enum LLA_FIELDS { LAT, LON, ALT, N_LLA };  /* latitude, longitude, altitude */
+enum LLA_FIELDS
+{
+    LAT,
+    LON,
+    ALT,
+    N_LLA
+}; /* latitude, longitude, altitude */
 
 /**
  * @brief A geographic position based on latitude, longitude, and altitude
@@ -573,37 +598,37 @@ typedef l_fp LLA[N_LLA];
  *
  * @{ */
 
-#define N_SYNTH_FREQ_DIGIT  4    ///< number of digits to edit
-#define MAX_SYNTH_FREQ   1000    ///< if range == ::MAX_SYNTH_RANGE
+#define N_SYNTH_FREQ_DIGIT 4 ///< number of digits to edit
+#define MAX_SYNTH_FREQ 1000  ///< if range == ::MAX_SYNTH_RANGE
 
-#define MIN_SYNTH_RANGE     0
-#define MAX_SYNTH_RANGE     5
-#define N_SYNTH_RANGE       ( MAX_SYNTH_RANGE - MIN_SYNTH_RANGE + 1 )
+#define MIN_SYNTH_RANGE 0
+#define MAX_SYNTH_RANGE 5
+#define N_SYNTH_RANGE (MAX_SYNTH_RANGE - MIN_SYNTH_RANGE + 1)
 
-#define N_SYNTH_PHASE_DIGIT  4
-#define MAX_SYNTH_PHASE      3600
+#define N_SYNTH_PHASE_DIGIT 4
+#define MAX_SYNTH_PHASE 3600
 
 
-#define MAX_SYNTH_FREQ_EDIT  9999  ///< max sequence of digits when editing
+#define MAX_SYNTH_FREQ_EDIT 9999 ///< max sequence of digits when editing
 
 
 /**
  * @brief The maximum frequency that can be configured for the synthesizer
  */
-#define MAX_SYNTH_FREQ_VAL   10000000U     ///< 10 MHz
+#define MAX_SYNTH_FREQ_VAL 10000000U ///< 10 MHz
 /*   == MAX_SYNTH_FREQ * 10^(MAX_SYNTH_RANGE-1) */
 
 /**
  * @brief The synthesizer's phase is only be synchronized if the frequency is below this limit
  */
-#define SYNTH_PHASE_SYNC_LIMIT   10000U    ///< 10 kHz
+#define SYNTH_PHASE_SYNC_LIMIT 10000U ///< 10 kHz
 
 /**
  * A Macro used to determine the position of the decimal point
  * when printing the synthesizer frequency as 4 digit value
  */
-#define _synth_dp_pos_from_range( _r ) \
-  ( ( ( N_SYNTH_RANGE - (_r) ) % ( N_SYNTH_FREQ_DIGIT - 1 ) ) + 1 )
+#define _synth_dp_pos_from_range(_r) \
+    (((N_SYNTH_RANGE - (_r)) % (N_SYNTH_FREQ_DIGIT - 1)) + 1)
 
 /**
  * @brief Synthesizer frequency units
@@ -612,14 +637,14 @@ typedef l_fp LLA[N_LLA];
  * (::N_SYNTH_RANGE strings)
  */
 #define DEFAULT_FREQ_RANGES \
-{                           \
-  "Hz",                     \
-  "kHz",                    \
-  "kHz",                    \
-  "kHz",                    \
-  "MHz",                    \
-  "MHz",                    \
-}
+    {                       \
+        "Hz",               \
+        "kHz",              \
+        "kHz",              \
+        "kHz",              \
+        "MHz",              \
+        "MHz",              \
+    }
 
 
 
@@ -628,18 +653,18 @@ typedef l_fp LLA[N_LLA];
  */
 typedef struct
 {
-  int16_t freq;    ///< four digits used; scale: 0.1 Hz; e.g. 1234 -> 123.4 Hz
-  int16_t range;   ///< scale factor for freq; 0..::MAX_SYNTH_RANGE
-  int16_t phase;   ///< -::MAX_SYNTH_PHASE..+::MAX_SYNTH_PHASE; >0 -> pulses later
+    int16_t freq;  ///< four digits used; scale: 0.1 Hz; e.g. 1234 -> 123.4 Hz
+    int16_t range; ///< scale factor for freq; 0..::MAX_SYNTH_RANGE
+    int16_t phase; ///< -::MAX_SYNTH_PHASE..+::MAX_SYNTH_PHASE; >0 -> pulses later
 
 } SYNTH;
 
-#define _mbg_swab_synth( _p )   \
-{                               \
-  _mbg_swab16( &(_p)->freq );   \
-  _mbg_swab16( &(_p)->range );  \
-  _mbg_swab16( &(_p)->phase );  \
-}
+#define _mbg_swab_synth(_p)        \
+    {                              \
+        _mbg_swab16(&(_p)->freq);  \
+        _mbg_swab16(&(_p)->range); \
+        _mbg_swab16(&(_p)->phase); \
+    }
 
 
 /**
@@ -647,12 +672,12 @@ typedef struct
  */
 enum SYNTH_STATES
 {
-  SYNTH_DISABLED,   ///< disbled by cfg, i.e. freq == 0.0
-  SYNTH_OFF,        ///< not enabled after power-up
-  SYNTH_FREE,       ///< enabled, but not synchronized
-  SYNTH_DRIFTING,   ///< has initially been sync'd, but now running free
-  SYNTH_SYNC,       ///< fully synchronized
-  N_SYNTH_STATE     ///< the number of known states
+    SYNTH_DISABLED, ///< disbled by cfg, i.e. freq == 0.0
+    SYNTH_OFF,      ///< not enabled after power-up
+    SYNTH_FREE,     ///< enabled, but not synchronized
+    SYNTH_DRIFTING, ///< has initially been sync'd, but now running free
+    SYNTH_SYNC,     ///< fully synchronized
+    N_SYNTH_STATE   ///< the number of known states
 };
 
 
@@ -661,14 +686,14 @@ enum SYNTH_STATES
  */
 typedef struct
 {
-  uint8_t state;     ///< state code as enumerated in ::SYNTH_STATES
-  uint8_t flags;     ///< reserved, currently always 0
+    uint8_t state; ///< state code as enumerated in ::SYNTH_STATES
+    uint8_t flags; ///< reserved, currently always 0
 
 } SYNTH_STATE;
 
-#define _mbg_swab_synth_state( _p )  _nop_macro_fnc()
+#define _mbg_swab_synth_state(_p) _nop_macro_fnc()
 
-#define SYNTH_FLAG_PHASE_IGNORED  0x01
+#define SYNTH_FLAG_PHASE_IGNORED 0x01
 
 /** @} defgroup group_synth */
 
@@ -711,11 +736,11 @@ typedef char TZ_NAME[6];
  */
 typedef struct
 {
-  int32_t offs;      ///< standard offset from %UTC to local time [sec]
-  int32_t offs_dl;   ///< additional offset if daylight saving enabled [sec]
-  TM_GPS tm_on;      ///< date/time when daylight saving starts
-  TM_GPS tm_off;     ///< date/time when daylight saving ends
-  TZ_NAME name[2];   ///< names without and with daylight saving enabled
+    int32_t offs;    ///< standard offset from %UTC to local time [sec]
+    int32_t offs_dl; ///< additional offset if daylight saving enabled [sec]
+    TM_GPS tm_on;    ///< date/time when daylight saving starts
+    TM_GPS tm_off;   ///< date/time when daylight saving ends
+    TZ_NAME name[2]; ///< names without and with daylight saving enabled
 
 } TZDL;
 
@@ -725,7 +750,7 @@ typedef struct
  * If this flag is or'ed to the year numbers in ::TZDL::tm_on and ::TZDL::tm_off
  * then daylight saving is computed automatically year by year.
  */
-#define DL_AUTO_FLAG  0x8000
+#define DL_AUTO_FLAG 0x8000
 
 /** @} defgroup group_tzdl */
 
@@ -748,10 +773,10 @@ typedef struct
  */
 typedef struct
 {
-  int16_t status;      ///< current status of antenna, see ::ANT_STATUS_CODES
-  TM_GPS tm_disconn;   ///< time of antenna disconnect
-  TM_GPS tm_reconn;    ///< time of antenna reconnect
-  int32_t delta_t;     ///< clock offs at reconn. time in 1/::RECEIVER_INFO::ticks_per_sec units
+    int16_t status;    ///< current status of antenna, see ::ANT_STATUS_CODES
+    TM_GPS tm_disconn; ///< time of antenna disconnect
+    TM_GPS tm_reconn;  ///< time of antenna reconnect
+    int32_t delta_t;   ///< clock offs at reconn. time in 1/::RECEIVER_INFO::ticks_per_sec units
 
 } ANT_INFO;
 
@@ -761,10 +786,10 @@ typedef struct
  */
 enum ANT_STATUS_CODES
 {
-  ANT_INVALID,   ///< No other fields valid since antenna has not yet been disconnected
-  ANT_DISCONN,   ///< Antenna is disconnected, tm_reconn and delta_t not yet set
-  ANT_RECONN,    ///< Antenna has been disconnect, and receiver sync. after reconnect, so all fields valid
-  N_ANT_STATUS_CODES  ///< the number of known status codes
+    ANT_INVALID,       ///< No other fields valid since antenna has not yet been disconnected
+    ANT_DISCONN,       ///< Antenna is disconnected, tm_reconn and delta_t not yet set
+    ANT_RECONN,        ///< Antenna has been disconnect, and receiver sync. after reconnect, so all fields valid
+    N_ANT_STATUS_CODES ///< the number of known status codes
 };
 
 
@@ -774,15 +799,15 @@ enum ANT_STATUS_CODES
  */
 typedef struct
 {
-  CSUM csum;                  ///< checksum of the remaining bytes
-  int16_t valid;              ///< flag data are valid
+    CSUM csum;     ///< checksum of the remaining bytes
+    int16_t valid; ///< flag data are valid
 
-  T_GPS tot_51;               ///< time of transmission, page 51
-  T_GPS tot_63;               ///< time of transmission, page 63
-  T_GPS t0a;                  ///< complete reference time almanac
+    T_GPS tot_51; ///< time of transmission, page 51
+    T_GPS tot_63; ///< time of transmission, page 63
+    T_GPS t0a;    ///< complete reference time almanac
 
-  CFG cfg[N_SVNO_GPS];        ///< 4 bit SV configuration code from page 63
-  HEALTH health[N_SVNO_GPS];  ///< 6 bit SV health codes from pages 51, 63
+    CFG cfg[N_SVNO_GPS];       ///< 4 bit SV configuration code from page 63
+    HEALTH health[N_SVNO_GPS]; ///< 6 bit SV health codes from pages 51, 63
 
 } CFGH;
 
@@ -828,17 +853,17 @@ typedef struct
  */
 typedef struct
 {
-  CSUM csum;          ///<  Checksum of the remaining bytes
-  int16_t valid;      ///<  Flag indicating %UTC parameters are valid
+    CSUM csum;     ///<  Checksum of the remaining bytes
+    int16_t valid; ///<  Flag indicating %UTC parameters are valid
 
-  T_GPS t0t;          ///<  Reference Time %UTC Parameters [wn|sec]
-  l_fp A0;            ///<  +- Clock Correction Coefficient 0 [sec]
-  l_fp A1;            ///<  +- Clock Correction Coefficient 1 [sec/sec]
+    T_GPS t0t; ///<  Reference Time %UTC Parameters [wn|sec]
+    l_fp A0;   ///<  +- Clock Correction Coefficient 0 [sec]
+    l_fp A1;   ///<  +- Clock Correction Coefficient 1 [sec/sec]
 
-  uint16_t WNlsf;     ///<  Week number of nearest leap second
-  int16_t DNt;        ///<  The day number at the end of which a leap second occurs
-  int8_t delta_tls;   ///<  Current %UTC offset to GPS system time [sec]
-  int8_t delta_tlsf;  ///<  Future %UTC offset to GPS system time after next leap second transition [sec]
+    uint16_t WNlsf;    ///<  Week number of nearest leap second
+    int16_t DNt;       ///<  The day number at the end of which a leap second occurs
+    int8_t delta_tls;  ///<  Current %UTC offset to GPS system time [sec]
+    int8_t delta_tlsf; ///<  Future %UTC offset to GPS system time after next leap second transition [sec]
 
 } UTC;
 
@@ -848,9 +873,9 @@ typedef struct
  */
 typedef struct
 {
-  CSUM csum;       ///< checksum of the remaining bytes */
-  int16_t valid;   ///< flag data are valid
-  char s[23];      ///< 22 chars GPS ASCII message plus trailing zero
+    CSUM csum;     ///< checksum of the remaining bytes */
+    int16_t valid; ///< flag data are valid
+    char s[23];    ///< 22 chars GPS ASCII message plus trailing zero
 
 } ASCII_MSG;
 
@@ -864,42 +889,42 @@ typedef struct
  */
 typedef struct
 {
-  CSUM csum;       ///<    checksum of the remaining bytes
-  int16_t valid;   ///<    flag data are valid
+    CSUM csum;     ///<    checksum of the remaining bytes
+    int16_t valid; ///<    flag data are valid
 
-  HEALTH health;   ///<    health indication of transmitting SV      [---]
-  IOD IODC;        ///<    Issue Of Data, Clock
-  IOD IODE2;       ///<    Issue of Data, Ephemeris (Subframe 2)
-  IOD IODE3;       ///<    Issue of Data, Ephemeris (Subframe 3)
-  T_GPS tt;        ///<    time of transmission
-  T_GPS t0c;       ///<    Reference Time Clock                      [---]
-  T_GPS t0e;       ///<    Reference Time Ephemeris                  [---]
+    HEALTH health; ///<    health indication of transmitting SV      [---]
+    IOD IODC;      ///<    Issue Of Data, Clock
+    IOD IODE2;     ///<    Issue of Data, Ephemeris (Subframe 2)
+    IOD IODE3;     ///<    Issue of Data, Ephemeris (Subframe 3)
+    T_GPS tt;      ///<    time of transmission
+    T_GPS t0c;     ///<    Reference Time Clock                      [---]
+    T_GPS t0e;     ///<    Reference Time Ephemeris                  [---]
 
-  l_fp sqrt_A;     ///<    Square Root of semi-major Axis        [sqrt(m)]
-  l_fp e;          ///<    Eccentricity                              [---]
-  l_fp M0;         ///< +- Mean Anomaly at Ref. Time                 [rad]
-  l_fp omega;      ///< +- Argument of Perigee                       [rad]
-  l_fp OMEGA0;     ///< +- Longit. of Asc. Node of orbit plane       [rad]
-  l_fp OMEGADOT;   ///< +- Rate of Right Ascension               [rad/sec]
-  l_fp deltan;     ///< +- Mean Motion Diff. from computed value [rad/sec]
-  l_fp i0;         ///< +- Inclination Angle                         [rad]
-  l_fp idot;       ///< +- Rate of Inclination Angle             [rad/sec]
-  l_fp crc;        ///< +- Cosine Corr. Term to Orbit Radius           [m]
-  l_fp crs;        ///< +- Sine Corr. Term to Orbit Radius             [m]
-  l_fp cuc;        ///< +- Cosine Corr. Term to Arg. of Latitude     [rad]
-  l_fp cus;        ///< +- Sine Corr. Term to Arg. of Latitude       [rad]
-  l_fp cic;        ///< +- Cosine Corr. Term to Inclination Angle    [rad]
-  l_fp cis;        ///< +- Sine Corr. Term to Inclination Angle      [rad]
+    l_fp sqrt_A;   ///<    Square Root of semi-major Axis        [sqrt(m)]
+    l_fp e;        ///<    Eccentricity                              [---]
+    l_fp M0;       ///< +- Mean Anomaly at Ref. Time                 [rad]
+    l_fp omega;    ///< +- Argument of Perigee                       [rad]
+    l_fp OMEGA0;   ///< +- Longit. of Asc. Node of orbit plane       [rad]
+    l_fp OMEGADOT; ///< +- Rate of Right Ascension               [rad/sec]
+    l_fp deltan;   ///< +- Mean Motion Diff. from computed value [rad/sec]
+    l_fp i0;       ///< +- Inclination Angle                         [rad]
+    l_fp idot;     ///< +- Rate of Inclination Angle             [rad/sec]
+    l_fp crc;      ///< +- Cosine Corr. Term to Orbit Radius           [m]
+    l_fp crs;      ///< +- Sine Corr. Term to Orbit Radius             [m]
+    l_fp cuc;      ///< +- Cosine Corr. Term to Arg. of Latitude     [rad]
+    l_fp cus;      ///< +- Sine Corr. Term to Arg. of Latitude       [rad]
+    l_fp cic;      ///< +- Cosine Corr. Term to Inclination Angle    [rad]
+    l_fp cis;      ///< +- Sine Corr. Term to Inclination Angle      [rad]
 
-  l_fp af0;        ///< +- Clock Correction Coefficient 0            [sec]
-  l_fp af1;        ///< +- Clock Correction Coefficient 1        [sec/sec]
-  l_fp af2;        ///< +- Clock Correction Coefficient 2      [sec/sec^2]
-  l_fp tgd;        ///< +- estimated group delay differential        [sec]
+    l_fp af0; ///< +- Clock Correction Coefficient 0            [sec]
+    l_fp af1; ///< +- Clock Correction Coefficient 1        [sec/sec]
+    l_fp af2; ///< +- Clock Correction Coefficient 2      [sec/sec^2]
+    l_fp tgd; ///< +- estimated group delay differential        [sec]
 
-  uint16_t URA;    ///<    predicted User Range Accuracy
+    uint16_t URA; ///<    predicted User Range Accuracy
 
-  uint8_t L2code;  ///<    code on L2 channel                         [---]
-  uint8_t L2flag;  ///<    L2 P data flag                             [---]
+    uint8_t L2code; ///<    code on L2 channel                         [---]
+    uint8_t L2flag; ///<    L2 P data flag                             [---]
 
 } EPH;
 
@@ -914,22 +939,22 @@ typedef struct
  */
 typedef struct
 {
-  CSUM csum;       ///<    checksum of the remaining bytes
-  int16_t valid;   ///<    flag data are valid
+    CSUM csum;     ///<    checksum of the remaining bytes
+    int16_t valid; ///<    flag data are valid
 
-  HEALTH health;   ///<                                               [---]
-  T_GPS t0a;       ///<    Reference Time Almanac                     [sec]
+    HEALTH health; ///<                                               [---]
+    T_GPS t0a;     ///<    Reference Time Almanac                     [sec]
 
-  l_fp sqrt_A;     ///<    Square Root of semi-major Axis         [sqrt(m)]
-  l_fp e;          ///<    Eccentricity                               [---]
+    l_fp sqrt_A; ///<    Square Root of semi-major Axis         [sqrt(m)]
+    l_fp e;      ///<    Eccentricity                               [---]
 
-  l_fp M0;         ///< +- Mean Anomaly at Ref. Time                  [rad]
-  l_fp omega;      ///< +- Argument of Perigee                        [rad]
-  l_fp OMEGA0;     ///< +- Longit. of Asc. Node of orbit plane        [rad]
-  l_fp OMEGADOT;   ///< +- Rate of Right Ascension                [rad/sec]
-  l_fp deltai;     ///< +-                                            [rad]
-  l_fp af0;        ///< +- Clock Correction Coefficient 0             [sec]
-  l_fp af1;        ///< +- Clock Correction Coefficient 1         [sec/sec]
+    l_fp M0;       ///< +- Mean Anomaly at Ref. Time                  [rad]
+    l_fp omega;    ///< +- Argument of Perigee                        [rad]
+    l_fp OMEGA0;   ///< +- Longit. of Asc. Node of orbit plane        [rad]
+    l_fp OMEGADOT; ///< +- Rate of Right Ascension                [rad/sec]
+    l_fp deltai;   ///< +-                                            [rad]
+    l_fp af0;      ///< +- Clock Correction Coefficient 0             [sec]
+    l_fp af1;      ///< +- Clock Correction Coefficient 1         [sec/sec]
 
 } ALM;
 
@@ -940,48 +965,48 @@ typedef struct
  */
 typedef struct
 {
-  CSUM csum;       ///<    checksum of the remaining bytes
-  int16_t valid;   ///<    flag data are valid
+    CSUM csum;     ///<    checksum of the remaining bytes
+    int16_t valid; ///<    flag data are valid
 
-  l_fp alpha_0;    ///<    Ionosph. Corr. Coeff. Alpha 0              [sec]
-  l_fp alpha_1;    ///<    Ionosph. Corr. Coeff. Alpha 1          [sec/deg]
-  l_fp alpha_2;    ///<    Ionosph. Corr. Coeff. Alpha 2        [sec/deg^2]
-  l_fp alpha_3;    ///<    Ionosph. Corr. Coeff. Alpha 3        [sec/deg^3]
+    l_fp alpha_0; ///<    Ionosph. Corr. Coeff. Alpha 0              [sec]
+    l_fp alpha_1; ///<    Ionosph. Corr. Coeff. Alpha 1          [sec/deg]
+    l_fp alpha_2; ///<    Ionosph. Corr. Coeff. Alpha 2        [sec/deg^2]
+    l_fp alpha_3; ///<    Ionosph. Corr. Coeff. Alpha 3        [sec/deg^3]
 
-  l_fp beta_0;     ///<    Ionosph. Corr. Coeff. Beta 0               [sec]
-  l_fp beta_1;     ///<    Ionosph. Corr. Coeff. Beta 1           [sec/deg]
-  l_fp beta_2;     ///<    Ionosph. Corr. Coeff. Beta 2         [sec/deg^2]
-  l_fp beta_3;     ///<    Ionosph. Corr. Coeff. Beta 3         [sec/deg^3]
+    l_fp beta_0; ///<    Ionosph. Corr. Coeff. Beta 0               [sec]
+    l_fp beta_1; ///<    Ionosph. Corr. Coeff. Beta 1           [sec/deg]
+    l_fp beta_2; ///<    Ionosph. Corr. Coeff. Beta 2         [sec/deg^2]
+    l_fp beta_3; ///<    Ionosph. Corr. Coeff. Beta 3         [sec/deg^3]
 
 } IONO;
 
 
 
-void mbg_tm_str (char **, TM_GPS *, int, int);
-void mbg_tgps_str (char **, T_GPS *, int);
-void get_mbg_header (unsigned char **, GPS_MSG_HDR *);
-void put_mbg_header (unsigned char **, GPS_MSG_HDR *);
-void get_mbg_sw_rev (unsigned char **, SW_REV *);
-void get_mbg_ascii_msg (unsigned char **, ASCII_MSG *);
-void get_mbg_svno (unsigned char **, SVNO *);
-void get_mbg_health (unsigned char **, HEALTH *);
-void get_mbg_cfg (unsigned char **, CFG *);
-void get_mbg_tgps (unsigned char **, T_GPS *);
-void get_mbg_tm (unsigned char **, TM_GPS *);
-void get_mbg_ttm (unsigned char **, TTM *);
-void get_mbg_synth (unsigned char **, SYNTH *);
-void get_mbg_tzdl (unsigned char **, TZDL *);
-void get_mbg_antinfo (unsigned char **, ANT_INFO *);
-void get_mbg_cfgh (unsigned char **, CFGH *);
-void get_mbg_utc (unsigned char **, UTC *);
-void get_mbg_lla (unsigned char **, LLA);
-void get_mbg_xyz (unsigned char **, XYZ);
-void get_mbg_portparam (unsigned char **, PORT_PARM *);
-void get_mbg_eph (unsigned char **, EPH *);
-void get_mbg_alm (unsigned char **, ALM *);
-void get_mbg_iono (unsigned char **, IONO *);
+void mbg_tm_str(char**, TM_GPS*, int, int);
+void mbg_tgps_str(char**, T_GPS*, int);
+void get_mbg_header(unsigned char**, GPS_MSG_HDR*);
+void put_mbg_header(unsigned char**, GPS_MSG_HDR*);
+void get_mbg_sw_rev(unsigned char**, SW_REV*);
+void get_mbg_ascii_msg(unsigned char**, ASCII_MSG*);
+void get_mbg_svno(unsigned char**, SVNO*);
+void get_mbg_health(unsigned char**, HEALTH*);
+void get_mbg_cfg(unsigned char**, CFG*);
+void get_mbg_tgps(unsigned char**, T_GPS*);
+void get_mbg_tm(unsigned char**, TM_GPS*);
+void get_mbg_ttm(unsigned char**, TTM*);
+void get_mbg_synth(unsigned char**, SYNTH*);
+void get_mbg_tzdl(unsigned char**, TZDL*);
+void get_mbg_antinfo(unsigned char**, ANT_INFO*);
+void get_mbg_cfgh(unsigned char**, CFGH*);
+void get_mbg_utc(unsigned char**, UTC*);
+void get_mbg_lla(unsigned char**, LLA);
+void get_mbg_xyz(unsigned char**, XYZ);
+void get_mbg_portparam(unsigned char**, PORT_PARM*);
+void get_mbg_eph(unsigned char**, EPH*);
+void get_mbg_alm(unsigned char**, ALM*);
+void get_mbg_iono(unsigned char**, IONO*);
 
-CSUM mbg_csum (unsigned char *, unsigned int);
+CSUM mbg_csum(unsigned char*, unsigned int);
 
 #endif
 /*

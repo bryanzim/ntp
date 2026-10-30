@@ -29,14 +29,13 @@
 
 /* The definition of _Noreturn is copied here.  */
 #if !defined _Noreturn && __STDC_VERSION__ < 201112
-# if (3 <= __GNUC__ || (__GNUC__ == 2 && 8 <= __GNUC_MINOR__) \
-      || 0x5110 <= __SUNPRO_C)
-#  define _Noreturn __attribute__ ((__noreturn__))
-# elif 1200 <= _MSC_VER
-#  define _Noreturn __declspec (noreturn)
-# else
-#  define _Noreturn
-# endif
+#if (3 <= __GNUC__ || (__GNUC__ == 2 && 8 <= __GNUC_MINOR__) || 0x5110 <= __SUNPRO_C)
+#define _Noreturn __attribute__((__noreturn__))
+#elif 1200 <= _MSC_VER
+#define _Noreturn __declspec(noreturn)
+#else
+#define _Noreturn
+#endif
 #endif
 
 #if 1200 <= _MSC_VER
@@ -48,9 +47,9 @@
    rewritten to "__declspec () void abort (void);", which is
    equivalent to "void abort (void);"; this gives up on noreturn's
    advice to the compiler but at least it is valid code.  */
-# define noreturn /*empty*/
+#define noreturn /*empty*/
 #else
-# define noreturn _Noreturn
+#define noreturn _Noreturn
 #endif
 
 /* Did he ever return?

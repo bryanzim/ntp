@@ -4,21 +4,21 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_HEATH)
 
-#include "ntpd.h"
 #include "ntp_io.h"
 #include "ntp_refclock.h"
 #include "ntp_stdlib.h"
+#include "ntpd.h"
 
-#include <stdio.h>
 #include <ctype.h>
+#include <stdio.h>
 
 #ifdef HAVE_SYS_IOCTL_H
-# include <sys/ioctl.h>
+#include <sys/ioctl.h>
 #endif /* not HAVE_SYS_IOCTL_H */
 
 /*
@@ -32,7 +32,7 @@
  * sunset without warning. Since the indicated precision is 100 ms,
  * expect a host synchronized only to this thing to wander to and fro,
  * occasionally being rudely stepped when the offset exceeds the default
- * clock_max of 128 ms. 
+ * clock_max of 128 ms.
  *
  * There were two GC-1000 versions supported by this driver. The original
  * GC-1000 with RS-232 output first appeared in 1983, but dissapeared
@@ -160,48 +160,48 @@
 /*
  * Interface definitions
  */
-#define	DEVICE		"/dev/heath%d" /* device name and unit */
-#define	PRECISION	(-4)	/* precision assumed (about 100 ms) */
-#define	REFID		"WWV\0"	/* reference ID */
-#define	DESCRIPTION	"Heath GC-1000 Most Accurate Clock" /* WRU */
+#define DEVICE "/dev/heath%d"                           /* device name and unit */
+#define PRECISION (-4)                                  /* precision assumed (about 100 ms) */
+#define REFID "WWV\0"                                   /* reference ID */
+#define DESCRIPTION "Heath GC-1000 Most Accurate Clock" /* WRU */
 
-#define LENHEATH1	23	/* min timecode length */
-#if 0	/* BUG 689 */
-#define LENHEATH2	13	/* min timecode length */
+#define LENHEATH1 23 /* min timecode length */
+#if 0                /* BUG 689 */
+#define LENHEATH2 13 /* min timecode length */
 #endif
 
 /*
  * Tables to compute the ddd of year form icky dd/mm timecode. Viva la
  * leap.
  */
-static int day1tab[] = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
-static int day2tab[] = {31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
+static int day1tab[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+static int day2tab[] = { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
 
 /*
  * Baud rate table. The GC-1000 supports 1200, 2400 and 4800; the
  * GC-1001 II supports only 9600.
  */
-static int speed[] = {B1200, B2400, B4800, B9600};
+static int speed[] = { B1200, B2400, B4800, B9600 };
 
 /*
  * Function prototypes
  */
-static	int	heath_start	(int, struct peer *);
-static	void	heath_shutdown	(int, struct peer *);
-static	void	heath_receive	(struct recvbuf *);
-static	void	heath_poll	(int, struct peer *);
+static int heath_start(int, struct peer*);
+static void heath_shutdown(int, struct peer*);
+static void heath_receive(struct recvbuf*);
+static void heath_poll(int, struct peer*);
 
 /*
  * Transfer vector
  */
-struct	refclock refclock_heath = {
-	heath_start,		/* start up driver */
-	heath_shutdown,		/* shut down driver */
-	heath_poll,		/* transmit poll message */
-	noentry,		/* not used (old heath_control) */
-	noentry,		/* initialize driver */
-	noentry,		/* not used (old heath_buginfo) */
-	NOFLAGS			/* not used */
+struct refclock refclock_heath = {
+    heath_start,    /* start up driver */
+    heath_shutdown, /* shut down driver */
+    heath_poll,     /* transmit poll message */
+    noentry,        /* not used (old heath_control) */
+    noentry,        /* initialize driver */
+    noentry,        /* not used (old heath_buginfo) */
+    NOFLAGS         /* not used */
 };
 
 
@@ -210,40 +210,40 @@ struct	refclock refclock_heath = {
  */
 static int
 heath_start(
-	int unit,
-	struct peer *peer
-	)
+    int unit,
+    struct peer* peer)
 {
-	struct refclockproc *pp;
-	int fd;
-	char device[20];
+    struct refclockproc* pp;
+    int fd;
+    char device[20];
 
-	/*
-	 * Open serial port
-	 */
-	snprintf(device, sizeof(device), DEVICE, unit);
-	fd = refclock_open(&peer->srcadr, device, speed[peer->ttl & 0x3],
-			   LDISC_REMOTE);
-	if (fd <= 0)
-		return (0);
-	pp = peer->procptr;
-	pp->io.clock_recv = heath_receive;
-	pp->io.srcclock = peer;
-	pp->io.datalen = 0;
-	pp->io.fd = fd;
-	if (!io_addclock(&pp->io)) {
-		close(fd);
-		pp->io.fd = -1;
-		return (0);
-	}
+    /*
+     * Open serial port
+     */
+    snprintf(device, sizeof(device), DEVICE, unit);
+    fd = refclock_open(&peer->srcadr, device, speed[peer->ttl & 0x3],
+                       LDISC_REMOTE);
+    if (fd <= 0)
+        return (0);
+    pp = peer->procptr;
+    pp->io.clock_recv = heath_receive;
+    pp->io.srcclock = peer;
+    pp->io.datalen = 0;
+    pp->io.fd = fd;
+    if (!io_addclock(&pp->io))
+    {
+        close(fd);
+        pp->io.fd = -1;
+        return (0);
+    }
 
-	/*
-	 * Initialize miscellaneous variables
-	 */
-	peer->precision = PRECISION;
-	pp->clockdesc = DESCRIPTION;
-	memcpy(&pp->refid, REFID, 4);
-	return (1);
+    /*
+     * Initialize miscellaneous variables
+     */
+    peer->precision = PRECISION;
+    pp->clockdesc = DESCRIPTION;
+    memcpy(&pp->refid, REFID, 4);
+    return (1);
 }
 
 
@@ -252,15 +252,14 @@ heath_start(
  */
 static void
 heath_shutdown(
-	int unit,
-	struct peer *peer
-	)
+    int unit,
+    struct peer* peer)
 {
-	struct refclockproc *pp;
+    struct refclockproc* pp;
 
-	pp = peer->procptr;
-	if (-1 != pp->io.fd)
-		io_closeclock(&pp->io);
+    pp = peer->procptr;
+    if (-1 != pp->io.fd)
+        io_closeclock(&pp->io);
 }
 
 
@@ -269,46 +268,47 @@ heath_shutdown(
  */
 static void
 heath_receive(
-	struct recvbuf *rbufp
-	)
+    struct recvbuf* rbufp)
 {
-	struct refclockproc *pp;
-	struct peer *peer;
-	l_fp trtmp;
-	int month, day;
-	int i;
-	char dsec, a[5];
+    struct refclockproc* pp;
+    struct peer* peer;
+    l_fp trtmp;
+    int month, day;
+    int i;
+    char dsec, a[5];
 
-	/*
-	 * Initialize pointers and read the timecode and timestamp
-	 */
-	peer = rbufp->recv_peer;
-	pp = peer->procptr;
-	pp->lencode = refclock_gtlin(rbufp, pp->a_lastcode, BMAX,
-	    &trtmp);
+    /*
+     * Initialize pointers and read the timecode and timestamp
+     */
+    peer = rbufp->recv_peer;
+    pp = peer->procptr;
+    pp->lencode = refclock_gtlin(rbufp, pp->a_lastcode, BMAX,
+                                 &trtmp);
 
-	/*
-	 * We get down to business, check the timecode format and decode
-	 * its contents. If the timecode has invalid length or is not in
-	 * proper format, we declare bad format and exit.
-	 */
-	switch (pp->lencode) {
+    /*
+     * We get down to business, check the timecode format and decode
+     * its contents. If the timecode has invalid length or is not in
+     * proper format, we declare bad format and exit.
+     */
+    switch (pp->lencode)
+    {
 
-	/*
-	 * GC-1000 timecode format: "hh:mm:ss.f AM  mm/dd/yy"
-	 * GC-1001 II timecode format: "hh:mm:ss.f   "
-	 */
-	case LENHEATH1:
-		if (sscanf(pp->a_lastcode,
-		    "%2d:%2d:%2d.%c%5c%2d/%2d/%2d", &pp->hour,
-		    &pp->minute, &pp->second, &dsec, a, &month, &day,
-		    &pp->year) != 8) {
-			refclock_report(peer, CEVNT_BADREPLY);
-			return;
-		}
-		break;
+    /*
+     * GC-1000 timecode format: "hh:mm:ss.f AM  mm/dd/yy"
+     * GC-1001 II timecode format: "hh:mm:ss.f   "
+     */
+    case LENHEATH1:
+        if (sscanf(pp->a_lastcode,
+                   "%2d:%2d:%2d.%c%5c%2d/%2d/%2d", &pp->hour,
+                   &pp->minute, &pp->second, &dsec, a, &month, &day,
+                   &pp->year) != 8)
+        {
+            refclock_report(peer, CEVNT_BADREPLY);
+            return;
+        }
+        break;
 
-#if 0	/* BUG 689 */
+#if 0 /* BUG 689 */
 	/*
 	 * GC-1001 II timecode format: "hh:mm:ss.f   "
 	 */
@@ -338,55 +338,62 @@ heath_receive(
 		break;
 #endif
 
-	default:
-		refclock_report(peer, CEVNT_BADREPLY);
-		return;
-	}
+    default:
+        refclock_report(peer, CEVNT_BADREPLY);
+        return;
+    }
 
-	/*
-	 * We determine the day of the year from the DIPswitches. This
-	 * should be fixed, since somebody might forget to set them.
-	 * Someday this hazard will be fixed by a fiendish scheme that
-	 * looks at the timecode and year the radio shows, then computes
-	 * the residue of the seconds mod the seconds in a leap cycle.
-	 * If in the third year of that cycle and the third and later
-	 * months of that year, add one to the day. Then, correct the
-	 * timecode accordingly. Icky pooh. This bit of nonsense could
-	 * be avoided if the engineers had been required to write a
-	 * device driver before finalizing the timecode format.
-	 */
-	if (month < 1 || month > 12 || day < 1) {
-		refclock_report(peer, CEVNT_BADTIME);
-		return;
-	}
-	if (pp->year % 4) {
-		if (day > day1tab[month - 1]) {
-			refclock_report(peer, CEVNT_BADTIME);
-			return;
-		}
-		for (i = 0; i < month - 1; i++)
-		    day += day1tab[i];
-	} else {
-		if (day > day2tab[month - 1]) {
-			refclock_report(peer, CEVNT_BADTIME);
-			return;
-		}
-		for (i = 0; i < month - 1; i++)
-		    day += day2tab[i];
-	}
-	pp->day = day;
+    /*
+     * We determine the day of the year from the DIPswitches. This
+     * should be fixed, since somebody might forget to set them.
+     * Someday this hazard will be fixed by a fiendish scheme that
+     * looks at the timecode and year the radio shows, then computes
+     * the residue of the seconds mod the seconds in a leap cycle.
+     * If in the third year of that cycle and the third and later
+     * months of that year, add one to the day. Then, correct the
+     * timecode accordingly. Icky pooh. This bit of nonsense could
+     * be avoided if the engineers had been required to write a
+     * device driver before finalizing the timecode format.
+     */
+    if (month < 1 || month > 12 || day < 1)
+    {
+        refclock_report(peer, CEVNT_BADTIME);
+        return;
+    }
+    if (pp->year % 4)
+    {
+        if (day > day1tab[month - 1])
+        {
+            refclock_report(peer, CEVNT_BADTIME);
+            return;
+        }
+        for (i = 0; i < month - 1; i++)
+            day += day1tab[i];
+    }
+    else
+    {
+        if (day > day2tab[month - 1])
+        {
+            refclock_report(peer, CEVNT_BADTIME);
+            return;
+        }
+        for (i = 0; i < month - 1; i++)
+            day += day2tab[i];
+    }
+    pp->day = day;
 
-	/*
-	 * Determine synchronization and last update
-	 */
-	if (!isdigit((unsigned char)dsec))
-		pp->leap = LEAP_NOTINSYNC;
-	else {
-		pp->nsec = (dsec - '0') * 100000000;
-		pp->leap = LEAP_NOWARNING;
-	}
-	if (!refclock_process(pp))
-		refclock_report(peer, CEVNT_BADTIME);
+    /*
+     * Determine synchronization and last update
+     */
+    if (!isdigit((unsigned char)dsec))
+        pp->leap = LEAP_NOTINSYNC;
+    else
+    {
+        pp->nsec = (dsec - '0') * 100000000;
+        pp->leap = LEAP_NOWARNING;
+    }
+    if (!refclock_process(pp))
+        refclock_report(peer, CEVNT_BADTIME);
 }
 
 
@@ -395,54 +402,54 @@ heath_receive(
  */
 static void
 heath_poll(
-	int unit,
-	struct peer *peer
-	)
+    int unit,
+    struct peer* peer)
 {
-	struct refclockproc *pp;
-	int bits = TIOCM_RTS;
+    struct refclockproc* pp;
+    int bits = TIOCM_RTS;
 
-	/*
-	 * At each poll we check for timeout and toggle the RTS modem
-	 * control line, then take a timestamp. Presumably, this is the
-	 * event the radio captures to generate the timecode.
-	 * Apparently, the radio takes about a second to make up its
-	 * mind to send a timecode, so the receive timestamp is
-	 * worthless.
-	 */
-	pp = peer->procptr;
+    /*
+     * At each poll we check for timeout and toggle the RTS modem
+     * control line, then take a timestamp. Presumably, this is the
+     * event the radio captures to generate the timecode.
+     * Apparently, the radio takes about a second to make up its
+     * mind to send a timecode, so the receive timestamp is
+     * worthless.
+     */
+    pp = peer->procptr;
 
-	/*
-	 * We toggle the RTS modem control lead (GC-1000) and sent a T
-	 * (GC-1001 II) to kick a timecode loose from the radio. This
-	 * code works only for POSIX and SYSV interfaces. With bsd you
-	 * are on your own. We take a timestamp between the up and down
-	 * edges to lengthen the pulse, which should be about 50 usec on
-	 * a Sun IPC. With hotshot CPUs, the pulse might get too short.
-	 * Later.
-	 *
-	 * Bug 689: Even though we no longer support the GC-1001 II,
-	 * I'm leaving the 'T' write in for timing purposes.
-	 */
-	if (ioctl(pp->io.fd, TIOCMBIC, (char *)&bits) < 0)
-		refclock_report(peer, CEVNT_FAULT);
-	get_systime(&pp->lastrec);
-	if (refclock_write(peer, "T", 1, "T") != 1)
-		refclock_report(peer, CEVNT_FAULT);
-	ioctl(pp->io.fd, TIOCMBIS, (char *)&bits);
-	if (pp->coderecv == pp->codeproc) {
-		refclock_report(peer, CEVNT_TIMEOUT);
-		return;
-	}
-	pp->lastref = pp->lastrec;
-	refclock_receive(peer);
-	record_clock_stats(&peer->srcadr, pp->a_lastcode);
+    /*
+     * We toggle the RTS modem control lead (GC-1000) and sent a T
+     * (GC-1001 II) to kick a timecode loose from the radio. This
+     * code works only for POSIX and SYSV interfaces. With bsd you
+     * are on your own. We take a timestamp between the up and down
+     * edges to lengthen the pulse, which should be about 50 usec on
+     * a Sun IPC. With hotshot CPUs, the pulse might get too short.
+     * Later.
+     *
+     * Bug 689: Even though we no longer support the GC-1001 II,
+     * I'm leaving the 'T' write in for timing purposes.
+     */
+    if (ioctl(pp->io.fd, TIOCMBIC, (char*)&bits) < 0)
+        refclock_report(peer, CEVNT_FAULT);
+    get_systime(&pp->lastrec);
+    if (refclock_write(peer, "T", 1, "T") != 1)
+        refclock_report(peer, CEVNT_FAULT);
+    ioctl(pp->io.fd, TIOCMBIS, (char*)&bits);
+    if (pp->coderecv == pp->codeproc)
+    {
+        refclock_report(peer, CEVNT_TIMEOUT);
+        return;
+    }
+    pp->lastref = pp->lastrec;
+    refclock_receive(peer);
+    record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
-	if (debug)
-	    printf("heath: timecode %d %s\n", pp->lencode,
-		   pp->a_lastcode);
+    if (debug)
+        printf("heath: timecode %d %s\n", pp->lencode,
+               pp->a_lastcode);
 #endif
-	pp->polls++;
+    pp->polls++;
 }
 
 #else

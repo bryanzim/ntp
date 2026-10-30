@@ -36,23 +36,23 @@
  */
 
 #if HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_SCHMID)
 
+#include "ntp_calendar.h"
 #include "ntp_fp.h"
 #include "ntp_unixtime.h"
-#include "ntp_calendar.h"
-
 #include "parse.h"
 
 #ifndef PARSESTREAM
 #include "ntp_stdlib.h"
+
 #include <stdio.h>
 #else
 #include "sys/parsestreams.h"
-extern int printf (const char *, ...);
+extern int printf(const char*, ...);
 #endif
 
 /*
@@ -79,116 +79,112 @@ extern int printf (const char *, ...);
  * Bit 6:	time in backup mode, units of 5 minutes (unused here)
  *
  */
-#define WS_TIME		0x01
-#define WS_SIGNAL	0x02
+#define WS_TIME 0x01
+#define WS_SIGNAL 0x02
 
-#define WS_CALLBIT	0x01  /* "call bit" used to signalize irregularities in the control facilities */
-#define WS_ANNOUNCE	0x02
-#define WS_TZ		0x0c
-#define   WS_MET	0x08
-#define   WS_MEST	0x04
-#define WS_LEAP		0x10
+#define WS_CALLBIT 0x01 /* "call bit" used to signalize irregularities in the control facilities */
+#define WS_ANNOUNCE 0x02
+#define WS_TZ 0x0c
+#define WS_MET 0x08
+#define WS_MEST 0x04
+#define WS_LEAP 0x10
 
 static parse_cvt_fnc_t cvt_schmid;
 static parse_inp_fnc_t inp_schmid;
 
-clockformat_t clock_schmid =
-{
-  inp_schmid,			/* no input handling */
-  cvt_schmid,			/* Schmid conversion */
-  0,				/* not direct PPS monitoring */
-  0,				/* conversion configuration */
-  "Schmid",			/* Schmid receiver */
-  12,				/* binary data buffer */
-  0,				/* no private data (complete messages) */
+clockformat_t clock_schmid = {
+    inp_schmid, /* no input handling */
+    cvt_schmid, /* Schmid conversion */
+    0,          /* not direct PPS monitoring */
+    0,          /* conversion configuration */
+    "Schmid",   /* Schmid receiver */
+    12,         /* binary data buffer */
+    0,          /* no private data (complete messages) */
 };
 
 /* parse_cvt_fnc_t */
 static u_long
 cvt_schmid(
-	   unsigned char *buffer,
-	   int            size,
-	   struct format *format,
-	   clocktime_t   *clock_time,
-	   void          *local
-	)
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-	if ((size != 11) || (buffer[10U] != (unsigned char)'\375'))
-	{
-		return CVT_NONE;
-	}
-	else
-	{
-		if (buffer[0U] > 23 || buffer[1U] > 59 || buffer[2U] > 59 || buffer[3U] >  9) /* Time */
-		{
-			return CVT_FAIL|CVT_BADTIME;
-		}
-		else
-		    if (buffer[4U] <  1 || buffer[4U] > 31 || buffer[5U] <  1 || buffer[5U] > 12
-			||  buffer[6U] > 99)
-		    {
-			    return CVT_FAIL|CVT_BADDATE;
-		    }
-		    else
-		    {
-			    clock_time->hour    = buffer[0U];
-			    clock_time->minute  = buffer[1U];
-			    clock_time->second  = buffer[2U];
-			    clock_time->usecond = buffer[3U] * 100000;
-			    clock_time->day     = buffer[4U];
-			    clock_time->month   = buffer[5U];
-			    clock_time->year    = buffer[6U];
+    if ((size != 11) || (buffer[10U] != (unsigned char)'\375'))
+    {
+        return CVT_NONE;
+    }
+    else
+    {
+        if (buffer[0U] > 23 || buffer[1U] > 59 || buffer[2U] > 59 || buffer[3U] > 9) /* Time */
+        {
+            return CVT_FAIL | CVT_BADTIME;
+        }
+        else if (buffer[4U] < 1 || buffer[4U] > 31 || buffer[5U] < 1 || buffer[5U] > 12 || buffer[6U] > 99)
+        {
+            return CVT_FAIL | CVT_BADDATE;
+        }
+        else
+        {
+            clock_time->hour = buffer[0U];
+            clock_time->minute = buffer[1U];
+            clock_time->second = buffer[2U];
+            clock_time->usecond = buffer[3U] * 100000;
+            clock_time->day = buffer[4U];
+            clock_time->month = buffer[5U];
+            clock_time->year = buffer[6U];
 
-			    clock_time->flags   = 0;
+            clock_time->flags = 0;
 
-			    switch (buffer[8U] & WS_TZ)
-			    {
-				case WS_MET:
-				    clock_time->utcoffset = -1*60*60;
-				    break;
+            switch (buffer[8U] & WS_TZ)
+            {
+            case WS_MET:
+                clock_time->utcoffset = -1 * 60 * 60;
+                break;
 
-				case WS_MEST:
-				    clock_time->utcoffset = -2*60*60;
-				    clock_time->flags    |= PARSEB_DST;
-				    break;
+            case WS_MEST:
+                clock_time->utcoffset = -2 * 60 * 60;
+                clock_time->flags |= PARSEB_DST;
+                break;
 
-				default:
-				    return CVT_FAIL|CVT_BADFMT;
-			    }
+            default:
+                return CVT_FAIL | CVT_BADFMT;
+            }
 
-			    if (!(buffer[7U] & WS_TIME))
-			    {
-				    clock_time->flags |= PARSEB_POWERUP;
-			    }
+            if (!(buffer[7U] & WS_TIME))
+            {
+                clock_time->flags |= PARSEB_POWERUP;
+            }
 
-			    if (!(buffer[7U] & WS_SIGNAL))
-			    {
-				    clock_time->flags |= PARSEB_NOSYNC;
-			    }
+            if (!(buffer[7U] & WS_SIGNAL))
+            {
+                clock_time->flags |= PARSEB_NOSYNC;
+            }
 
-			    if (buffer[7U] & WS_SIGNAL)
-			    {
-				    if (buffer[8U] & WS_CALLBIT)
-				    {
-					    clock_time->flags |= PARSEB_CALLBIT;
-				    }
+            if (buffer[7U] & WS_SIGNAL)
+            {
+                if (buffer[8U] & WS_CALLBIT)
+                {
+                    clock_time->flags |= PARSEB_CALLBIT;
+                }
 
-				    if (buffer[8U] & WS_ANNOUNCE)
-				    {
-					    clock_time->flags |= PARSEB_ANNOUNCE;
-				    }
+                if (buffer[8U] & WS_ANNOUNCE)
+                {
+                    clock_time->flags |= PARSEB_ANNOUNCE;
+                }
 
-				    if (buffer[8U] & WS_LEAP)
-				    {
-					    clock_time->flags |= PARSEB_LEAPADD; /* default: DCF77 data format deficiency */
-				    }
-			    }
+                if (buffer[8U] & WS_LEAP)
+                {
+                    clock_time->flags |= PARSEB_LEAPADD; /* default: DCF77 data format deficiency */
+                }
+            }
 
-			    clock_time->flags |= PARSEB_S_LEAP|PARSEB_S_CALLBIT;
+            clock_time->flags |= PARSEB_S_LEAP | PARSEB_S_CALLBIT;
 
-			    return CVT_OK;
-		    }
-	}
+            return CVT_OK;
+        }
+    }
 }
 
 /*
@@ -198,30 +194,29 @@ cvt_schmid(
  */
 static u_long
 inp_schmid(
-	  parse_t      *parseio,
-	  char         ch,
-	  timestamp_t  *tstamp
-	  )
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	unsigned int rtc;
+    unsigned int rtc;
 
-	parseprintf(DD_PARSE, ("inp_schmid(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
+    parseprintf(DD_PARSE, ("inp_schmid(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
-	switch ((uint8_t)ch)
-	{
-	case 0xFD:		/*  */
-		parseprintf(DD_PARSE, ("inp_schmid: 0xFD seen\n"));
-		if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
-			return parse_end(parseio);
-		else
-			return rtc;
+    switch ((uint8_t)ch)
+    {
+    case 0xFD: /*  */
+        parseprintf(DD_PARSE, ("inp_schmid: 0xFD seen\n"));
+        if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+            return parse_end(parseio);
+        else
+            return rtc;
 
-	default:
-		return parse_addchar(parseio, ch);
-	}
+    default:
+        return parse_addchar(parseio, ch);
+    }
 }
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_SCHMID) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_SCHMID) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_SCHMID) */
 

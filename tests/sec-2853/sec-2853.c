@@ -1,18 +1,18 @@
 #include <config.h>
 
-#include <rc_cmdlength.h>
-
 #include "unity.h"
+
+#include <rc_cmdlength.h>
 
 void setUp(void);
 void tearDown(void);
 
-void test_main( void );
-int basic_good( void );
-int embedded_nul( void );
-int trailing_space( void );
+void test_main(void);
+int basic_good(void);
+int embedded_nul(void);
+int trailing_space(void);
 
-static int verbose = 1;        // if not 0, also print results if test passed
+static int verbose = 1; // if not 0, also print results if test passed
 // static int exit_on_err = 0;    // if not 0, exit if test failed
 
 
@@ -37,81 +37,81 @@ void tearDown(void)
  */
 
 
-void test_main( void )
+void test_main(void)
 {
-	TEST_ASSERT_EQUAL(0, basic_good());
-	TEST_ASSERT_EQUAL(0, embedded_nul());
-	TEST_ASSERT_EQUAL(0, trailing_space());
+    TEST_ASSERT_EQUAL(0, basic_good());
+    TEST_ASSERT_EQUAL(0, embedded_nul());
+    TEST_ASSERT_EQUAL(0, trailing_space());
 }
 
 
-int basic_good( void )
+int basic_good(void)
 {
-	const char string[] = "good";
-	const char *EOstring;
-	size_t len;
-	int failed;
+    const char string[] = "good";
+    const char* EOstring;
+    size_t len;
+    int failed;
 
-	EOstring = string + sizeof string;
+    EOstring = string + sizeof string;
 
-	len = remoteconfig_cmdlength(string, EOstring);
+    len = remoteconfig_cmdlength(string, EOstring);
 
-	failed = ( 4 != len );
+    failed = (4 != len);
 
-	if ( failed || verbose )
-		printf( "remoteconfig_cmdlength(\"%s\") returned %llu, expected %u: %s\n",
-			string,
-			(unsigned long long)len,
-			4,
-			failed ? "NO <<" : "yes" );
+    if (failed || verbose)
+        printf("remoteconfig_cmdlength(\"%s\") returned %llu, expected %u: %s\n",
+               string,
+               (unsigned long long)len,
+               4,
+               failed ? "NO <<" : "yes");
 
-	return failed ? -1 : 0;
+    return failed ? -1 : 0;
 }
 
 
-int embedded_nul( void )
+int embedded_nul(void)
 {
-	const char string[] = "nul\0 there";
-	const char *EOstring;
-	size_t len;
-	int failed;
+    const char string[] = "nul\0 there";
+    const char* EOstring;
+    size_t len;
+    int failed;
 
-	EOstring = string + sizeof string;
+    EOstring = string + sizeof string;
 
-	len = remoteconfig_cmdlength(string, EOstring);
+    len = remoteconfig_cmdlength(string, EOstring);
 
-	failed = ( 3 != len );
+    failed = (3 != len);
 
-	if ( failed || verbose )
-		printf( "remoteconfig_cmdlength(\"%s\") returned %llu, expected %u: %s\n",
-			string,
-			(unsigned long long)len,
-			3,
-			failed ? "NO <<" : "yes" );
+    if (failed || verbose)
+        printf("remoteconfig_cmdlength(\"%s\") returned %llu, expected %u: %s\n",
+               string,
+               (unsigned long long)len,
+               3,
+               failed ? "NO <<" : "yes");
 
-	return failed ? -1 : 0;
+    return failed ? -1 : 0;
 }
 
 
-int trailing_space( void )
+int trailing_space(void)
 {
-	const char string[] = "trailing space ";
-	const char *EOstring;
-	size_t len;
-	int failed;
+    const char string[] = "trailing space ";
+    const char* EOstring;
+    size_t len;
+    int failed;
 
-	EOstring = string + sizeof string;
+    EOstring = string + sizeof string;
 
-	len = remoteconfig_cmdlength(string, EOstring);
+    len = remoteconfig_cmdlength(string, EOstring);
 
-	failed = ( 14 != len );
+    failed = (14 != len);
 
-	if ( failed || verbose )
-		printf( "remoteconfig_cmdlength(\"%s\") returned %llu, expected %u: %s\n",
-			string,
-			(unsigned long long)len,
-			14,
-			failed ? "NO <<" : "yes" );
+    if (failed || verbose)
+        printf("remoteconfig_cmdlength(\"%s\") returned %llu, expected %u: %s\n",
+               string,
+               (unsigned long long)len,
+               14,
+               failed ? "NO <<" : "yes");
 
-	return failed ? -1 : 0;
+    return failed ? -1 : 0;
 }

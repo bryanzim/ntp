@@ -5,10 +5,10 @@
  * processing.
  */
 #ifndef NTP_LIBOPTS_H
-# define NTP_LIBOPTS_H
-# include "autoopts/options.h"
+#define NTP_LIBOPTS_H
+#include "autoopts/options.h"
 
-extern	int	ntpOptionProcess(tOptions *pOpts, int argc,
-				 char ** argv);
-extern	void	ntpOptionPrintVersion(tOptions *, tOptDesc *);
+extern int ntpOptionProcess(tOptions* pOpts, int argc,
+                            char** argv);
+extern void ntpOptionPrintVersion(tOptions*, tOptDesc*);
 #endif

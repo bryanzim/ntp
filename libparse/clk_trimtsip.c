@@ -36,25 +36,24 @@
  */
 
 #ifdef HAVE_CONFIG_H
-# include <config.h>
+#include <config.h>
 #endif
 
 #if defined(REFCLOCK) && defined(CLOCK_PARSE) && defined(CLOCK_TRIMTSIP)
 
-#include "ntp_syslog.h"
-#include "ntp_types.h"
-#include "ntp_fp.h"
-#include "timevalops.h"
 #include "ntp_calendar.h"
+#include "ntp_fp.h"
 #include "ntp_machine.h"
 #include "ntp_stdlib.h"
-
+#include "ntp_syslog.h"
+#include "ntp_types.h"
 #include "parse.h"
+#include "timevalops.h"
 
 #ifndef PARSESTREAM
-# include <stdio.h>
+#include <stdio.h>
 #else
-# include "sys/parsestreams.h"
+#include "sys/parsestreams.h"
 #endif
 
 #include "ascii.h"
@@ -99,114 +98,118 @@ static offsets_t trim_offsets = { 0, 1, 2, 3, 4, 5, 6, 7 };
 
 struct trimble
 {
-	u_char  t_in_pkt;	/* first DLE received */
-	u_char  t_dle;		/* subsequent DLE received */
-	u_short t_week;		/* GPS week */
-	u_short t_weekleap;	/* GPS week of next/last week */
-	u_short t_dayleap;	/* day in week */
-	u_short t_gpsutc;	/* GPS - UTC offset */
-	u_short t_gpsutcleap;	/* offset at next/last leap */
-	u_char  t_operable;	/* receiver feels OK */
-	u_char  t_mode;		/* actual operating mode */
-	u_char  t_leap;		/* possible leap warning */
-        u_char  t_utcknown;	/* utc offset known */
+    u_char t_in_pkt;      /* first DLE received */
+    u_char t_dle;         /* subsequent DLE received */
+    u_short t_week;       /* GPS week */
+    u_short t_weekleap;   /* GPS week of next/last week */
+    u_short t_dayleap;    /* day in week */
+    u_short t_gpsutc;     /* GPS - UTC offset */
+    u_short t_gpsutcleap; /* offset at next/last leap */
+    u_char t_operable;    /* receiver feels OK */
+    u_char t_mode;        /* actual operating mode */
+    u_char t_leap;        /* possible leap warning */
+    u_char t_utcknown;    /* utc offset known */
 };
 
-#define STATUS_BAD    0		/* BAD or UNINITIALIZED receiver status */
-#define STATUS_UNSAFE 1		/* not enough receivers for full precision */
-#define STATUS_SYNC   2		/* enough information for good operation */
+#define STATUS_BAD 0    /* BAD or UNINITIALIZED receiver status */
+#define STATUS_UNSAFE 1 /* not enough receivers for full precision */
+#define STATUS_SYNC 2   /* enough information for good operation */
 
-static unsigned long inp_tsip (parse_t *, char, timestamp_t *);
-static unsigned long cvt_trimtsip (unsigned char *, int, struct format *, clocktime_t *, void *);
+static unsigned long inp_tsip(parse_t*, char, timestamp_t*);
+static unsigned long cvt_trimtsip(unsigned char*, int, struct format*, clocktime_t*, void*);
 
-struct clockformat clock_trimtsip =
-{
-	inp_tsip,		/* Trimble TSIP input handler */
-	cvt_trimtsip,		/* Trimble TSIP conversion */
-	pps_one,		/* easy PPS monitoring */
-	0,			/* no configuration data */
-	"Trimble TSIP",
-	400,			/* input buffer */
-	sizeof(struct trimble)	/* private data */
+struct clockformat clock_trimtsip = {
+    inp_tsip,     /* Trimble TSIP input handler */
+    cvt_trimtsip, /* Trimble TSIP conversion */
+    pps_one,      /* easy PPS monitoring */
+    0,            /* no configuration data */
+    "Trimble TSIP",
+    400,                   /* input buffer */
+    sizeof(struct trimble) /* private data */
 };
 
-#define ADDSECOND	0x01
-#define DELSECOND	0x02
+#define ADDSECOND 0x01
+#define DELSECOND 0x02
 
 static unsigned long
 inp_tsip(
-	 parse_t      *parseio,
-	 char         ch,
-	 timestamp_t  *tstamp
-	)
+    parse_t* parseio,
+    char ch,
+    timestamp_t* tstamp)
 {
-	struct trimble *t = (struct trimble *)parseio->parse_pdata;
+    struct trimble* t = (struct trimble*)parseio->parse_pdata;
 
-	if (!t)
-	    return PARSE_INP_SKIP;		/* local data not allocated - sigh! */
+    if (!t)
+        return PARSE_INP_SKIP; /* local data not allocated - sigh! */
 
-	if (!t->t_in_pkt && ch != DLE) {
-		/* wait for start of packet */
-		return PARSE_INP_SKIP;
-	}
+    if (!t->t_in_pkt && ch != DLE)
+    {
+        /* wait for start of packet */
+        return PARSE_INP_SKIP;
+    }
 
-	if ((parseio->parse_index >= (parseio->parse_dsize - 2)) ||
-	    (parseio->parse_dtime.parse_msglen >= (sizeof(parseio->parse_dtime.parse_msg) - 2)))
-		{		/* OVERFLOW - DROP! */
-			t->t_in_pkt = t->t_dle = 0;
-			parseio->parse_index = 0;
-			parseio->parse_dtime.parse_msglen = 0;
-		return PARSE_INP_SKIP;
-	}
+    if ((parseio->parse_index >= (parseio->parse_dsize - 2)) ||
+        (parseio->parse_dtime.parse_msglen >= (sizeof(parseio->parse_dtime.parse_msg) - 2)))
+    { /* OVERFLOW - DROP! */
+        t->t_in_pkt = t->t_dle = 0;
+        parseio->parse_index = 0;
+        parseio->parse_dtime.parse_msglen = 0;
+        return PARSE_INP_SKIP;
+    }
 
-	switch (ch) {
-	    case DLE:
-		if (!t->t_in_pkt) {
-			t->t_dle = 0;
-			t->t_in_pkt = 1;
-			parseio->parse_index = 0;
-			parseio->parse_data[parseio->parse_index++] = ch;
-			parseio->parse_dtime.parse_msglen = 0;
-			parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
-			parseio->parse_dtime.parse_stime = *tstamp; /* pick up time stamp at packet start */
-		} else if (t->t_dle) {
-			/* Double DLE -> insert a DLE */
-			t->t_dle = 0;
-			parseio->parse_data[parseio->parse_index++] = DLE;
-			parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = DLE;
-		} else
-		    t->t_dle = 1;
-		break;
+    switch (ch)
+    {
+    case DLE:
+        if (!t->t_in_pkt)
+        {
+            t->t_dle = 0;
+            t->t_in_pkt = 1;
+            parseio->parse_index = 0;
+            parseio->parse_data[parseio->parse_index++] = ch;
+            parseio->parse_dtime.parse_msglen = 0;
+            parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
+            parseio->parse_dtime.parse_stime = *tstamp; /* pick up time stamp at packet start */
+        }
+        else if (t->t_dle)
+        {
+            /* Double DLE -> insert a DLE */
+            t->t_dle = 0;
+            parseio->parse_data[parseio->parse_index++] = DLE;
+            parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = DLE;
+        }
+        else
+            t->t_dle = 1;
+        break;
 
-	    case ETX:
-		if (t->t_dle) {
-			/* DLE,ETX -> end of packet */
-			parseio->parse_data[parseio->parse_index++] = DLE;
-			parseio->parse_data[parseio->parse_index] = ch;
-			parseio->parse_ldsize = (u_short) (parseio->parse_index + 1);
-			memcpy(parseio->parse_ldata, parseio->parse_data, parseio->parse_ldsize);
-			parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = DLE;
-			parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
-			t->t_in_pkt = t->t_dle = 0;
-			return PARSE_INP_TIME|PARSE_INP_DATA;
-		}
-		/*FALLTHROUGH*/
+    case ETX:
+        if (t->t_dle)
+        {
+            /* DLE,ETX -> end of packet */
+            parseio->parse_data[parseio->parse_index++] = DLE;
+            parseio->parse_data[parseio->parse_index] = ch;
+            parseio->parse_ldsize = (u_short)(parseio->parse_index + 1);
+            memcpy(parseio->parse_ldata, parseio->parse_data, parseio->parse_ldsize);
+            parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = DLE;
+            parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
+            t->t_in_pkt = t->t_dle = 0;
+            return PARSE_INP_TIME | PARSE_INP_DATA;
+        }
+        /*FALLTHROUGH*/
 
-	    default:		/* collect data */
-		t->t_dle = 0;
-		parseio->parse_data[parseio->parse_index++] = ch;
-		parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
-	}
+    default: /* collect data */
+        t->t_dle = 0;
+        parseio->parse_data[parseio->parse_index++] = ch;
+        parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
+    }
 
-  return PARSE_INP_SKIP;
+    return PARSE_INP_SKIP;
 }
 
 static short
 getshort(
-	 unsigned char *p
-	 )
+    unsigned char* p)
 {
-	return (short) get_msb_short(&p);
+    return (short)get_msb_short(&p);
 }
 
 /*
@@ -216,178 +219,175 @@ getshort(
  */
 static unsigned long
 cvt_trimtsip(
-	     unsigned char *buffer,
-	     int            size,
-	     struct format *format,
-	     clocktime_t   *clock_time,
-	     void          *local
-	     )
+    unsigned char* buffer,
+    int size,
+    struct format* format,
+    clocktime_t* clock_time,
+    void* local)
 {
-        register struct trimble *t = (struct trimble *)local; /* get local data space */
-#define mb(_X_) (buffer[2+(_X_)]) /* shortcut for buffer access */
-	register u_char cmd;
+    register struct trimble* t = (struct trimble*)local; /* get local data space */
+#define mb(_X_) (buffer[2 + (_X_)])                      /* shortcut for buffer access */
+    register u_char cmd;
 
-	clock_time->flags = 0;
+    clock_time->flags = 0;
 
-	if (!t) {
-		return CVT_NONE;		/* local data not allocated - sigh! */
-	}
+    if (!t)
+    {
+        return CVT_NONE; /* local data not allocated - sigh! */
+    }
 
-	if ((size < 4) ||
-	    (buffer[0U]      != DLE) ||
-	    (buffer[size-1] != ETX) ||
-	    (buffer[size-2] != DLE))
-	{
-		printf("TRIMBLE BAD packet, size %d:\n", size);
-		return CVT_NONE;
-	}
-	else
-	{
-		unsigned char *bp;
-		cmd = buffer[1U];
+    if ((size < 4) ||
+        (buffer[0U] != DLE) ||
+        (buffer[size - 1] != ETX) ||
+        (buffer[size - 2] != DLE))
+    {
+        printf("TRIMBLE BAD packet, size %d:\n", size);
+        return CVT_NONE;
+    }
+    else
+    {
+        unsigned char* bp;
+        cmd = buffer[1U];
 
-		    switch(cmd)
-		    {
-		    case CMD_RCURTIME:
-			    {			/* GPS time */
-				    l_fp  secs;
-				    u_int week = getshort((unsigned char *)&mb(4));
-				    l_fp  utcoffset;
-				    l_fp  gpstime;
+        switch (cmd)
+        {
+        case CMD_RCURTIME: { /* GPS time */
+            l_fp secs;
+            u_int week = getshort((unsigned char*)&mb(4));
+            l_fp utcoffset;
+            l_fp gpstime;
 
-				    bp = &mb(0);
-				    if (fetch_ieee754(&bp, IEEE_SINGLE, &secs, trim_offsets) != IEEE_OK)
-					    return CVT_FAIL|CVT_BADFMT;
+            bp = &mb(0);
+            if (fetch_ieee754(&bp, IEEE_SINGLE, &secs, trim_offsets) != IEEE_OK)
+                return CVT_FAIL | CVT_BADFMT;
 
-				    if ((secs.l_i <= 0) ||
-					(t->t_utcknown == 0))
-				    {
-					    clock_time->flags = PARSEB_POWERUP;
-					    return CVT_OK;
-				    }
-				    week = basedate_expand_gpsweek(week);
+            if ((secs.l_i <= 0) ||
+                (t->t_utcknown == 0))
+            {
+                clock_time->flags = PARSEB_POWERUP;
+                return CVT_OK;
+            }
+            week = basedate_expand_gpsweek(week);
 
-				    /* time OK */
+            /* time OK */
 
-				    /* fetch UTC offset */
-				    bp = &mb(6);
-				    if (fetch_ieee754(&bp, IEEE_SINGLE, &utcoffset, trim_offsets) != IEEE_OK)
-					    return CVT_FAIL|CVT_BADFMT;
+            /* fetch UTC offset */
+            bp = &mb(6);
+            if (fetch_ieee754(&bp, IEEE_SINGLE, &utcoffset, trim_offsets) != IEEE_OK)
+                return CVT_FAIL | CVT_BADFMT;
 
-				    L_SUB(&secs, &utcoffset); /* adjust GPS time to UTC time */
+            L_SUB(&secs, &utcoffset); /* adjust GPS time to UTC time */
 
-				    gpstolfp((unsigned short)week, (unsigned short)0,
-					     secs.l_ui, &gpstime);
+            gpstolfp((unsigned short)week, (unsigned short)0,
+                     secs.l_ui, &gpstime);
 
-				    gpstime.l_uf = secs.l_uf;
+            gpstime.l_uf = secs.l_uf;
 
-				    clock_time->utctime = gpstime.l_ui - JAN_1970;
+            clock_time->utctime = gpstime.l_ui - JAN_1970;
 
-				    TSFTOTVU(gpstime.l_uf, clock_time->usecond);
+            TSFTOTVU(gpstime.l_uf, clock_time->usecond);
 
-				    if (t->t_leap == ADDSECOND)
-					clock_time->flags |= PARSEB_LEAPADD;
+            if (t->t_leap == ADDSECOND)
+                clock_time->flags |= PARSEB_LEAPADD;
 
-				    if (t->t_leap == DELSECOND)
-					clock_time->flags |= PARSEB_LEAPDEL;
+            if (t->t_leap == DELSECOND)
+                clock_time->flags |= PARSEB_LEAPDEL;
 
-				    switch (t->t_operable)
-				      {
-				      case STATUS_SYNC:
-					clock_time->flags &= ~(PARSEB_POWERUP|PARSEB_NOSYNC);
-					break;
+            switch (t->t_operable)
+            {
+            case STATUS_SYNC:
+                clock_time->flags &= ~(PARSEB_POWERUP | PARSEB_NOSYNC);
+                break;
 
-				      case STATUS_UNSAFE:
-					clock_time->flags |= PARSEB_NOSYNC;
-					break;
+            case STATUS_UNSAFE:
+                clock_time->flags |= PARSEB_NOSYNC;
+                break;
 
-				      case STATUS_BAD:
-					clock_time->flags |= PARSEB_NOSYNC|PARSEB_POWERUP;
-					break;
-				      }
+            case STATUS_BAD:
+                clock_time->flags |= PARSEB_NOSYNC | PARSEB_POWERUP;
+                break;
+            }
 
-				    if (t->t_mode == 0)
-					    clock_time->flags |= PARSEB_POSITION;
+            if (t->t_mode == 0)
+                clock_time->flags |= PARSEB_POSITION;
 
-				    clock_time->flags |= PARSEB_S_LEAP|PARSEB_S_POSITION;
+            clock_time->flags |= PARSEB_S_LEAP | PARSEB_S_POSITION;
 
-				    return CVT_OK;
+            return CVT_OK;
 
-			    } /* case 0x41 */
+        } /* case 0x41 */
 
-		    case CMD_RRECVHEALTH:
-			    {
-				    /* TRIMBLE health */
-				    u_char status = mb(0);
+        case CMD_RRECVHEALTH: {
+            /* TRIMBLE health */
+            u_char status = mb(0);
 
-				    switch (status)
-				    {
-				      case 0x00: /* position fixes */
-					t->t_operable = STATUS_SYNC;
-					break;
+            switch (status)
+            {
+            case 0x00: /* position fixes */
+                t->t_operable = STATUS_SYNC;
+                break;
 
-				      case 0x09: /* 1 satellite */
-				      case 0x0A: /* 2 satellites */
-				      case 0x0B: /* 3 satellites */
-					t->t_operable = STATUS_UNSAFE;
-					break;
+            case 0x09: /* 1 satellite */
+            case 0x0A: /* 2 satellites */
+            case 0x0B: /* 3 satellites */
+                t->t_operable = STATUS_UNSAFE;
+                break;
 
-				      default:
-					t->t_operable = STATUS_BAD;
-					break;
-				    }
-				    t->t_mode = status;
-			    }
-			    break;
+            default:
+                t->t_operable = STATUS_BAD;
+                break;
+            }
+            t->t_mode = status;
+        }
+        break;
 
-		    case CMD_RUTCPARAM:
-			    {
-			            l_fp t0t;
-				    unsigned char *lbp;
+        case CMD_RUTCPARAM: {
+            l_fp t0t;
+            unsigned char* lbp;
 
-				    /* UTC correction data - derive a leap warning */
-				    int tls   = t->t_gpsutc     = (u_short) getshort((unsigned char *)&mb(12)); /* current leap correction (GPS-UTC) */
-				    int tlsf  = t->t_gpsutcleap = (u_short) getshort((unsigned char *)&mb(24)); /* new leap correction */
+            /* UTC correction data - derive a leap warning */
+            int tls = t->t_gpsutc = (u_short)getshort((unsigned char*)&mb(12));      /* current leap correction (GPS-UTC) */
+            int tlsf = t->t_gpsutcleap = (u_short)getshort((unsigned char*)&mb(24)); /* new leap correction */
 
-				    t->t_weekleap   = basedate_expand_gpsweek(
-					(u_short) getshort((unsigned char *)&mb(20))); /* week no of leap correction */
+            t->t_weekleap = basedate_expand_gpsweek(
+                (u_short)getshort((unsigned char*)&mb(20))); /* week no of leap correction */
 
-				    t->t_dayleap    = (u_short) getshort((unsigned char *)&mb(22)); /* day in week of leap correction */
-				    t->t_week = basedate_expand_gpsweek(
-					(u_short) getshort((unsigned char *)&mb(18))); /* current week no */
+            t->t_dayleap = (u_short)getshort((unsigned char*)&mb(22)); /* day in week of leap correction */
+            t->t_week = basedate_expand_gpsweek(
+                (u_short)getshort((unsigned char*)&mb(18))); /* current week no */
 
-				    lbp = (unsigned char *)&mb(14); /* last update time */
-				    if (fetch_ieee754(&lbp, IEEE_SINGLE, &t0t, trim_offsets) != IEEE_OK)
-					    return CVT_FAIL|CVT_BADFMT;
+            lbp = (unsigned char*)&mb(14); /* last update time */
+            if (fetch_ieee754(&lbp, IEEE_SINGLE, &t0t, trim_offsets) != IEEE_OK)
+                return CVT_FAIL | CVT_BADFMT;
 
-				    t->t_utcknown = t0t.l_ui != 0;
+            t->t_utcknown = t0t.l_ui != 0;
 
-				    if ((t->t_utcknown) && /* got UTC information */
-					(tlsf != tls)   && /* something will change */
-					((t->t_weekleap - t->t_week) < 5)) /* and close in the future */
-				    {
-					    /* generate a leap warning */
-					    if (tlsf > tls)
-						t->t_leap = ADDSECOND;
-					    else
-						t->t_leap = DELSECOND;
-				    }
-				    else
-				    {
-					    t->t_leap = 0;
-				    }
-			    }
-			    break;
+            if ((t->t_utcknown) &&                 /* got UTC information */
+                (tlsf != tls) &&                   /* something will change */
+                ((t->t_weekleap - t->t_week) < 5)) /* and close in the future */
+            {
+                /* generate a leap warning */
+                if (tlsf > tls)
+                    t->t_leap = ADDSECOND;
+                else
+                    t->t_leap = DELSECOND;
+            }
+            else
+            {
+                t->t_leap = 0;
+            }
+        }
+        break;
 
-		    default:
-			    /* it's validly formed, but we don't care about it! */
-			    break;
-		}
-	}
-	return CVT_SKIP;
+        default:
+            /* it's validly formed, but we don't care about it! */
+            break;
+        }
+    }
+    return CVT_SKIP;
 }
 
-#else /* not (REFCLOCK && CLOCK_PARSE && CLOCK_TRIMTSIP && !PARSESTREAM) */
+#else  /* not (REFCLOCK && CLOCK_PARSE && CLOCK_TRIMTSIP && !PARSESTREAM) */
 NONEMPTY_TRANSLATION_UNIT
 #endif /* not (REFCLOCK && CLOCK_PARSE && CLOCK_TRIMTSIP && !PARSESTREAM) */
 

@@ -39,35 +39,35 @@
 
 #if !defined(_MSC_VER)
 
-# error use this header only with Micro$oft Visual C compilers!
+#error use this header only with Micro$oft Visual C compilers!
 
 #elif defined(OPENSSL_NO_AUTOLINK)
 
-# pragma message("automatic OpenSSL library selection disabled")
+#pragma message("automatic OpenSSL library selection disabled")
 
 #elif defined(OPENSSL_AUTOLINK_STRICT)
 
- /* ---------------------------------------------------------------- */
+/* ---------------------------------------------------------------- */
 /*  selection dance to get the right libraries linked               */
 /* ---------------------------------------------------------------- */
 
 /* --*-- check if this a DEBUG or a RELEASE build --*--
  * The '_DEBUG' macro is only set for DEBUG build variants
  */
-# ifdef _DEBUG
-#  define LTAG_DEBUG "d"
-# else
-#  define LTAG_DEBUG ""
-# endif
+#ifdef _DEBUG
+#define LTAG_DEBUG "d"
+#else
+#define LTAG_DEBUG ""
+#endif
 
 /* --*-- check platform (32 bit vs. 64 bit) --*--
  * '_WIN64' is defined for X64 Platform only
  */
-# ifdef _WIN64
-#  define LTAG_SIZE "64"
-# else
-#  define LTAG_SIZE "32"
-# endif
+#ifdef _WIN64
+#define LTAG_SIZE "64"
+#else
+#define LTAG_SIZE "32"
+#endif
 
 /* --*-- check VC runtime model --*--
  * '_DLL' is set if a runtime-in-a-dll code generation model is chosen.
@@ -77,11 +77,11 @@
  * somewhere after VS2008 to drop that model anyway, so it's no longer
  * available on newer platforms.
  */
-# ifdef _DLL
-#  #define LTAG_RTLIB "MD"
-# else
-#  define LTAG_RTLIB "MT"
-# endif
+#ifdef _DLL
+# #define LTAG_RTLIB "MD"
+#else
+#define LTAG_RTLIB "MT"
+#endif
 
 /* --*-- place linker request in object file --*--
  * Here we come to the reason for all that trouble: the library names
@@ -101,24 +101,24 @@
  * under lib\VC\<arch>\<MT|MTd|MD|MDd>; the property sheets select the
  * subdirectory from OPENSSL_LIB / OPENSSL64_LIB.
  */
-#  if OPENSSL_VERSION_NUMBER >= 0x40000000L
-#   pragma comment(lib, "libcrypto_static.lib")
-#   pragma comment(lib, "crypt32.lib")
-#  elif OPENSSL_VERSION_NUMBER >= 0x10100000L
-#   pragma comment(lib, "libcrypto" LTAG_SIZE LTAG_RTLIB LTAG_DEBUG ".lib")
-#  else
-#   pragma comment(lib, "libeay32" LTAG_RTLIB LTAG_DEBUG ".lib")
-#  endif
+#if OPENSSL_VERSION_NUMBER >= 0x40000000L
+#pragma comment(lib, "libcrypto_static.lib")
+#pragma comment(lib, "crypt32.lib")
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
+#pragma comment(lib, "libcrypto" LTAG_SIZE LTAG_RTLIB LTAG_DEBUG ".lib")
+#else
+#pragma comment(lib, "libeay32" LTAG_RTLIB LTAG_DEBUG ".lib")
+#endif
 
-# else
+#else
 
-# if OPENSSL_VERSION_NUMBER >= 0x40000000L
-#  pragma comment(lib, "libcrypto_static.lib")
-#  pragma comment(lib, "crypt32.lib")
-# elif OPENSSL_VERSION_NUMBER >= 0x10100000L
-#  pragma comment(lib, "libcrypto.lib")
-# else
-#  pragma comment(lib, "libeay32.lib")
-# endif
+#if OPENSSL_VERSION_NUMBER >= 0x40000000L
+#pragma comment(lib, "libcrypto_static.lib")
+#pragma comment(lib, "crypt32.lib")
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
+#pragma comment(lib, "libcrypto.lib")
+#else
+#pragma comment(lib, "libeay32.lib")
+#endif
 
 #endif /*!defined(OPENSSL_NO_AUTOLINK)*/

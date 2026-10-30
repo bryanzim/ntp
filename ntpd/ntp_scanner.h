@@ -1,6 +1,6 @@
 /* ntp_scanner.h
  *
- * The header file for a simple lexical analyzer. 
+ * The header file for a simple lexical analyzer.
  *
  * Written By:	Sachin Kamboj
  *		University of Delaware
@@ -35,21 +35,22 @@
  * non-accepting states (where the state number does not match a T_
  * value).
  */
-typedef enum {
-	FOLLBY_TOKEN = 0,
-	FOLLBY_STRING,
-	FOLLBY_STRINGS_TO_EOC,
-	FOLLBY_NON_ACCEPTING
+typedef enum
+{
+    FOLLBY_TOKEN = 0,
+    FOLLBY_STRING,
+    FOLLBY_STRINGS_TO_EOC,
+    FOLLBY_NON_ACCEPTING
 } follby;
 
-#define MAXLINE		1024	/* maximum length of line */
-#define MAXINCLUDELEVEL	5	/* maximum include file levels */
+#define MAXLINE 1024      /* maximum length of line */
+#define MAXINCLUDELEVEL 5 /* maximum include file levels */
 
 /* STRUCTURES
  * ----------
  */
 
-/* 
+/*
  * Define a structure to hold the FSA for the keywords.
  * The structure is actually a trie.
  *
@@ -69,23 +70,23 @@ typedef enum {
  * Bits 21 through 31 hold the next state to check matching the char.
  */
 
-#define S_ST(ch, fb, match_n, other_n) (			\
-	(u_char)((ch) & 0xff) |					\
-	((u_int32)(fb) << 8) |					\
-	((u_int32)(match_n) << 10) |				\
-	((u_int32)(other_n) << 21)				\
-)
+#define S_ST(ch, fb, match_n, other_n) ( \
+    (u_char)((ch) & 0xff) |              \
+    ((u_int32)(fb) << 8) |               \
+    ((u_int32)(match_n) << 10) |         \
+    ((u_int32)(other_n) << 21))
 
-#define SS_CH(ss)	((char)(u_char)((ss) & 0xff))
-#define SS_FB(ss)	(((u_int)(ss) >>  8) & 0x3)
-#define SS_MATCH_N(ss)	(((u_int)(ss) >> 10) & 0x7ff)
-#define SS_OTHER_N(ss)	(((u_int)(ss) >> 21) & 0x7ff)
+#define SS_CH(ss) ((char)(u_char)((ss) & 0xff))
+#define SS_FB(ss) (((u_int)(ss) >> 8) & 0x3)
+#define SS_MATCH_N(ss) (((u_int)(ss) >> 10) & 0x7ff)
+#define SS_OTHER_N(ss) (((u_int)(ss) >> 21) & 0x7ff)
 
 typedef u_int32 scan_state;
 
-struct LCPOS {
-	int nline;
-	int ncol;
+struct LCPOS
+{
+    int nline;
+    int ncol;
 };
 
 /* Structure to hold a filename, file pointer and positional info.
@@ -93,25 +94,26 @@ struct LCPOS {
  * value into a dynamic extension of the 'fname' array. (Which *must* be
  * the last field for that reason!)
  */
-struct FILE_INFO {
-	struct FILE_INFO * st_next;	/* next on stack */
-	FILE *		   fpi;		/* File Descriptor */
-	int                force_eof;	/* locked or not */
-	int                backch;	/* ungetch buffer */
-	
-	struct LCPOS       curpos;	/* current scan position */
-	struct LCPOS       bakpos;	/* last line end for ungetc */
-	struct LCPOS       tokpos;	/* current token position */
-	struct LCPOS       errpos;	/* error position */
+struct FILE_INFO
+{
+    struct FILE_INFO* st_next; /* next on stack */
+    FILE* fpi;                 /* File Descriptor */
+    int force_eof;             /* locked or not */
+    int backch;                /* ungetch buffer */
 
-	char               fname[1];	/* (formal only) buffered name */
+    struct LCPOS curpos; /* current scan position */
+    struct LCPOS bakpos; /* last line end for ungetc */
+    struct LCPOS tokpos; /* current token position */
+    struct LCPOS errpos; /* error position */
+
+    char fname[1]; /* (formal only) buffered name */
 };
 
 
-/* SCANNER GLOBAL VARIABLES 
+/* SCANNER GLOBAL VARIABLES
  * ------------------------
  */
-extern config_tree cfgt;	  /* Parser output stored here */
+extern config_tree cfgt; /* Parser output stored here */
 
 /* VARIOUS EXTERNAL DECLARATIONS
  * -----------------------------
@@ -121,22 +123,22 @@ extern int old_config_style;
 /* VARIOUS SUBROUTINE DECLARATIONS
  * -------------------------------
  */
-extern const char *keyword(int token);
-extern char *quote_if_needed(char *str);
+extern const char* keyword(int token);
+extern char* quote_if_needed(char* str);
 int yylex(void);
 
 /* managing the input source stack itself */
-extern int/*BOOL*/ lex_init_stack(const char * path, const char * mode);
-extern void        lex_drop_stack(void);
-extern int/*BOOL*/ lex_flush_stack(void);
+extern int /*BOOL*/ lex_init_stack(const char* path, const char* mode);
+extern void lex_drop_stack(void);
+extern int /*BOOL*/ lex_flush_stack(void);
 
 /* add/remove a nested input source */
-extern int/*BOOL*/ lex_push_file(const char * path, const char * mode);
-extern int/*BOOL*/ lex_pop_file(void);
+extern int /*BOOL*/ lex_push_file(const char* path, const char* mode);
+extern int /*BOOL*/ lex_pop_file(void);
 
 /* input stack state query functions */
-extern size_t      lex_level(void);
-extern int/*BOOL*/ lex_from_file(void);
-extern struct FILE_INFO * lex_current(void);
+extern size_t lex_level(void);
+extern int /*BOOL*/ lex_from_file(void);
+extern struct FILE_INFO* lex_current(void);
 
-#endif	/* NTP_SCANNER_H */
+#endif /* NTP_SCANNER_H */

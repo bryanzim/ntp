@@ -1,7 +1,6 @@
 #include "config.h"
 
-#include "sntptest.h"
-
 #include "networking.h"
 
+#include "sntptest.h"
 #include "unity.h"

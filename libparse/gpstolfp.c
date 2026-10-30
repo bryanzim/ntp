@@ -33,20 +33,19 @@
  *
  */
 #include <config.h>
-#include "ntp_fp.h"
+
 #include "ntp_calendar.h"
+#include "ntp_fp.h"
 #include "parse.h"
 
-void
-gpstolfp(
-	 u_int weeks,
-	 u_int days,
-	 unsigned long  seconds,
-	 l_fp * lfp
-	 )
+void gpstolfp(
+    u_int weeks,
+    u_int days,
+    unsigned long seconds,
+    l_fp* lfp)
 {
-  lfp->l_ui = (uint32_t)(weeks * SECSPERWEEK + days * SECSPERDAY + seconds + GPSORIGIN); /* convert to NTP time */
-  lfp->l_uf = 0;
+    lfp->l_ui = (uint32_t)(weeks * SECSPERWEEK + days * SECSPERDAY + seconds + GPSORIGIN); /* convert to NTP time */
+    lfp->l_uf = 0;
 }
 
 /*

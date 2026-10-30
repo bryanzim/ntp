@@ -1,318 +1,302 @@
-/* 
+/*
  * hopf_PCI_io.c
  * Read data from a hopf PCI clock using the ATLSoft WinNT driver.
  *
- * Date: 21.03.2000 Revision: 01.10 
+ * Date: 21.03.2000 Revision: 01.10
  *
  * Copyright (C) 1999, 2000 by Bernd Altmeier altmeier@ATLSoft.de
- * 
+ *
  */
 
 /*
  * Ignore nonstandard extension warning.
  * This happens when including winioctl.h
  */
-#pragma warning(disable: 4201)
+#pragma warning(disable : 4201)
 #define _FILESYSTEMFSCTL_
 
 #include <config.h>
-#include <windows.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <stddef.h>
-#include <winioctl.h>
 
-#include "ntp_stdlib.h"
 #include "hopf_PCI_io.h"
 
+#include "ntp_stdlib.h"
 
-#define ATL_PASSTHROUGH_READ_TOSIZE	(3 * sizeof(ULONG))
-#define ATL_PASSTHROUGH_READ_FROMSIZE	0
-#define IOCTL_ATLSOFT_PASSTHROUGH_READ	CTL_CODE(			\
-						FILE_DEVICE_UNKNOWN,	\
-						0x805,			\
-						METHOD_BUFFERED,	\
-						FILE_ANY_ACCESS)
+#include <windows.h>
+#include <winioctl.h>
+
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 
-HANDLE	hDevice = NULL;	// this is the handle to the PCI Device
+#define ATL_PASSTHROUGH_READ_TOSIZE (3 * sizeof(ULONG))
+#define ATL_PASSTHROUGH_READ_FROMSIZE 0
+#define IOCTL_ATLSOFT_PASSTHROUGH_READ CTL_CODE( \
+    FILE_DEVICE_UNKNOWN,                         \
+    0x805,                                       \
+    METHOD_BUFFERED,                             \
+    FILE_ANY_ACCESS)
 
-HANDLE		hRdEvent;
-OVERLAPPED	Rdoverlapped;
-OVERLAPPED *	pRdOverlapped;
 
-ULONG		iobuffer[256];
-DWORD		cbReturned;
-BOOL		HaveBoard = FALSE;
+HANDLE hDevice = NULL; // this is the handle to the PCI Device
 
-struct {
-	ULONG	region;
-	ULONG	offset;
-	ULONG	count;
+HANDLE hRdEvent;
+OVERLAPPED Rdoverlapped;
+OVERLAPPED* pRdOverlapped;
+
+ULONG iobuffer[256];
+DWORD cbReturned;
+BOOL HaveBoard = FALSE;
+
+struct
+{
+    ULONG region;
+    ULONG offset;
+    ULONG count;
 } io_params;
 
 
-BOOL
-OpenHopfDevice(void)
+BOOL OpenHopfDevice(void)
 {
-	ULONG		deviceNumber = 0;
-	CHAR		deviceName[255];
-			
-	snprintf(deviceName, sizeof(deviceName),
-		 "\\\\.\\hclk6039%d", deviceNumber + 1);
-	hDevice = CreateFile(
-		deviceName,
-		GENERIC_WRITE | GENERIC_READ,
-		FILE_SHARE_WRITE | FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_OVERLAPPED,
-		NULL);
+    ULONG deviceNumber = 0;
+    CHAR deviceName[255];
 
-	if (INVALID_HANDLE_VALUE == hDevice) // the system didn't return a handle
-		return FALSE;  //"A handle to the driver could not be obtained properly"
+    snprintf(deviceName, sizeof(deviceName),
+             "\\\\.\\hclk6039%d", deviceNumber + 1);
+    hDevice = CreateFile(
+        deviceName,
+        GENERIC_WRITE | GENERIC_READ,
+        FILE_SHARE_WRITE | FILE_SHARE_READ,
+        NULL,
+        OPEN_EXISTING,
+        FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_OVERLAPPED,
+        NULL);
 
-	// an event to be used for async transfers
-	hRdEvent = CreateEvent(
-		NULL,
-		TRUE,
-		FALSE,
-		NULL);	
+    if (INVALID_HANDLE_VALUE == hDevice) // the system didn't return a handle
+        return FALSE;                    //"A handle to the driver could not be obtained properly"
 
-	if (INVALID_HANDLE_VALUE == hRdEvent) 
-		return FALSE;  // the system didn't return a handle
+    // an event to be used for async transfers
+    hRdEvent = CreateEvent(
+        NULL,
+        TRUE,
+        FALSE,
+        NULL);
 
-	pRdOverlapped = &Rdoverlapped;
-	pRdOverlapped->hEvent = hRdEvent;
+    if (INVALID_HANDLE_VALUE == hRdEvent)
+        return FALSE; // the system didn't return a handle
 
-	HaveBoard = TRUE; // board installed and we have access
+    pRdOverlapped = &Rdoverlapped;
+    pRdOverlapped->hEvent = hRdEvent;
 
-	return TRUE;
+    HaveBoard = TRUE; // board installed and we have access
+
+    return TRUE;
 } // end of OpenHopfDevice()
 
 
-BOOL
-CloseHopfDevice(void)
+BOOL CloseHopfDevice(void)
 {
-	CloseHandle(hRdEvent);// When done, close the handle to the driver
+    CloseHandle(hRdEvent); // When done, close the handle to the driver
 
-	return CloseHandle(hDevice);
+    return CloseHandle(hDevice);
 } // end of CloseHopfDevice()
 
 
-void
-ReadHopfDevice(void)
+void ReadHopfDevice(void)
 {
-	if (!HaveBoard)
-		return;
+    if (!HaveBoard)
+        return;
 
-	DeviceIoControl(
-		hDevice,
-		IOCTL_ATLSOFT_PASSTHROUGH_READ,
-		&io_params,
-		ATL_PASSTHROUGH_READ_TOSIZE,
-		iobuffer,
-		ATL_PASSTHROUGH_READ_FROMSIZE
-		 + io_params.count * sizeof(ULONG),
-		&cbReturned, 
-		pRdOverlapped
-		);
+    DeviceIoControl(
+        hDevice,
+        IOCTL_ATLSOFT_PASSTHROUGH_READ,
+        &io_params,
+        ATL_PASSTHROUGH_READ_TOSIZE,
+        iobuffer,
+        ATL_PASSTHROUGH_READ_FROMSIZE + io_params.count * sizeof(ULONG),
+        &cbReturned,
+        pRdOverlapped);
 }
 
 
 #ifdef NOTUSED
-void
-GetHardwareData(
-	LPDWORD	Data32,
-	WORD	Ofs
-	)
+void GetHardwareData(
+    LPDWORD Data32,
+    WORD Ofs)
 {
-	io_params.region = 1;
-	io_params.offset = Ofs;
-	io_params.count = 1;
-	ReadHopfDevice();
-	*Data32 = iobuffer[0U];
+    io_params.region = 1;
+    io_params.offset = Ofs;
+    io_params.count = 1;
+    ReadHopfDevice();
+    *Data32 = iobuffer[0U];
 }
-#endif	/* NOTUSED */
+#endif /* NOTUSED */
 
 
-void
-GetHopfTime(
-	LPHOPFTIME	Data,
-	DWORD		Offset
-	)
+void GetHopfTime(
+    LPHOPFTIME Data,
+    DWORD Offset)
 {
-	io_params.region = 1;
-	io_params.offset = Offset;
-	io_params.count = 4;
+    io_params.region = 1;
+    io_params.offset = Offset;
+    io_params.count = 4;
 
-	ReadHopfDevice();
+    ReadHopfDevice();
 
-	Data->wHour = 0;
-	Data->wMinute = 0;
-	Data->wSecond = 0;
-	while (iobuffer[0U] >= 60 * 60 * 1000) {
-		iobuffer[0U] = iobuffer[0U] - 60 * 60 * 1000;
-		Data->wHour++;
-	}
-	while (iobuffer[0U] >= 60 * 1000) {
-		iobuffer[0U] = iobuffer[0U] - 60 * 1000;
-		Data->wMinute++;
-	}
-	while (iobuffer[0U] >= 1000) {
-		iobuffer[0U] = iobuffer[0U] - 1000;
-		Data->wSecond++;
-	}
-	Data->wMilliseconds = LOWORD(iobuffer[0U]);
-	Data->wDay = HIBYTE(HIWORD(iobuffer[1U]));
-	Data->wMonth = LOBYTE(HIWORD(iobuffer[1U]));
-	Data->wYear = LOWORD(iobuffer[1U]);
-	Data->wDayOfWeek = HIBYTE(HIWORD(iobuffer[2U]));
-	if (Data->wDayOfWeek == 7) // Dow Korrektur
-		Data->wDayOfWeek = 0;
-	
- 	io_params.region = 1;
-	io_params.offset += 0x08;
-	io_params.count = 1;
+    Data->wHour = 0;
+    Data->wMinute = 0;
+    Data->wSecond = 0;
+    while (iobuffer[0U] >= 60 * 60 * 1000)
+    {
+        iobuffer[0U] = iobuffer[0U] - 60 * 60 * 1000;
+        Data->wHour++;
+    }
+    while (iobuffer[0U] >= 60 * 1000)
+    {
+        iobuffer[0U] = iobuffer[0U] - 60 * 1000;
+        Data->wMinute++;
+    }
+    while (iobuffer[0U] >= 1000)
+    {
+        iobuffer[0U] = iobuffer[0U] - 1000;
+        Data->wSecond++;
+    }
+    Data->wMilliseconds = LOWORD(iobuffer[0U]);
+    Data->wDay = HIBYTE(HIWORD(iobuffer[1U]));
+    Data->wMonth = LOBYTE(HIWORD(iobuffer[1U]));
+    Data->wYear = LOWORD(iobuffer[1U]);
+    Data->wDayOfWeek = HIBYTE(HIWORD(iobuffer[2U]));
+    if (Data->wDayOfWeek == 7) // Dow Korrektur
+        Data->wDayOfWeek = 0;
 
-	ReadHopfDevice();
+    io_params.region = 1;
+    io_params.offset += 0x08;
+    io_params.count = 1;
 
-	Data->wStatus = LOBYTE(HIWORD(iobuffer[0U]));
-}
+    ReadHopfDevice();
 
-
-#ifdef NOTUSED
-void
-GetHopfLocalTime(
-	LPHOPFTIME Data
-	)
-{
-	DWORD Offset = 0;
-
-	GetHopfTime(Data, Offset);
-}
-#endif	/* NOTUSED */
-
-
-void
-GetHopfSystemTime(
-	LPHOPFTIME Data
-	)
-{
-	DWORD Offset = 0x10;
-
-	GetHopfTime(Data,Offset);
+    Data->wStatus = LOBYTE(HIWORD(iobuffer[0U]));
 }
 
 
 #ifdef NOTUSED
-void
-GetSatData(
-	LPSATSTAT Data
-	)
+void GetHopfLocalTime(
+    LPHOPFTIME Data)
 {
-	io_params.region = 1;
-	io_params.offset = 0xb0;
-	io_params.count = 5;
+    DWORD Offset = 0;
 
-	ReadHopfDevice();
-				
-	Data->wVisible	= HIBYTE(HIWORD(iobuffer[0U]));
-	Data->wMode	= LOBYTE(LOWORD(iobuffer[0U]));
-	Data->wSat0	= HIBYTE(HIWORD(iobuffer[1U]));
-	Data->wRat0	= LOBYTE(HIWORD(iobuffer[1U]));
-	Data->wSat1	= HIBYTE(LOWORD(iobuffer[1U]));
-	Data->wRat1	= LOBYTE(LOWORD(iobuffer[1U]));
-	Data->wSat2	= HIBYTE(HIWORD(iobuffer[2U]));
-	Data->wRat2	= LOBYTE(HIWORD(iobuffer[2U]));
-	Data->wSat3	= HIBYTE(LOWORD(iobuffer[2U]));
-	Data->wRat3	= LOBYTE(LOWORD(iobuffer[2U]));
-	Data->wSat4	= HIBYTE(HIWORD(iobuffer[3U]));
-	Data->wRat4	= LOBYTE(HIWORD(iobuffer[3U]));
-	Data->wSat5	= HIBYTE(LOWORD(iobuffer[3U]));
-	Data->wRat5	= LOBYTE(LOWORD(iobuffer[3U]));
-	Data->wSat6	= HIBYTE(HIWORD(iobuffer[4U]));
-	Data->wRat6	= LOBYTE(HIWORD(iobuffer[4U]));
-	Data->wSat7	= HIBYTE(LOWORD(iobuffer[4U]));
-	Data->wRat7	= LOBYTE(LOWORD(iobuffer[4U]));
+    GetHopfTime(Data, Offset);
+}
+#endif /* NOTUSED */
+
+
+void GetHopfSystemTime(
+    LPHOPFTIME Data)
+{
+    DWORD Offset = 0x10;
+
+    GetHopfTime(Data, Offset);
 }
 
 
-void
-GetDiffTime(
-	LPLONG Data
-	)
+#ifdef NOTUSED
+void GetSatData(
+    LPSATSTAT Data)
 {
-	io_params.region = 1;
-	io_params.offset = 0x0c;
-	io_params.count = 1;
+    io_params.region = 1;
+    io_params.offset = 0xb0;
+    io_params.count = 5;
 
-	ReadHopfDevice();
+    ReadHopfDevice();
 
-	*Data = iobuffer[0U];
+    Data->wVisible = HIBYTE(HIWORD(iobuffer[0U]));
+    Data->wMode = LOBYTE(LOWORD(iobuffer[0U]));
+    Data->wSat0 = HIBYTE(HIWORD(iobuffer[1U]));
+    Data->wRat0 = LOBYTE(HIWORD(iobuffer[1U]));
+    Data->wSat1 = HIBYTE(LOWORD(iobuffer[1U]));
+    Data->wRat1 = LOBYTE(LOWORD(iobuffer[1U]));
+    Data->wSat2 = HIBYTE(HIWORD(iobuffer[2U]));
+    Data->wRat2 = LOBYTE(HIWORD(iobuffer[2U]));
+    Data->wSat3 = HIBYTE(LOWORD(iobuffer[2U]));
+    Data->wRat3 = LOBYTE(LOWORD(iobuffer[2U]));
+    Data->wSat4 = HIBYTE(HIWORD(iobuffer[3U]));
+    Data->wRat4 = LOBYTE(HIWORD(iobuffer[3U]));
+    Data->wSat5 = HIBYTE(LOWORD(iobuffer[3U]));
+    Data->wRat5 = LOBYTE(LOWORD(iobuffer[3U]));
+    Data->wSat6 = HIBYTE(HIWORD(iobuffer[4U]));
+    Data->wRat6 = LOBYTE(HIWORD(iobuffer[4U]));
+    Data->wSat7 = HIBYTE(LOWORD(iobuffer[4U]));
+    Data->wRat7 = LOBYTE(LOWORD(iobuffer[4U]));
 }
 
 
-void
-GetPosition(
-	LPGPSPOS Data
-	)
+void GetDiffTime(
+    LPLONG Data)
 {
-	io_params.region = 1;
-	io_params.offset = 0x90; // Positionsdaten Länge
-	io_params.count  = 1;
+    io_params.region = 1;
+    io_params.offset = 0x0c;
+    io_params.count = 1;
 
-	ReadHopfDevice();
+    ReadHopfDevice();
 
-	Data->wLongitude = iobuffer[0U]; //in Millisekunden
-	io_params.region = 1;
-	io_params.offset = 0xa0; // Positionsdaten Breite
-	io_params.count  = 1;
-
-	ReadHopfDevice();
-
-	Data->wLatitude	= iobuffer[0U];
-	Data->wAltitude	= 0;
+    *Data = iobuffer[0U];
 }
 
 
-void
-GetHardwareVersion(
-	LPCLOCKVER Data
-	)
+void GetPosition(
+    LPGPSPOS Data)
 {
-	int i;
+    io_params.region = 1;
+    io_params.offset = 0x90; // Positionsdaten Länge
+    io_params.count = 1;
 
-	io_params.region = 1;
-	io_params.offset = 0x50;
-	io_params.count = 12;
+    ReadHopfDevice();
 
-	ReadHopfDevice();
-				
-	Data->cVersion[0U] = '\0';
-	iobuffer[13U] = 0;
-	for (i = 0; i < 13; i++) {
-		Data->cVersion[i * 4    ] = HIBYTE(HIWORD(iobuffer[i]));
-		Data->cVersion[i * 4 + 1] = LOBYTE(HIWORD(iobuffer[i]));
-		Data->cVersion[i * 4 + 2] = HIBYTE(LOWORD(iobuffer[i]));
-		Data->cVersion[i * 4 + 3] = LOBYTE(LOWORD(iobuffer[i]));
-	}
+    Data->wLongitude = iobuffer[0U]; // in Millisekunden
+    io_params.region = 1;
+    io_params.offset = 0xa0; // Positionsdaten Breite
+    io_params.count = 1;
+
+    ReadHopfDevice();
+
+    Data->wLatitude = iobuffer[0U];
+    Data->wAltitude = 0;
 }
 
 
-void
-GetDCFAntenne(
-	LPDCFANTENNE Data
-	)
+void GetHardwareVersion(
+    LPCLOCKVER Data)
 {
-	io_params.region = 1;
-	io_params.offset = 0xcc;
-	io_params.count = 1;
+    int i;
 
-	ReadHopfDevice();
-	Data->bStatus1	= HIBYTE(HIWORD(iobuffer[0U]));
-	Data->bStatus	= LOBYTE(HIWORD(iobuffer[0U]));
-	Data->wAntValue	= LOWORD(iobuffer[0U]);
+    io_params.region = 1;
+    io_params.offset = 0x50;
+    io_params.count = 12;
+
+    ReadHopfDevice();
+
+    Data->cVersion[0U] = '\0';
+    iobuffer[13U] = 0;
+    for (i = 0; i < 13; i++)
+    {
+        Data->cVersion[i * 4] = HIBYTE(HIWORD(iobuffer[i]));
+        Data->cVersion[i * 4 + 1] = LOBYTE(HIWORD(iobuffer[i]));
+        Data->cVersion[i * 4 + 2] = HIBYTE(LOWORD(iobuffer[i]));
+        Data->cVersion[i * 4 + 3] = LOBYTE(LOWORD(iobuffer[i]));
+    }
 }
-#endif	/* NOTUSED */
 
+
+void GetDCFAntenne(
+    LPDCFANTENNE Data)
+{
+    io_params.region = 1;
+    io_params.offset = 0xcc;
+    io_params.count = 1;
+
+    ReadHopfDevice();
+    Data->bStatus1 = HIBYTE(HIWORD(iobuffer[0U]));
+    Data->bStatus = LOBYTE(HIWORD(iobuffer[0U]));
+    Data->wAntValue = LOWORD(iobuffer[0U]);
+}
+#endif /* NOTUSED */

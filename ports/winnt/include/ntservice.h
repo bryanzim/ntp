@@ -28,4 +28,4 @@ BOOL shall_sync_cmos_time(void);
 void WINAPI ServiceControl(DWORD dwCtrlCode);
 BOOL WINAPI OnConsoleEvent(DWORD dwCtrlType);
 
-#endif	/* NTSERVICE_H */
+#endif /* NTSERVICE_H */

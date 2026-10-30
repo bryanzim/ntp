@@ -16,13 +16,12 @@
  * stdio.h must be included in config.h after _GNU_SOURCE is defined
  * but before #define snprintf rpl_snprintf
  */
-# include <stdio.h>
+#include <stdio.h>
 #endif
 
 #ifdef HW_WANT_RPL_SNPRINTF
-# undef snprintf
+#undef snprintf
 #endif
 #ifdef HW_WANT_RPL_VSNPRINTF
-# undef vsnprintf
+#undef vsnprintf
 #endif
-
