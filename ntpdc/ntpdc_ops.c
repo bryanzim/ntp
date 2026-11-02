@@ -286,21 +286,27 @@ again:
                   &itemsize, (void*)&plist, 0,
                   sizeof(struct info_peer_list));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_peer_list)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_peer_list)))
+    {
         return;
+    }
 
     while (items > 0)
     {
@@ -314,9 +320,13 @@ again:
             (void)fprintf(fp, "%-12s %s",
                           modetoa(plist->hmode), strhost);
             if (strcmp(strhost, straddr))
+            {
                 (void)fprintf(fp, " (%s)\n", straddr);
+            }
             else
+            {
                 (void)fprintf(fp, "\n");
+            }
         }
         plist++;
         items--;
@@ -372,21 +382,27 @@ again:
                   &items, &itemsize, (void*)&plist, 0,
                   sizeof(struct info_peer_summary));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_peer_summary)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_peer_summary)))
+    {
         return;
+    }
 
     (void)fprintf(fp,
                   "     remote           local      st poll reach  delay   offset    disp\n");
@@ -397,30 +413,52 @@ again:
         if (!dmstyle)
         {
             if (plist->flags & INFO_FLAG_SYSPEER)
+            {
                 c = '*';
+            }
             else if (plist->hmode == MODE_ACTIVE)
+            {
                 c = '+';
+            }
             else if (plist->hmode == MODE_PASSIVE)
+            {
                 c = '-';
+            }
             else if (plist->hmode == MODE_CLIENT)
+            {
                 c = '=';
+            }
             else if (plist->hmode == MODE_BROADCAST)
+            {
                 c = '^';
+            }
             else if (plist->hmode == MODE_BCLIENT)
+            {
                 c = '~';
+            }
             else
+            {
                 c = ' ';
+            }
         }
         else
         {
             if (plist->flags & INFO_FLAG_SYSPEER)
+            {
                 c = '*';
+            }
             else if (plist->flags & INFO_FLAG_SHORTLIST)
+            {
                 c = '+';
+            }
             else if (plist->flags & INFO_FLAG_SEL_CANDIDATE)
+            {
                 c = '.';
+            }
             else
+            {
                 c = ' ';
+            }
         }
         NTOHL_FP(&(plist->offset), &tempts);
         ntp_poll = 1 << max(min3(plist->ppoll, plist->hpoll, NTP_MAXPOLL),
@@ -429,6 +467,7 @@ again:
         if ((pcmd->nargs == 0) ||
             ((pcmd->argval->ival == 6) && (plist->v6_flag != 0)) ||
             ((pcmd->argval->ival == 4) && (plist->v6_flag == 0)))
+        {
             (void)fprintf(fp,
                           "%c%-15.15s %-15.15s %2u %4d  %3o %7.7s %9.9s %7.7s\n",
                           c, nntohost(&srcadr), stoa(&dstadr),
@@ -436,6 +475,7 @@ again:
                           fptoa(NTOHS_FP(plist->delay), 5),
                           lfptoa(&tempts, 6),
                           ufptoa(NTOHS_FP(plist->dispersion), 5));
+        }
         plist++;
         items--;
     }
@@ -449,7 +489,7 @@ refid_string(
 {
     if (stratum <= 1)
     {
-        static char junk[5];
+        static char junk[5U];
         junk[4U] = 0;
         memcpy(junk, &refid, 4);
         return junk;
@@ -577,31 +617,37 @@ printpeer(
                   prettydate(&tempts));
 
     (void)fprintf(fp, "filter delay: ");
-    for (i = 0; i < NTP_SHIFT; i++)
+    for (i = 0; i < NTP_SHIFT; ++i)
     {
         (void)fprintf(fp, " %-8.8s",
                       fptoa(NTOHS_FP(pp->filtdelay[i]), 5));
         if (i == (NTP_SHIFT >> 1) - 1)
+        {
             (void)fprintf(fp, "\n              ");
+        }
     }
     (void)fprintf(fp, "\n");
 
     (void)fprintf(fp, "filter offset:");
-    for (i = 0; i < NTP_SHIFT; i++)
+    for (i = 0; i < NTP_SHIFT; ++i)
     {
         NTOHL_FP(&pp->filtoffset[i], &tempts);
         (void)fprintf(fp, " %-8.8s", lfptoa(&tempts, 6));
         if (i == (NTP_SHIFT >> 1) - 1)
+        {
             (void)fprintf(fp, "\n              ");
+        }
     }
     (void)fprintf(fp, "\n");
 
     (void)fprintf(fp, "filter order: ");
-    for (i = 0; i < NTP_SHIFT; i++)
+    for (i = 0; i < NTP_SHIFT; ++i)
     {
         (void)fprintf(fp, " %-8d", pp->order[i]);
         if (i == (NTP_SHIFT >> 1) - 1)
+        {
             (void)fprintf(fp, "\n              ");
+        }
     }
     (void)fprintf(fp, "\n");
 
@@ -635,18 +681,24 @@ showpeer(
 
 again:
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct info_peer_list);
+    }
     else
+    {
         sendsize = v4sizeof(struct info_peer_list);
+    }
 
     qitemlim = min(pcmd->nargs, COUNTOF(plist));
-    for (qitems = 0, pl = plist; qitems < qitemlim; qitems++)
+    for (qitems = 0, pl = plist; qitems < qitemlim; ++qitems)
     {
         if (IS_IPV4(&pcmd->argval[qitems].netnum))
         {
             pl->addr = NSRCADR(&pcmd->argval[qitems].netnum);
             if (impl_ver == IMPL_XNTPD)
+            {
                 pl->v6_flag = 0;
+            }
         }
         else
         {
@@ -668,27 +720,35 @@ again:
                   sendsize, (char*)plist, &items,
                   &itemsize, (void*)&pp, 0, sizeof(struct info_peer));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_peer)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_peer)))
+    {
         return;
+    }
 
     while (items-- > 0)
     {
         printpeer(pp, fp);
         if (items > 0)
+        {
             fprintf(fp, "\n");
+        }
         pp++;
     }
 }
@@ -715,20 +775,26 @@ peerstats(
 
 again:
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct info_peer_list);
+    }
     else
+    {
         sendsize = v4sizeof(struct info_peer_list);
+    }
 
     ZERO(plist);
 
     qitemlim = min(pcmd->nargs, COUNTOF(plist));
-    for (qitems = 0, pl = plist; qitems < qitemlim; qitems++)
+    for (qitems = 0, pl = plist; qitems < qitemlim; ++qitems)
     {
         if (IS_IPV4(&pcmd->argval[qitems].netnum))
         {
             pl->addr = NSRCADR(&pcmd->argval[qitems].netnum);
             if (impl_ver == IMPL_XNTPD)
+            {
                 pl->v6_flag = 0;
+            }
         }
         else
         {
@@ -751,21 +817,27 @@ again:
                   &itemsize, (void*)&pp, 0,
                   sizeof(struct info_peer_stats));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_peer_stats)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_peer_stats)))
+    {
         return;
+    }
 
     while (items-- > 0)
     {
@@ -816,7 +888,9 @@ again:
         fprintf(fp, "candidate order:      %u\n",
                 pp->candidate);
         if (items > 0)
+        {
             fprintf(fp, "\n");
+        }
         fprintf(fp, "flags:	");
         print_pflag(fp, ntohs(pp->flags));
         pp++;
@@ -842,9 +916,13 @@ loopinfo(
     if (pcmd->nargs > 0)
     {
         if (STREQ(pcmd->argval[0U].string, "oneline"))
+        {
             oneline = 1;
+        }
         else if (STREQ(pcmd->argval[0U].string, "multiline"))
+        {
             oneline = 0;
+        }
         else
         {
             (void)fprintf(stderr, "How many lines?\n");
@@ -857,20 +935,26 @@ again:
                   &items, &itemsize, (void*)&il, 0,
                   sizeof(struct info_loop));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_loop)))
+    {
         return;
+    }
 
     if (oneline)
     {
@@ -923,21 +1007,27 @@ again:
                   &items, &itemsize, (void*)&is, 0,
                   sizeof(struct info_sys));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_sys)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_sys)))
+    {
         return;
+    }
 
     SET_ADDR(peeraddr, is->v6_flag, is->peer, is->peer6);
 
@@ -967,21 +1057,37 @@ again:
     else
     {
         if (is->flags & INFO_FLAG_BCLIENT)
+        {
             (void)fprintf(fp, "bclient ");
+        }
         if (is->flags & INFO_FLAG_AUTHENTICATE)
+        {
             (void)fprintf(fp, "auth ");
+        }
         if (is->flags & INFO_FLAG_MONITOR)
+        {
             (void)fprintf(fp, "monitor ");
+        }
         if (is->flags & INFO_FLAG_NTP)
+        {
             (void)fprintf(fp, "ntp ");
+        }
         if (is->flags & INFO_FLAG_KERNEL)
+        {
             (void)fprintf(fp, "kernel ");
+        }
         if (is->flags & INFO_FLAG_FILEGEN)
+        {
             (void)fprintf(fp, "stats ");
+        }
         if (is->flags & INFO_FLAG_CAL)
+        {
             (void)fprintf(fp, "calibrate ");
+        }
         if (is->flags & INFO_FLAG_PPS_SYNC)
+        {
             (void)fprintf(fp, "pps ");
+        }
         (void)fprintf(fp, "\n");
     }
     (void)fprintf(fp, "jitter:               %s s\n",
@@ -1014,20 +1120,24 @@ again:
                   &items, &itemsize, (void*)&ss, 0,
                   sizeof(struct info_sys_stats));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (itemsize != sizeof(struct info_sys_stats) &&
-        itemsize != sizeof(struct old_info_sys_stats))
+        (itemsize != sizeof(struct old_info_sys_stats)))
     {
         /* issue warning according to new structure size */
         checkitemsize(itemsize, sizeof(struct info_sys_stats));
@@ -1054,7 +1164,9 @@ again:
     fprintf(fp, "bad authentication:     %lu\n",
             (u_long)ntohl(ss->badauth));
     if (itemsize != sizeof(struct info_sys_stats))
+    {
         return;
+    }
 
     fprintf(fp, "rate exceeded:          %lu\n",
             (u_long)ntohl(ss->limitrejected));
@@ -1080,20 +1192,26 @@ again:
     res = doquery(impl_ver, REQ_IO_STATS, 0, 0, 0, NULL, &items,
                   &itemsize, (void*)&io, 0, sizeof(*io));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(*io)))
+    {
         return;
+    }
 
     fprintf(fp, "time since reset:     %lu\n",
             (u_long)ntohl(io->timereset));
@@ -1141,20 +1259,26 @@ again:
     res = doquery(impl_ver, REQ_MEM_STATS, 0, 0, 0, NULL, &items,
                   &itemsize, (void*)&mem, 0, sizeof(*mem));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(*mem)))
+    {
         return;
+    }
 
     fprintf(fp, "time since reset:     %lu\n",
             (u_long)ntohl(mem->timereset));
@@ -1170,11 +1294,13 @@ again:
             (u_long)ntohl(mem->demobilizations));
 
     fprintf(fp, "hash table counts:   ");
-    for (i = 0; i < NTP_HASH_SIZE; i++)
+    for (i = 0; i < NTP_HASH_SIZE; ++i)
     {
         fprintf(fp, "%4d", (int)mem->hashcount[i]);
-        if ((i % 8) == 7 && i != (NTP_HASH_SIZE - 1))
+        if (((i % 8) == 7) && (i != (NTP_HASH_SIZE - 1)))
+        {
             fprintf(fp, "\n                     ");
+        }
     }
     fprintf(fp, "\n");
 }
@@ -1199,20 +1325,26 @@ again:
     res = doquery(impl_ver, REQ_TIMER_STATS, 0, 0, 0, NULL, &items,
                   &itemsize, (void*)&tim, 0, sizeof(*tim));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(*tim)))
+    {
         return;
+    }
 
     fprintf(fp, "time since reset:  %lu\n",
             (u_long)ntohl(tim->timereset));
@@ -1306,34 +1438,56 @@ again:
     maxpoll = NTP_MAXDPOLL;
     numtyp = 1;
     if (refc)
+    {
         numtyp = 5;
+    }
 
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct conf_peer);
+    }
     else
+    {
         sendsize = v4sizeof(struct conf_peer);
+    }
 
     items = 1;
     while (pcmd->nargs > (size_t)items)
     {
         if (STREQ(pcmd->argval[items].string, "prefer"))
+        {
             flags |= CONF_FLAG_PREFER;
+        }
         else if (STREQ(pcmd->argval[items].string, "burst"))
+        {
             flags |= CONF_FLAG_BURST;
+        }
         else if (STREQ(pcmd->argval[items].string, "iburst"))
+        {
             flags |= CONF_FLAG_IBURST;
+        }
         else if (!refc && STREQ(pcmd->argval[items].string, "keyid"))
+        {
             numtyp = 1;
+        }
         else if (!refc && STREQ(pcmd->argval[items].string, "version"))
+        {
             numtyp = 2;
+        }
         else if (STREQ(pcmd->argval[items].string, "minpoll"))
+        {
             numtyp = 3;
+        }
         else if (STREQ(pcmd->argval[items].string, "maxpoll"))
+        {
             numtyp = 4;
+        }
         else
         {
             if (!atoint(pcmd->argval[items].string, &val))
+            {
                 numtyp = 0;
+            }
             switch (numtyp)
             {
             case 1:
@@ -1378,16 +1532,18 @@ again:
         items++;
     }
     if (keyid > 0)
+    {
         flags |= CONF_FLAG_AUTHENABLE;
-    if (version > NTP_VERSION || version < NTP_OLDVERSION)
+    }
+    if ((version > NTP_VERSION) || (version < NTP_OLDVERSION))
     {
         fprintf(fp, "***invalid version number: %u\n",
                 version);
         res = TRUE;
     }
-    if (minpoll < NTP_MINPOLL || minpoll > NTP_MAXPOLL ||
-        maxpoll < NTP_MINPOLL || maxpoll > NTP_MAXPOLL ||
-        minpoll > maxpoll)
+    if ((minpoll < NTP_MINPOLL) || (minpoll > NTP_MAXPOLL) ||
+        (maxpoll < NTP_MINPOLL) || (maxpoll > NTP_MAXPOLL) ||
+        (minpoll > maxpoll))
     {
         fprintf(fp, "***min/max-poll must be within %d..%d\n",
                 NTP_MINPOLL, NTP_MAXPOLL);
@@ -1395,7 +1551,9 @@ again:
     }
 
     if (res)
+    {
         return;
+    }
 
     ZERO(cpeer);
 
@@ -1403,7 +1561,9 @@ again:
     {
         cpeer.peeraddr = NSRCADR(&pcmd->argval[0U].netnum);
         if (impl_ver == IMPL_XNTPD)
+        {
             cpeer.v6_flag = 0;
+        }
     }
     else
     {
@@ -1428,7 +1588,7 @@ again:
                   sendsize, (char*)&cpeer, &items,
                   &itemsize, &dummy, 0, sizeof(struct conf_peer));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
@@ -1444,7 +1604,9 @@ again:
                       sizeof(struct conf_peer));
     }
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -1469,18 +1631,24 @@ unconfig(
 
 again:
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct conf_unpeer);
+    }
     else
+    {
         sendsize = v4sizeof(struct conf_unpeer);
+    }
 
     qitemlim = min(pcmd->nargs, COUNTOF(plist));
-    for (qitems = 0, pl = plist; qitems < qitemlim; qitems++)
+    for (qitems = 0, pl = plist; qitems < qitemlim; ++qitems)
     {
         if (IS_IPV4(&pcmd->argval[0U].netnum))
         {
             pl->peeraddr = NSRCADR(&pcmd->argval[qitems].netnum);
             if (impl_ver == IMPL_XNTPD)
+            {
                 pl->v6_flag = 0;
+            }
         }
         else
         {
@@ -1501,14 +1669,16 @@ again:
                   sendsize, (char*)plist, &items,
                   &itemsize, &dummy, 0, sizeof(struct conf_unpeer));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
 }
 
 
@@ -1553,24 +1723,40 @@ doset(
 
     sys.flags = 0;
     res = 0;
-    for (items = 0; (size_t)items < pcmd->nargs; items++)
+    for (items = 0; (size_t)items < pcmd->nargs; ++items)
     {
         if (STREQ(pcmd->argval[items].string, "auth"))
+        {
             sys.flags |= SYS_FLAG_AUTH;
+        }
         else if (STREQ(pcmd->argval[items].string, "bclient"))
+        {
             sys.flags |= SYS_FLAG_BCLIENT;
+        }
         else if (STREQ(pcmd->argval[items].string, "calibrate"))
+        {
             sys.flags |= SYS_FLAG_CAL;
+        }
         else if (STREQ(pcmd->argval[items].string, "kernel"))
+        {
             sys.flags |= SYS_FLAG_KERNEL;
+        }
         else if (STREQ(pcmd->argval[items].string, "monitor"))
+        {
             sys.flags |= SYS_FLAG_MONITOR;
+        }
         else if (STREQ(pcmd->argval[items].string, "ntp"))
+        {
             sys.flags |= SYS_FLAG_NTP;
+        }
         else if (STREQ(pcmd->argval[items].string, "pps"))
+        {
             sys.flags |= SYS_FLAG_PPS;
+        }
         else if (STREQ(pcmd->argval[items].string, "stats"))
+        {
             sys.flags |= SYS_FLAG_FILEGEN;
+        }
         else
         {
             (void)fprintf(fp, "Unknown flag %s\n",
@@ -1580,22 +1766,26 @@ doset(
     }
 
     sys.flags = htonl(sys.flags);
-    if (res || sys.flags == 0)
+    if (res || (sys.flags == 0))
+    {
         return;
+    }
 
 again:
     res = doquery(impl_ver, req, 1, 1,
                   sizeof(struct conf_sys_flags), (char*)&sys, &items,
                   &itemsize, &dummy, 0, sizeof(struct conf_sys_flags));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
 }
 
 
@@ -1670,7 +1860,7 @@ reslist(
     u_int32 count;
     u_short rflags;
     u_short mflags;
-    char flagstr[300];
+    char flagstr[300U];
     static const char* comma = ", ";
 
 again:
@@ -1678,21 +1868,27 @@ again:
                   &items, &itemsize, (void*)&rl, 0,
                   sizeof(struct info_restrict));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_restrict)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_restrict)))
+    {
         return;
+    }
 
     fprintf(fp,
             "   address          mask            count        flags\n");
@@ -1709,16 +1905,22 @@ again:
         else
         {
             if (rl->mask == (u_int32)0xffffffff)
+            {
                 addr = nntohost(&resaddr);
+            }
             else
+            {
                 addr = stoa(&resaddr);
+            }
         }
         mask = stoa(&maskaddr);
         skip = 1;
         if ((pcmd->nargs == 0) ||
             ((pcmd->argval->ival == 6) && (rl->v6_flag != 0)) ||
             ((pcmd->argval->ival == 4) && (rl->v6_flag == 0)))
+        {
             skip = 0;
+        }
         count = ntohl(rl->count);
         rflags = ntohs(rl->rflags);
         mflags = ntohs(rl->mflags);
@@ -1731,8 +1933,10 @@ again:
             if (mflags & rf->bit)
             {
                 if (!res)
+                {
                     strlcat(flagstr, comma,
                             sizeof(flagstr));
+                }
                 res = 0;
                 strlcat(flagstr, rf->str,
                         sizeof(flagstr));
@@ -1749,8 +1953,10 @@ again:
             if (rflags & rf->bit)
             {
                 if (!res)
+                {
                     strlcat(flagstr, comma,
                             sizeof(flagstr));
+                }
                 res = 0;
                 strlcat(flagstr, rf->str,
                         sizeof(flagstr));
@@ -1759,11 +1965,15 @@ again:
         }
 
         if (flagstr[0U] == '\0')
+        {
             strlcpy(flagstr, "none", sizeof(flagstr));
+        }
 
         if (!skip)
+        {
             fprintf(fp, "%-15.15s %-15.15s %9lu  %s\n",
                     addr, mask, (u_long)count, flagstr);
+        }
         rl++;
         items--;
     }
@@ -1836,16 +2046,22 @@ do_restrict(
 
 again:
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct conf_restrict);
+    }
     else
+    {
         sendsize = v4sizeof(struct conf_restrict);
+    }
 
     if (IS_IPV4(&pcmd->argval[0U].netnum))
     {
         cres.addr = NSRCADR(&pcmd->argval[0U].netnum);
         cres.mask = NSRCADR(&pcmd->argval[1U].netnum);
         if (impl_ver == IMPL_XNTPD)
+        {
             cres.v6_flag = 0;
+        }
     }
     else
     {
@@ -1861,7 +2077,7 @@ again:
     cres.flags = 0;
     cres.mflags = 0;
     err = FALSE;
-    for (res = 2; res < pcmd->nargs; res++)
+    for (res = 2; res < pcmd->nargs; ++res)
     {
         if (STREQ(pcmd->argval[res].string, "ntpport"))
         {
@@ -1869,11 +2085,13 @@ again:
         }
         else
         {
-            for (i = 0; resflagsV3[i].bit != 0; i++)
+            for (i = 0; resflagsV3[i].bit != 0; ++i)
             {
                 if (STREQ(pcmd->argval[res].string,
                           resflagsV3[i].str))
+                {
                     break;
+                }
             }
             if (resflagsV3[i].bit != 0)
             {
@@ -1911,11 +2129,19 @@ again:
         {
             num = ntohl(cres.mask);
             for (bit = 0x80000000; bit != 0; bit >>= 1)
+            {
                 if ((num & bit) == 0)
+                {
                     break;
+                }
+            }
             for (; bit != 0; bit >>= 1)
+            {
                 if ((num & bit) != 0)
+                {
                     break;
+                }
+            }
             if (bit != 0)
             {
                 fprintf(fp, "Invalid mask %s\n",
@@ -1930,19 +2156,23 @@ again:
     }
 
     if (err)
+    {
         return;
+    }
 
     res = doquery(impl_ver, req_code, 1, 1, sendsize, (char*)&cres,
                   &items, &itemsize, &dummy, 0, sizeof(cres));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -1968,34 +2198,42 @@ monlist(
     int version = -1;
 
     if (pcmd->nargs > 0)
+    {
         version = pcmd->argval[0U].ival;
+    }
 
 again:
     res = doquery(impl_ver,
-                  (version == 1 || version == -1) ? REQ_MON_GETLIST_1 : REQ_MON_GETLIST, 0, 0, 0, NULL,
+                  ((version == 1) || (version == -1)) ? REQ_MON_GETLIST_1 : REQ_MON_GETLIST, 0, 0, 0, NULL,
                   &items, &itemsize, &struct_star,
                   (version < 0) ? (1 << INFO_ERR_REQ) : 0,
                   sizeof(struct info_monitor_1));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
-    if (res == INFO_ERR_REQ && version < 0)
+    if ((res == INFO_ERR_REQ) && (version < 0))
+    {
         res = doquery(impl_ver, REQ_MON_GETLIST, 0, 0, 0, NULL,
                       &items, &itemsize, &struct_star, 0,
                       sizeof(struct info_monitor));
+    }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (itemsize == sizeof(struct info_monitor_1) ||
-        itemsize == v4sizeof(struct info_monitor_1))
+        (itemsize == v4sizeof(struct info_monitor_1)))
     {
 
         m1 = (const void*)struct_star;
@@ -2009,6 +2247,7 @@ again:
             if ((pcmd->nargs == 0) ||
                 ((pcmd->argval->ival == 6) && (m1->v6_flag != 0)) ||
                 ((pcmd->argval->ival == 4) && (m1->v6_flag == 0)))
+            {
                 fprintf(fp,
                         "%-22.22s %5d %-15s %8lu %1u %1u %6lx %6lu %7lu\n",
                         nntohost(&addr),
@@ -2020,12 +2259,13 @@ again:
                         (u_long)ntohl(m1->restr),
                         (u_long)ntohl(m1->avg_int),
                         (u_long)ntohl(m1->last_int));
+            }
             m1++;
             items--;
         }
     }
     else if (itemsize == sizeof(struct info_monitor) ||
-             itemsize == v4sizeof(struct info_monitor))
+             (itemsize == v4sizeof(struct info_monitor)))
     {
 
         ml = (const void*)struct_star;
@@ -2039,6 +2279,7 @@ again:
             if ((pcmd->nargs == 0) ||
                 ((pcmd->argval->ival == 6) && (ml->v6_flag != 0)) ||
                 ((pcmd->argval->ival == 4) && (ml->v6_flag == 0)))
+            {
                 fprintf(fp,
                         "%-25.25s %5u %9lu %4u %2u %9lx %9lu %9lu\n",
                         nntohost(&dstadr),
@@ -2049,6 +2290,7 @@ again:
                         (u_long)ntohl(ml->restr),
                         (u_long)ntohl(ml->avg_int),
                         (u_long)ntohl(ml->last_int));
+            }
             ml++;
             items--;
         }
@@ -2120,12 +2362,14 @@ reset(
 
     err = 0;
     rflags.flags = 0;
-    for (res = 0; res < pcmd->nargs; res++)
+    for (res = 0; res < pcmd->nargs; ++res)
     {
-        for (i = 0; sreset[i].flag != 0; i++)
+        for (i = 0; sreset[i].flag != 0; ++i)
         {
             if (STREQ(pcmd->argval[res].string, sreset[i].str))
+            {
                 break;
+            }
         }
         if (sreset[i].flag == 0)
         {
@@ -2151,14 +2395,16 @@ again:
                   sizeof(struct reset_flags), (char*)&rflags, &items,
                   &itemsize, &dummy, 0, sizeof(struct reset_flags));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -2184,18 +2430,24 @@ preset(
 
 again:
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct conf_unpeer);
+    }
     else
+    {
         sendsize = v4sizeof(struct conf_unpeer);
+    }
 
     qitemlim = min(pcmd->nargs, COUNTOF(plist));
-    for (qitems = 0, pl = plist; qitems < qitemlim; qitems++)
+    for (qitems = 0, pl = plist; qitems < qitemlim; ++qitems)
     {
         if (IS_IPV4(&pcmd->argval[qitems].netnum))
         {
             pl->peeraddr = NSRCADR(&pcmd->argval[qitems].netnum);
             if (impl_ver == IMPL_XNTPD)
+            {
                 pl->v6_flag = 0;
+            }
         }
         else
         {
@@ -2216,14 +2468,16 @@ again:
                   sendsize, (char*)plist, &items,
                   &itemsize, &dummy, 0, sizeof(struct conf_unpeer));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
 }
 
 
@@ -2245,14 +2499,16 @@ again:
     res = doquery(impl_ver, REQ_REREAD_KEYS, 1, 0, 0, (char*)0,
                   &items, &itemsize, &dummy, 0, sizeof(dummy));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -2299,7 +2555,7 @@ do_trustkey(
     int res;
 
     ritems = 0;
-    for (i = 0; i < pcmd->nargs; i++)
+    for (i = 0; i < pcmd->nargs; ++i)
     {
         keyids[ritems++] = pcmd->argval[i].uval;
     }
@@ -2309,14 +2565,16 @@ again:
                   (char*)keyids, &items, &itemsize, &dummy, 0,
                   sizeof(dummy));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -2340,20 +2598,26 @@ again:
     res = doquery(impl_ver, REQ_AUTHINFO, 0, 0, 0, NULL, &items,
                   &itemsize, (void*)&ia, 0, sizeof(*ia));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(*ia)))
+    {
         return;
+    }
 
     fprintf(fp, "time since reset:     %lu\n",
             (u_long)ntohl(ia->timereset));
@@ -2397,23 +2661,29 @@ again:
     res = doquery(impl_ver, REQ_TRAPS, 0, 0, 0, NULL, &items,
                   &itemsize, (void*)&it, 0, sizeof(*it));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_trap)) &&
         !checkitemsize(itemsize, v4sizeof(struct info_trap)))
+    {
         return;
+    }
 
-    for (i = 0; i < items; i++)
+    for (i = 0; i < items; ++i)
     {
         SET_ADDRS(trap_addr, local_addr, it, trap_address, local_address);
         fprintf(fp, "%saddress %s, port %d\n",
@@ -2426,11 +2696,17 @@ again:
                     ? "wildcard"
                     : stoa(&local_addr));
         if (ntohl(it->flags) & TRAP_CONFIGURED)
+        {
             fprintf(fp, "configured\n");
+        }
         else if (ntohl(it->flags) & TRAP_NONPRIO)
+        {
             fprintf(fp, "low priority\n");
+        }
         else
+        {
             fprintf(fp, "normal priority\n");
+        }
 
         fprintf(fp, "set for %ld secs, last set %ld secs ago\n",
                 (long)ntohl(it->origtime),
@@ -2483,15 +2759,21 @@ do_addclr_trap(
 
 again:
     if (impl_ver == IMPL_XNTPD)
+    {
         sendsize = sizeof(struct conf_trap);
+    }
     else
+    {
         sendsize = v4sizeof(struct conf_trap);
+    }
 
     if (IS_IPV4(&pcmd->argval[0U].netnum))
     {
         ctrap.trap_address = NSRCADR(&pcmd->argval[0U].netnum);
         if (impl_ver == IMPL_XNTPD)
+        {
             ctrap.v6_flag = 0;
+        }
     }
     else
     {
@@ -2521,9 +2803,13 @@ again:
                 return;
             }
             if (IS_IPV4(&pcmd->argval[2U].netnum))
+            {
                 ctrap.local_address = NSRCADR(&pcmd->argval[2U].netnum);
+            }
             else
+            {
                 ctrap.local_address6 = SOCK_ADDR6(&pcmd->argval[2U].netnum);
+            }
         }
     }
 
@@ -2531,14 +2817,16 @@ again:
                   (char*)&ctrap, &items, &itemsize, &dummy, 0,
                   sizeof(struct conf_trap));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -2592,14 +2880,16 @@ again:
                   (char*)&key, &items, &itemsize, &dummy, 0,
                   sizeof(dummy));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -2623,20 +2913,26 @@ again:
     res = doquery(impl_ver, REQ_GET_CTLSTATS, 0, 0, 0, NULL, &items,
                   &itemsize, (void*)&ic, 0, sizeof(*ic));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!check1item(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(*ic)))
+    {
         return;
+    }
 
     fprintf(fp, "time since reset:       %lu\n",
             (u_long)ntohl(ic->ctltimereset));
@@ -2691,42 +2987,58 @@ clockstat(
     struct clktype* clk;
 
     qitemlim = min(pcmd->nargs, COUNTOF(clist));
-    for (qitems = 0; qitems < qitemlim; qitems++)
+    for (qitems = 0; qitems < qitemlim; ++qitems)
+    {
         clist[qitems] = NSRCADR(&pcmd->argval[qitems].netnum);
+    }
 
 again:
     res = doquery(impl_ver, REQ_GET_CLOCKINFO, 0, qitems,
                   sizeof(u_int32), (char*)clist, &items,
                   &itemsize, (void*)&cl, 0, sizeof(struct info_clock));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_clock)))
+    {
         return;
+    }
 
     while (items-- > 0)
     {
         (void)fprintf(fp, "clock address:        %s\n",
                       numtoa(cl->clockadr));
-        for (clk = clktypes; clk->code >= 0; clk++)
+        for (clk = clktypes; clk->code >= 0; ++clk)
+        {
             if (clk->code == cl->type)
+            {
                 break;
+            }
+        }
         if (clk->code >= 0)
+        {
             (void)fprintf(fp, "clock type:           %s\n",
                           clk->clocktype);
+        }
         else
+        {
             (void)fprintf(fp, "clock type:           unknown type (%d)\n",
                           cl->type);
+        }
         (void)fprintf(fp, "last event:           %d\n",
                       cl->lastevent);
         (void)fprintf(fp, "current status:       %d\n",
@@ -2764,7 +3076,9 @@ again:
                       cl->flags);
 
         if (items > 0)
+        {
             (void)fprintf(fp, "\n");
+        }
         cl++;
     }
 }
@@ -2797,41 +3111,61 @@ fudge(
     {
         fudgedata.which = htonl(FUDGE_TIME1);
         if (!atolfp(pcmd->argval[2U].string, &ts))
+        {
             err = 1;
+        }
         else
+        {
             NTOHL_FP(&ts, &fudgedata.fudgetime);
+        }
     }
     else if (STREQ(pcmd->argval[1U].string, "time2"))
     {
         fudgedata.which = htonl(FUDGE_TIME2);
         if (!atolfp(pcmd->argval[2U].string, &ts))
+        {
             err = 1;
+        }
         else
+        {
             NTOHL_FP(&ts, &fudgedata.fudgetime);
+        }
     }
     else if (STREQ(pcmd->argval[1U].string, "val1"))
     {
         fudgedata.which = htonl(FUDGE_VAL1);
         if (!atoint(pcmd->argval[2U].string, &val))
+        {
             err = 1;
+        }
         else
+        {
             fudgedata.fudgeval_flags = htonl(val);
+        }
     }
     else if (STREQ(pcmd->argval[1U].string, "val2"))
     {
         fudgedata.which = htonl(FUDGE_VAL2);
         if (!atoint(pcmd->argval[2U].string, &val))
+        {
             err = 1;
+        }
         else
+        {
             fudgedata.fudgeval_flags = htonl((u_int32)val);
+        }
     }
     else if (STREQ(pcmd->argval[1U].string, "flags"))
     {
         fudgedata.which = htonl(FUDGE_FLAGS);
         if (!hextoint(pcmd->argval[2U].string, &u_val))
+        {
             err = 1;
+        }
         else
+        {
             fudgedata.fudgeval_flags = htonl((u_int32)(u_val & 0xf));
+        }
     }
     else
     {
@@ -2852,14 +3186,16 @@ again:
                   sizeof(struct conf_fudge), (char*)&fudgedata, &items,
                   &itemsize, &dummy, 0, sizeof(dummy));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res == 0)
+    {
         (void)fprintf(fp, "done!\n");
+    }
     return;
 }
 
@@ -2887,28 +3223,36 @@ clkbug(
     l_fp ts;
 
     qitemlim = min(pcmd->nargs, COUNTOF(clist));
-    for (qitems = 0; qitems < qitemlim; qitems++)
+    for (qitems = 0; qitems < qitemlim; ++qitems)
+    {
         clist[qitems] = NSRCADR(&pcmd->argval[qitems].netnum);
+    }
 
 again:
     res = doquery(impl_ver, REQ_GET_CLKBUGINFO, 0, qitems,
                   sizeof(u_int32), (char*)clist, &items,
                   &itemsize, (void*)&cl, 0, sizeof(struct info_clkbug));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_clkbug)))
+    {
         return;
+    }
 
     while (items-- > 0)
     {
@@ -2918,17 +3262,25 @@ again:
         (void)fprintf(fp, "values: %d", n);
         s = ntohs(cl->svalues);
         if (n > NUMCBUGVALUES)
+        {
             n = NUMCBUGVALUES;
-        for (i = 0; i < n; i++)
+        }
+        for (i = 0; i < n; ++i)
         {
             ltemp = ntohl(cl->values[i]);
             ltemp &= 0xffffffff; /* HMS: This does nothing now */
             if ((i & 0x3) == 0)
+            {
                 (void)fprintf(fp, "\n");
+            }
             if (s & (1 << i))
+            {
                 (void)fprintf(fp, "%12ld", (u_long)ltemp);
+            }
             else
+            {
                 (void)fprintf(fp, "%12lu", (u_long)ltemp);
+            }
         }
         (void)fprintf(fp, "\n");
 
@@ -2936,9 +3288,11 @@ again:
         (void)fprintf(fp, "times: %d", n);
         s = ntohl(cl->stimes);
         if (n > NUMCBUGTIMES)
+        {
             n = NUMCBUGTIMES;
+        }
         needsp = 0;
-        for (i = 0; i < n; i++)
+        for (i = 0; i < n; ++i)
         {
             if ((i & 0x1) == 0)
             {
@@ -2946,8 +3300,10 @@ again:
             }
             else
             {
-                for (; needsp > 0; needsp--)
+                for (; needsp > 0; --needsp)
+                {
                     putc(' ', fp);
+                }
             }
             NTOHL_FP(&cl->times[i], &ts);
             if (s & (1 << i))
@@ -2993,18 +3349,24 @@ again:
                   &items, &itemsize, (void*)&ik, 0,
                   sizeof(struct info_kernel));
 
-    if (res == INFO_ERR_IMPL && impl_ver == IMPL_XNTPD)
+    if ((res == INFO_ERR_IMPL) && (impl_ver == IMPL_XNTPD))
     {
         impl_ver = IMPL_XNTPD_OLD;
         goto again;
     }
 
     if (res != 0)
+    {
         return;
+    }
     if (!check1item(items, fp))
+    {
         return;
+    }
     if (!checkitemsize(itemsize, sizeof(struct info_kernel)))
+    {
         return;
+    }
 
     status = ntohs(ik->status) & 0xffff;
     /*
@@ -3012,7 +3374,9 @@ again:
      */
 #ifdef STA_NANO
     if (status & STA_NANO)
+    {
         tscale_unano = 1e-9;
+    }
 #endif
     (void)fprintf(fp, "pll offset:           %g s\n",
                   (int32)ntohl(ik->offset) * tscale_unano);
@@ -3025,67 +3389,99 @@ again:
     (void)fprintf(fp, "status:               %04x ", status);
 #ifdef STA_PLL
     if (status & STA_PLL)
+    {
         (void)fprintf(fp, " pll");
+    }
 #endif
 #ifdef STA_PPSFREQ
     if (status & STA_PPSFREQ)
+    {
         (void)fprintf(fp, " ppsfreq");
+    }
 #endif
 #ifdef STA_PPSTIME
     if (status & STA_PPSTIME)
+    {
         (void)fprintf(fp, " ppstime");
+    }
 #endif
 #ifdef STA_FLL
     if (status & STA_FLL)
+    {
         (void)fprintf(fp, " fll");
+    }
 #endif
 #ifdef STA_INS
     if (status & STA_INS)
+    {
         (void)fprintf(fp, " ins");
+    }
 #endif
 #ifdef STA_DEL
     if (status & STA_DEL)
+    {
         (void)fprintf(fp, " del");
+    }
 #endif
 #ifdef STA_UNSYNC
     if (status & STA_UNSYNC)
+    {
         (void)fprintf(fp, " unsync");
+    }
 #endif
 #ifdef STA_FREQHOLD
     if (status & STA_FREQHOLD)
+    {
         (void)fprintf(fp, " freqhold");
+    }
 #endif
 #ifdef STA_PPSSIGNAL
     if (status & STA_PPSSIGNAL)
+    {
         (void)fprintf(fp, " ppssignal");
+    }
 #endif
 #ifdef STA_PPSJITTER
     if (status & STA_PPSJITTER)
+    {
         (void)fprintf(fp, " ppsjitter");
+    }
 #endif
 #ifdef STA_PPSWANDER
     if (status & STA_PPSWANDER)
+    {
         (void)fprintf(fp, " ppswander");
+    }
 #endif
 #ifdef STA_PPSERROR
     if (status & STA_PPSERROR)
+    {
         (void)fprintf(fp, " ppserror");
+    }
 #endif
 #ifdef STA_CLOCKERR
     if (status & STA_CLOCKERR)
+    {
         (void)fprintf(fp, " clockerr");
+    }
 #endif
 #ifdef STA_NANO
     if (status & STA_NANO)
+    {
         (void)fprintf(fp, " nano");
+    }
 #endif
 #ifdef STA_MODE
     if (status & STA_MODE)
+    {
         (void)fprintf(fp, " mode=fll");
+    }
 #endif
 #ifdef STA_CLK
     if (status & STA_CLK)
+    {
         (void)fprintf(fp, " src=B");
+    }
 #endif
     (void)fprintf(fp, "\n");
     (void)fprintf(fp, "pll time constant:    %ld\n",
@@ -3100,7 +3496,9 @@ again:
      * only if the shift member is nonzero.
      */
     if (!ik->shift)
+    {
         return;
+    }
 
     /*
      * pps variables
@@ -3141,13 +3539,19 @@ iflist(
     sockaddr_u saddr;
 
     if (res != 0)
+    {
         return;
+    }
 
     if (!checkitems(items, fp))
+    {
         return;
+    }
 
     if (!checkitemsize(itemsize, sizeof(struct info_if_stats)))
+    {
         return;
+    }
 
     fprintf(fp, IF_LIST_FMT_STR, IF_LIST_LABELS);
     fprintf(fp, IF_LIST_LINE);
@@ -3158,7 +3562,7 @@ iflist(
                  ifs->unaddr.addr.s_addr, ifs->unaddr.addr6);
         fprintf(fp, IF_LIST_FMT,
                 ntohl(ifs->ifnum),
-                actions[(ifs->action >= 1 && ifs->action < 4) ? ifs->action : 0],
+                actions[((ifs->action >= 1) && (ifs->action < 4)) ? ifs->action : 0],
                 stoa((&saddr)), 'A',
                 ifs->ignore_packets ? 'D' : 'E',
                 ifs->name,
@@ -3176,7 +3580,7 @@ iflist(
                  ifs->unmask.addr.s_addr, ifs->unmask.addr6);
         fprintf(fp, IF_LIST_AFMT_STR, stoa(&saddr), 'M');
 
-        if (!ntohl(ifs->v6_flag) && ntohl(ifs->flags) & (INT_BCASTOPEN))
+        if (!ntohl(ifs->v6_flag) && (ntohl(ifs->flags) & (INT_BCASTOPEN)))
         {
             SET_ADDR(saddr, ntohl(ifs->v6_flag),
                      ifs->unbcast.addr.s_addr, ifs->unbcast.addr6);

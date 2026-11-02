@@ -122,7 +122,7 @@ pst_start(
     register struct pstunit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port. Use CLK line discipline, if available.
@@ -130,7 +130,9 @@ pst_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -174,9 +176,13 @@ pst_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -192,10 +198,10 @@ pst_receive(
     struct peer* peer;
     l_fp trtmp;
     u_long ltemp;
-    char ampmchar;   /* AM/PM indicator */
-    char daychar;    /* standard/daylight indicator */
-    char junque[10]; /* "yy/dd/mm/" discard */
-    char info[14];   /* "frdzycchhSSFT" clock info */
+    char ampmchar;    /* AM/PM indicator */
+    char daychar;     /* standard/daylight indicator */
+    char junque[10U]; /* "yy/dd/mm/" discard */
+    char info[14U];   /* "frdzycchhSSFT" clock info */
 
     /*
      * Initialize pointers and read the timecode and timestamp
@@ -212,11 +218,15 @@ pst_receive(
      * the first timestamp is retained.
      */
     if (up->tcswitch == 0)
+    {
         pp->lastrec = trtmp;
+    }
     up->tcswitch++;
     pp->lencode = up->lastptr - pp->a_lastcode;
     if (up->tcswitch < 3)
+    {
         return;
+    }
 
     /*
      * We get down to business, check the timecode format and decode
@@ -251,15 +261,25 @@ pst_receive(
      * as reported by the clock.
      */
     if (info[9U] != '8')
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     if (info[12U] == 'H')
+    {
         memcpy((char*)&pp->refid, WWVHREFID, 4);
+    }
     else
+    {
         memcpy((char*)&pp->refid, WWVREFID, 4);
+    }
     if (peer->stratum <= 1)
+    {
         peer->refid = pp->refid;
+    }
     if (ltemp == 0)
+    {
         pp->lastref = pp->lastrec;
+    }
     pp->disp = PST_PHI * ltemp * 60;
 
     /*
@@ -267,9 +287,13 @@ pst_receive(
      * timecode timestamp.
      */
     if (!refclock_process(pp))
+    {
         refclock_report(peer, CEVNT_BADTIME);
+    }
     else if (peer->disp > MAXDISTANCE)
+    {
         refclock_receive(peer);
+    }
 }
 
 
@@ -297,7 +321,9 @@ pst_poll(
     up->tcswitch = 0;
     up->lastptr = pp->a_lastcode;
     if (write(pp->io.fd, "QTQDQMT", 6) != 6)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
     if (pp->coderecv == pp->codeproc)
     {
         refclock_report(peer, CEVNT_TIMEOUT);
@@ -307,8 +333,10 @@ pst_poll(
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("pst: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif
     pp->polls++;
 }

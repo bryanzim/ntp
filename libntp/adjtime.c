@@ -78,9 +78,11 @@ int adjtime(struct timeval* delta, struct timeval* olddelta)
     offset_usecs = ticks_to_micro(offset_ticks);
     pdc_usecs_wanted = get_time() - offset_usecs;
     pdc_usecs_current = pdc_time(&hpe_status);
-    if (hpe_status == 0) 
+    if (hpe_status == 0)
+    { 
       /* Force new PDC time by starting an extra correction. */
       set_time_correction(pdc_usecs_wanted - pdc_usecs_current,0,1);
+    }
   }
 #endif /* 0 */
 
@@ -205,7 +207,9 @@ int adjtime(
      * as per Unix convention.
      */
     if (olddelta)
+    {
         olddelta->tv_sec = olddelta->tv_usec = 0;
+    }
     return (0);
 }
 
@@ -226,24 +230,34 @@ int _adjtime(
      * and recreated)
      */
     if ((mqid = msgget(KEY, 0)) == -1)
+    {
         return (-1);
+    }
     msgp->msgb.mtype = CLIENT;
     msgp->msgb.tv = *delta;
     if (olddelta)
+    {
         msgp->msgb.code = DELTA2;
+    }
     else
+    {
         msgp->msgb.code = DELTA1;
+    }
 
     /*
      * Tickle adjtimed and snatch residual, if indicated. Lots of
      * fanatic error checking here.
      */
     if (msgsnd(mqid, &msgp->msgp, MSGSIZE, 0) == -1)
+    {
         return (-1);
+    }
     if (olddelta)
     {
         if (msgrcv(mqid, &msgp->msgp, MSGSIZE, SERVER, 0) == -1)
+        {
             return (-1);
+        }
         *olddelta = msgp->msgb.tv;
     }
     return (0);
@@ -291,9 +305,13 @@ int adjtime(struct timeval* delta, struct timeval* olddelta)
      * How many nanoseconds are we adjusting?
      */
     if (delta != NULL)
+    {
         delta_nsec = 1e9 * (long)delta->tv_sec + 1e3 * delta->tv_usec;
+    }
     else
+    {
         delta_nsec = 0;
+    }
 
     /*
      * Build the adjust structure and call ClockAdjust()
@@ -319,7 +337,9 @@ int adjtime(struct timeval* delta, struct timeval* olddelta)
          * Get the current clock period (nanoseconds)
          */
         if (ClockPeriod(CLOCK_REALTIME, 0, &period, 0) == -1)
+        {
             return -1;
+        }
 
         /*
          * Compute count and nanoseconds increment
@@ -359,7 +379,9 @@ int adjtime(struct timeval* delta, struct timeval* olddelta)
     }
 
     if (ClockAdjust(CLOCK_REALTIME, &adj, &oldadj) == -1)
+    {
         return -1;
+    }
 
     /*
      * Build olddelta

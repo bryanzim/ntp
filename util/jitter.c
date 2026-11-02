@@ -22,7 +22,7 @@
 #define JAN_1970 2208988800U /* Unix base epoch */
 #define CLOCK_GETTIME        /* Solaris hires clock */
 
-char progname[10];
+char progname[10U];
 double sys_residual;
 double average;
 void sys_gettime(l_fp*);
@@ -38,13 +38,15 @@ int main(
     /*
      * Force pages into memory
      */
-    for (i = 0; i < NBUF; i++)
+    for (i = 0; i < NBUF; ++i)
+    {
         gtod[i] = 0;
+    }
 
     /*
      * Construct gtod array
      */
-    for (i = 0; i < NBUF; i++)
+    for (i = 0; i < NBUF; ++i)
     {
         get_systime(&tr);
         LFPTOD(&tr, gtod[i]);
@@ -54,7 +56,7 @@ int main(
      * Write out gtod array for later processing with Matlab
      */
     average = 0;
-    for (i = 0; i < NBUF - 2; i++)
+    for (i = 0; i < NBUF - 2; ++i)
     {
         gtod[i] = gtod[i + 1] - gtod[i];
         printf("%13.9f\n", gtod[i]);
@@ -64,9 +66,9 @@ int main(
     /*
      * Sort the gtod array and display deciles
      */
-    for (i = 0; i < NBUF - 2; i++)
+    for (i = 0; i < NBUF - 2; ++i)
     {
-        for (j = 0; j <= i; j++)
+        for (j = 0; j <= i; ++j)
         {
             if (gtod[j] > gtod[i])
             {
@@ -79,11 +81,15 @@ int main(
     average = average / (NBUF - 2);
     fprintf(stderr, "Average %13.9f\n", average);
     fprintf(stderr, "First rank\n");
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 10; ++i)
+    {
         fprintf(stderr, "%2d %13.9f\n", i, gtod[i]);
+    }
     fprintf(stderr, "Last rank\n");
-    for (i = NBUF - 12; i < NBUF - 2; i++)
+    for (i = NBUF - 12; i < NBUF - 2; ++i)
+    {
         fprintf(stderr, "%2d %13.9f\n", i, gtod[i]);
+    }
     exit(0);
 }
 

@@ -51,7 +51,7 @@ typedef struct
     unsigned unit_year : 4;
     unsigned thou_year : 4;
     unsigned hun_year : 4;
-    unsigned char reserved_2[2];
+    unsigned char reserved_2[2U];
 } preset_time_reg_t;
 
 typedef struct
@@ -98,7 +98,7 @@ typedef struct
 {
     unsigned char off_low;
     unsigned char off_high;
-    unsigned char reserved_4[2];
+    unsigned char reserved_4[2U];
 } sync_gen_off_reg_t;
 
 typedef struct
@@ -184,7 +184,7 @@ typedef struct
     unsigned char lvl6_tens_units;
 
     unsigned char flag;
-    unsigned char reserved[3];
+    unsigned char reserved[3U];
 } sig_levels_t;
 
 typedef struct
@@ -211,7 +211,7 @@ typedef struct
     unsigned unit_year : 4;
     unsigned thou_year : 4;
     unsigned hun_year : 4;
-    unsigned char reserved_5[2];
+    unsigned char reserved_5[2U];
 } ext_time_event_reg_t;
 
 typedef struct
@@ -239,7 +239,7 @@ typedef struct
 {
     unsigned char err_stat;
     unsigned char no_def;
-    unsigned char oscillator_stat[2];
+    unsigned char oscillator_stat[2U];
 } diag_reg_t;
 
 typedef struct
@@ -251,7 +251,7 @@ typedef struct
     unsigned rate_stat_clr : 1;
     unsigned cmp_stat_clr : 1;
     unsigned ext_stat_clr : 1;
-    unsigned char reserved[3];
+    unsigned char reserved[3U];
 } hw_ctl_reg_t;
 
 typedef struct
@@ -293,15 +293,15 @@ typedef struct
 
     sync_gen_off_reg_t sync_gen_offset;
 
-    unsigned char reserved[4];
+    unsigned char reserved[4U];
 
     unsigned char config_reg2_ctl;
 
-    unsigned char reserved2[11];
+    unsigned char reserved2[11U];
 
     time_cmp_reg_t time_compare_reg;
 
-    unsigned char reserved3[24];
+    unsigned char reserved3[24U];
 
     preset_time_reg_t preset_time_reg;
 
@@ -309,11 +309,11 @@ typedef struct
 
     ext_time_event_reg_t extern_time_event_reg;
 
-    unsigned char reserved4[24];
+    unsigned char reserved4[24U];
 
     sig_levels_t signal_levels_reg;
 
-    unsigned char reserved5[12];
+    unsigned char reserved5[12U];
 } tt_mem_space_t;
 
 #define TTIME_MEMORY_SIZE 0x200

@@ -371,8 +371,8 @@ static struct partab
  */
 static struct dcfparam
 {
-    unsigned char onebits[60];
-    unsigned char zerobits[60];
+    unsigned char onebits[60U];
+    unsigned char zerobits[60U];
 } dcfparam = {
     "###############RADMLS1248124P124812P1248121241248112481248P", /* 'ONE' representation */
     "--------------------s-------p------p----------------------p"  /* 'ZERO' representation */
@@ -395,7 +395,7 @@ ext_bf(
 
     first = rawdcfcode[idx].offset;
 
-    for (i = rawdcfcode[idx + 1].offset - 1; i >= first; i--)
+    for (i = rawdcfcode[idx + 1].offset - 1; i >= first; --i)
     {
         sum <<= 1;
         sum |= (buf[i] != dcfparam.zerobits[i]);
@@ -416,12 +416,14 @@ pcheck(
     register int idx)
 {
     register int i, last;
-    register unsigned psum = 1;
+    register unsigned psum = 1U;
 
     last = partab[idx + 1].offset;
 
-    for (i = partab[idx].offset; i < last; i++)
+    for (i = partab[idx].offset; i < last; ++i)
+    {
         psum ^= (buf[i] != dcfparam.zerobits[i]);
+    }
 
     return psum;
 }
@@ -497,13 +499,19 @@ convert_rawdcf(
          * extract various warnings from DCF77
          */
         if (ext_bf(buffer, DCF_A1))
+        {
             clock_time->flags |= DCFB_ANNOUNCE;
+        }
 
         if (ext_bf(buffer, DCF_A2))
+        {
             clock_time->flags |= DCFB_LEAP;
+        }
 
         if (ext_bf(buffer, DCF_R))
+        {
             clock_time->flags |= DCFB_CALLBIT;
+        }
 
         return CVT_OK;
     }
@@ -556,7 +564,7 @@ cvt_rawdcf(
     /*
      * clear histogram buffer
      */
-    for (i = 0; i < BITS; i++)
+    for (i = 0; i < BITS; ++i)
     {
         histbuf[i] = 0;
     }
@@ -579,7 +587,7 @@ cvt_rawdcf(
             /*
              * character ok
              */
-            for (i = 0; ch; i++)
+            for (i = 0; ch; ++i)
             {
                 ch >>= 1;
             }
@@ -624,7 +632,7 @@ cvt_rawdcf(
      * collect weighted sum of lower bits (left of initial guess)
      */
     DPRINTF(("parse: cvt_rawdcf: histogram:"));
-    for (i = 0; i <= cutoff; i++)
+    for (i = 0; i <= cutoff; ++i)
     {
         lowmax += histbuf[i] * i;
         highmax += histbuf[i];
@@ -657,7 +665,7 @@ cvt_rawdcf(
     /*
      * collect weighted sum of lower bits (right of initial guess)
      */
-    for (; i < BITS; i++)
+    for (; i < BITS; ++i)
     {
         highmax += histbuf[i] * i;
         cutoff += histbuf[i];
@@ -688,7 +696,7 @@ cvt_rawdcf(
      * possibly a minimum span)
      */
     span = cutoff = lowmax;
-    for (i = lowmax; i <= highmax; i++)
+    for (i = lowmax; i <= highmax; ++i)
     {
         if (histbuf[cutoff] > histbuf[i])
         {
@@ -776,11 +784,15 @@ dcf_to_unixtime(
     /*
      * map 2 digit years to 19xx (DCF77 is a 20th century item)
      */
-    if (clock_time->year < YEAR_PIVOT) /* in case of	   Y2KFixes [ */
-        clock_time->year += 100;       /* *year%100, make tm_year */
-                                       /* *(do we need this?) */
-    if (clock_time->year < YEAR_BREAK) /* (failsafe if) */
-        clock_time->year += 1900;      /* Y2KFixes ] */
+    if (clock_time->year < YEAR_PIVOT)
+    { /* in case of	   Y2KFixes [ */
+        clock_time->year += 100;
+    } /* *year%100, make tm_year */
+    /* *(do we need this?) */
+    if (clock_time->year < YEAR_BREAK)
+    { /* (failsafe if) */
+        clock_time->year += 1900;
+    } /* Y2KFixes ] */
 
     /*
      * must have been a really bad year code - drop it
@@ -800,26 +812,28 @@ dcf_to_unixtime(
     t = julian0(clock_time->year) - julian0(1970);
 
     /* month */
-    if (clock_time->month <= 0 || clock_time->month > 12)
+    if ((clock_time->month <= 0) || (clock_time->month > 12))
     {
         SETRTC(CVT_FAIL | CVT_BADDATE);
         return -1; /* bad month */
     }
     /* adjust current leap year */
 #if 0
-	if (clock_time->month < 3 && days_per_year(clock_time->year) == 366)
+	if ((clock_time->month < 3) && (days_per_year(clock_time->year) == 366))
+	{
 	    t--;
+	}
 #endif
 
     /*
      * collect days from months excluding the current one
      */
-    for (i = 1; i < clock_time->month; i++)
+    for (i = 1; i < clock_time->month; ++i)
     {
         t += days_of_month[i];
     }
     /* day */
-    if (clock_time->day < 1 || ((clock_time->month == 2 && days_per_year(clock_time->year) == 366) ? clock_time->day > 29 : clock_time->day > days_of_month[clock_time->month]))
+    if ((clock_time->day < 1) || (((clock_time->month == 2) && (days_per_year(clock_time->year) == 366)) ? clock_time->day > 29 : clock_time->day > days_of_month[clock_time->month]))
     {
         SETRTC(CVT_FAIL | CVT_BADDATE);
         return -1; /* bad day */
@@ -831,7 +845,7 @@ dcf_to_unixtime(
     t += clock_time->day - 1;
 
     /* hour */
-    if (clock_time->hour < 0 || clock_time->hour >= 24)
+    if ((clock_time->hour < 0) || (clock_time->hour >= 24))
     {
         SETRTC(CVT_FAIL | CVT_BADTIME);
         return -1; /* bad hour */
@@ -843,7 +857,7 @@ dcf_to_unixtime(
     t = TIMES24(t) + clock_time->hour;
 
     /* min */
-    if (clock_time->minute < 0 || clock_time->minute > 59)
+    if ((clock_time->minute < 0) || (clock_time->minute > 59))
     {
         SETRTC(CVT_FAIL | CVT_BADTIME);
         return -1; /* bad min */
@@ -860,7 +874,7 @@ dcf_to_unixtime(
      */
     t += clock_time->utcoffset;
 
-    if (clock_time->second < 0 || clock_time->second > 60) /* allow for LEAPs */
+    if ((clock_time->second < 0) || (clock_time->second > 60)) /* allow for LEAPs */
     {
         SETRTC(CVT_FAIL | CVT_BADTIME);
         return -1; /* bad sec */
@@ -888,7 +902,7 @@ type(
 /*-----------------------------------------------------------------------
  * week day representation
  */
-static const char* wday[8] = {
+static const char* wday[8U] = {
     "??",
     "Mo",
     "Tu",
@@ -906,16 +920,20 @@ static char*
 pr_timeval(
     struct timeval* val)
 {
-    static char buf[20];
+    static char buf[20U];
 
     if (val->tv_sec == 0)
+    {
         snprintf(buf, sizeof(buf), "%c0.%06ld",
                  (val->tv_usec < 0) ? '-' : '+',
                  (long int)l_abs(val->tv_usec));
+    }
     else
+    {
         snprintf(buf, sizeof(buf), "%ld.%06ld",
                  (long int)val->tv_sec,
                  (long int)l_abs(val->tv_usec));
+    }
     return buf;
 }
 
@@ -929,7 +947,9 @@ set_time(
     struct timeval the_time;
 
     if (no_set)
+    {
         return;
+    }
 
     LPRINTF("set_time: %s ", pr_timeval(offset));
     syslog(LOG_NOTICE, "setting time (offset %s)", pr_timeval(offset));
@@ -958,14 +978,18 @@ adj_time(
     struct timeval time_offset;
 
     if (no_set)
+    {
         return;
+    }
 
     time_offset.tv_sec = offset / 1000000;
     time_offset.tv_usec = offset % 1000000;
 
     LPRINTF("adj_time: %ld us ", (long int)offset);
     if (adjtime(&time_offset, 0L) == -1)
+    {
         perror("adjtime()");
+    }
 }
 
 /*-----------------------------------------------------------------------
@@ -983,7 +1007,9 @@ read_drift(
         int idrift = 0, fdrift = 0;
 
         if (2 != fscanf(df, "%4d.%03d", &idrift, &fdrift))
+        {
             LPRINTF("read_drift: trouble reading drift file");
+        }
         fclose(df);
         LPRINTF("read_drift: %d.%03d ppm ", idrift, fdrift);
 
@@ -1036,7 +1062,9 @@ adjust_clock(
     int tmp;
 
     if (no_set)
+    {
         return;
+    }
 
     if (skip_adjust)
     {
@@ -1048,7 +1076,7 @@ adjust_clock(
     toffset.tv_sec = l_abs(toffset.tv_sec);
     toffset.tv_usec = l_abs(toffset.tv_usec);
     if (toffset.tv_sec ||
-        (!toffset.tv_sec && toffset.tv_usec > max_adj_offset_usec))
+        (!toffset.tv_sec && (toffset.tv_usec > max_adj_offset_usec)))
     {
         /*
          * hopeless - set the clock - and clear the timing
@@ -1065,17 +1093,25 @@ adjust_clock(
 
     tmp = 0;
     while (adjustments > (1 << tmp))
+    {
         tmp++;
+    }
     adjustments = 0;
     if (tmp > FREQ_WEIGHT)
+    {
         tmp = FREQ_WEIGHT;
+    }
 
     accum_drift += R_SHIFT(usecoffset << USECSCALE, TIMECONSTANT + TIMECONSTANT + FREQ_WEIGHT - tmp);
 
-    if (accum_drift > MAX_DRIFT) /* clamp into interval */
+    if (accum_drift > MAX_DRIFT)
+    { /* clamp into interval */
         accum_drift = MAX_DRIFT;
+    }
     else if (accum_drift < -MAX_DRIFT)
+    {
         accum_drift = -MAX_DRIFT;
+    }
 
     update_drift(drift_file, usecoffset, reftime);
     LPRINTF("clock_adjust: %s, clock_adjust %ld, drift_comp %ld(%ld) ",
@@ -1167,7 +1203,9 @@ detach(
     }
 #else /* not HAVE_DAEMON */
     if (fork())
+    {
         exit(0);
+    }
 
     {
         u_long s;
@@ -1178,8 +1216,10 @@ detach(
 #else  /* HAVE_SYSCONF && _SC_OPEN_MAX */
         max_fd = getdtablesize();
 #endif /* HAVE_SYSCONF && _SC_OPEN_MAX */
-        for (s = 0; s < max_fd; s++)
+        for (s = 0; s < max_fd; ++s)
+        {
             (void)close((int)s);
+        }
         (void)open("/", 0);
         (void)dup2(0, 1);
         (void)dup2(0, 2);
@@ -1195,10 +1235,14 @@ detach(
 #if defined(HAVE_SETPGID) || defined(HAVE_SETSID)
 #ifdef HAVE_SETSID
         if (setsid() == (pid_t)-1)
+        {
             syslog(LOG_ERR, "dcfd: setsid(): %m");
+        }
 #else
         if (setpgid(0, 0) == -1)
+        {
             syslog(LOG_ERR, "dcfd: setpgid(): %m");
+        }
 #endif
 #else /* HAVE_SETPGID || HAVE_SETSID */
         {
@@ -1287,7 +1331,7 @@ check_y2k(void)
     printf("  starting year %04d\n", (int)year);
     printf("  ending year   %04d\n", (int)yearend);
 
-    for (; year < yearend; year++)
+    for (; year < yearend; ++year)
     {
         clocktime_t ct;
         time_t Observed;
@@ -1316,7 +1360,7 @@ check_y2k(void)
         }
         t = julian0(year) - julian0(1970); /* Julian day from 1970 */
         Expected = t * 24 * 60 * 60;
-        if (Observed != Expected || Flag)
+        if ((Observed != Expected) || Flag)
         { /* time difference */
             fprintf(stdout,
                     "%04d: dcf_to_unixtime(,%d) FAILURE: was=%lu s/b=%lu  (%ld)\n",
@@ -1459,7 +1503,9 @@ int main(
                     break;
                 }
         else if (file == NULL)
+        {
             file = arg;
+        }
         else
         {
             fprintf(stderr, "%s: device specified twice\n", argv[0U]);
@@ -1497,8 +1543,8 @@ int main(
         struct timeval timeout;
         struct timeval phase;
         struct timeval time_offset;
-        char pbuf[61];          /* printable version */
-        char buf[61];           /* raw data */
+        char pbuf[61U];         /* printable version */
+        char buf[61U];          /* raw data */
         clocktime_t clock_time; /* wall clock time */
         time_t utc_time = 0;
         time_t last_utc_time = 0;
@@ -1554,7 +1600,9 @@ int main(
          * lose terminal if in daemon operation
          */
         if (!interactive)
+        {
             detach();
+        }
 
         /*
          * get syslog() initialized
@@ -1627,8 +1675,10 @@ int main(
         PRINTF("  DCF77 monitor %s - Copyright (C) 1993-2005 by Frank Kardel\n\n", revision);
 
         pbuf[60U] = '\0';
-        for (i = 0; i < 60; i++)
+        for (i = 0; i < 60; ++i)
+        {
             pbuf[i] = '.';
+        }
 
         read_drift(drift_file);
 
@@ -1690,12 +1740,18 @@ int main(
                      * collect first character
                      */
                     if (((c ^ 0xFF) + 1) & (c ^ 0xFF))
+                    {
                         pbuf[0U] = '?';
+                    }
                     else
+                    {
                         pbuf[0U] = type(c) ? '#' : '-';
+                    }
 
-                    for (i = 1; i < 60; i++)
+                    for (i = 1; i < 60; ++i)
+                    {
                         pbuf[i] = '.';
+                    }
 
                     i = 0;
                 }
@@ -1710,14 +1766,18 @@ int main(
                      * initial guess (usually correct)
                      */
                     if (((c ^ 0xFF) + 1) & (c ^ 0xFF))
+                    {
                         pbuf[i] = '?';
+                    }
                     else
+                    {
                         pbuf[i] = type(c) ? '#' : '-';
+                    }
 
                     PRINTF("%c %.*s ", pat[i % (sizeof(pat) - 1)], 59 - offset, &pbuf[offset]);
                 }
 
-                if (i == 0 && rtc == CVT_OK)
+                if ((i == 0) && (rtc == CVT_OK))
                 {
                     /*
                      * we got a good time code here - try to convert it to
@@ -1744,7 +1804,9 @@ int main(
                         rtc = CVT_FAIL | CVT_BADTIME | CVT_BADDATE;
                     }
                     else
+                    {
                         usecerror = 0;
+                    }
 
                     last_utc_time = utc_time;
                 }
@@ -1817,7 +1879,9 @@ int main(
                 tlast = tt;
 
                 if (interactive)
+                {
                     fflush(stdout);
+                }
             }
         } while ((rrc == -1) && (errno == EINTR));
 

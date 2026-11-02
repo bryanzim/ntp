@@ -111,8 +111,8 @@ extern systime_func_ptr ntpcal_set_timefunc(systime_func_ptr);
 #define TIMESDPERC(val) (((val) << 10) + ((val) << 8) + ((val) << 7) + ((val) << 5) + ((val) << 4) + ((val) << 2) + (val)) /* *big* hack */
 
 
-extern const char* const months[12];
-extern const char* const daynames[7];
+extern const char* const months[12U];
+extern const char* const daynames[7U];
 
 extern char* ntpcal_iso8601std(char*, size_t, struct calendar const*);
 extern void caljulian(uint32_t, struct calendar*);

@@ -84,7 +84,9 @@ socktohost(
     }
 #endif
     if (a_info)
+    {
         goto forward_fail;
+    }
 
     INSIST(alist != NULL);
 
@@ -101,7 +103,9 @@ socktohost(
         octets = min(sizeof(addr), ai->ai_addrlen);
         memcpy(&addr, ai->ai_addr, octets);
         if (SOCK_EQ(sock, &addr))
+        {
             break;
+        }
     }
     freeaddrinfo(alist);
 

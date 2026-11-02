@@ -17,12 +17,12 @@
 
 static char* common_prettydate(l_fp*, int);
 
-const char* const months[12] = {
+const char* const months[12U] = {
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 };
 
-const char* const daynames[7] = {
+const char* const daynames[7U] = {
     "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 };
 
@@ -82,13 +82,17 @@ get_struct_tm(
         if (tl < 0)
         {
             if (--folds < MINFOLD)
+            {
                 return NULL;
+            }
             tl += SOLAR_CYCLE_SECS;
         }
         else
         {
             if (++folds > MAXFOLD)
+            {
                 return NULL;
+            }
             tl -= SOLAR_CYCLE_SECS;
         }
         ts = tl; /* next try... */
@@ -109,13 +113,17 @@ get_struct_tm(
         if (M_ISNEG(hi, lo))
         {
             if (--folds < MINFOLD)
+            {
                 return NULL;
+            }
             M_ADD(hi, lo, 0, SOLAR_CYCLE_SECS);
         }
         else
         {
             if (++folds > MAXFOLD)
+            {
                 return NULL;
+            }
             M_SUB(hi, lo, 0, SOLAR_CYCLE_SECS);
         }
     }
@@ -140,25 +148,33 @@ get_struct_tm(
         if (ts < 0)
         {
             if (--folds < MINFOLD)
+            {
                 return NULL;
+            }
             ts += SOLAR_CYCLE_SECS;
         }
         else if (ts >= (time_t)SOLAR_CYCLE_SECS)
         {
             if (++folds > MAXFOLD)
+            {
                 return NULL;
+            }
             ts -= SOLAR_CYCLE_SECS;
         }
         else
-            return NULL; /* That's truly pathological! */
+        {
+            return NULL;
+        } /* That's truly pathological! */
 
     /* 'tm' surely not NULL here! */
     INSIST(tm != NULL);
     if (folds != 0)
     {
         tm->tm_year += folds * SOLAR_CYCLE_YEARS;
-        if (tm->tm_year <= 0 || tm->tm_year >= 200)
-            return NULL; /* left warp range... can't help here! */
+        if ((tm->tm_year <= 0) || (tm->tm_year >= 200))
+        {
+            return NULL;
+        } /* left warp range... can't help here! */
     }
 
     return tm;
@@ -182,7 +198,7 @@ common_prettydate(
 
     LIB_GETBUF(bp);
 
-    if (ts->l_ui == 0 && ts->l_uf == 0)
+    if ((ts->l_ui == 0) && (ts->l_uf == 0))
     {
         strlcpy(bp, "(no time)", LIB_BUFLENGTH);
         return (bp);
@@ -213,11 +229,13 @@ common_prettydate(
                  jd.minute, jd.second, msec);
     }
     else
+    {
         snprintf(bp, LIB_BUFLENGTH, pfmt0,
                  (u_long)ts->l_ui, (u_long)ts->l_uf,
                  daynames[tm->tm_wday], months[tm->tm_mon],
                  tm->tm_mday, 1900 + tm->tm_year, tm->tm_hour,
                  tm->tm_min, tm->tm_sec, msec);
+    }
     return bp;
 }
 

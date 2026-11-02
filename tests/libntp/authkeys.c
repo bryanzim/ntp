@@ -14,7 +14,7 @@
 #endif
 #include <limits.h>
 
-u_long current_time = 4;
+u_long current_time = 4U;
 int counter = 0;
 
 void setUp(void);
@@ -54,7 +54,7 @@ void tearDown(void)
 
 
 static const int KEYTYPE = NID_md5;
-static char msgbuf[128];
+static char msgbuf[128U];
 
 void AddTrustedKey(keyid_t keyno)
 {
@@ -75,8 +75,8 @@ void AddUntrustedKey(keyid_t keyno)
 void test_AddTrustedKeys(void);
 void test_AddTrustedKeys(void)
 {
-    const keyid_t KEYNO1 = 5;
-    const keyid_t KEYNO2 = 8;
+    const keyid_t KEYNO1 = 5U;
+    const keyid_t KEYNO2 = 8U;
 
     AddTrustedKey(KEYNO1);
     AddTrustedKey(KEYNO2);
@@ -88,7 +88,7 @@ void test_AddTrustedKeys(void)
 void test_AddUntrustedKey(void);
 void test_AddUntrustedKey(void)
 {
-    const keyid_t KEYNO = 3;
+    const keyid_t KEYNO = 3U;
 
     AddUntrustedKey(KEYNO);
 
@@ -98,7 +98,7 @@ void test_AddUntrustedKey(void)
 void test_HaveKeyCorrect(void);
 void test_HaveKeyCorrect(void)
 {
-    const keyid_t KEYNO = 3;
+    const keyid_t KEYNO = 3U;
 
     AddTrustedKey(KEYNO);
 
@@ -109,7 +109,7 @@ void test_HaveKeyCorrect(void)
 void test_HaveKeyIncorrect(void);
 void test_HaveKeyIncorrect(void)
 {
-    const keyid_t KEYNO = 2;
+    const keyid_t KEYNO = 2U;
 
     TEST_ASSERT_FALSE(auth_havekey(KEYNO));
     TEST_ASSERT_FALSE(authhavekey(KEYNO));
@@ -118,7 +118,7 @@ void test_HaveKeyIncorrect(void)
 void test_AddWithAuthUseKey(void);
 void test_AddWithAuthUseKey(void)
 {
-    const keyid_t KEYNO = 5;
+    const keyid_t KEYNO = 5U;
     const char* KEY = "52a";
 
     TEST_ASSERT_TRUE(authusekey(KEYNO, KEYTYPE, (const u_char*)KEY));
@@ -127,7 +127,7 @@ void test_AddWithAuthUseKey(void)
 void test_EmptyKey(void);
 void test_EmptyKey(void)
 {
-    const keyid_t KEYNO = 3;
+    const keyid_t KEYNO = 3U;
     const char* KEY = "";
 
     TEST_ASSERT_FALSE(authusekey(KEYNO, KEYTYPE, (const u_char*)KEY));
@@ -147,9 +147,13 @@ auth_log2(
     {
         m <<= s;
         if (x & m)
+        {
             r += s;
+        }
         else
+        {
             x <<= s;
+        }
     }
     return (u_short)r;
 }
@@ -189,11 +193,17 @@ getaddr(
     hint.ai_flags = AI_NUMERICHOST;
     hint.ai_family = af;
     if (getaddrinfo(astr, NULL, &hint, &ares))
+    {
         return FALSE;
+    }
     if (ares->ai_addrlen > sizeof(*addr))
+    {
         memcpy(addr, ares->ai_addr, sizeof(*addr));
+    }
     else
+    {
         memcpy(addr, ares->ai_addr, ares->ai_addrlen);
+    }
     freeaddrinfo(ares);
     return TRUE;
 }
@@ -237,7 +247,9 @@ void test_AddrMatch_self4(void)
 
     TEST_ASSERT_TRUE(getaddr(AF_INET, "192.128.1.1", &ip4));
     for (bits = 0; bits < 40; ++bits)
+    {
         TEST_ASSERT_TRUE(keyacc_amatch(&ip4, &ip4, bits));
+    }
 }
 
 void test_AddrMatch_self6(void);
@@ -248,7 +260,9 @@ void test_AddrMatch_self6(void)
 
     TEST_ASSERT_TRUE(getaddr(AF_INET6, "::1", &ip6));
     for (bits = 0; bits < 136; ++bits)
+    {
         TEST_ASSERT_TRUE(keyacc_amatch(&ip6, &ip6, bits));
+    }
 }
 
 void test_AddrMatch_afmix(void);

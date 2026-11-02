@@ -563,7 +563,7 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
     int* intptr;
     short int* shortptr;
     signed char* charptr;
-    size_t len = 0;
+    size_t len = 0U;
     int overflow = 0;
     int base = 0;
     int cflags = 0;
@@ -581,17 +581,23 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
      * (Though some of these versions will write to a non-NULL buffer even
      * if a size of zero was specified, which violates the standard.)
      */
-    if (str == NULL && size != 0)
+    if ((str == NULL) && (size != 0U))
+    {
         size = 0;
+    }
 
     while (ch != '\0')
         switch (state)
         {
         case PRINT_S_DEFAULT:
             if (ch == '%')
+            {
                 state = PRINT_S_FLAGS;
+            }
             else
+            {
                 OUTCHAR(str, len, size, ch);
+            }
             ch = *format++;
             break;
         case PRINT_S_FLAGS:
@@ -654,7 +660,9 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                 state = PRINT_S_DOT;
             }
             else
+            {
                 state = PRINT_S_DOT;
+            }
             break;
         case PRINT_S_DOT:
             if (ch == '.')
@@ -663,11 +671,15 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                 ch = *format++;
             }
             else
+            {
                 state = PRINT_S_MOD;
+            }
             break;
         case PRINT_S_PRECISION:
             if (precision == -1)
+            {
                 precision = 0;
+            }
             if (ISDIGIT(ch))
             {
                 ch = CHARTOINT(ch);
@@ -687,12 +699,16 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                  * (7.19.6.1, 5)
                  */
                 if ((precision = va_arg(args, int)) < 0)
+                {
                     precision = -1;
+                }
                 ch = *format++;
                 state = PRINT_S_MOD;
             }
             else
+            {
                 state = PRINT_S_MOD;
+            }
             break;
         case PRINT_S_MOD:
             switch (ch)
@@ -705,7 +721,9 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                     cflags = PRINT_C_CHAR;
                 }
                 else
+                {
                     cflags = PRINT_C_SHORT;
+                }
                 break;
             case 'l':
                 ch = *format++;
@@ -715,7 +733,9 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                     cflags = PRINT_C_LLONG;
                 }
                 else
+                {
                     cflags = PRINT_C_LONG;
+                }
                 break;
             case 'L':
                 cflags = PRINT_C_LDOUBLE;
@@ -780,11 +800,15 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                 /* FALLTHROUGH */
             case 'o':
                 if (base == 0)
+                {
                     base = 8;
+                }
                 /* FALLTHROUGH */
             case 'u':
                 if (base == 0)
+                {
                     base = 10;
+                }
                 flags |= PRINT_F_UNSIGNED;
                 switch (cflags)
                 {
@@ -829,13 +853,19 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                 /* FALLTHROUGH */
             case 'f':
                 if (cflags == PRINT_C_LDOUBLE)
+                {
                     fvalue = va_arg(args, LDOUBLE);
+                }
                 else
+                {
                     fvalue = va_arg(args, double);
+                }
                 fmtflt(str, &len, size, fvalue, width,
                        precision, flags, &overflow);
                 if (overflow)
+                {
                     goto out;
+                }
                 break;
             case 'E':
                 flags |= PRINT_F_UP;
@@ -843,13 +873,19 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
             case 'e':
                 flags |= PRINT_F_TYPE_E;
                 if (cflags == PRINT_C_LDOUBLE)
+                {
                     fvalue = va_arg(args, LDOUBLE);
+                }
                 else
+                {
                     fvalue = va_arg(args, double);
+                }
                 fmtflt(str, &len, size, fvalue, width,
                        precision, flags, &overflow);
                 if (overflow)
+                {
                     goto out;
+                }
                 break;
             case 'G':
                 flags |= PRINT_F_UP;
@@ -857,19 +893,27 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
             case 'g':
                 flags |= PRINT_F_TYPE_G;
                 if (cflags == PRINT_C_LDOUBLE)
+                {
                     fvalue = va_arg(args, LDOUBLE);
+                }
                 else
+                {
                     fvalue = va_arg(args, double);
+                }
                 /*
                  * If the precision is zero, it is treated as
                  * one (cf. C99: 7.19.6.1, 8).
                  */
                 if (precision == 0)
+                {
                     precision = 1;
+                }
                 fmtflt(str, &len, size, fvalue, width,
                        precision, flags, &overflow);
                 if (overflow)
+                {
                     goto out;
+                }
                 break;
             case 'c':
                 cvalue = va_arg(args, int);
@@ -888,12 +932,14 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
                  * manner." (C99: 7.19.6.1, 8)
                  */
                 if ((strvalue = va_arg(args, void*)) == NULL)
+                {
                     /*
                      * We use the glibc format.  BSD prints
                      * "0x0", SysV "0".
                      */
                     fmtstr(str, &len, size, "(nil)", width,
                            -1, flags);
+                }
                 else
                 {
                     /*
@@ -966,11 +1012,15 @@ int rpl_vsnprintf(char* str, size_t size, const char* format, va_list args)
         }
 out:
     if (len < size)
+    {
         str[len] = '\0';
-    else if (size > 0)
+    }
+    else if (size > 0U)
+    {
         str[size - 1] = '\0';
+    }
 
-    if (overflow || len >= INT_MAX)
+    if (overflow || (len >= INT_MAX))
     {
         errno = overflow ? EOVERFLOW : ERANGE;
         return -1;
@@ -985,26 +1035,34 @@ fmtstr(char* str, size_t* len, size_t size, const char* value, int width,
     int padlen, strln; /* Amount to pad. */
     int noprecision = (precision == -1);
 
-    if (value == NULL) /* We're forgiving. */
+    if (value == NULL)
+    { /* We're forgiving. */
         value = "(null)";
+    }
 
     /* If a precision was specified, don't read the string past it. */
-    for (strln = 0; value[strln] != '\0' &&
-                    (noprecision || strln < precision);
-         strln++)
+    for (strln = 0; (value[strln] != '\0') &&
+                    (noprecision || (strln < precision));
+         ++strln)
+    {
         continue;
+    }
 
     if ((padlen = width - strln) < 0)
+    {
         padlen = 0;
-    if (flags & PRINT_F_MINUS) /* Left justify. */
+    }
+    if (flags & PRINT_F_MINUS)
+    { /* Left justify. */
         padlen = -padlen;
+    }
 
     while (padlen > 0)
     { /* Leading spaces. */
         OUTCHAR(str, *len, size, ' ');
         padlen--;
     }
-    while (*value != '\0' && (noprecision || precision-- > 0))
+    while ((*value != '\0') && (noprecision || (precision-- > 0)))
     {
         OUTCHAR(str, *len, size, *value);
         value++;
@@ -1031,22 +1089,30 @@ fmtint(char* str, size_t* len, size_t size, INTMAX_T value, int base, int width,
     int noprecision = (precision == -1);
 
     if (flags & PRINT_F_UNSIGNED)
+    {
         uvalue = value;
+    }
     else
     {
         uvalue = (value >= 0) ? value : -value;
         if (value < 0)
+        {
             sign = '-';
-        else if (flags & PRINT_F_PLUS) /* Do a sign. */
+        }
+        else if (flags & PRINT_F_PLUS)
+        { /* Do a sign. */
             sign = '+';
+        }
         else if (flags & PRINT_F_SPACE)
+        {
             sign = ' ';
+        }
     }
 
     pos = convert(uvalue, iconvert, sizeof(iconvert), base,
                   flags & PRINT_F_UP);
 
-    if (flags & PRINT_F_NUM && uvalue != 0)
+    if ((flags & PRINT_F_NUM) && (uvalue != 0))
     {
         /*
          * C99 says: "The result is converted to an `alternative form'.
@@ -1060,7 +1126,9 @@ fmtint(char* str, size_t* len, size_t size, INTMAX_T value, int base, int width,
         {
         case 8:
             if (precision <= pos)
+            {
                 precision = pos + 1;
+            }
             break;
         case 16:
             hexprefix = (flags & PRINT_F_UP) ? 'X' : 'x';
@@ -1068,8 +1136,10 @@ fmtint(char* str, size_t* len, size_t size, INTMAX_T value, int base, int width,
         }
     }
 
-    if (separators) /* Get the number of group separators we'll print. */
+    if (separators)
+    { /* Get the number of group separators we'll print. */
         separators = getnumsep(pos);
+    }
 
     zpadlen = precision - pos - separators;
     spadlen = width                         /* Minimum field width. */
@@ -1079,18 +1149,24 @@ fmtint(char* str, size_t* len, size_t size, INTMAX_T value, int base, int width,
               - ((hexprefix != 0) ? 2 : 0); /* Will we print a prefix? */
 
     if (zpadlen < 0)
+    {
         zpadlen = 0;
+    }
     if (spadlen < 0)
+    {
         spadlen = 0;
+    }
 
     /*
      * C99 says: "If the `0' and `-' flags both appear, the `0' flag is
      * ignored.  For `d', `i', `o', `u', `x', and `X' conversions, if a
      * precision is specified, the `0' flag is ignored." (7.19.6.1, 6)
      */
-    if (flags & PRINT_F_MINUS) /* Left justify. */
+    if (flags & PRINT_F_MINUS)
+    { /* Left justify. */
         spadlen = -spadlen;
-    else if (flags & PRINT_F_ZERO && noprecision)
+    }
+    else if ((flags & PRINT_F_ZERO) && noprecision)
     {
         zpadlen += spadlen;
         spadlen = 0;
@@ -1100,8 +1176,10 @@ fmtint(char* str, size_t* len, size_t size, INTMAX_T value, int base, int width,
         OUTCHAR(str, *len, size, ' ');
         spadlen--;
     }
-    if (sign != 0) /* Sign. */
+    if (sign != 0)
+    { /* Sign. */
         OUTCHAR(str, *len, size, sign);
+    }
     if (hexprefix != 0)
     { /* A "0x" or "0X" prefix. */
         OUTCHAR(str, *len, size, '0');
@@ -1116,8 +1194,10 @@ fmtint(char* str, size_t* len, size_t size, INTMAX_T value, int base, int width,
     { /* The actual digits. */
         pos--;
         OUTCHAR(str, *len, size, iconvert[pos]);
-        if (separators > 0 && pos > 0 && pos % 3 == 0)
+        if ((separators > 0) && (pos > 0) && (pos % 3 == 0))
+        {
             printsep(str, len, size);
+        }
     }
     while (spadlen < 0)
     { /* Trailing spaces. */
@@ -1137,7 +1217,7 @@ fmtflt(char* str, size_t* len, size_t size, LDOUBLE fvalue, int width,
     const char* infnan = NULL;
     char iconvert[MAX_CONVERT_LENGTH];
     char fconvert[MAX_CONVERT_LENGTH];
-    char econvert[4]; /* "e-12" (without nul-termination). */
+    char econvert[4U]; /* "e-12" (without nul-termination). */
     char esign = 0;
     char sign = 0;
     int leadfraczeros = 0;
@@ -1161,32 +1241,48 @@ fmtflt(char* str, size_t* len, size_t size, LDOUBLE fvalue, int width,
      * defaults to 6.
      */
     if (precision == -1)
+    {
         precision = 6;
+    }
 
     if (fvalue < 0.0)
+    {
         sign = '-';
-    else if (flags & PRINT_F_PLUS) /* Do a sign. */
+    }
+    else if (flags & PRINT_F_PLUS)
+    { /* Do a sign. */
         sign = '+';
+    }
     else if (flags & PRINT_F_SPACE)
+    {
         sign = ' ';
+    }
 
     if (ISNAN(fvalue))
+    {
         infnan = (flags & PRINT_F_UP) ? "NAN" : "nan";
+    }
     else if (ISINF(fvalue))
+    {
         infnan = (flags & PRINT_F_UP) ? "INF" : "inf";
+    }
 
     if (infnan != NULL)
     {
         if (sign != 0)
+        {
             iconvert[ipos++] = sign;
+        }
         while (*infnan != '\0')
+        {
             iconvert[ipos++] = *infnan++;
+        }
         fmtstr(str, len, size, iconvert, width, ipos, flags);
         return;
     }
 
     /* "%e" (or "%E") or "%g" (or "%G") conversion. */
-    if (flags & PRINT_F_TYPE_E || flags & PRINT_F_TYPE_G)
+    if ((flags & PRINT_F_TYPE_E) || (flags & PRINT_F_TYPE_G))
     {
         if (flags & PRINT_F_TYPE_G)
         {
@@ -1210,7 +1306,9 @@ fmtflt(char* str, size_t* len, size_t size, LDOUBLE fvalue, int width,
              * unless the "#" flag was specified.
              */
             if (!(flags & PRINT_F_NUM))
+            {
                 omitzeros = 1;
+            }
         }
         exponent = getexponent(fvalue);
         estyle = 1;
@@ -1226,21 +1324,29 @@ again:
     {
     case 16:
         if (precision > 38)
+        {
             precision = 38;
+        }
         break;
     case 8:
         if (precision > 19)
+        {
             precision = 19;
+        }
         break;
     default:
         if (precision > 9)
+        {
             precision = 9;
+        }
         break;
     }
 
     ufvalue = (fvalue >= 0.0) ? fvalue : -fvalue;
-    if (estyle) /* We want exactly one integer digit. */
+    if (estyle)
+    { /* We want exactly one integer digit. */
         ufvalue /= mypow10(exponent);
+    }
 
     if ((intpart = cast(ufvalue)) == UINTMAX_MAX)
     {
@@ -1267,7 +1373,7 @@ again:
          */
         intpart++;
         fracpart = 0;
-        if (estyle && intpart == 10)
+        if (estyle && (intpart == 10))
         {
             /*
              * The value was rounded up to ten, but we only want one
@@ -1298,8 +1404,8 @@ again:
      *
      * Note that we had decremented the precision by one.
      */
-    if (flags & PRINT_F_TYPE_G && estyle &&
-        precision + 1 > exponent && exponent >= -4)
+    if ((flags & PRINT_F_TYPE_G) && estyle &&
+        (precision + 1 > exponent) && (exponent >= -4))
     {
         precision -= exponent;
         estyle = 0;
@@ -1314,7 +1420,9 @@ again:
             esign = '-';
         }
         else
+        {
             esign = '+';
+        }
 
         /*
          * Convert the exponent.  The sizeof(econvert) is 4.  So, the
@@ -1329,23 +1437,31 @@ again:
          * exponent." (7.19.6.1, 8)
          */
         if (epos == 1)
+        {
             econvert[epos++] = '0';
+        }
         econvert[epos++] = esign;
         econvert[epos++] = (flags & PRINT_F_UP) ? 'E' : 'e';
     }
 
     /* Convert the integer part and the fractional part. */
     ipos = convert(intpart, iconvert, sizeof(iconvert), 10, 0);
-    if (fracpart != 0) /* convert() would return 1 if fracpart == 0. */
+    if (fracpart != 0)
+    { /* convert() would return 1 if fracpart == 0. */
         fpos = convert(fracpart, fconvert, sizeof(fconvert), 10, 0);
+    }
 
     leadfraczeros = precision - fpos;
 
     if (omitzeros)
     {
-        if (fpos > 0) /* Omit trailing fractional part zeros. */
-            while (omitcount < fpos && fconvert[omitcount] == '0')
+        if (fpos > 0)
+        { /* Omit trailing fractional part zeros. */
+            while ((omitcount < fpos) && (fconvert[omitcount] == '0'))
+            {
                 omitcount++;
+            }
+        }
         else
         { /* The fractional part is zero, omit it completely. */
             omitcount = precision;
@@ -1358,10 +1474,14 @@ again:
      * Print a decimal point if either the fractional part is non-zero
      * and/or the "#" flag was specified.
      */
-    if (precision > 0 || flags & PRINT_F_NUM)
+    if ((precision > 0) || (flags & PRINT_F_NUM))
+    {
         emitpoint = 1;
-    if (separators) /* Get the number of group separators we'll print. */
+    }
+    if (separators)
+    { /* Get the number of group separators we'll print. */
         separators = getnumsep(ipos);
+    }
 
     padlen = width                    /* Minimum field width. */
              - ipos                   /* Number of integer digits. */
@@ -1372,15 +1492,19 @@ again:
              - ((sign != 0) ? 1 : 0); /* Will we print a sign character? */
 
     if (padlen < 0)
+    {
         padlen = 0;
+    }
 
     /*
      * C99 says: "If the `0' and `-' flags both appear, the `0' flag is
      * ignored." (7.19.6.1, 6)
      */
-    if (flags & PRINT_F_MINUS) /* Left justifty. */
+    if (flags & PRINT_F_MINUS)
+    { /* Left justifty. */
         padlen = -padlen;
-    else if (flags & PRINT_F_ZERO && padlen > 0)
+    }
+    else if ((flags & PRINT_F_ZERO) && (padlen > 0))
     {
         if (sign != 0)
         { /* Sign. */
@@ -1398,20 +1522,26 @@ again:
         OUTCHAR(str, *len, size, ' ');
         padlen--;
     }
-    if (sign != 0) /* Sign. */
+    if (sign != 0)
+    { /* Sign. */
         OUTCHAR(str, *len, size, sign);
+    }
     while (ipos > 0)
     { /* Integer part. */
         ipos--;
         OUTCHAR(str, *len, size, iconvert[ipos]);
-        if (separators > 0 && ipos > 0 && ipos % 3 == 0)
+        if ((separators > 0) && (ipos > 0) && (ipos % 3 == 0))
+        {
             printsep(str, len, size);
+        }
     }
     if (emitpoint)
     { /* Decimal point. */
 #if HAVE_LOCALECONV && HAVE_LCONV_DECIMAL_POINT
-        if (lc->decimal_point != NULL && *lc->decimal_point != '\0')
+        if ((lc->decimal_point != NULL) && (*lc->decimal_point != '\0'))
+        {
             OUTCHAR(str, *len, size, *lc->decimal_point);
+        }
         else /* We'll always print some decimal point character. */
 #endif       /* HAVE_LOCALECONV && HAVE_LCONV_DECIMAL_POINT */
             OUTCHAR(str, *len, size, '.');
@@ -1446,8 +1576,12 @@ printsep(char* str, size_t* len, size_t size)
     int i;
 
     if (lc->thousands_sep != NULL)
-        for (i = 0; lc->thousands_sep[i] != '\0'; i++)
+    {
+        for (i = 0; lc->thousands_sep[i] != '\0'; ++i)
+        {
             OUTCHAR(str, *len, size, lc->thousands_sep[i]);
+        }
+    }
     else
 #endif /* HAVE_LOCALECONV && HAVE_LCONV_THOUSANDS_SEP */
         OUTCHAR(str, *len, size, ',');
@@ -1464,8 +1598,10 @@ getnumsep(int digits)
     /* We support an arbitrary separator length (including zero). */
     if (lc->thousands_sep != NULL)
     {
-        for (strln = 0; lc->thousands_sep[strln] != '\0'; strln++)
+        for (strln = 0; lc->thousands_sep[strln] != '\0'; ++strln)
+        {
             continue;
+        }
         separators *= strln;
     }
 #endif /* HAVE_LOCALECONV && HAVE_LCONV_THOUSANDS_SEP */
@@ -1485,10 +1621,14 @@ getexponent(LDOUBLE value)
      * for infinity before calling this function using our ISINF() macro, so
      * this might be somewhat paranoid.
      */
-    while (tmp < 1.0 && tmp > 0.0 && --exponent > -99)
+    while ((tmp < 1.0) && (tmp > 0.0) && (--exponent > -99))
+    {
         tmp *= 10;
-    while (tmp >= 10.0 && ++exponent < 99)
+    }
+    while ((tmp >= 10.0) && (++exponent < 99))
+    {
         tmp /= 10;
+    }
 
     return exponent;
 }
@@ -1497,14 +1637,14 @@ static int
 convert(UINTMAX_T value, char* buf, size_t size, int base, int caps)
 {
     const char* digits = caps ? "0123456789ABCDEF" : "0123456789abcdef";
-    size_t pos = 0;
+    size_t pos = 0U;
 
     /* We return an unterminated buffer with the digits in reverse order. */
     do
     {
         buf[pos++] = digits[value % base];
         value /= base;
-    } while (value != 0 && pos < size);
+    } while ((value != 0) && (pos < size));
 
     return (int)pos;
 }
@@ -1522,7 +1662,9 @@ cast(LDOUBLE value)
      * value although converting the latter to UINTMAX_T would overflow.
      */
     if (value >= (LDOUBLE)UINTMAX_MAX)
+    {
         return UINTMAX_MAX;
+    }
 
     result = (UINTMAX_T)value;
     /*
@@ -1569,7 +1711,9 @@ void* mymemcpy(void* dst, void* src, size_t len)
 
     /* No need for optimization, we use this only to replace va_copy(3). */
     while (len-- > 0)
+    {
         *to++ = *from++;
+    }
     return dst;
 }
 #endif /* NEED_MYMEMCPY */
@@ -1585,8 +1729,10 @@ int rpl_vasprintf(char** ret, const char* format, va_list ap)
     VA_COPY(aq, ap);
     len = vsnprintf(NULL, 0, format, aq);
     VA_END_COPY(aq);
-    if (len < 0 || (*ret = malloc(size = len + 1)) == NULL)
+    if ((len < 0) || ((*ret = malloc(size = len + 1)) == NULL))
+    {
         return -1;
+    }
     return vsnprintf(*ret, size, format, ap);
 }
 #endif /* HW_WANT_RPL_VASPRINTF */
@@ -2118,7 +2264,7 @@ int main(void)
         NULL
     };
 #endif /* !OS_SYSV */
-    char buf1[1024], buf2[1024];
+    char buf1[1024U], buf2[1024U];
     double value, digits = 9.123456789012345678901234567890123456789;
     int i, j, r1, r2, failed = 0, num = 0;
 
@@ -2174,7 +2320,7 @@ int main(void)
     (void)printf("Result: %d out of %d tests failed.\n", failed, num);
 
     (void)fputs("Checking how many digits we support: ", stdout);
-    for (i = 0; i < 100; i++)
+    for (i = 0; i < 100; ++i)
     {
         value = pow(10, i) * digits;
         (void)sprintf(buf1, "%.1f", value);

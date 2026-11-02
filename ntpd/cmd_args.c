@@ -42,9 +42,13 @@ void getCmdOpts(
     if (ipv4_works && ipv6_works)
     {
         if (HAVE_OPT(IPV4))
+        {
             ipv6_works = 0;
+        }
         else if (HAVE_OPT(IPV6))
+        {
             ipv4_works = 0;
+        }
     }
     else if (!ipv4_works && !ipv6_works)
     {
@@ -52,17 +56,27 @@ void getCmdOpts(
         exit(1);
     }
     else if (HAVE_OPT(IPV4) && !ipv4_works)
+    {
         msyslog(LOG_WARNING, "-4/--ipv4 ignored, IPv4 networking not found.");
+    }
     else if (HAVE_OPT(IPV6) && !ipv6_works)
+    {
         msyslog(LOG_WARNING, "-6/--ipv6 ignored, IPv6 networking not found.");
+    }
 
     if (HAVE_OPT(AUTHREQ))
+    {
         proto_config(PROTO_AUTHENTICATE, 1, 0., NULL);
+    }
     else if (HAVE_OPT(AUTHNOREQ))
+    {
         proto_config(PROTO_AUTHENTICATE, 0, 0., NULL);
+    }
 
     if (HAVE_OPT(BCASTSYNC))
+    {
         proto_config(PROTO_BROADCLIENT, 1, 0., NULL);
+    }
 
     if (HAVE_OPT(CONFIGFILE))
     {
@@ -73,13 +87,19 @@ void getCmdOpts(
     }
 
     if (HAVE_OPT(DRIFTFILE))
+    {
         stats_config(STATS_FREQ_FILE, OPT_ARG(DRIFTFILE), 1);
+    }
 
     if (HAVE_OPT(PANICGATE))
+    {
         allow_panic = TRUE;
+    }
 
     if (HAVE_OPT(FORCE_STEP_ONCE))
+    {
         force_step_once = TRUE;
+    }
 
 #ifdef HAVE_DROPROOT
     if (HAVE_OPT(JAILDIR))
@@ -90,15 +110,22 @@ void getCmdOpts(
 #endif
 
     if (HAVE_OPT(KEYFILE))
+    {
         getauthkeys(OPT_ARG(KEYFILE));
+    }
 
     if (HAVE_OPT(PIDFILE))
+    {
         stats_config(STATS_PID_FILE, OPT_ARG(PIDFILE), 1);
+    }
 
     if (HAVE_OPT(QUIT))
+    {
         mode_ntpdate = TRUE;
+    }
 
     if (HAVE_OPT(PROPAGATIONDELAY))
+    {
         do
         {
             double tmp;
@@ -115,9 +142,12 @@ void getCmdOpts(
                 proto_config(PROTO_BROADDELAY, 0, tmp, NULL);
             }
         } while (0);
+    }
 
     if (HAVE_OPT(STATSDIR))
+    {
         stats_config(STATS_STATSDIR, OPT_ARG(STATSDIR), 1);
+    }
 
     if (HAVE_OPT(TRUSTEDKEY))
     {
@@ -130,7 +160,7 @@ void getCmdOpts(
             const char* p = *pp++;
 
             tkey = (int)atol(p);
-            if (tkey == 0 || tkey > NTP_MAXKEY)
+            if ((tkey == 0) || (tkey > NTP_MAXKEY))
             {
                 msyslog(LOG_ERR,
                         "command line trusted key %s is invalid",
@@ -192,7 +222,9 @@ void getCmdOpts(
     }
 
     if (HAVE_OPT(SLEW))
+    {
         loop_config(LOOP_MAX, 600);
+    }
 
     if (HAVE_OPT(UPDATEINTERVAL))
     {
@@ -222,5 +254,7 @@ void getCmdOpts(
 
     /* display usage & exit with any option processing errors */
     if (errflg)
-        optionUsage(&ntpdOptions, 2); /* does not return */
+    {
+        optionUsage(&ntpdOptions, 2);
+    } /* does not return */
 }

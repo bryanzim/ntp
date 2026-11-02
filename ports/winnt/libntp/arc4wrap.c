@@ -79,7 +79,9 @@ static void
 private_unlock_(void)
 {
     if (InterlockedExchangeAdd(&once_, 0) == 2)
+    {
         LeaveCriticalSection(&csec_);
+    }
 }
 
 #pragma warning(disable : 4244)

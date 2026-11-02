@@ -359,7 +359,7 @@ nmea_start(
 {
     struct refclockproc* const pp = peer->procptr;
     nmea_unit* const up = emalloc_zero(sizeof(*up));
-    char device[20];
+    char device[20U];
     size_t devlen;
     u_int32 rate;
     int baudrate;
@@ -428,7 +428,9 @@ nmea_start(
     {
         pp->io.fd = nmead_open(device);
         if (-1 == pp->io.fd)
+        {
             return FALSE;
+        }
     }
 
     /* succeed if this clock can be added */
@@ -457,14 +459,18 @@ nmea_shutdown(
     {
 #ifdef HAVE_PPSAPI
         if (up->ppsapi_lit)
+        {
             time_pps_destroy(up->atom.handle);
+        }
         ppsdev_close(pp->io.fd, up->ppsapi_fd);
 #endif
         free(up);
     }
     pp->unitptr = (caddr_t)NULL;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     pp->io.fd = -1;
 }
 
@@ -484,7 +490,7 @@ nmea_control(
     struct refclockproc* const pp = peer->procptr;
     nmea_unit* const up = (nmea_unit*)pp->unitptr;
 
-    char device[32];
+    char device[32U];
     size_t devlen;
 
     UNUSED_ARG(in_st);
@@ -550,7 +556,9 @@ nmea_control(
     {
         /* shutdown PPS API */
         if (up->ppsapi_lit)
+        {
             time_pps_destroy(up->atom.handle);
+        }
         up->atom.handle = 0;
         /* do !!NOT!! close/drop PPS fd here! */
 
@@ -591,8 +599,10 @@ nmea_timer(
 
 #if NMEA_WRITE_SUPPORT
 
-    if (-1 != pp->io.fd) /* any mode bits to evaluate here? */
+    if (-1 != pp->io.fd)
+    { /* any mode bits to evaluate here? */
         gps_send(pp->io.fd, "$PMOTG,RMC,0000*1D\r\n", peer);
+    }
 
 #endif /* NMEA_WRITE_SUPPORT */
 
@@ -611,7 +621,9 @@ nmea_timer(
     }
 
     if (up->hold_gpsdate && (--up->hold_gpsdate < DATE_HLIM))
+    {
         up->type_gpsdate = DTYP_NONE;
+    }
 }
 
 /*
@@ -706,21 +718,37 @@ nmea_procrec(
      */
     cp = field_parse(&rdata, 0);
     if (strncmp(cp + 2, "RMC,", 4) == 0)
+    {
         sentence = NMEA_GPRMC;
+    }
     else if (strncmp(cp + 2, "GGA,", 4) == 0)
+    {
         sentence = NMEA_GPGGA;
+    }
     else if (strncmp(cp + 2, "GLL,", 4) == 0)
+    {
         sentence = NMEA_GPGLL;
+    }
     else if (strncmp(cp + 2, "ZDA,", 4) == 0)
+    {
         sentence = NMEA_GPZDA;
+    }
     else if (strncmp(cp + 2, "ZDG,", 4) == 0)
+    {
         sentence = NMEA_GPZDG;
+    }
     else if (strncmp(cp, "PGRMF,", 6) == 0)
+    {
         sentence = NMEA_PGRMF;
+    }
     else if (strncmp(cp, "PUBX,04,", 8) == 0)
+    {
         sentence = NMEA_PUBX04;
+    }
     else
-        return; /* not something we know about */
+    {
+        return;
+    } /* not something we know about */
 
     /* Eventually output delay measurement now. */
     if (peer->ttl & NMEA_DELAYMEAS_MASK)
@@ -815,7 +843,9 @@ nmea_procrec(
             rc_dtyp = DTYP_Y2D;
         }
         if (CLK_FLAG4 & pp->sloppyclockflag)
+        {
             field_wipe(&rdata, 3, 4, 5, 6, -1);
+        }
         break;
 
     case NMEA_GPGGA:
@@ -823,7 +853,9 @@ nmea_procrec(
         rc_time = parse_time(&date, &tofs, &rdata, 1);
         pp->leap = parse_qual(&rdata, 6, '0', 1);
         if (CLK_FLAG4 & pp->sloppyclockflag)
+        {
             field_wipe(&rdata, 2, 4, -1);
+        }
         break;
 
     case NMEA_GPGLL:
@@ -831,7 +863,9 @@ nmea_procrec(
         rc_time = parse_time(&date, &tofs, &rdata, 5);
         pp->leap = parse_qual(&rdata, 6, 'A', 0);
         if (CLK_FLAG4 & pp->sloppyclockflag)
+        {
             field_wipe(&rdata, 1, 3, -1);
+        }
         break;
 
     case NMEA_GPZDA:
@@ -866,7 +900,9 @@ nmea_procrec(
         }
         pp->leap = parse_qual(&rdata, 11, '0', 1);
         if (CLK_FLAG4 & pp->sloppyclockflag)
+        {
             field_wipe(&rdata, 6, 8, -1);
+        }
         break;
 
     case NMEA_PUBX04:
@@ -926,10 +962,12 @@ nmea_procrec(
      * fudge time 2 to the receive time stamp directly.
      */
 #ifdef HAVE_PPSAPI
-    if (up->ppsapi_lit && pp->leap != LEAP_NOTINSYNC)
+    if (up->ppsapi_lit && (pp->leap != LEAP_NOTINSYNC))
+    {
         withpps = refclock_ppsaugment(
             &up->atom, &rd_timestamp,
             pp->fudgetime2, pp->fudgetime1);
+    }
     else
 #endif /* HAVE_PPSAPI */
         rd_timestamp = ntpfp_with_fudge(
@@ -1020,7 +1058,9 @@ nmea_procrec(
         if (tabsdiffd(rd_reftime, rd_timestamp) < 0.5)
         {
             if (!(peer->ttl & NMEA_QUIETPPS_MASK))
+            {
                 peer->flags |= FLAG_PPS;
+            }
             DPRINTF(2, ("%s PPS_RELATE_PHASE\n",
                         refnumtoa(&peer->srcadr)));
             up->tally.pps_used++;
@@ -1083,7 +1123,9 @@ nmea_receive(
 
     /* paranoia check: */
     if (up->lb_len >= sizeof(up->lb_buf))
+    {
         up->lb_len = 0;
+    }
 
     /* pick up last assembly position; leave room for NUL */
     dp = up->lb_buf + up->lb_len;
@@ -1102,20 +1144,22 @@ nmea_receive(
         if (dp == up->lb_buf)
         {
             if (ch == '$')
+            {
                 *dp++ = ch;
+            }
         }
         else if (dp > de)
         {
             dp = up->lb_buf;
         }
-        else if (ch == '\n' || ch == '\r')
+        else if ((ch == '\n') || (ch == '\r'))
         {
             *dp = '\0';
             up->lb_len = (int)(dp - up->lb_buf);
             dp = up->lb_buf;
             nmea_procrec(peer, rbufp->recv_time);
         }
-        else if (ch >= 0x20 && ch < 0x7f)
+        else if ((ch >= 0x20) && (ch < 0x7f))
         {
             *dp++ = ch;
         }
@@ -1172,7 +1216,9 @@ nmea_poll(
     {
         peer->flags &= ~FLAG_PPS;
         if (pp->currentstatus < CEVNT_TIMEOUT)
+        {
             refclock_report(peer, CEVNT_TIMEOUT);
+        }
         memset(&up->last_gpsdate, 0, sizeof(up->last_gpsdate));
     }
     else
@@ -1181,7 +1227,9 @@ nmea_poll(
         pp->lastref = pp->lastrec;
         refclock_receive(peer);
         if (pp->currentstatus > CEVNT_NOMINAL)
+        {
             refclock_report(peer, CEVNT_NOMINAL);
+        }
     }
 
     /*
@@ -1194,7 +1242,9 @@ nmea_poll(
         /* Log & reset counters with extended logging */
         const char* nmea = pp->a_lastcode;
         if (*nmea == '\0')
+        {
             nmea = "(none)";
+        }
         mprintf_clock_stats(
             &peer->srcadr, "%s  %u %u %u %u %u %u",
             nmea,
@@ -1244,8 +1294,10 @@ gps_send(
         /* get checksum and length */
         beg = end = (const u_char*)cmd;
         dcs = 0;
-        while (*end >= ' ' && *end != '*')
+        while ((*end >= ' ') && (*end != '*'))
+        {
             dcs ^= *end++;
+        }
         len = end - beg;
         /* format into output buffer with overflow check */
         len = snprintf(buf, sizeof(buf), "$%.*s*%02X\r\n",
@@ -1268,7 +1320,9 @@ gps_send(
 
     /* send out the whole stuff */
     if (refclock_fdwrite(peer, fd, cmd, len) != len)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
 }
 #endif /* NMEA_WRITE_SUPPORT */
 
@@ -1321,7 +1375,9 @@ field_init(
     cs_r = 0;
     /* some basic input constraints */
     if (dlen < 0)
+    {
         dlen = 0;
+    }
     eptr = cptr + dlen;
     *eptr = '\0';
 
@@ -1339,9 +1395,13 @@ field_init(
 
     /* -*- start character: '^\$' */
     if (*cptr == '\0')
+    {
         return CHECK_EMPTY;
+    }
     if (*cptr++ != '$')
+    {
         return CHECK_INVALID;
+    }
 
     /* -*- advance context beyond start character */
     data->base++;
@@ -1349,40 +1409,60 @@ field_init(
     data->blen--;
 
     /* -*- field name: '[A-Z][A-Z0-9]{4,},' */
-    if (*cptr < 'A' || *cptr > 'Z')
+    if ((*cptr < 'A') || (*cptr > 'Z'))
+    {
         return CHECK_INVALID;
+    }
     cs_l ^= *cptr++;
-    while ((*cptr >= 'A' && *cptr <= 'Z') ||
-           (*cptr >= '0' && *cptr <= '9'))
+    while (((*cptr >= 'A') && (*cptr <= 'Z')) ||
+           ((*cptr >= '0') && (*cptr <= '9')))
+    {
         cs_l ^= *cptr++;
-    if (*cptr != ',' || (cptr - data->base) < NMEA_PROTO_IDLEN)
+    }
+    if ((*cptr != ',') || ((cptr - data->base) < NMEA_PROTO_IDLEN))
+    {
         return CHECK_INVALID;
+    }
     cs_l ^= *cptr++;
 
     /* -*- data: '[^*]*' */
-    while (*cptr && *cptr != '*')
+    while (*cptr && (*cptr != '*'))
+    {
         cs_l ^= *cptr++;
+    }
 
     /* -*- checksum field: (\*[0-9A-F]{2})?$ */
     if (*cptr == '\0')
-        return CHECK_VALID;
-    if (*cptr != '*' || cptr != eptr - 3 ||
-        (cptr - data->base) >= NMEA_PROTO_MAXLEN)
-        return CHECK_INVALID;
-
-    for (cptr++; (tmp = *cptr) != '\0'; cptr++)
     {
-        if (tmp >= '0' && tmp <= '9')
+        return CHECK_VALID;
+    }
+    if ((*cptr != '*') || (cptr != eptr - 3) ||
+        ((cptr - data->base) >= NMEA_PROTO_MAXLEN))
+    {
+        return CHECK_INVALID;
+    }
+
+    for (cptr++; (tmp = *cptr) != '\0'; ++cptr)
+    {
+        if ((tmp >= '0') && (tmp <= '9'))
+        {
             cs_r = (cs_r << 4) + (tmp - '0');
-        else if (tmp >= 'A' && tmp <= 'F')
+        }
+        else if ((tmp >= 'A') && (tmp <= 'F'))
+        {
             cs_r = (cs_r << 4) + (tmp - 'A' + 10);
+        }
         else
+        {
             break;
+        }
     }
 
     /* -*- make sure we are at end of string and csum matches */
-    if (cptr != eptr || cs_l != cs_r)
+    if ((cptr != eptr) || (cs_l != cs_r))
+    {
         return CHECK_INVALID;
+    }
 
     return CHECK_CSVALID;
 }
@@ -1408,7 +1488,7 @@ field_parse(
         data->cidx = 0;
         data->cptr = data->base;
     }
-    while ((fn > data->cidx) && (tmp = *data->cptr) != '\0')
+    while ((fn > data->cidx) && ((tmp = *data->cptr) != '\0'))
     {
         data->cidx += (tmp == ',');
         data->cptr++;
@@ -1452,20 +1532,26 @@ field_wipe(
     do
     {
         fidx = va_arg(va, int);
-        if (fidx >= 0 && fidx <= NMEA_PROTO_FIELDS)
+        if ((fidx >= 0) && (fidx <= NMEA_PROTO_FIELDS))
         {
             cp = field_parse(data, fidx);
         }
         else
         {
             cp = data->base + data->blen;
-            if (data->blen >= 3 && cp[-3] == '*')
+            if ((data->blen >= 3) && (cp[-3] == '*'))
+            {
                 cp -= 2;
+            }
         }
-        for (; '\0' != *cp && '*' != *cp && ',' != *cp; cp++)
+        for (; ('\0' != *cp) && ('*' != *cp) && (',' != *cp); ++cp)
+        {
             if ('.' != *cp)
+            {
                 *cp = '_';
-    } while (fcnt-- && fidx >= 0);
+            }
+        }
+    } while (fcnt-- && (fidx >= 0));
     va_end(va);
 }
 
@@ -1484,8 +1570,12 @@ static int field_length(UCC* cp, unsigned int nfields)
     char const* ep = (char const*)cp;
     ep = strpbrk(ep, s_eof_chars);
     if (ep && nfields)
-        while (--nfields && ep && *ep == ',')
+    {
+        while (--nfields && ep && (*ep == ','))
+        {
             ep = strpbrk(ep + 1, s_eof_chars);
+        }
+    }
     return (ep)
                ? (int)((UCC*)ep - cp)
                : (int)strlen((char const*)cp);
@@ -1526,14 +1616,15 @@ static int _parse_num2d(UCC* cp, UCC** ep, uint16_t* into)
 /* /[[:digit:]]+/ --> uint16_t */
 static int _parse_u16(UCC* cp, UCC** ep, uint16_t* into, unsigned int ndig)
 {
-    uint16_t num = 0;
+    uint16_t num = 0U;
     int rc = FALSE;
     if (isdigit(*cp) && ndig)
     {
         rc = TRUE;
         do
+        {
             num = (num * 10) + (*cp - '0');
-        while (isdigit(*++cp) && --ndig);
+        } while (isdigit(*++cp) && --ndig);
         *into = num;
     }
     *ep = cp;
@@ -1543,14 +1634,15 @@ static int _parse_u16(UCC* cp, UCC** ep, uint16_t* into, unsigned int ndig)
 /* /[[:digit:]]+/ --> uint32_t */
 static int _parse_u32(UCC* cp, UCC** ep, uint32_t* into, unsigned int ndig)
 {
-    uint32_t num = 0;
+    uint32_t num = 0U;
     int rc = FALSE;
     if (isdigit(*cp) && ndig)
     {
         rc = TRUE;
         do
+        {
             num = (num * 10) + (*cp - '0');
-        while (isdigit(*++cp) && --ndig);
+        } while (isdigit(*++cp) && --ndig);
         *into = num;
     }
     *ep = cp;
@@ -1565,7 +1657,7 @@ static int _parse_u32(UCC* cp, UCC** ep, uint32_t* into, unsigned int ndig)
  */
 static int _parse_frac(UCC* cp, UCC** ep, l_fp* into)
 {
-    static const uint32_t powtab[10] = {
+    static const uint32_t powtab[10U] = {
         0,
         100000000, 10000000, 1000000,
         100000, 10000, 1000,
@@ -1576,12 +1668,16 @@ static int _parse_frac(UCC* cp, UCC** ep, l_fp* into)
     ZERO(ts);
     if (*cp == '.')
     {
-        uint32_t fval = 0;
+        uint32_t fval = 0U;
         UCC* sp = cp + 1;
         if (_parse_u32(sp, &cp, &fval, 9))
+        {
             ts.tv_nsec = fval * powtab[(size_t)(cp - sp)];
+        }
         while (isdigit(*cp))
+        {
             ++cp;
+        }
     }
 
     *ep = cp;
@@ -1594,7 +1690,7 @@ static int _parse_frac(UCC* cp, UCC** ep, l_fp* into)
  */
 static int _parse_time(UCC* cp, UCC** ep, TCivilDate* into)
 {
-    uint16_t s = 0, m = 0, h = 0;
+    uint16_t s = 0U, m = 0, h = 0;
     int rc;
     UCC* xp = cp;
 
@@ -1647,7 +1743,7 @@ static int _parse_date1(UCC* cp, UCC** ep, TCivilDate* into)
  */
 static int _parse_date3(UCC* cp, UCC** ep, TCivilDate* into)
 {
-    uint16_t d = 0, m = 0, y = 0;
+    uint16_t d = 0U, m = 0, y = 0;
     int rc;
     UCC* xp = cp;
 
@@ -1685,7 +1781,7 @@ parse_qual(
     char tag,
     int inv)
 {
-    static const u_char table[2] = {
+    static const u_char table[2U] = {
         LEAP_NOTINSYNC, LEAP_NOWARNING
     };
 
@@ -1762,8 +1858,8 @@ parse_gpsw(
     int timeidx,
     int leapidx)
 {
-    uint32_t secs = 0;
-    uint16_t week = 0, leap = 0;
+    uint32_t secs = 0U;
+    uint16_t week = 0U, leap = 0;
     l_fp fofs;
     int rc;
 
@@ -1772,7 +1868,7 @@ parse_gpsw(
 
     ZERO(fofs);
     rc = _parse_u16(dpw, &dpw, &week, 5) && _parse_eof(dpw, &dpw) && _parse_u32(dps, &dps, &secs, 9) && _parse_frac(dps, &dps, &fofs) && _parse_eof(dps, &dps) && (secs < 7 * SECSPERDAY);
-    if (rc && leapidx > 0)
+    if (rc && (leapidx > 0))
     {
         UCC* dpl = (UCC*)field_parse(rd, leapidx);
         rc = _parse_u16(dpl, &dpl, &leap, 5) && _parse_eof(dpl, &dpl);
@@ -1830,7 +1926,7 @@ nmead_open(
     int fd = -1; /* result file descriptor */
 
 #ifdef HAVE_READLINK
-    char host[80];            /* link target buffer	*/
+    char host[80U];           /* link target buffer	*/
     char* port;               /* port name or number	*/
     int rc;                   /* result code (several)*/
     int sh;                   /* socket handle	*/
@@ -1843,13 +1939,17 @@ nmead_open(
     /* try to read as link, make sure no overflow occurs */
     rc = readlink(device, host, sizeof(host));
     if ((size_t)rc >= sizeof(host))
-        return fd;   /* error / overflow / truncation */
+    {
+        return fd;
+    } /* error / overflow / truncation */
     host[rc] = '\0'; /* readlink does not place NUL	*/
 
     /* get port */
     port = strchr(host, ':');
     if (!port)
-        return fd;  /* not 'host:port' syntax ? */
+    {
+        return fd;
+    } /* not 'host:port' syntax ? */
     *port++ = '\0'; /* put in separator */
 
     /* get address infos and try to open socket
@@ -1864,23 +1964,33 @@ nmead_open(
     ai_hint.ai_protocol = IPPROTO_TCP;
     ai_hint.ai_socktype = SOCK_STREAM;
     if (getaddrinfo(host, port, &ai_hint, &ai_list))
+    {
         return fd;
+    }
 
     for (ai = ai_list; ai && (fd == -1); ai = ai->ai_next)
     {
         sh = socket(ai->ai_family, ai->ai_socktype,
                     ai->ai_protocol);
         if (INVALID_SOCKET == sh)
+        {
             continue;
+        }
         rc = connect(sh, ai->ai_addr, ai->ai_addrlen);
         if (-1 != rc)
+        {
             fd = sh;
+        }
         else
+        {
             close(sh);
+        }
     }
     freeaddrinfo(ai_list);
     if (fd != -1)
+    {
         make_socket_nonblocking(fd);
+    }
 #else
     fd = -1;
 #endif

@@ -92,7 +92,7 @@ const bool
 timeval_isValid(struct timeval V)
 {
 
-    return V.tv_usec >= 0 && V.tv_usec < 1000000;
+    return (V.tv_usec >= 0) && (V.tv_usec < 1000000);
 }
 
 
@@ -113,7 +113,9 @@ bool AssertTimevalClose(const struct timeval m, const struct timeval n, const st
 
     diff = abs_tval(sub_tval(m, n));
     if (cmp_tval(limit, diff) >= 0)
+    {
         return TRUE;
+    }
 
     printf("m_expr which is %lld.%06lu \nand\n"
            "n_expr which is %lld.%06lu\nare not close; diff=%lld.%06luusec\n",
@@ -601,7 +603,7 @@ void test_Helpers2(void)
             {
                 y = x;
                 y.tv_usec += i;
-                if (i >= -2 && i <= 2)
+                if ((i >= -2) && (i <= 2))
                 {
                     TEST_ASSERT_TRUE(AssertTimevalClose(x, y, limit)); // ASSERT_PRED_FORMAT2(isClose, x, y);
                 }
@@ -629,7 +631,7 @@ void test_ToLFPbittest(void)
 {
     l_fp lfpClose = l_fp_init(0, 1);
 
-    u_int32 i = 0;
+    u_int32 i = 0U;
     for (i = 0; i < 1000000; ++i)
     {
         struct timeval a = timeval_init(1, i);
@@ -710,7 +712,7 @@ void test_FromLFPbittest(void)
     // Not *exactly* a bittest, because 2**32 tests would take a
     // really long time even on very fast machines! So we do test
     // every 1000 fractional units.
-    u_int32 tsf = 0;
+    u_int32 tsf = 0U;
 
     for (tsf = 0; tsf < ~((u_int32)(1000)); tsf += 1000)
     {
@@ -770,7 +772,7 @@ void test_FromLFPrelNeg(void)
 void test_LFProundtrip(void)
 {
     int32_t t = -1;
-    u_int32 i = 5;
+    u_int32 i = 5U;
 
     for (t = -1; t < 2; ++t)
         for (i = 5; i < 1000000; i += 11)

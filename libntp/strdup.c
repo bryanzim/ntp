@@ -19,7 +19,9 @@ char* strdup(
     REQUIRE(s);
     octets = strlen(s) + 1;
     if ((cp = malloc(octets)) == NULL)
+    {
         return NULL;
+    }
     memcpy(cp, s, octets);
 
     return cp;
@@ -31,7 +33,7 @@ char* _strupr(char* s)
 {
     char* pch;
 
-    for (pch = s; '\0' != *pch; pch++)
+    for (pch = s; '\0' != *pch; ++pch)
     {
         *pch = toupper((u_char)*pch);
     }

@@ -138,7 +138,7 @@ typedef struct
 { /*  Almanac health page (25) parameters  */
     unsigned char
         WN_a,
-        SV_health[32], t_oa;
+        SV_health[32U], t_oa;
 } ALH_PARMS;
 
 typedef struct
@@ -303,8 +303,8 @@ short rpt_0x40(TSIPPKT* rpt, unsigned char* sv_prn, short* week_num,
                float* M_0);
 short rpt_0x41(TSIPPKT* rpt, float* time_of_week, float* UTC_offset,
                short* week_num);
-short rpt_0x42(TSIPPKT* rpt, float ECEF_pos[3], float* time_of_fix);
-short rpt_0x43(TSIPPKT* rpt, float ECEF_vel[3], float* freq_offset,
+short rpt_0x42(TSIPPKT* rpt, float ECEF_pos[3U], float* time_of_fix);
+short rpt_0x43(TSIPPKT* rpt, float ECEF_vel[3U], float* freq_offset,
                float* time_of_fix);
 short rpt_0x45(TSIPPKT* rpt, unsigned char* major_nav_version,
                unsigned char* minor_nav_version, unsigned char* nav_day,
@@ -333,7 +333,7 @@ short rpt_0x54(TSIPPKT* rpt, float* clock_bias, float* freq_offset,
                float* time_of_fix);
 short rpt_0x55(TSIPPKT* rpt, unsigned char* pos_code, unsigned char* vel_code,
                unsigned char* time_code, unsigned char* aux_code);
-short rpt_0x56(TSIPPKT* rpt, float vel_ENU[3], float* freq_offset,
+short rpt_0x56(TSIPPKT* rpt, float vel_ENU[3U], float* freq_offset,
                float* time_of_fix);
 short rpt_0x57(TSIPPKT* rpt, unsigned char* source_code,
                unsigned char* diag_code, short* week_num, float* time_of_fix);
@@ -341,7 +341,7 @@ short rpt_0x58(TSIPPKT* rpt, unsigned char* op_code, unsigned char* data_type,
                unsigned char* sv_prn, unsigned char* data_length,
                unsigned char* data_packet);
 short rpt_0x59(TSIPPKT* rpt, unsigned char* code_type,
-               unsigned char status_code[32]);
+               unsigned char status_code[32U]);
 short rpt_0x5A(TSIPPKT* rpt, unsigned char* sv_prn, float* sample_length,
                float* signal_level, float* code_phase, float* Doppler,
                double* time_of_fix);
@@ -358,7 +358,7 @@ short rpt_0x6D(TSIPPKT* rpt, unsigned char* manual_mode, unsigned char* nsvs,
                unsigned char* ndim, unsigned char sv_prn[], float* pdop,
                float* hdop, float* vdop, float* tdop);
 short rpt_0x82(TSIPPKT* rpt, unsigned char* diff_mode);
-short rpt_0x83(TSIPPKT* rpt, double ECEF_pos[3], double* clock_bias,
+short rpt_0x83(TSIPPKT* rpt, double ECEF_pos[3U], double* clock_bias,
                float* time_of_fix);
 short rpt_0x84(TSIPPKT* rpt, double* lat, double* lon, double* alt,
                double* clock_bias, float* time_of_fix);
@@ -376,9 +376,9 @@ short rpt_0x8F0B(TSIPPKT* rpt, unsigned short* event, double* tow,
                  unsigned char* date, unsigned char* month, short* year,
                  unsigned char* dim_mode, short* utc_offset, double* bias, double* drift,
                  float* bias_unc, float* dr_unc, double* lat, double* lon, double* alt,
-                 char sv_id[8]);
-short rpt_0x8F14(TSIPPKT* rpt, short* datum_idx, double datum_coeffs[5]);
-short rpt_0x8F15(TSIPPKT* rpt, short* datum_idx, double datum_coeffs[5]);
+                 char sv_id[8U]);
+short rpt_0x8F14(TSIPPKT* rpt, short* datum_idx, double datum_coeffs[5U]);
+short rpt_0x8F15(TSIPPKT* rpt, short* datum_idx, double datum_coeffs[5U]);
 short rpt_0x8F20(TSIPPKT* rpt, unsigned char* info, double* lat,
                  double* lon, double* alt, double vel_enu[], double* time_of_fix,
                  short* week_num, unsigned char* nsvs, unsigned char sv_prn[],
@@ -488,7 +488,7 @@ ripencc_start(int unit, struct peer* peer)
 {
     register struct ripencc_unit* up;
     struct refclockproc* pp;
-    char device[40];
+    char device[40U];
     int fd;
     struct termios tio;
     TSIPPKT spt;
@@ -621,7 +621,9 @@ ripencc_start(int unit, struct peer* peer)
 
 #ifdef DEBUG_NCC
     if (debug)
+    {
         printf("ripencc_start: success\n");
+    }
 #endif /* DEBUG_NCC */
 
     /*
@@ -684,9 +686,13 @@ int ripencc_ppsapi(
     }
     memset(&up->pps_params, 0, sizeof(pps_params_t));
     if (enb_clear)
+    {
         up->pps_params.mode = capability & PPS_CAPTURECLEAR;
+    }
     else
+    {
         up->pps_params.mode = capability & PPS_CAPTUREASSERT;
+    }
     if (!up->pps_params.mode)
     {
         msyslog(LOG_ERR,
@@ -754,25 +760,33 @@ ripencc_get_pps_ts(
      * Convert the timespec nanoseconds field to ntp l_fp units.
      */
     if (up->handle == 0)
+    {
         return (0);
+    }
     timeout.tv_sec = 0;
     timeout.tv_nsec = 0;
     memcpy(&pps_info, &up->pps_info, sizeof(pps_info_t));
     if (time_pps_fetch(up->handle, PPS_TSFMT_TSPEC, &up->pps_info,
                        &timeout) < 0)
+    {
         return (0);
+    }
     if (up->pps_params.mode & PPS_CAPTUREASSERT)
     {
         if (pps_info.assert_sequence ==
             up->pps_info.assert_sequence)
+        {
             return (0);
+        }
         ts = up->pps_info.assert_timestamp;
     }
     else if (up->pps_params.mode & PPS_CAPTURECLEAR)
     {
         if (pps_info.clear_sequence ==
             up->pps_info.clear_sequence)
+        {
             return (0);
+        }
         ts = up->pps_info.clear_timestamp;
     }
     else
@@ -780,7 +794,9 @@ ripencc_get_pps_ts(
         return (0);
     }
     if ((up->ts.tv_sec == ts.tv_sec) && (up->ts.tv_nsec == ts.tv_nsec))
+    {
         return (0);
+    }
     up->ts = ts;
 
     tstmp.l_ui = ts.tv_sec + JAN_1970;
@@ -811,11 +827,15 @@ ripencc_shutdown(int unit, struct peer* peer)
     if (up != NULL)
     {
         if (up->handle != 0)
+        {
             time_pps_destroy(up->handle);
+        }
         free(up);
     }
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
 
     return;
 }
@@ -832,14 +852,20 @@ ripencc_poll(int unit, struct peer* peer)
 
 #ifdef DEBUG_NCC
     if (debug)
+    {
         fprintf(stderr, "ripencc_poll(%d)\n", unit);
+    }
 #endif /* DEBUG_NCC */
     pp = peer->procptr;
     up = pp->unitptr;
     if (up->pollcnt == 0)
+    {
         refclock_report(peer, CEVNT_TIMEOUT);
+    }
     else
+    {
         up->pollcnt--;
+    }
 
     pp->polls++;
     up->polled = 1;
@@ -858,7 +884,7 @@ static void
 ripencc_send(struct peer* peer, TSIPPKT spt)
 {
     unsigned char *ip, *op;
-    unsigned char obuf[512];
+    unsigned char obuf[512U];
 
 #ifdef DEBUG_RAW
     {
@@ -868,7 +894,9 @@ ripencc_send(struct peer* peer, TSIPPKT spt)
         pp = peer->procptr;
         up = pp->unitptr;
         if (debug)
+        {
             printf("ripencc_send(%d, %02X)\n", up->unit, cmd);
+        }
     }
 #endif /* DEBUG_RAW */
 
@@ -887,8 +915,10 @@ ripencc_send(struct peer* peer, TSIPPKT spt)
             return;
         }
 
-        if (*ip == 0x10) /* byte stuffing */
+        if (*ip == 0x10)
+        { /* byte stuffing */
             *op++ = 0x10;
+        }
         *op++ = *ip++;
     }
 
@@ -906,7 +936,9 @@ ripencc_send(struct peer* peer, TSIPPKT spt)
         {
             printf(" %02X", *cp);
             if (i % 10 == 0)
+            {
                 printf("\n");
+            }
         }
         printf("\n");
     }
@@ -953,7 +985,9 @@ ripencc_receive(struct recvbuf* rbufp)
 
 #ifdef DEBUG_RAW
     if (debug)
+    {
         fprintf(stderr, "ripencc_receive(%d)\n", up->unit);
+    }
 #endif /* DEBUG_RAW */
 
 #ifdef DEBUG_RAW
@@ -969,7 +1003,9 @@ ripencc_receive(struct recvbuf* rbufp)
         {
             printf(" %02X", *cp);
             if (i % 10 == 0)
+            {
                 printf("\n");
+            }
         }
         printf("\n");
     }
@@ -984,7 +1020,9 @@ ripencc_receive(struct recvbuf* rbufp)
         tsip_input_proc(&rpt, (unsigned char)*cp++);
 
         if (rpt.status != TSIP_PARSED_FULL)
+        {
             continue;
+        }
 
         switch (rpt.code)
         {
@@ -1013,7 +1051,7 @@ ripencc_receive(struct recvbuf* rbufp)
                 /*   if (up->polled && ns_since_pps > -1 && ns_since_pps < 150) { */
 
                 ns_since_pps = 200;
-                if (up->polled && ns_since_pps < 150)
+                if (up->polled && (ns_since_pps < 150))
                 {
                     msyslog(LOG_INFO, "%s(): up->polled",
                             __FUNCTION__);
@@ -1044,7 +1082,9 @@ ripencc_receive(struct recvbuf* rbufp)
                     pp->nsec = 0;
                 }
                 else
+                {
                     msyslog(LOG_INFO, "%s(): ripencc_get_pps_ts returns failure", __FUNCTION__);
+                }
 
 
                 if (!up->polled)
@@ -1483,7 +1523,7 @@ parse0x8FAD(
     unsigned hour, minute, second;
     unsigned char trackstat, utcflags;
 
-    static char logbuf[1024]; /* logging string buffer */
+    static char logbuf[1024U]; /* logging string buffer */
     int i;
     unsigned char* buf;
 
@@ -1491,13 +1531,17 @@ parse0x8FAD(
     pp = peer->procptr;
 
     if (rpt->len != 22)
+    {
         return (-1);
+    }
 
     if (bGetShort(&buf[1U]) != 0)
     {
 #ifdef DEBUG_NCC
         if (debug)
+        {
             printf("parse0x8FAD: event count != 0\n");
+        }
 #endif /* DEBUG_NCC */
         return (-1);
     }
@@ -1506,7 +1550,9 @@ parse0x8FAD(
     {
 #ifdef DEBUG_NCC
         if (debug)
+        {
             printf("parse0x8FAD: fracsecs != 0\n");
+        }
 #endif /* DEBUG_NCC */
         return (-1);
     }
@@ -1526,13 +1572,17 @@ parse0x8FAD(
 
 #ifdef DEBUG_NCC
     if (debug)
+    {
         puts(logbuf);
+    }
 #endif /* DEBUG_NCC */
 
     record_clock_stats(&peer->srcadr, logbuf);
 
     if (!utcflags & UTCF_UTC_AVAIL)
+    {
         return (-1);
+    }
 
     /* poll for UTC parameters once and then if UTC flag changed */
     up = (struct ripencc_unit*)pp->unitptr;
@@ -1550,27 +1600,39 @@ parse0x8FAD(
      * No offense, just defense ;-).
      */
     if (second == 60)
+    {
         return (-1);
+    }
 
     /* now check and convert the time we received */
 
     pp->year = year;
-    if (month < 1 || month > 12 || day < 1 || day > 31)
+    if ((month < 1) || (month > 12) || (day < 1) || (day > 31))
+    {
         return (-1);
+    }
 
     if (pp->year % 4)
     { /* XXX: use is_leapyear() ? */
         if (day > day1tab[month - 1])
+        {
             return (-1);
-        for (i = 0; i < month - 1; i++)
+        }
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day1tab[i];
+        }
     }
     else
     {
         if (day > day2tab[month - 1])
+        {
             return (-1);
-        for (i = 0; i < month - 1; i++)
+        }
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day2tab[i];
+        }
     }
     pp->day = day;
     pp->hour = hour;
@@ -1578,12 +1640,16 @@ parse0x8FAD(
     pp->second = second;
     pp->nsec = 0;
 
-    if ((utcflags & UTCF_LEAP_PNDG) && up->leapdelta != 0)
+    if ((utcflags & UTCF_LEAP_PNDG) && (up->leapdelta != 0))
+    {
         pp->leap = (up->leapdelta > 0)
                        ? LEAP_ADDSECOND
                        : LEAP_DELSECOND;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
 
     return (0);
 }
@@ -1611,9 +1677,9 @@ int parse0x8F0B(
     short lat_deg, lon_deg;
     float lat_min, lon_min;
     unsigned char north_south, east_west;
-    char sv[9];
+    char sv[9U];
 
-    static char logbuf[1024]; /* logging string buffer */
+    static char logbuf[1024U]; /* logging string buffer */
     unsigned char b;
     int i;
     unsigned char* buf;
@@ -1623,11 +1689,14 @@ int parse0x8F0B(
     pp = peer->procptr;
 
     if (rpt->len != 74)
+    {
         return (-1);
+    }
 
     if (bGetShort(&buf[1U]) != 0)
+    {
         return (-1);
-    ;
+    };
 
     tow = bGetDouble(&buf[3U]);
 
@@ -1642,7 +1711,9 @@ int parse0x8F0B(
     else
     {
         if (tow < 604799.9)
+        {
             tow = tow + .00000001;
+        }
         second = (unsigned int)fmod(tow, 60.);
         minute = (unsigned int)fmod(tow / 60., 60.);
         hour = (unsigned int)fmod(tow / 3600., 24.);
@@ -1686,7 +1757,7 @@ int parse0x8F0B(
     lon_deg = (short)lon;
     lon_min = (lon - lon_deg) * 60.0;
 
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8; ++i)
     {
         sv[i] = buf[i + 66];
         if (sv[i])
@@ -1703,12 +1774,14 @@ int parse0x8F0B(
     sprintf(logbuf, "C1 %02d%02d%04d %02d%02d%02d %d %7.0f %.1f %.0f %.1f %d %02d%09.6f %c %02d%09.6f %c %.0f  %d %d %d %d %d %d %d %d",
             day, month, year, hour, minute, second, mode, bias, biasunc,
             rate, rateunc, utcoff, lat_deg, lat_min, north_south, lon_deg,
-            lon_min, east_west, alt, sv[0], sv[1], sv[2], sv[3], sv[4],
-            sv[5U], sv[6], sv[7]);
+            lon_min, east_west, alt, sv[0U], sv[1U], sv[2U], sv[3U], sv[4U],
+            sv[5U], sv[6U], sv[7U]);
 
 #ifdef DEBUG_NCC
     if (debug)
+    {
         puts(logbuf);
+    }
 #endif /* DEBUG_NCC */
 
     record_clock_stats(&peer->srcadr, logbuf);
@@ -1724,12 +1797,14 @@ int parseany(
     TSIPPKT* rpt,
     struct peer* peer)
 {
-    static char logbuf[1024]; /* logging string buffer */
+    static char logbuf[1024U]; /* logging string buffer */
 
     TranslateTSIPReportToText(rpt, logbuf); /* anything else */
 #ifdef DEBUG_NCC
     if (debug)
+    {
         puts(&logbuf[1U]);
+    }
 #endif /* DEBUG_NCC */
     record_clock_stats(&peer->srcadr, &logbuf[1U]);
     return (0);
@@ -1756,13 +1831,15 @@ int parse0x4F(
     float a1, tot;
     int dt_ls, wn_t, wn_lsf, dn, dt_lsf;
 
-    static char logbuf[1024]; /* logging string buffer */
+    static char logbuf[1024U]; /* logging string buffer */
     unsigned char* buf;
 
     buf = rpt->buf;
 
     if (rpt->len != 26)
+    {
         return (-1);
+    }
     a0 = bGetDouble(buf);
     a1 = bGetSingle(&buf[8U]);
     dt_ls = bGetShort(&buf[12U]);
@@ -1777,7 +1854,9 @@ int parse0x4F(
 
 #ifdef DEBUG_NCC
     if (debug)
+    {
         puts(logbuf);
+    }
 #endif /* DEBUG_NCC */
 
     record_clock_stats(&peer->srcadr, logbuf);
@@ -1802,20 +1881,26 @@ int parse0x5C(
     unsigned char prn, channel, aqflag, ephstat;
     float snr, azinuth, elevation;
 
-    static char logbuf[1024]; /* logging string buffer */
+    static char logbuf[1024U]; /* logging string buffer */
     unsigned char* buf;
 
     buf = rpt->buf;
 
     if (rpt->len != 24)
+    {
         return (-1);
+    }
 
     prn = buf[0U];
     channel = (unsigned char)(buf[1U] >> 3);
     if (channel == 0x10)
+    {
         channel = 2;
+    }
     else
+    {
         channel++;
+    }
     aqflag = buf[2U];
     ephstat = buf[3U];
     snr = bGetSingle(&buf[4U]);
@@ -1827,7 +1912,9 @@ int parse0x5C(
 
 #ifdef DEBUG_NCC
     if (debug)
+    {
         puts(logbuf);
+    }
 #endif /* DEBUG_NCC */
 
     record_clock_stats(&peer->srcadr, logbuf);
@@ -1910,8 +1997,10 @@ tsip_input_proc(
 {
     unsigned char newbyte;
 
-    if (inbyte < 0 || inbyte > 0xFF)
+    if ((inbyte < 0) || (inbyte > 0xFF))
+    {
         return;
+    }
 
     newbyte = (unsigned char)(inbyte);
     switch (rpt->status)
@@ -2015,7 +2104,9 @@ short rpt_0x3D(
     buf = rpt->buf;
 
     if (rpt->len != 6)
+    {
         return TRUE;
+    }
     *tx_baud_index = buf[0U];
     *rx_baud_index = buf[1U];
     *char_format_index = buf[2U];
@@ -2045,7 +2136,9 @@ short rpt_0x40(
     buf = rpt->buf;
 
     if (rpt->len != 39)
+    {
         return TRUE;
+    }
     *sv_prn = buf[0U];
     *t_zc = bGetSingle(&buf[1U]);
     *week_num = bGetShort(&buf[5U]);
@@ -2071,7 +2164,9 @@ short rpt_0x41(
     buf = rpt->buf;
 
     if (rpt->len != 10)
+    {
         return TRUE;
+    }
     *time_of_week = bGetSingle(buf);
     *week_num = bGetShort(&buf[4U]);
     *UTC_offset = bGetSingle(&buf[6U]);
@@ -2081,14 +2176,16 @@ short rpt_0x41(
 /* position in ECEF, single precision */
 short rpt_0x42(
     TSIPPKT* rpt,
-    float pos_ECEF[3],
+    float pos_ECEF[3U],
     float* time_of_fix)
 {
     unsigned char* buf;
     buf = rpt->buf;
 
     if (rpt->len != 16)
+    {
         return TRUE;
+    }
     pos_ECEF[0U] = bGetSingle(buf);
     pos_ECEF[1U] = bGetSingle(&buf[4U]);
     pos_ECEF[2U] = bGetSingle(&buf[8U]);
@@ -2099,7 +2196,7 @@ short rpt_0x42(
 /* velocity in ECEF, single precision */
 short rpt_0x43(
     TSIPPKT* rpt,
-    float ECEF_vel[3],
+    float ECEF_vel[3U],
     float* freq_offset,
     float* time_of_fix)
 {
@@ -2107,7 +2204,9 @@ short rpt_0x43(
     buf = rpt->buf;
 
     if (rpt->len != 20)
+    {
         return TRUE;
+    }
     ECEF_vel[0U] = bGetSingle(buf);
     ECEF_vel[1U] = bGetSingle(&buf[4U]);
     ECEF_vel[2U] = bGetSingle(&buf[8U]);
@@ -2134,7 +2233,9 @@ short rpt_0x45(
     buf = rpt->buf;
 
     if (rpt->len != 10)
+    {
         return TRUE;
+    }
     *major_nav_version = buf[0U];
     *minor_nav_version = buf[1U];
     *nav_day = buf[2U];
@@ -2158,7 +2259,9 @@ short rpt_0x46(
     buf = rpt->buf;
 
     if (rpt->len != 2)
+    {
         return TRUE;
+    }
     *status1 = buf[0U];
     *status2 = buf[1U];
     return FALSE;
@@ -2176,12 +2279,14 @@ short rpt_0x47(
     buf = rpt->buf;
 
     if (rpt->len != 1 + 5 * buf[0U])
-        return TRUE;
-    *nsvs = buf[0U];
-    for (isv = 0; isv < (*nsvs); isv++)
     {
-        sv_prn[isv] = buf[5 * isv + 1];
-        snr[isv] = bGetSingle(&buf[5 * isv + 2]);
+        return TRUE;
+    }
+    *nsvs = buf[0U];
+    for (isv = 0; isv < (*nsvs); ++isv)
+    {
+        sv_prn[isv] = buf[5U * isv + 1];
+        snr[isv] = bGetSingle(&buf[5U * isv + 2]);
     }
     return FALSE;
 }
@@ -2195,7 +2300,9 @@ short rpt_0x48(
     buf = rpt->buf;
 
     if (rpt->len != 22)
+    {
         return TRUE;
+    }
     memcpy(message, buf, 22);
     message[22U] = 0;
     return FALSE;
@@ -2211,9 +2318,13 @@ short rpt_0x49(
     buf = rpt->buf;
 
     if (rpt->len != 32)
+    {
         return TRUE;
-    for (i = 0; i < 32; i++)
+    }
+    for (i = 0; i < 32; ++i)
+    {
         sv_health[i] = buf[i];
+    }
     return FALSE;
 }
 
@@ -2230,7 +2341,9 @@ short rpt_0x4A(
     buf = rpt->buf;
 
     if (rpt->len != 20)
+    {
         return TRUE;
+    }
     *lat = bGetSingle(buf);
     *lon = bGetSingle(&buf[4U]);
     *alt = bGetSingle(&buf[8U]);
@@ -2251,7 +2364,9 @@ short rpt_0x4A_2(
     buf = rpt->buf;
 
     if (rpt->len != 9)
+    {
         return TRUE;
+    }
     *alt = bGetSingle(buf);
     *dummy = bGetSingle(&buf[4U]);
     *alt_flag = buf[8U];
@@ -2269,7 +2384,9 @@ short rpt_0x4B(
     buf = rpt->buf;
 
     if (rpt->len != 3)
+    {
         return TRUE;
+    }
     *machine_id = buf[0U];
     *status3 = buf[1U];
     *status4 = buf[2U];
@@ -2289,7 +2406,9 @@ short rpt_0x4C(
     buf = rpt->buf;
 
     if (rpt->len != 17)
+    {
         return TRUE;
+    }
     *dyn_code = buf[0U];
     *el_mask = bGetSingle(&buf[1U]);
     *snr_mask = bGetSingle(&buf[5U]);
@@ -2307,7 +2426,9 @@ short rpt_0x4D(
     buf = rpt->buf;
 
     if (rpt->len != 4)
+    {
         return TRUE;
+    }
     *osc_offset = bGetSingle(buf);
     return FALSE;
 }
@@ -2321,7 +2442,9 @@ short rpt_0x4E(
     buf = rpt->buf;
 
     if (rpt->len != 1)
+    {
         return TRUE;
+    }
     *response = buf[0U];
     return FALSE;
 }
@@ -2342,7 +2465,9 @@ short rpt_0x4F(
     buf = rpt->buf;
 
     if (rpt->len != 26)
+    {
         return TRUE;
+    }
     *a0 = bGetDouble(buf);
     *a1 = bGetSingle(&buf[8U]);
     *dt_ls = bGetShort(&buf[12U]);
@@ -2366,7 +2491,9 @@ short rpt_0x54(
     buf = rpt->buf;
 
     if (rpt->len != 12)
+    {
         return TRUE;
+    }
     *clock_bias = bGetSingle(buf);
     *freq_offset = bGetSingle(&buf[4U]);
     *time_of_fix = bGetSingle(&buf[8U]);
@@ -2385,7 +2512,9 @@ short rpt_0x55(
     buf = rpt->buf;
 
     if (rpt->len != 4)
+    {
         return TRUE;
+    }
     *pos_code = buf[0U];
     *vel_code = buf[1U];
     *time_code = buf[2U];
@@ -2396,7 +2525,7 @@ short rpt_0x55(
 /* velocity in east-north-up coordinates */
 short rpt_0x56(
     TSIPPKT* rpt,
-    float vel_ENU[3],
+    float vel_ENU[3U],
     float* freq_offset,
     float* time_of_fix)
 {
@@ -2404,7 +2533,9 @@ short rpt_0x56(
     buf = rpt->buf;
 
     if (rpt->len != 20)
+    {
         return TRUE;
+    }
     /* east */
     vel_ENU[0U] = bGetSingle(buf);
     /* north */
@@ -2428,7 +2559,9 @@ short rpt_0x57(
     buf = rpt->buf;
 
     if (rpt->len != 8)
+    {
         return TRUE;
+    }
     *source_code = buf[0U];
     *diag_code = buf[1U];
     *time_of_fix = bGetSingle(&buf[2U]);
@@ -2457,9 +2590,13 @@ short rpt_0x58(
     if (buf[0U] == 2)
     {
         if (rpt->len < 4)
+        {
             return TRUE;
+        }
         if (rpt->len != 4 + buf[3U])
+        {
             return TRUE;
+        }
     }
     else if (rpt->len != 3)
     {
@@ -2478,7 +2615,9 @@ short rpt_0x58(
         case 2:
             /* Almanac */
             if (*data_length != sizeof(ALM_INFO))
+            {
                 return TRUE;
+            }
             alminfo = (ALM_INFO*)data_packet;
             alminfo->t_oa_raw = buf4[0U];
             alminfo->SV_health = buf4[1U];
@@ -2504,7 +2643,9 @@ short rpt_0x58(
         case 3:
             /* Almanac health page */
             if (*data_length != sizeof(ALH_PARMS) + 3)
+            {
                 return TRUE;
+            }
 
             /* this record is returned raw */
             memcpy(data_packet, buf4, dl);
@@ -2513,7 +2654,9 @@ short rpt_0x58(
         case 4:
             /* Ionosphere */
             if (*data_length != sizeof(ION_INFO) + 8)
+            {
                 return TRUE;
+            }
             ioninfo = (ION_INFO*)data_packet;
             ioninfo->alpha_0 = bGetSingle(&buf4[8U]);
             ioninfo->alpha_1 = bGetSingle(&buf4[12U]);
@@ -2528,7 +2671,9 @@ short rpt_0x58(
         case 5:
             /* UTC */
             if (*data_length != sizeof(UTC_INFO) + 13)
+            {
                 return TRUE;
+            }
             utcinfo = (UTC_INFO*)data_packet;
             utcinfo->A_0 = bGetDouble(&buf4[13U]);
             utcinfo->A_1 = bGetSingle(&buf4[21U]);
@@ -2543,7 +2688,9 @@ short rpt_0x58(
         case 6:
             /* Ephemeris */
             if (*data_length != sizeof(NAV_INFO) - 1)
+            {
                 return TRUE;
+            }
 
             navinfo = (NAV_INFO*)data_packet;
 
@@ -2596,17 +2743,21 @@ short rpt_0x58(
 short rpt_0x59(
     TSIPPKT* rpt,
     unsigned char* code_type,
-    unsigned char status_code[32])
+    unsigned char status_code[32U])
 {
     short iprn;
     unsigned char* buf;
     buf = rpt->buf;
 
     if (rpt->len != 33)
+    {
         return TRUE;
+    }
     *code_type = buf[0U];
-    for (iprn = 0; iprn < 32; iprn++)
+    for (iprn = 0; iprn < 32; ++iprn)
+    {
         status_code[iprn] = buf[iprn + 1];
+    }
     return FALSE;
 }
 
@@ -2624,7 +2775,9 @@ short rpt_0x5A(
     buf = rpt->buf;
 
     if (rpt->len != 25)
+    {
         return TRUE;
+    }
     *sv_prn = buf[0U];
     *sample_length = bGetSingle(&buf[1U]);
     *signal_level = bGetSingle(&buf[5U]);
@@ -2649,7 +2802,9 @@ short rpt_0x5B(
     buf = rpt->buf;
 
     if (rpt->len != 16)
+    {
         return TRUE;
+    }
     *sv_prn = buf[0U];
     *time_of_collection = bGetSingle(&buf[1U]);
     *sv_health = buf[5U];
@@ -2681,14 +2836,20 @@ short rpt_0x5C(
     buf = rpt->buf;
 
     if (rpt->len != 24)
+    {
         return TRUE;
+    }
     *sv_prn = buf[0U];
     *slot = (unsigned char)((buf[1U] & 0x07) + 1);
     *chan = (unsigned char)(buf[1U] >> 3);
     if (*chan == 0x10)
+    {
         *chan = 2;
+    }
     else
+    {
         (*chan)++;
+    }
     *acq_flag = buf[2U];
     *eph_flag = buf[3U];
     *signal_level = bGetSingle(&buf[4U]);
@@ -2721,9 +2882,13 @@ short rpt_0x6D(
 
     *nsvs = (unsigned char)((buf[0U] & 0xF0) >> 4);
     if ((*nsvs) > 8)
+    {
         return TRUE;
+    }
     if (rpt->len != 17 + (*nsvs))
+    {
         return TRUE;
+    }
 
     *manual_mode = (unsigned char)(buf[0U] & 0x08);
     *ndim = (unsigned char)((buf[0U] & 0x07));
@@ -2731,8 +2896,10 @@ short rpt_0x6D(
     *hdop = bGetSingle(&buf[5U]);
     *vdop = bGetSingle(&buf[9U]);
     *tdop = bGetSingle(&buf[13U]);
-    for (islot = 0; islot < (*nsvs); islot++)
+    for (islot = 0; islot < (*nsvs); ++islot)
+    {
         sv_prn[islot] = buf[islot + 17];
+    }
     return FALSE;
 }
 
@@ -2746,7 +2913,9 @@ short rpt_0x82(
     buf = rpt->buf;
 
     if (rpt->len != 1)
+    {
         return TRUE;
+    }
     *diff_mode = buf[0U];
     return FALSE;
 }
@@ -2754,7 +2923,7 @@ short rpt_0x82(
 /* position, ECEF double precision */
 short rpt_0x83(
     TSIPPKT* rpt,
-    double ECEF_pos[3],
+    double ECEF_pos[3U],
     double* clock_bias,
     float* time_of_fix)
 {
@@ -2762,7 +2931,9 @@ short rpt_0x83(
     buf = rpt->buf;
 
     if (rpt->len != 36)
+    {
         return TRUE;
+    }
     ECEF_pos[0U] = bGetDouble(buf);
     ECEF_pos[1U] = bGetDouble(&buf[8U]);
     ECEF_pos[2U] = bGetDouble(&buf[16U]);
@@ -2784,7 +2955,9 @@ short rpt_0x84(
     buf = rpt->buf;
 
     if (rpt->len != 36)
+    {
         return TRUE;
+    }
     *lat = bGetDouble(buf);
     *lon = bGetDouble(&buf[8U]);
     *alt = bGetDouble(&buf[16U]);
@@ -2803,7 +2976,9 @@ short rpt_Paly0xBB(
     /* Palisade is inconsistent with other TSIP, which has a length of 40 */
     /* if (rpt->len != 40) return TRUE; */
     if (rpt->len != 43)
+    {
         return TRUE;
+    }
 
     TsipxBB->bSubcode = buf[0U];
     TsipxBB->operating_mode = buf[1U];
@@ -2833,7 +3008,9 @@ short rpt_0xBC(
     buf = rpt->buf;
 
     if (rpt->len != 10)
+    {
         return TRUE;
+    }
     *port_num = buf[0U];
     *in_baud = buf[1U];
     *out_baud = buf[2U];
@@ -2866,14 +3043,16 @@ short rpt_0x8F0B(
     double* lat,
     double* lon,
     double* alt,
-    char sv_id[8])
+    char sv_id[8U])
 {
     short local_index;
     unsigned char* buf;
 
     buf = rpt->buf;
     if (rpt->len != 74)
+    {
         return TRUE;
+    }
     *event = bGetShort(&buf[1U]);
     *tow = bGetDouble(&buf[3U]);
     *date = buf[11U];
@@ -2889,8 +3068,10 @@ short rpt_0x8F0B(
     *lon = bGetDouble(&buf[50U]);
     *alt = bGetDouble(&buf[58U]);
 
-    for (local_index = 0; local_index < 8; local_index++)
+    for (local_index = 0; local_index < 8; ++local_index)
+    {
         sv_id[local_index] = buf[local_index + 66];
+    }
     return FALSE;
 }
 
@@ -2898,13 +3079,15 @@ short rpt_0x8F0B(
 short rpt_0x8F14(
     TSIPPKT* rpt,
     short* datum_idx,
-    double datum_coeffs[5])
+    double datum_coeffs[5U])
 {
     unsigned char* buf;
     buf = rpt->buf;
 
     if (rpt->len != 43)
+    {
         return TRUE;
+    }
     *datum_idx = bGetShort(&buf[1U]);
     datum_coeffs[0U] = bGetDouble(&buf[3U]);
     datum_coeffs[1U] = bGetDouble(&buf[11U]);
@@ -2919,13 +3102,15 @@ short rpt_0x8F14(
 short rpt_0x8F15(
     TSIPPKT* rpt,
     short* datum_idx,
-    double datum_coeffs[5])
+    double datum_coeffs[5U])
 {
     unsigned char* buf;
     buf = rpt->buf;
 
     if (rpt->len != 43)
+    {
         return TRUE;
+    }
     *datum_idx = bGetShort(&buf[1U]);
     datum_coeffs[0U] = bGetDouble(&buf[3U]);
     datum_coeffs[1U] = bGetDouble(&buf[11U]);
@@ -2967,7 +3152,9 @@ short rpt_0x8F20(
     buf = rpt->buf;
 
     if (rpt->len != 56)
+    {
         return TRUE;
+    }
 
     vel_scale = (buf[24U] & 1) ? 0.020 : 0.005;
     vel_enu[0U] = bGetShort(buf + 2) * vel_scale;
@@ -2982,7 +3169,9 @@ short rpt_0x8F20(
     ulongtemp = bGetULong(buf + 16);
     *lon = ulongtemp * (GPS_PI / MAX_LONG);
     if (*lon > GPS_PI)
+    {
         *lon -= 2.0 * GPS_PI;
+    }
 
     *alt = bGetLong(buf + 20) * .001;
     /* 25 blank; 29 = UTC */
@@ -2990,11 +3179,11 @@ short rpt_0x8F20(
     *info = buf[27U];
     *nsvs = buf[28U];
     *week_num = bGetShort(&buf[30U]);
-    for (isv = 0; isv < 8; isv++)
+    for (isv = 0; isv < 8; ++isv)
     {
-        prnx = buf[32 + 2 * isv];
+        prnx = buf[32U + 2 * isv];
         sv_prn[isv] = (unsigned char)(prnx & 0x3F);
-        iode = buf[33 + 2 * isv];
+        iode = buf[33U + 2 * isv];
         sv_IODC[isv] = (short)(iode | ((prnx >> 6) << 8));
     }
     return FALSE;
@@ -3013,7 +3202,9 @@ short rpt_0x8F41(
     unsigned short* iTestCodeId)
 {
     if (rpt->len != 17)
+    {
         return FALSE;
+    }
     *bSearchRange = rpt->buf[1U];
     *bBoardOptions = rpt->buf[2U];
     *iiSerialNumber = bGetLong(&rpt->buf[3U]);
@@ -3039,7 +3230,9 @@ short rpt_0x8F42(
     unsigned short* iKey)
 {
     if (rpt->len != 19)
+    {
         return FALSE;
+    }
     *bProdOptionsPre = rpt->buf[1U];
     *bProdNumberExt = rpt->buf[2U];
     *iCaseSerialNumberPre = bGetShort(&rpt->buf[3U]);
@@ -3056,7 +3249,9 @@ short rpt_0x8F45(
     unsigned char* bSegMask)
 {
     if (rpt->len != 2)
+    {
         return FALSE;
+    }
     *bSegMask = rpt->buf[1U];
     return TRUE;
 }
@@ -3074,7 +3269,9 @@ short rpt_0x8F4A_16(
 
     buf = rpt->buf;
     if (rpt->len != 16)
+    {
         return TRUE;
+    }
     *pps_enabled = buf[1U];
     *pps_timebase = buf[2U];
     *pos_polarity = buf[3U];
@@ -3091,7 +3288,9 @@ short rpt_0x8F4B(
 
     buf = rpt->buf;
     if (rpt->len != 5)
+    {
         return TRUE;
+    }
     *decorr_max = bGetLong(&buf[1U]);
     return FALSE;
 }
@@ -3104,7 +3303,9 @@ short rpt_0x8F4D(
 
     buf = rpt->buf;
     if (rpt->len != 5)
+    {
         return TRUE;
+    }
     *event_mask = bGetULong(&buf[1U]);
     return FALSE;
 }
@@ -3117,7 +3318,9 @@ short rpt_0x8FA5(
 
     buf = rpt->buf;
     if (rpt->len != 5)
+    {
         return TRUE;
+    }
     spktmask[0U] = buf[1U];
     spktmask[1U] = buf[2U];
     spktmask[2U] = buf[3U];
@@ -3139,7 +3342,9 @@ short rpt_0x8FAD(
     unsigned char* Flags)
 {
     if (rpt->len != 22)
+    {
         return TRUE;
+    }
 
     *COUNT = bGetUShort(&rpt->buf[1U]);
     *FracSec = bGetDouble(&rpt->buf[3U]);
@@ -3220,7 +3425,7 @@ char* show_time(
     short days, hours, minutes;
     float seconds;
     double tow = 0;
-    static char timestring[80];
+    static char timestring[80U];
 
     if (time_of_week == -1.0)
     {
@@ -3233,7 +3438,9 @@ char* show_time(
     else
     {
         if (time_of_week < 604799.9)
+        {
             tow = time_of_week + .00000001;
+        }
         seconds = (float)fmod(tow, 60.);
         minutes = (short)fmod(tow / 60., 60.);
         hours = (short)fmod(tow / 3600., 24.);
@@ -3274,14 +3481,22 @@ rpt_chan_A_config(
     nbaud = sizeof(old_baudnum);
 
     for (i = 0; i < nbaud; ++i)
+    {
         if (tx_baud_index == old_baudnum[i])
+        {
             break;
+        }
+    }
     pbuf += sprintf(pbuf, "\n   Transmit speed: %s at %s",
                     old_output_ch[tx_mode_index], st_baud_text_app[i]);
 
     for (i = 0; i < nbaud; ++i)
+    {
         if (rx_baud_index == old_baudnum[i])
+        {
             break;
+        }
+    }
     pbuf += sprintf(pbuf, "\n   Receive speed: %s at %s",
                     old_input_ch[rx_mode_index], st_baud_text_app[i]);
 
@@ -3289,7 +3504,9 @@ rpt_chan_A_config(
 
     parity = (unsigned char)(char_format_index >> 2);
     if (parity > 4)
+    {
         parity = 2;
+    }
 
     pbuf += sprintf(pbuf, "\n   Character format (bits/char, parity, stop bits): %d-%s-%d",
                     databits, old_parity_text[parity], stop_bits);
@@ -3379,7 +3596,7 @@ rpt_single_ECEF_position(
     }
 
     pbuf += sprintf(pbuf, "\nSXYZ:  %15.0f  %15.0f  %15.0f    %s",
-                    ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2],
+                    ECEF_pos[0U], ECEF_pos[1U], ECEF_pos[2U],
                     show_time(time_of_fix));
 }
 
@@ -3401,7 +3618,7 @@ rpt_single_ECEF_velocity(
     }
 
     pbuf += sprintf(pbuf, "\nVelECEF: %11.3f  %11.3f  %11.3f  %12.3f%s",
-                    ECEF_vel[0U], ECEF_vel[1], ECEF_vel[2], freq_offset,
+                    ECEF_vel[0U], ECEF_vel[1U], ECEF_vel[2U], freq_offset,
                     show_time(time_of_fix));
 }
 
@@ -3486,7 +3703,7 @@ rpt_SNR_all_SVs(
 {
     unsigned char
         nsvs,
-        sv_prn[12];
+        sv_prn[12U];
     short
         isv;
     float
@@ -3500,7 +3717,7 @@ rpt_SNR_all_SVs(
     }
 
     pbuf += sprintf(pbuf, "\nSNR for satellites: %d", nsvs);
-    for (isv = 0; isv < nsvs; isv++)
+    for (isv = 0; isv < nsvs; ++isv)
     {
         pbuf += sprintf(pbuf, "\n    SV %02d   %6.2f",
                         sv_prn[isv], snr[isv]);
@@ -3543,10 +3760,12 @@ rpt_almanac_health_page(
     }
 
     pbuf += sprintf(pbuf, "\nAlmanac health page:");
-    for (iprn = 0; iprn < 32; iprn++)
+    for (iprn = 0; iprn < 32; ++iprn)
     {
         if (!(iprn % 5))
+        {
             *pbuf++ = '\n';
+        }
         pbuf += sprintf(pbuf, "    SV%02d  %2X",
                         (iprn + 1), sv_health[iprn]);
     }
@@ -3891,7 +4110,7 @@ rpt_ENU_velocity(
     }
 
     pbuf += sprintf(pbuf, "\nVel ENU: %11.3f  %11.3f  %11.3f  %12.3f%s",
-                    vel_ENU[0U], vel_ENU[1], vel_ENU[2], freq_offset,
+                    vel_ENU[0U], vel_ENU[1U], vel_ENU[2U], freq_offset,
                     show_time(time_of_fix));
 }
 
@@ -3929,7 +4148,7 @@ rpt_GPS_system_data(
     unsigned char
         iprn,
         op_code, data_type, sv_prn,
-        data_length, data_packet[250];
+        data_length, data_packet[250U];
     ALM_INFO
     *almanac;
     ALH_PARMS
@@ -3973,7 +4192,7 @@ rpt_GPS_system_data(
         {
         case 2:
             /* Almanac */
-            if (sv_prn == 0 || sv_prn > 32)
+            if ((sv_prn == 0) || (sv_prn > 32))
             {
                 pbuf += sprintf(pbuf, "  Binary PRN invalid");
                 return;
@@ -4006,10 +4225,12 @@ rpt_GPS_system_data(
             pbuf += sprintf(pbuf, "\n   t_oa = %d, wn_oa&0xFF = %d  ",
                             almh->t_oa, almh->WN_a);
             pbuf += sprintf(pbuf, "\nAlmanac health page:");
-            for (iprn = 0; iprn < 32; iprn++)
+            for (iprn = 0; iprn < 32; ++iprn)
             {
                 if (!(iprn % 5))
+                {
                     *pbuf++ = '\n';
+                }
                 pbuf += sprintf(pbuf, "    SV%02d  %2X",
                                 (iprn + 1), almh->SV_health[iprn]);
             }
@@ -4046,7 +4267,7 @@ rpt_GPS_system_data(
             break;
 
         case 6: /* Ephemeris */
-            if (sv_prn == 0 || sv_prn > 32)
+            if ((sv_prn == 0) || (sv_prn > 32))
             {
                 pbuf += sprintf(pbuf, "  Binary PRN invalid");
                 return;
@@ -4129,7 +4350,7 @@ rpt_SVs_enabled(
         return;
     }
     numsvs = 0;
-    for (iprn = 0; iprn < 32; iprn++)
+    for (iprn = 0; iprn < 32; ++iprn)
     {
         if (status_code[iprn])
         {
@@ -4138,7 +4359,9 @@ rpt_SVs_enabled(
         }
     }
     if (numsvs == 0)
+    {
         pbuf += sprintf(pbuf, "None");
+    }
 }
 
 
@@ -4237,7 +4460,7 @@ rpt_allSV_selection(
 {
     unsigned char
         manual_mode,
-        nsvs, sv_prn[8], ndim;
+        nsvs, sv_prn[8U], ndim;
     short
         islot;
     float
@@ -4274,12 +4497,14 @@ rpt_allSV_selection(
         break;
     }
 
-    for (islot = 0; islot < nsvs; islot++)
+    for (islot = 0; islot < nsvs; ++islot)
     {
         if (sv_prn[islot])
+        {
             pbuf += sprintf(pbuf, " %02d", sv_prn[islot]);
+        }
     }
-    if (ndim == 3 || ndim == 4)
+    if ((ndim == 3) || (ndim == 4))
     {
         pbuf += sprintf(pbuf, ";  DOPs: P %.1f H %.1f V %.1f T %.1f",
                         pdop, hdop, vdop, tdop);
@@ -4327,7 +4552,7 @@ rpt_double_ECEF_position(
     }
 
     pbuf += sprintf(pbuf, "\nDXYZ:%12.2f  %13.2f  %13.2f %12.2f%s",
-                    ECEF_pos[0U], ECEF_pos[1], ECEF_pos[2], clock_bias,
+                    ECEF_pos[0U], ECEF_pos[1U], ECEF_pos[2U], clock_bias,
                     show_time(time_of_fix));
 }
 
@@ -4454,7 +4679,9 @@ rpt_rcvr_serial_port_config(
         known = TRUE;
     }
     if (known == FALSE)
+    {
         pbuf += sprintf(pbuf, "No known");
+    }
 
     pbuf += sprintf(pbuf, "\n             Output protocols: ");
     known = FALSE;
@@ -4469,7 +4696,9 @@ rpt_rcvr_serial_port_config(
         known = TRUE;
     }
     if (known == FALSE)
+    {
         pbuf += sprintf(pbuf, "No known");
+    }
     reserved = reserved;
 }
 
@@ -4592,17 +4821,21 @@ rpt_8F0B(
     pbuf += sprintf(pbuf, " %10.2f", alt);
 
     numfix = numnotfix = 0;
-    for (local_index = 0; local_index < 8; local_index++)
+    for (local_index = 0; local_index < 8; ++local_index)
     {
         if (sv_id[local_index] < 0)
+        {
             numnotfix++;
+        }
         if (sv_id[local_index] > 0)
+        {
             numfix++;
+        }
     }
     if (numfix > 0)
     {
         pbuf += sprintf(pbuf, "\nSVs used in fix  : ");
-        for (local_index = 0; local_index < 8; local_index++)
+        for (local_index = 0; local_index < 8; ++local_index)
         {
             if (sv_id[local_index] > 0)
             {
@@ -4613,7 +4846,7 @@ rpt_8F0B(
     if (numnotfix > 0)
     {
         pbuf += sprintf(pbuf, "\nOther SVs tracked: ");
-        for (local_index = 0; local_index < 8; local_index++)
+        for (local_index = 0; local_index < 8; ++local_index)
         {
             if (sv_id[local_index] < 0)
             {
@@ -4708,16 +4941,16 @@ rpt_8F20(
 {
     unsigned char
         info,
-        nsvs, sv_prn[32];
+        nsvs, sv_prn[32U];
     short
         week_num,
-        datum_index, sv_IODC[32];
+        datum_index, sv_IODC[32U];
     double
         lat,
         lon, alt, time_of_fix;
     double
         londeg,
-        latdeg, vel[3];
+        latdeg, vel[3U];
     short
         isv;
     char
@@ -4770,16 +5003,16 @@ rpt_8F20(
                     datum_string);
     pbuf += sprintf(pbuf,
                     "\n   Vel:    %9.3f E       %9.3f N      %9.3f U   (m/sec)",
-                    vel[0U], vel[1], vel[2]);
+                    vel[0U], vel[1U], vel[2U]);
 
     pbuf += sprintf(pbuf,
                     "\n   SVs: ");
-    for (isv = 0; isv < nsvs; isv++)
+    for (isv = 0; isv < nsvs; ++isv)
     {
         pbuf += sprintf(pbuf, " %02d", sv_prn[isv]);
     }
     pbuf += sprintf(pbuf, "     (IODEs:");
-    for (isv = 0; isv < nsvs; isv++)
+    for (isv = 0; isv < nsvs; ++isv)
     {
         pbuf += sprintf(pbuf, " %02X", sv_IODC[isv] & 0xFF);
     }
@@ -4975,7 +5208,7 @@ rpt_8F4D(
     numchoices = sizeof(MaskText) / sizeof(char*);
     pbuf += sprintf(pbuf, "\nAuto-Reports scheduled for Output:");
     linestart = pbuf;
-    for (ichoice = 0; ichoice < numchoices; ichoice++)
+    for (ichoice = 0; ichoice < numchoices; ++ichoice)
     {
         if (OutputMask & MaskBit[ichoice])
         {
@@ -4983,21 +5216,27 @@ rpt_8F4D(
                             (pbuf == linestart) ? "\n     " : ",",
                             MaskText[ichoice]);
             if (pbuf - linestart > 60)
+            {
                 linestart = pbuf;
+            }
         }
     }
 
     pbuf += sprintf(pbuf, "\nAuto-Reports NOT scheduled for Output:");
     linestart = pbuf;
-    for (ichoice = 0; ichoice < numchoices; ichoice++)
+    for (ichoice = 0; ichoice < numchoices; ++ichoice)
     {
         if (OutputMask & MaskBit[ichoice])
+        {
             continue;
+        }
         pbuf += sprintf(pbuf, "%s %s",
                         (pbuf == linestart) ? "\n     " : ",",
                         MaskText[ichoice]);
         if (pbuf - linestart > 60)
+        {
             linestart = pbuf;
+        }
     }
 }
 
@@ -5015,18 +5254,28 @@ rpt_8FA5(
     }
 
     pbuf += sprintf(pbuf, "\nSuperpacket auto-output mask: %02X %02X %02X %02X",
-                    spktmask[0U], spktmask[1], spktmask[2], spktmask[3]);
+                    spktmask[0U], spktmask[1U], spktmask[2U], spktmask[3U]);
 
     if (spktmask[0U] & 0x01)
+    {
         pbuf += sprintf(pbuf, "\n    PPS   8F-0B");
+    }
     if (spktmask[0U] & 0x02)
+    {
         pbuf += sprintf(pbuf, "\n    Event 8F-0B");
+    }
     if (spktmask[0U] & 0x10)
+    {
         pbuf += sprintf(pbuf, "\n    PPS   8F-AD");
+    }
     if (spktmask[0U] & 0x20)
+    {
         pbuf += sprintf(pbuf, "\n    Event 8F-AD");
+    }
     if (spktmask[2U] & 0x01)
+    {
         pbuf += sprintf(pbuf, "\n    ppos Fix 8F-20");
+    }
 }
 
 static void
@@ -5088,10 +5337,12 @@ rpt_8FAD(
     pbuf += sprintf(pbuf, "\n   Leap Flags:");
     if (Flags)
     {
-        for (i = 0; i < 8; i++)
+        for (i = 0; i < 8; ++i)
         {
             if (Flags & (1 << i))
+            {
                 pbuf += sprintf(pbuf, LeapStatusText[i]);
+            }
         }
     }
     else
@@ -5118,7 +5369,7 @@ int print_msg_table_header(
         numchars;
 
     numchars = 0;
-    if (force || rptcode != last_rptcode)
+    if (force || (rptcode != last_rptcode))
     {
         /* supply a header in console output */
         switch (rptcode)
@@ -5172,10 +5423,12 @@ unknown_rpt(
                         rpt->code, rpt->len);
     }
 
-    for (i = 0; i < rpt->len; i++)
+    for (i = 0; i < rpt->len; ++i)
     {
         if ((i % 20) == 0)
+        {
             *pbuf++ = '\n';
+        }
         pbuf += sprintf(pbuf, " %02X", rpt->buf[i]);
     }
 }

@@ -30,7 +30,7 @@ static int /*BOOL*/ isValidAbsPath(const char* path)
 {
     int retv = FALSE;
     /* this needs some elaboration: */
-    if (path && path[0U] == '/')
+    if (path && (path[0U] == '/'))
     {
         struct stat sb;
         if (0 == lstat(path, &sb))
@@ -43,7 +43,7 @@ static int /*BOOL*/ isValidAbsPath(const char* path)
 
 static const char* errMsg(const char* fmt, ...)
 {
-    static char buf[256];
+    static char buf[256U];
     va_list va;
     va_start(va, fmt);
     vsnprintf(buf, sizeof(buf), fmt, va);
@@ -69,8 +69,8 @@ void test_DevLinks(void)
 #ifdef SYS_WINNT
     TEST_IGNORE_MESSAGE("not applicable to windows so far");
 #else
-    char nam[512];
-    char abs[512];
+    char nam[512U];
+    char abs[512U];
     struct dirent* ent;
     DIR* dfs = opendir("/dev");
 
@@ -84,7 +84,9 @@ void test_DevLinks(void)
          * did at some point in time, quite reliably...)
          */
         if (!strncmp(ent->d_name, "std", 3))
+        {
             continue;
+        }
         /* otherwise build the full name & try to resolve: */
         snprintf(nam, sizeof(nam), "/dev/%s", ent->d_name);
         resolved = ntp_realpath(nam);

@@ -57,8 +57,8 @@ normalize_tspec(
      * here: it has implementation-defined behaviour when applied
      * to LONG_MIN.
      */
-    if (x.tv_nsec < -3l * NANOSECONDS ||
-        x.tv_nsec > 3l * NANOSECONDS)
+    if ((x.tv_nsec < -3l * NANOSECONDS) ||
+        (x.tv_nsec > 3l * NANOSECONDS))
     {
         z = x.tv_nsec / NANOSECONDS;
         x.tv_nsec -= z * NANOSECONDS;
@@ -70,17 +70,21 @@ normalize_tspec(
      * outperform a division even if the mul-by-inverse trick is
      * employed. */
     if (x.tv_nsec < 0)
+    {
         do
         {
             x.tv_nsec += NANOSECONDS;
             x.tv_sec--;
         } while (x.tv_nsec < 0);
+    }
     else if (x.tv_nsec >= NANOSECONDS)
+    {
         do
         {
             x.tv_nsec -= NANOSECONDS;
             x.tv_sec++;
         } while (x.tv_nsec >= NANOSECONDS);
+    }
 
     return x;
 }
@@ -121,8 +125,10 @@ int cmp_tspec(
 
     r = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
     if (0 == r)
+    {
         r = (a.tv_nsec > b.tv_nsec) -
             (a.tv_nsec < b.tv_nsec);
+    }
 
     return r;
 }
@@ -138,7 +144,9 @@ int test_tspec(
 
     r = (a.tv_sec > 0) - (a.tv_sec < 0);
     if (r == 0)
+    {
         r = (a.tv_nsec > 0);
+    }
 
     return r;
 }

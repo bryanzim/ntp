@@ -137,8 +137,10 @@ leitch_init(void)
 
     memset((char*)leitchunits, 0, sizeof(leitchunits));
     memset((char*)unitinuse, 0, sizeof(unitinuse));
-    for (i = 0; i < MAXUNITS; i++)
+    for (i = 0; i < MAXUNITS; ++i)
+    {
         memcpy((char*)&refid[i], LEITCHREFID, 4);
+    }
 }
 
 /*
@@ -157,10 +159,14 @@ leitch_shutdown(
     }
     leitch = &leitchunits[unit];
     if (-1 != leitch->leitchio.fd)
+    {
         io_closeclock(&leitch->leitchio);
+    }
 #ifdef DEBUG
     if (debug)
+    {
         fprintf(stderr, "leitch_shutdown()\n");
+    }
 #endif
 }
 
@@ -178,7 +184,9 @@ leitch_poll(
 
 #ifdef DEBUG
     if (debug)
+    {
         fprintf(stderr, "leitch_poll()\n");
+    }
 #endif
     if (unit >= MAXUNITS)
     {
@@ -218,9 +226,13 @@ leitch_control(
     if (in)
     {
         if (in->haveflags & CLK_HAVEVAL1)
+        {
             stratumtouse[unit] = (u_char)(in->fudgeval1);
+        }
         if (in->haveflags & CLK_HAVEVAL2)
+        {
             refid[unit] = in->fudgeval2;
+        }
         if (unitinuse[unit])
         {
             struct peer* peer;
@@ -253,7 +265,7 @@ leitch_start(
 {
     struct leitchunit* leitch;
     int fd232;
-    char leitchdev[32];
+    char leitchdev[32U];
 
     /*
      * Check configuration info.
@@ -417,12 +429,16 @@ leitch_receive(
 
 #ifdef DEBUG
     if (debug)
+    {
         fprintf(stderr, "leitch_recieve(%*.*s)\n",
                 rbufp->recv_length, rbufp->recv_length,
                 rbufp->recv_buffer);
+    }
 #endif
     if (rbufp->recv_length != 7)
-        return; /* The date is return with a trailing newline,
+    {
+        return;
+    } /* The date is return with a trailing newline,
                discard it. */
 
     switch (leitch->state)
@@ -438,7 +454,9 @@ leitch_receive(
         leitch_send(leitch, "T\r");
 #ifdef DEBUG
         if (debug)
+        {
             fprintf(stderr, "%u\n", leitch->yearday);
+        }
 #endif
         leitch->state = STATE_TIME1;
         break;
@@ -456,7 +474,9 @@ leitch_receive(
         leitch->reftime1.l_uf = 0;
 #ifdef DEBUG
         if (debug)
+        {
             fprintf(stderr, "%lu\n", (u_long)leitch->reftime1.l_ui);
+        }
 #endif
         MSUTOTSF(leitch->fudge1, leitch->reftime1.l_uf);
         leitch->codetime1 = rbufp->recv_time;
@@ -475,7 +495,9 @@ leitch_receive(
         }
 #ifdef DEBUG
         if (debug)
+        {
             fprintf(stderr, "%lu\n", (u_long)leitch->reftime2.l_ui);
+        }
 #endif
         MSUTOTSF(leitch->fudge1, leitch->reftime2.l_uf);
         leitch->codetime2 = rbufp->recv_time;
@@ -494,7 +516,9 @@ leitch_receive(
         }
 #ifdef DEBUG
         if (debug)
+        {
             fprintf(stderr, "%lu\n", (u_long)leitch->reftime3.l_ui);
+        }
 #endif
         MSUTOTSF(leitch->fudge1, leitch->reftime3.l_uf);
         leitch->codetime3 = rbufp->recv_time;
@@ -531,12 +555,16 @@ leitch_process(
     tmp_fp = leitch->reftime2;
     L_SUB(&tmp_fp, &leitch->codetime2);
     if (L_ISGEQ(&off, &tmp_fp))
+    {
         off = tmp_fp;
+    }
     tmp_fp = leitch->reftime3;
     L_SUB(&tmp_fp, &leitch->codetime3);
 
     if (L_ISGEQ(&off, &tmp_fp))
+    {
         off = tmp_fp;
+    }
     /*LFPTOD(&off, doffset);*/
     refclock_receive(leitch->peer);
 }
@@ -580,11 +608,15 @@ leitch_get_date(
     int i;
 
     if (rbufp->recv_length < 6)
+    {
         return (0);
+    }
 #undef BAD /* confict: defined as (-1) in AIX sys/param.h */
 #define BAD(A) (rbufp->recv_buffer[A] < '0') || (rbufp->recv_buffer[A] > '9')
     if (BAD(0) || BAD(1) || BAD(2) || BAD(3) || BAD(4) || BAD(5))
+    {
         return (0);
+    }
 #define ATOB(A) ((rbufp->recv_buffer[A]) - '0')
     leitch->year = ATOB(0) * 10 + ATOB(1);
     leitch->month = ATOB(2) * 10 + ATOB(3);
@@ -592,20 +624,28 @@ leitch_get_date(
 
     /* sanity checks */
     if (leitch->month > 12)
+    {
         return (0);
+    }
     if (leitch->day > days_in_month[leitch->month - 1])
+    {
         return (0);
+    }
 
     /* calculate yearday */
     i = 0;
     leitch->yearday = leitch->day;
 
     while (i < (leitch->month - 1))
+    {
         leitch->yearday += days_in_month[i++];
+    }
 
     if ((days_per_year((leitch->year > 90 ? 1900 : 2000) + leitch->year) == 365) &&
-        leitch->month > 2)
+        (leitch->month > 2))
+    {
         leitch->yearday--;
+    }
 
     return (1);
 }
@@ -620,14 +660,18 @@ leitch_get_time(
     int which)
 {
     if (BAD(0) || BAD(1) || BAD(2) || BAD(3) || BAD(4) || BAD(5))
+    {
         return (0);
+    }
     leitch->hour = ATOB(0) * 10 + ATOB(1);
     leitch->minute = ATOB(2) * 10 + ATOB(3);
     leitch->second = ATOB(4) * 10 + ATOB(5);
 
     if ((leitch->hour > 23) || (leitch->minute > 60) ||
         (leitch->second > 60))
+    {
         return (0);
+    }
     return (1);
 }
 

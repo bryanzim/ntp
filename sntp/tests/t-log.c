@@ -45,8 +45,8 @@ void testOpenLogfileTest(void)
 
 void testWriteInCustomLogfile(void)
 {
-    char testString[256] = "12345 ABC";
-    char testName[256] = "TEST_PROGNAME3";
+    char testString[256U] = "12345 ABC";
+    char testName[256U] = "TEST_PROGNAME3";
 
     (void)remove("testLogfile2.log");
 
@@ -57,7 +57,7 @@ void testWriteInCustomLogfile(void)
 
     msyslog(LOG_ERR, "%s", testString);
     FILE* f = fopen("testLogfile2.log", "r");
-    char line[256];
+    char line[256U];
 
     TEST_ASSERT_TRUE(f != NULL);
 

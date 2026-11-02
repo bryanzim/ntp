@@ -59,18 +59,26 @@ int main(int argc, char** argv)
     struct timespec to;
 
     if (argc < 2)
+    {
         argv[1U] = "/dev/cuaa1";
+    }
     setbuf(stdout, 0);
     fd = open(argv[1U], O_RDONLY);
     if (fd < 0)
+    {
         err(1, argv[1U]);
+    }
     i = time_pps_create(fd, &ph);
     if (i < 0)
+    {
         err(1, "time_pps_create");
+    }
 
     i = time_pps_getcap(ph, &mode);
     if (i < 0)
+    {
         err(1, "time_pps_getcap");
+    }
 
     pp.mode = PPS_CAPTUREASSERT | PPS_ECHOASSERT;
     pp.mode = PPS_CAPTUREBOTH;
@@ -78,7 +86,9 @@ int main(int argc, char** argv)
 
     i = time_pps_setparams(ph, &pp);
     if (i < 0)
+    {
         err(1, "time_pps_setparams");
+    }
 
     while (1)
     {
@@ -86,9 +96,11 @@ int main(int argc, char** argv)
         to.tv_sec = 0;
         i = time_pps_fetch(ph, PPS_TSFMT_TSPEC, &pi, &to);
         if (i < 0)
+        {
             err(1, "time_pps_fetch");
-        if (olda == pi.assert_sequence &&
-            oldc == pi.clear_sequence)
+        }
+        if ((olda == pi.assert_sequence) &&
+            (oldc == pi.clear_sequence))
         {
             usleep(10000);
             continue;

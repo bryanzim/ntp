@@ -157,7 +157,7 @@ hpgps_start(
     struct refclockproc* pp;
     int fd;
     int speed, ldisc;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port. Use CLK line discipline, if available.
@@ -174,7 +174,9 @@ hpgps_start(
     }
     fd = refclock_open(&peer->srcadr, device, speed, ldisc);
     if (fd <= 0)
+    {
         return (0);
+    }
     /*
      * Allocate and initialize unit structure
      */
@@ -212,7 +214,9 @@ hpgps_start(
      */
     up->linecnt = 1;
     if (refclock_write(peer, "*IDN?\r:PTIME:TZONE?\r", 20, NULL) != 20)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
 
     return (1);
 }
@@ -232,9 +236,13 @@ hpgps_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -274,15 +282,19 @@ hpgps_receive(
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("hpgps: lencode: %d timecode:%s\n",
                pp->lencode, pp->a_lastcode);
+    }
 #endif
 
     /*
      * If there's no characters in the reply, we can quit now
      */
     if (pp->lencode == 0)
+    {
         return;
+    }
 
     /*
      * If linecnt is greater than zero, we are getting information only,
@@ -307,7 +319,9 @@ hpgps_receive(
             up->lastptr += pp->lencode;
         }
         if (up->linecnt == 0)
+        {
             record_clock_stats(&peer->srcadr, up->statscrn);
+        }
 
         return;
     }
@@ -339,12 +353,18 @@ hpgps_receive(
     strlcpy(prompt, pp->a_lastcode, sizeof(prompt));
     tcp = strrchr(pp->a_lastcode, '>');
     if (tcp == NULL)
+    {
         tcp = pp->a_lastcode;
+    }
     else
+    {
         tcp++;
+    }
     prompt[tcp - pp->a_lastcode] = '\0';
     while ((*tcp == ' ') || (*tcp == '\t'))
+    {
         tcp++;
+    }
 
     /*
      * deal with an error indication in the prompt here
@@ -353,10 +373,14 @@ hpgps_receive(
     {
 #ifdef DEBUG
         if (debug)
+        {
             printf("hpgps: error indicated in prompt: %s\n", prompt);
+        }
 #endif
         if (refclock_write(peer, "*CLS\r\r", 6, NULL) != 6)
+        {
             refclock_report(peer, CEVNT_FAULT);
+        }
     }
 
     /*
@@ -369,7 +393,9 @@ hpgps_receive(
     {
 #ifdef DEBUG
         if (debug)
+        {
             printf("hpgps: no format indicator\n");
+        }
 #endif
         refclock_report(peer, CEVNT_BADREPLY);
         return;
@@ -385,7 +411,9 @@ hpgps_receive(
         {
 #ifdef DEBUG
             if (debug)
+            {
                 printf("hpgps: only %d fields recognized in timezone\n", m);
+            }
 #endif
             refclock_report(peer, CEVNT_BADREPLY);
             return;
@@ -395,8 +423,10 @@ hpgps_receive(
         {
 #ifdef DEBUG
             if (debug)
+            {
                 printf("hpgps: timezone %d, %d out of range\n",
                        up->tzhour, up->tzminute);
+            }
 #endif
             refclock_report(peer, CEVNT_BADREPLY);
             return;
@@ -409,8 +439,10 @@ hpgps_receive(
     default:
 #ifdef DEBUG
         if (debug)
+        {
             printf("hpgps: unrecognized reply format %c%c\n",
                    tcodechar1, tcodechar2);
+        }
 #endif
         refclock_report(peer, CEVNT_BADREPLY);
         return;
@@ -431,7 +463,9 @@ hpgps_receive(
         {
 #ifdef DEBUG
             if (debug)
+            {
                 printf("hpgps: only %d fields recognized in timecode\n", m);
+            }
 #endif
             refclock_report(peer, CEVNT_BADREPLY);
             return;
@@ -441,8 +475,10 @@ hpgps_receive(
     default:
 #ifdef DEBUG
         if (debug)
+        {
             printf("hpgps: unrecognized timecode format %c%c\n",
                    tcodechar1, tcodechar2);
+        }
 #endif
         refclock_report(peer, CEVNT_BADREPLY);
         return;
@@ -455,15 +491,19 @@ hpgps_receive(
      */
     tcodechksm = 0;
     while (n-- > 0)
+    {
         tcodechksm += *tcp++;
+    }
     tcodechksm &= 0x00ff;
 
     if (tcodechksm != expectedsm)
     {
 #ifdef DEBUG
         if (debug)
+        {
             printf("hpgps: checksum %2hX doesn't match %2hX expected\n",
                    tcodechksm, expectedsm);
+        }
 #endif
         refclock_report(peer, CEVNT_BADREPLY);
         return;
@@ -472,7 +512,7 @@ hpgps_receive(
     /*
      * Compute the day of year from the yyyymmdd format.
      */
-    if (month < 1 || month > 12 || day < 1)
+    if ((month < 1) || (month > 12) || (day < 1))
     {
         refclock_report(peer, CEVNT_BADTIME);
         return;
@@ -486,8 +526,10 @@ hpgps_receive(
             refclock_report(peer, CEVNT_BADTIME);
             return;
         }
-        for (i = 0; i < month - 1; i++)
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day1tab[i];
+        }
         lastday = 365;
     }
     else
@@ -498,8 +540,10 @@ hpgps_receive(
             refclock_report(peer, CEVNT_BADTIME);
             return;
         }
-        for (i = 0; i < month - 1; i++)
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day2tab[i];
+        }
         lastday = 366;
     }
 
@@ -529,10 +573,14 @@ hpgps_receive(
         if (day < 1)
         {
             pp->year--;
-            if (isleap_4(pp->year)) /* Y2KFixes */
+            if (isleap_4(pp->year))
+            { /* Y2KFixes */
                 day = 366;
+            }
             else
+            {
                 day = 365;
+            }
         }
     }
 
@@ -574,19 +622,25 @@ hpgps_receive(
          */
         case '+':
             if ((month == 6) || (month == 12))
+            {
                 pp->leap = LEAP_ADDSECOND;
+            }
             break;
 
         case '-':
             if ((month == 6) || (month == 12))
+            {
                 pp->leap = LEAP_DELSECOND;
+            }
             break;
 
         default:
 #ifdef DEBUG
             if (debug)
+            {
                 printf("hpgps: unrecognized leap indicator: %c\n",
                        leapchar);
+            }
 #endif
             refclock_report(peer, CEVNT_BADTIME);
             return;
@@ -616,7 +670,9 @@ hpgps_receive(
     {
         up->linecnt = 22;
         if (refclock_write(peer, ":SYSTEM:PRINT?\r", 15, NULL) != 15)
+        {
             refclock_report(peer, CEVNT_FAULT);
+        }
     }
 }
 
@@ -641,15 +697,21 @@ hpgps_poll(
     pp = peer->procptr;
     up = pp->unitptr;
     if (up->pollcnt == 0)
+    {
         refclock_report(peer, CEVNT_TIMEOUT);
+    }
     else
+    {
         up->pollcnt--;
+    }
     if (refclock_write(peer, ":PTIME:TCODE?\r", 14, NULL) != 14)
     {
         refclock_report(peer, CEVNT_FAULT);
     }
     else
+    {
         pp->polls++;
+    }
 }
 
 #else

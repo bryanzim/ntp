@@ -60,7 +60,7 @@ socktoa(
             inet_ntop(AF_INET6, PSOCK_ADDR6(sock), res,
                       LIB_BUFLENGTH);
             scope = SCOPE_VAR(sock);
-            if (0 != scope && !strchr(res, '%'))
+            if ((0 != scope) && !strchr(res, '%'))
             {
                 addr = res;
                 LIB_GETBUF(res);
@@ -144,8 +144,10 @@ sock_hash(
         break;
     }
 
-    for (j = 0; j < len; j++)
+    for (j = 0; j < len; ++j)
+    {
         hashVal = 37 * hashVal + pch[j];
+    }
 
     return (u_short)(hashVal & USHRT_MAX);
 }

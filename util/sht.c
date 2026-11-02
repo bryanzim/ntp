@@ -71,7 +71,7 @@ getShmTime(
         return p;
     }
 #else
-    char buf[10];
+    char buf[10U];
     LPSECURITY_ATTRIBUTES psec = 0;
     snprintf(buf, sizeof(buf), "NTP%d", unit);
     SECURITY_DESCRIPTOR sd;
@@ -94,7 +94,7 @@ getShmTime(
 
     if (!shmid)
     {
-        char mbuf[1000];
+        char mbuf[1000U];
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                       0, GetLastError(), 0, mbuf, sizeof(mbuf), 0);
         int x = GetLastError();
@@ -107,7 +107,7 @@ getShmTime(
                                                            FILE_MAP_WRITE, 0, 0, sizeof(struct shmTime));
         if (p == 0)
         {
-            char mbuf[1000];
+            char mbuf[1000U];
             FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                           0, GetLastError(), 0, mbuf, sizeof(mbuf), 0);
             cout << "MapViewOfFile " << buf << ":" << mbuf << endl;
@@ -147,11 +147,17 @@ int main(
 
     unit = strtoul(argv[1U], &argp, 10);
     if (argp == argv[1U])
+    {
         unit = 2;
+    }
     else if (*argp == ':')
+    {
         argp++;
+    }
     else
+    {
         goto usage;
+    }
 
     p = getShmTime(unit);
     switch (*argp)
@@ -194,7 +200,9 @@ int main(
         printf("  leap=%d, precision=%d, nsamples=%d, valid=%d\n",
                p->leap, p->precision, p->nsamples, p->valid);
         if (!p->valid)
+        {
             printf("***\n");
+        }
         if (clear)
         {
             p->valid = 0;

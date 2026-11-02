@@ -76,7 +76,9 @@ sslshim_EVP_MD_CTX_new(void)
 {
     EVP_MD_CTX* ctx;
     if (NULL != (ctx = calloc(1, sizeof(EVP_MD_CTX))))
+    {
         EVP_MD_CTX_init(ctx);
+    }
     return ctx;
 }
 
@@ -125,11 +127,17 @@ void sslshim_RSA_get0_key(
     REQUIRE(prsa != NULL);
 
     if (pn)
+    {
         *pn = prsa->n;
+    }
     if (pe)
+    {
         *pe = prsa->e;
+    }
     if (pd)
+    {
         *pd = prsa->d;
+    }
 }
 
 int sslshim_RSA_set0_key(
@@ -140,7 +148,9 @@ int sslshim_RSA_set0_key(
 {
     REQUIRE(prsa != NULL);
     if (!((prsa->n || n) && (prsa->e || e)))
+    {
         return 0;
+    }
 
     replace_bn_nn(&prsa->n, n);
     replace_bn_nn(&prsa->e, e);
@@ -157,9 +167,13 @@ void sslshim_RSA_get0_factors(
     REQUIRE(prsa != NULL);
 
     if (pp)
+    {
         *pp = prsa->p;
+    }
     if (pq)
+    {
         *pq = prsa->q;
+    }
 }
 
 int sslshim_RSA_set0_factors(
@@ -169,7 +183,9 @@ int sslshim_RSA_set0_factors(
 {
     REQUIRE(prsa != NULL);
     if (!((prsa->p || p) && (prsa->q || q)))
+    {
         return 0;
+    }
 
     replace_bn_nn(&prsa->p, p);
     replace_bn_nn(&prsa->q, q);
@@ -187,7 +203,9 @@ int sslshim_RSA_set0_crt_params(
     if (!((prsa->dmp1 || dmp1) &&
           (prsa->dmq1 || dmq1) &&
           (prsa->iqmp || iqmp)))
+    {
         return 0;
+    }
 
     replace_bn_nn(&prsa->dmp1, dmp1);
     replace_bn_nn(&prsa->dmq1, dmq1);
@@ -207,9 +225,13 @@ void sslshim_DSA_SIG_get0(
     REQUIRE(psig != NULL);
 
     if (pr != NULL)
+    {
         *pr = psig->r;
+    }
     if (ps != NULL)
+    {
         *ps = psig->s;
+    }
 }
 
 int sslshim_DSA_SIG_set0(
@@ -219,7 +241,9 @@ int sslshim_DSA_SIG_set0(
 {
     REQUIRE(psig != NULL);
     if (!(r && s))
+    {
         return 0;
+    }
 
     replace_bn_nn(&psig->r, r);
     replace_bn_nn(&psig->s, s);
@@ -239,11 +263,17 @@ void sslshim_DSA_get0_pqg(
     REQUIRE(pdsa != NULL);
 
     if (pp != NULL)
+    {
         *pp = pdsa->p;
+    }
     if (pq != NULL)
+    {
         *pq = pdsa->q;
+    }
     if (pg != NULL)
+    {
         *pg = pdsa->g;
+    }
 }
 
 int sslshim_DSA_set0_pqg(
@@ -253,7 +283,9 @@ int sslshim_DSA_set0_pqg(
     BIGNUM* g)
 {
     if (!((pdsa->p || p) && (pdsa->q || q) && (pdsa->g || g)))
+    {
         return 0;
+    }
 
     replace_bn_nn(&pdsa->p, p);
     replace_bn_nn(&pdsa->q, q);
@@ -270,9 +302,13 @@ void sslshim_DSA_get0_key(
     REQUIRE(pdsa != NULL);
 
     if (ppub_key != NULL)
+    {
         *ppub_key = pdsa->pub_key;
+    }
     if (ppriv_key != NULL)
+    {
         *ppriv_key = pdsa->priv_key;
+    }
 }
 
 int sslshim_DSA_set0_key(
@@ -282,7 +318,9 @@ int sslshim_DSA_set0_key(
 {
     REQUIRE(pdsa != NULL);
     if (!(pdsa->pub_key || pub_key))
+    {
         return 0;
+    }
 
     replace_bn_nn(&pdsa->pub_key, pub_key);
     replace_bn_nn(&pdsa->priv_key, priv_key);

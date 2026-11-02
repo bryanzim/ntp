@@ -56,7 +56,9 @@ iohpAttach(
     IoHndPad_T* lp)
 {
     if (lp != NULL)
+    {
         InterlockedIncrement((PLONG)&lp->refc_count);
+    }
     return lp;
 }
 
@@ -71,7 +73,7 @@ IoHndPad_T* __fastcall
 iohpDetach(
     IoHndPad_T* lp)
 {
-    if (lp != NULL && !InterlockedDecrement((PLONG)&lp->refc_count))
+    if ((lp != NULL) && !InterlockedDecrement((PLONG)&lp->refc_count))
     {
         memset(lp, 0xFF, sizeof(IoHndPad_T));
         IOCPLPoolFree(lp, "Lock");
@@ -120,12 +122,18 @@ BOOL iohpQueueLocked(
     {
         done = (*pred)(lp);
         if (done)
+        {
             add_full_recv_buffer(buf);
+        }
     }
     if (done)
+    {
         SetEvent(WaitableIoEventHandle);
+    }
     else
+    {
         freerecvbuf(buf);
+    }
     return done;
 }
 
@@ -150,8 +158,10 @@ DevCtxAlloc(void)
         /* The initial COV values make sure there is no busy
          * loop on unused/empty slots.
          */
-        for (slot = 0; slot < PPS_QUEUE_LEN; slot++)
+        for (slot = 0; slot < PPS_QUEUE_LEN; ++slot)
+        {
             devCtx->pps_buff[slot].cov_count = ~slot;
+        }
     }
     return devCtx;
 }
@@ -161,7 +171,9 @@ DevCtxAttach(
     DevCtx_t* devCtx)
 {
     if (devCtx != NULL)
+    {
         InterlockedIncrement((PLONG)&devCtx->ref_count);
+    }
     return devCtx;
 }
 
@@ -170,7 +182,9 @@ DevCtxDetach(
     DevCtx_t* devCtx)
 {
     if (devCtx && !InterlockedDecrement((PLONG)&devCtx->ref_count))
+    {
         IOCPLPoolFree(devCtx, "DEV ctx");
+    }
     return NULL;
 }
 
@@ -236,9 +250,13 @@ IoCtxRelease(
     if (ctx)
     {
         if (ctx->flRawMem)
+        {
             IOCPLPoolFree(ctx->trans_buf, dmsg);
+        }
         else
+        {
             freerecvbuf(ctx->recv_buf);
+        }
         IoCtxFree(ctx);
     }
 }

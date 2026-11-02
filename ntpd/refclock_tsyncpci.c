@@ -129,9 +129,9 @@ typedef struct BoardObj
     int file_descriptor;
     unsigned short devid;
     unsigned short options;
-    unsigned char firmware[5];
-    unsigned char FPGA[5];
-    unsigned char driver[7];
+    unsigned char firmware[5U];
+    unsigned char FPGA[5U];
+    unsigned char driver[7U];
 
 } BoardObj;
 
@@ -389,7 +389,7 @@ static void tsync_shutdown(int unit, struct peer* peer)
  *******************************************************************************/
 static void tsync_poll(int unit, struct peer* peer)
 {
-    char device[32];
+    char device[32U];
     struct refclockproc* pp;
     struct calendar jt;
     TsyncUnit* up;
@@ -559,9 +559,9 @@ static void tsync_poll(int unit, struct peer* peer)
     tmscl = ntohl(tmscl);
 
     // Extract leap second info from ioctl payload and perform byte swapping
-    for (i = 0; i < (sizeof(leapSec) / 4); i++)
+    for (i = 0; i < (sizeof(leapSec) / 4); ++i)
     {
-        for (j = 0; j < 4; j++)
+        for (j = 0; j < 4; ++j)
         {
             ((unsigned char*)&leapSec)[(i * 4) + j] =
                 ((unsigned char*)(it2->payloads))[(i * 4) + (3 - j)];
@@ -569,7 +569,7 @@ static void tsync_poll(int unit, struct peer* peer)
     }
 
     // Determine time reference ID from reference name
-    for (i = 0; RefIdLookupTbl[i].pRef != NULL; i++)
+    for (i = 0; RefIdLookupTbl[i].pRef != NULL; ++i)
     {
         // Search RefID table
         if (strstr(timeRef, RefIdLookupTbl[i].pRef) != NULL)
@@ -580,7 +580,7 @@ static void tsync_poll(int unit, struct peer* peer)
     }
 
     // Determine pps reference ID from reference name
-    for (j = 0; RefIdLookupTbl[j].pRef != NULL; j++)
+    for (j = 0; RefIdLookupTbl[j].pRef != NULL; ++j)
     {
         // Search RefID table
         if (strstr(ppsRef, RefIdLookupTbl[j].pRef) != NULL)

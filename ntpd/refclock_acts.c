@@ -273,7 +273,9 @@ acts_start(
     {
         setup = get_ext_sys_var("modemsetup");
         if (setup != NULL)
+        {
             modem_setup = estrdup(setup);
+        }
     }
 
     return (1);
@@ -327,7 +329,7 @@ acts_receive(
     up = pp->unitptr;
     octets = sizeof(up->buf) - (up->bufptr - up->buf);
     refclock_gtraw(rbufp, tbuf, octets, &pp->lastrec);
-    for (tptr = tbuf; *tptr != '\0'; tptr++)
+    for (tptr = tbuf; *tptr != '\0'; ++tptr)
     {
         if (*tptr == LF)
         {
@@ -401,14 +403,18 @@ void acts_message(
              * Ignore it.
              */
             if (!strcmp(tbuf, modem_setup))
+            {
                 return;
+            }
             break;
         }
 
         mprintf_event(PEVNT_CLOCK, peer, "DIAL #%d %s",
                       up->retry, sys_phone[up->retry]);
         if (ioctl(pp->io.fd, TIOCMBIS, &dtr) < 0)
+        {
             msyslog(LOG_ERR, "acts: ioctl(TIOCMBIS) failed: %m");
+        }
         refclock_write(peer, sys_phone[up->retry],
                        strlen(sys_phone[up->retry]),
                        "DIAL");
@@ -426,7 +432,9 @@ void acts_message(
      */
     case S_CONNECT:
         if (strcmp(tbuf, "CONNECT") != 0)
+        {
             break;
+        }
 
         report_event(PEVNT_CLOCK, peer, msg);
         up->state = S_MSG;
@@ -440,11 +448,17 @@ void acts_message(
      */
     case S_MSG:
         if (strcmp(tbuf, "NO") == 0)
+        {
             report_event(PEVNT_CLOCK, peer, msg);
+        }
         if (up->msgcnt < MAXCODE)
+        {
             acts_timecode(peer, msg);
+        }
         else
+        {
             acts_timeout(peer, S_MSG);
+        }
         return;
     }
 
@@ -467,8 +481,8 @@ acts_timeout(
     struct actsunit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
-    char lockfile[128], pidbuf[8];
+    char device[20U];
+    char lockfile[128U], pidbuf[8U];
 
     /*
      * The state machine is driven by messages from the modem,
@@ -485,7 +499,9 @@ acts_timeout(
      */
     case S_IDLE:
         if (-1 != pp->io.fd)
-            return; /* port is already open */
+        {
+            return;
+        } /* port is already open */
 
         /*
          * Lock the modem port. If busy, retry later. Note: if
@@ -506,7 +522,9 @@ acts_timeout(
             snprintf(pidbuf, sizeof(pidbuf), "%d\n",
                      (u_int)getpid());
             if (write(fd, pidbuf, strlen(pidbuf)) < 0)
+            {
                 msyslog(LOG_ERR, "acts: write lock fails %m");
+            }
             close(fd);
         }
 
@@ -605,7 +623,7 @@ void acts_close(
 {
     struct actsunit* up;
     struct refclockproc* pp;
-    char lockfile[128];
+    char lockfile[128U];
     int dtr;
 
     pp = peer->procptr;
@@ -615,7 +633,9 @@ void acts_close(
         report_event(PEVNT_CLOCK, peer, "close");
         dtr = TIOCM_DTR;
         if (ioctl(pp->io.fd, TIOCMBIC, &dtr) < 0)
+        {
             msyslog(LOG_ERR, "acts: ioctl(TIOCMBIC) failed: %m");
+        }
         io_closeclock(&pp->io);
         pp->io.fd = -1;
     }
@@ -625,7 +645,7 @@ void acts_close(
                  LOCKFILE, up->unit);
         unlink(lockfile);
     }
-    if (up->msgcnt == 0 && up->retry > 0)
+    if ((up->msgcnt == 0) && (up->retry > 0))
     {
         if (sys_phone[up->retry] != NULL)
         {
@@ -680,8 +700,10 @@ acts_poll(
      * as either no peers are available or this peer is selected.
      */
     case MODE_BACKUP:
-        if (!(sys_peer == NULL || sys_peer == peer))
+        if (!((sys_peer == NULL) || (sys_peer == peer)))
+        {
             return;
+        }
 
         break;
     }
@@ -725,7 +747,9 @@ acts_timer(
     {
         up->timer--;
         if (up->timer == 0)
+        {
             acts_timeout(peer, up->state);
+        }
     }
 }
 
@@ -744,11 +768,11 @@ void acts_timecode(
     u_long mjd;  /* Modified Julian Day */
     double dut1; /* DUT adjustment */
 
-    u_int dst;    /* ACTS daylight/standard time */
-    u_int leap;   /* ACTS leap indicator */
-    double msADV; /* ACTS transmit advance (ms) */
-    char utc[10]; /* ACTS timescale */
-    char flag;    /* ACTS on-time character (* or #) */
+    u_int dst;     /* ACTS daylight/standard time */
+    u_int leap;    /* ACTS leap indicator */
+    double msADV;  /* ACTS transmit advance (ms) */
+    char utc[10U]; /* ACTS timescale */
+    char flag;     /* ACTS on-time character (* or #) */
 
     char synchar;  /* WWVB synchronized indicator */
     char qualchar; /* WWVB quality indicator */
@@ -775,8 +799,10 @@ void acts_timecode(
      * itself. Be sure a timecode has been received.
      */
     case 1:
-        if (*str == '*' && up->msgcnt > 0)
+        if ((*str == '*') && (up->msgcnt > 0))
+        {
             break;
+        }
 
         return;
 
@@ -797,13 +823,19 @@ void acts_timecode(
         pp->day = ymd2yd(pp->year, month, day);
         pp->leap = LEAP_NOWARNING;
         if (leap == 1)
+        {
             pp->leap = LEAP_ADDSECOND;
+        }
         else if (leap == 2)
+        {
             pp->leap = LEAP_DELSECOND;
+        }
         memcpy(&pp->refid, REFACTS, 4);
         up->msgcnt++;
         if (flag != '#' && up->msgcnt < 10)
+        {
             return;
+        }
 
         break;
 
@@ -846,9 +878,13 @@ void acts_timecode(
         if (leapmonth == month)
         {
             if (leapdir == '+')
+            {
                 pp->leap = LEAP_ADDSECOND;
+            }
             else if (leapdir == '-')
+            {
                 pp->leap = LEAP_DELSECOND;
+            }
         }
         pp->day = ymd2yd(pp->year, month, day);
         memcpy(&pp->refid, REFPTB, 4);
@@ -869,7 +905,9 @@ void acts_timecode(
         }
         pp->leap = LEAP_NOWARNING;
         if (synchar != ' ')
+        {
             pp->leap = LEAP_NOTINSYNC;
+        }
         memcpy(&pp->refid, REFWWVB, 4);
         up->msgcnt++;
         break;
@@ -889,9 +927,13 @@ void acts_timecode(
         pp->nsec *= 1000000;
         pp->leap = LEAP_NOWARNING;
         if (synchar != ' ')
+        {
             pp->leap = LEAP_NOTINSYNC;
+        }
         else if (leapchar == 'L')
+        {
             pp->leap = LEAP_ADDSECOND;
+        }
         memcpy(&pp->refid, REFWWVB, 4);
         up->msgcnt++;
         break;
@@ -913,7 +955,9 @@ void acts_timecode(
     peer->refid = pp->refid;
     pp->lastrec = up->tstamp;
     if (up->msgcnt == 0)
+    {
         return;
+    }
 
     strlcpy(pp->a_lastcode, str, sizeof(pp->a_lastcode));
     pp->lencode = strlen(pp->a_lastcode);

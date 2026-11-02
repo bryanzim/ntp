@@ -101,10 +101,10 @@ struct timeval_wrap
     timeval_wrap(const timeval_wrap& rhs)
     { V = rhs.V; }
     bool operator==(const timeval_wrap& rhs) const
-    { return V.tv_sec == rhs.V.tv_sec &&
-             V.tv_usec == rhs.V.tv_usec; }
+    { return (V.tv_sec == rhs.V.tv_sec) &&
+             (V.tv_usec == rhs.V.tv_usec); }
     bool valid() const
-    { return V.tv_usec >= 0 && V.tv_usec < 1000000; }
+    { return (V.tv_usec >= 0) && (V.tv_usec < 1000000); }
     operator struct timeval*()
     { return &V; }
     operator struct timeval&()
@@ -139,10 +139,10 @@ struct timespec_wrap
     timespec_wrap(const timespec_wrap& rhs)
     { V = rhs.V; }
     bool operator==(const timespec_wrap& rhs) const
-    { return V.tv_sec == rhs.V.tv_sec &&
-             V.tv_nsec == rhs.V.tv_nsec; }
+    { return (V.tv_sec == rhs.V.tv_sec) &&
+             (V.tv_nsec == rhs.V.tv_nsec); }
     bool valid() const
-    { return V.tv_nsec >= 0 && V.tv_nsec < 1000000000; }
+    { return (V.tv_nsec >= 0) && (V.tv_nsec < 1000000000); }
     operator struct timespec*()
     { return &V; }
     operator struct timespec&()

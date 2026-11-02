@@ -619,7 +619,7 @@ struct conf_peer
     u_char ttl;                /* time to live (multicast) or refclock mode */
     u_short unused1;           /* unused */
     keyid_t keyid;             /* key to use for this association */
-    char keystr[128];          /* public key file name */
+    char keystr[128U];         /* public key file name */
     u_int v6_flag;             /* is this v6 or not */
     u_int unused2;             /* unused, padding for peeraddr6 */
     struct in6_addr peeraddr6; /* ipv6 address to poll */
@@ -947,7 +947,7 @@ struct info_if_stats
     union addrun unbcast;  /* broadcast */
     union addrun unmask;   /* mask */
     u_int32 v6_flag;       /* is this v6 */
-    char name[32];         /* name of interface */
+    char name[32U];        /* name of interface */
     int32 flags;           /* interface flags */
     int32 last_ttl;        /* last TTL specified */
     int32 num_mcast;       /* No. of IP addresses in multicast socket */

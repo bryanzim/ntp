@@ -258,8 +258,8 @@ int main(
     struct timeval tv;    /* system clock at startup */
     audio_info_t info;    /* Sun audio structure */
     struct tm* tm = NULL; /* structure returned by gmtime */
-    char device[50];      /* audio device */
-    char code[100];       /* timecode */
+    char device[50U];     /* audio device */
+    char code[100U];      /* timecode */
     int rval, temp, arg, sw, ptr;
     int minute, hour, day, year;
     int i;
@@ -301,9 +301,13 @@ int main(
         case 'u': /* set DUT1 offset (-7 to +7) */
             sscanf(optarg, "%d", &dut1);
             if (dut1 < 0)
+            {
                 dut1 = abs(dut1);
+            }
             else
+            {
                 dut1 |= 0x8;
+            }
             break;
 
         case 'v': /* set output level (0-255) */
@@ -385,10 +389,12 @@ int main(
                  year / 10, day, hour, minute, year % 10);
         printf("%s\n", code);
         ptr = 8;
-        for (i = 0; i <= second; i++)
+        for (i = 0; i <= second; ++i)
         {
             if (progx[i].sw == DEC)
+            {
                 ptr--;
+            }
         }
         break;
 
@@ -474,7 +480,7 @@ int main(
          * percent on the 1000-Hz carrier.
          */
         case IRIG:
-            for (i = 0; i < 100; i++)
+            for (i = 0; i < 100; ++i)
             {
                 if (i < 10)
                 {
@@ -518,7 +524,9 @@ int main(
                     break;
                 }
                 if (ptr < 0)
+                {
                     break;
+                }
             }
             printf("\n");
             break;
@@ -576,25 +584,37 @@ int main(
 
             case DUT1: /* send DUT1 bits */
                 if (dut1 & arg)
+                {
                     sec(DATA1);
+                }
                 else
+                {
                     sec(DATA0);
+                }
                 break;
 
             case DST1: /* send DST1 bit */
                 ptr--;
                 if (dst)
+                {
                     sec(DATA1);
+                }
                 else
+                {
                     sec(DATA0);
+                }
                 printf(" ");
                 break;
 
             case DST2: /* send DST2 bit */
                 if (dst)
+                {
                     sec(DATA1);
+                }
                 else
+                {
                     sec(DATA0);
+                }
                 break;
             }
         }
@@ -638,12 +658,16 @@ void peep(
     int increm; /* phase increment */
     int i, j;
 
-    if (amp == OFF || freq == 0)
+    if ((amp == OFF) || (freq == 0))
+    {
         increm = 10;
+    }
     else
+    {
         increm = freq / 100;
+    }
     j = 0;
-    for (i = 0; i < pulse * 8; i++)
+    for (i = 0; i < pulse * 8; ++i)
     {
         switch (amp)
         {

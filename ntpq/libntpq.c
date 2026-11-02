@@ -66,9 +66,11 @@ int ntpq_stripquotes(char* resultbuf, char* srcbuf, int datalen, int maxlen)
     int ch;
 
     if (maxlen <= 0)
+    {
         return 0;
+    }
 
-    while ((dst != dep) && (src != sep) && (ch = (u_char)*src++) != 0)
+    while ((dst != dep) && (src != sep) && ((ch = (u_char)*src++) != 0))
     {
         if (esc)
         {
@@ -197,15 +199,23 @@ int ntpq_queryhost(unsigned short VARSET, unsigned short association, char* resu
     u_short rstatus;
 
     if (numhosts > 0)
+    {
         res = doquery(VARSET, association, 0, 0, (char*)0, &rstatus, &dsize, &datap);
+    }
     else
+    {
         return 0;
+    }
 
-    if ((res != 0) || (dsize == 0)) /* no data */
+    if ((res != 0) || (dsize == 0))
+    { /* no data */
         return 0;
+    }
 
     if (dsize > maxlen)
+    {
         dsize = maxlen;
+    }
 
 
     /* fill result resultbuf */
@@ -274,7 +284,9 @@ int ntpq_openhost(
 int ntpq_closehost(void)
 {
     if (numhosts)
+    {
         return closesocket(sockfd);
+    }
 
     return 0;
 }
@@ -318,10 +330,14 @@ int ntpq_read_associations(u_short resultbuf[], int max_entries)
     {
 
         if (numassoc < max_entries)
+        {
             max_entries = numassoc;
+        }
 
-        for (i = 0; i < max_entries; i++)
+        for (i = 0; i < max_entries; ++i)
+        {
             resultbuf[i] = assoc_cache[i].assid;
+        }
 
         return numassoc;
     }
@@ -384,10 +400,12 @@ int ntpq_get_assoc_number(associd_t associd)
 {
     int i;
 
-    for (i = 0; i < numassoc; i++)
+    for (i = 0; i < numassoc; ++i)
     {
         if (assoc_cache[i].assid == associd)
+        {
             return i;
+        }
     }
 
     return -1;
@@ -433,11 +451,15 @@ int ntpq_read_assoc_peervars(
     res = doquery(CTL_OP_READVAR, associd, 0, 0, NULL, &rstatus,
                   &dsize, &datap);
     if (res != 0)
+    {
         return 0;
+    }
     if (dsize <= 0)
     {
         if (numhosts > 1)
+        {
             fprintf(stderr, "server=%s ", currenthost);
+        }
         fprintf(stderr,
                 "***No information returned for association %d\n",
                 associd);
@@ -445,7 +467,9 @@ int ntpq_read_assoc_peervars(
         return 0;
     }
     if (dsize > maxsize)
+    {
         dsize = maxsize;
+    }
     memcpy(resultbuf, datap, dsize);
 
     return dsize;
@@ -491,12 +515,16 @@ ntpq_read_sysvars(
                   &dsize, &datap);
 
     if (res != 0)
+    {
         return 0;
+    }
 
     if (dsize == 0)
     {
         if (numhosts > 1)
+        {
             fprintf(stderr, "server=%s ", currenthost);
+        }
         fprintf(stderr, "***No sysvar information returned\n");
 
         return 0;
@@ -565,9 +593,13 @@ int ntpq_get_sysvars(void)
 {
     sysvarlen = ntpq_read_sysvars(sysvars, sizeof(sysvars));
     if (sysvarlen <= 0)
+    {
         return 0;
+    }
     else
+    {
         return 1;
+    }
 }
 
 
@@ -674,17 +706,23 @@ int ntpq_read_assoc_clockvars(
     res = ntpq_doquerylist(ntpq_varlist, CTL_OP_READCLOCK, associd,
                            0, &rstatus, &dsize, &datap);
     if (res != 0)
+    {
         return 0;
+    }
 
     if (dsize == 0)
     {
-        if (numhosts > 1) /* no information returned from server */
+        if (numhosts > 1)
+        { /* no information returned from server */
             return 0;
+        }
     }
     else
     {
         if (dsize > maxsize)
+        {
             dsize = maxsize;
+        }
         memcpy(resultbuf, datap, dsize);
     }
 
@@ -717,8 +755,10 @@ int ntpq_get_assoc_clocktype(
     char dstadr[LENHOSTNAME];
     char resultbuf[NTPQ_BUFLEN];
 
-    if (assoc_index < 0 || assoc_index >= numassoc)
+    if ((assoc_index < 0) || (assoc_index >= numassoc))
+    {
         return -1;
+    }
 
     associd = assoc_cache[assoc_index].assid;
     if (associd == peervar_assoc)
@@ -730,13 +770,17 @@ int ntpq_get_assoc_clocktype(
         i = ntpq_read_assoc_peervars(associd, resultbuf,
                                      sizeof(resultbuf));
         if (i <= 0)
+        {
             return -1;
+        }
         rc = ntpq_getvar(resultbuf, i, "dstadr", dstadr,
                          sizeof(dstadr));
     }
 
-    if (0 != rc && decodenetnum(dstadr, &dum_store))
+    if ((0 != rc) && decodenetnum(dstadr, &dum_store))
+    {
         return ntpq_decodeaddrtype(&dum_store);
+    }
 
     return -1;
 }
@@ -767,7 +811,9 @@ int ntpq_get_assoc_clockvars(associd_t associd)
 {
     if (NTP_CLOCKTYPE_LOCAL != ntpq_get_assoc_clocktype(
                                    ntpq_get_assoc_number(associd)))
+    {
         return 0;
+    }
     clockvarlen = ntpq_read_assoc_clockvars(associd, clockvars,
                                             sizeof(clockvars));
     if (clockvarlen <= 0)

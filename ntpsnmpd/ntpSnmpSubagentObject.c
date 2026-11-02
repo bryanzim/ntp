@@ -74,15 +74,17 @@ ntpsnmpd_parse_string(
     size_t val_cnt;
 
     /* we need at least one byte to work with to simplify */
-    if (fieldsize < 1 || valuesize < 1)
+    if ((fieldsize < 1) || (valuesize < 1))
+    {
         return 0;
+    }
 
     str_cnt = strlen(string);
 
     /* Parsing the field name */
     j = 0;
     loop = TRUE;
-    for (i = 0; loop && i <= str_cnt; i++)
+    for (i = 0; loop && (i <= str_cnt); ++i)
     {
         switch (string[i])
         {
@@ -99,7 +101,9 @@ ntpsnmpd_parse_string(
 
         default:
             if (j < fieldsize)
+            {
                 field[j++] = toupper(string[i]);
+            }
         }
     }
 
@@ -109,16 +113,20 @@ ntpsnmpd_parse_string(
     /* Now parsing the value */
     value[0U] = '\0';
     j = 0;
-    for (val_cnt = 0; i < str_cnt; i++)
+    for (val_cnt = 0; i < str_cnt; ++i)
     {
-        if (string[i] > 0x0D && string[i] != ' ')
+        if ((string[i] > 0x0D) && (string[i] != ' '))
+        {
             val_cnt = min(j + 1, valuesize - 1);
+        }
 
-        if (value[0U] != '\0' ||
-            (string[i] > 0x0D && string[i] != ' '))
+        if ((value[0U] != '\0') ||
+            ((string[i] > 0x0D) && (string[i] != ' ')))
         {
             if (j < valuesize)
+            {
                 value[j++] = string[i];
+            }
         }
     }
     value[val_cnt] = '\0';
@@ -127,7 +135,7 @@ ntpsnmpd_parse_string(
     {
         val_cnt--;
         strlcpy(value, &value[1U], valuesize);
-        if (val_cnt > 0 && value[val_cnt - 1] == '"')
+        if ((val_cnt > 0) && (value[val_cnt - 1] == '"'))
         {
             val_cnt--;
             value[val_cnt] = '\0';
@@ -177,19 +185,25 @@ ntpsnmpd_cut_string(
     size_t str_cnt;
 
     if (maxsize < 1)
+    {
         return 0;
+    }
 
     str_cnt = strlen(string);
     j = 0;
     memset(dest, 0, maxsize);
 
     /* Parsing the field name */
-    for (i = 0, l = 0; i < str_cnt && l <= fieldnumber; i++)
+    for (i = 0, l = 0; (i < str_cnt) && (l <= fieldnumber); ++i)
     {
         if (string[i] == delim)
-            l++; /* next field */
-        else if (l == fieldnumber && j < maxsize)
+        {
+            l++;
+        } /* next field */
+        else if ((l == fieldnumber) && (j < maxsize))
+        {
             dest[j++] = string[i];
+        }
     }
     j = min(j, maxsize - 1);
     dest[j] = '\0';
@@ -230,10 +244,14 @@ read_ntp_value(
     sv_len = ntpq_read_sysvars(sv_data, sizeof(sv_data));
 
     if (0 == sv_len)
+    {
         return 0;
+    }
     else
+    {
         return ntpq_getvar(sv_data, sv_len, variable, value,
                            valuesize);
+    }
 }
 
 
@@ -431,11 +449,17 @@ int get_ntpEntTimeResolution(
     case MODE_GET:
         if (!read_ntp_value("precision", ntpvalue,
                             sizeof(ntpvalue)))
+        {
             return SNMP_ERR_GENERR;
+        }
         if (1 != sscanf(ntpvalue, "%d", &precision))
+        {
             return SNMP_ERR_GENERR;
+        }
         if (precision >= 0)
+        {
             return SNMP_ERR_GENERR;
+        }
         precision = max(precision, -31);
         resolution = 1 << -precision;
         snmp_set_var_typed_value(
@@ -473,9 +497,13 @@ int get_ntpEntTimePrecision(
     case MODE_GET:
         if (!read_ntp_value("precision", ntpvalue,
                             sizeof(ntpvalue)))
+        {
             return SNMP_ERR_GENERR;
+        }
         if (1 != sscanf(ntpvalue, "%d", &precision))
+        {
             return SNMP_ERR_GENERR;
+        }
         precision32 = (int32)precision;
         snmp_set_var_typed_value(
             requests->requestvb,

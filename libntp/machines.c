@@ -148,8 +148,8 @@ int __ntp_mpe_bind(int s, void* addr, int addrlen)
 
     if (addrlen == sizeof(struct sockaddr_in))
     { /* AF_INET */
-        if (((struct sockaddr_in*)addr)->sin_port > 0 &&
-            ((struct sockaddr_in*)addr)->sin_port < 1024)
+        if ((((struct sockaddr_in*)addr)->sin_port > 0) &&
+            (((struct sockaddr_in*)addr)->sin_port < 1024))
         {
             priv = 1;
             GETPRIVMODE();
@@ -157,10 +157,14 @@ int __ntp_mpe_bind(int s, void* addr, int addrlen)
         /*	((struct sockaddr_in *)addr)->sin_addr.s_addr = 0; */
         result = bind(s, addr, addrlen);
         if (priv == 1)
+        {
             GETUSERMODE();
+        }
     }
-    else /* AF_UNIX */
+    else
+    { /* AF_UNIX */
         result = bind(s, addr, addrlen);
+    }
 
     return result;
 }
@@ -188,14 +192,20 @@ int __ntp_mpe_fcntl(int fd, int cmd, int arg)
     len = sizeof sa;
     if (getsockname(fd, &sa, &len) == -1)
     {
-        if (errno == EAFNOSUPPORT) /* AF_UNIX socket */
+        if (errno == EAFNOSUPPORT)
+        { /* AF_UNIX socket */
             return sfcntl(fd, cmd, arg);
-        if (errno == ENOTSOCK) /* file or pipe */
+        }
+        if (errno == ENOTSOCK)
+        { /* file or pipe */
             return fcntl(fd, cmd, arg);
+        }
         return (-1); /* unknown getsockname() failure */
     }
-    else /* AF_INET socket */
+    else
+    { /* AF_INET socket */
         return sfcntl(fd, cmd, arg);
+    }
 }
 
 /*
@@ -260,10 +270,12 @@ static RETSIGTYPE setitimer_mpe_handler(int sig)
 
     /* Call the original SIGALRM handler if it is a function and not just a flag */
 
-    if (setitimer_mpe_ctx.oldact.sa_handler != SIG_DFL &&
-        setitimer_mpe_ctx.oldact.sa_handler != SIG_ERR &&
-        setitimer_mpe_ctx.oldact.sa_handler != SIG_IGN)
+    if ((setitimer_mpe_ctx.oldact.sa_handler != SIG_DFL) &&
+        (setitimer_mpe_ctx.oldact.sa_handler != SIG_ERR) &&
+        (setitimer_mpe_ctx.oldact.sa_handler != SIG_IGN))
+    {
         (*setitimer_mpe_ctx.oldact.sa_handler)(SIGALRM);
+    }
 }
 
 /*
@@ -283,9 +295,13 @@ int setitimer(int which, struct itimerval* value,
      */
 
     if (value->it_value.tv_sec > (UINT_MAX / 1000))
+    {
         value_msec = UINT_MAX;
+    }
     else
+    {
         value_msec = value->it_value.tv_sec * 1000;
+    }
 
     value_msec += value->it_value.tv_usec / 1000;
 
@@ -294,13 +310,17 @@ int setitimer(int which, struct itimerval* value,
      */
 
     if (value->it_interval.tv_sec > (UINT_MAX / 1000))
+    {
         interval_msec = UINT_MAX;
+    }
     else
+    {
         interval_msec = value->it_interval.tv_sec * 1000;
+    }
 
     interval_msec += value->it_interval.tv_usec / 1000;
 
-    if (value_msec > 0 && interval_msec > 0)
+    if ((value_msec > 0) && (interval_msec > 0))
     {
         /*
          * We'll be starting an interval timer that will be repeating, so we need to
@@ -333,7 +353,9 @@ int setitimer(int which, struct itimerval* value,
      */
 
     if (ovalue != NULL)
+    {
         *ovalue = setitimer_mpe_ctx.current_itimerval;
+    }
 
     /*
      * Save current parameters for later usage
@@ -350,9 +372,13 @@ int setitimer(int which, struct itimerval* value,
 
     remaining_msec = px_alarm(value_msec, &alarm_hpe_status);
     if (alarm_hpe_status == 0)
+    {
         return (0);
+    }
     else
+    {
         return (-1);
+    }
 }
 
 /*
@@ -453,7 +479,7 @@ int ntp_set_tod(
     saved_errno = 0;
 
 #ifdef HAVE_CLOCK_SETTIME
-    if (rc && (SET_TOD_CLOCK_SETTIME == tod || !tod))
+    if (rc && ((SET_TOD_CLOCK_SETTIME == tod) || !tod))
     {
         struct timespec ts;
 
@@ -466,11 +492,13 @@ int ntp_set_tod(
         saved_errno = errno;
         TRACE(1, ("ntp_set_tod: clock_settime: %d %m\n", rc));
         if (!tod && !rc)
+        {
             tod = SET_TOD_CLOCK_SETTIME;
+        }
     }
 #endif /* HAVE_CLOCK_SETTIME */
 #ifdef HAVE_SETTIMEOFDAY
-    if (rc && (SET_TOD_SETTIMEOFDAY == tod || !tod))
+    if (rc && ((SET_TOD_SETTIMEOFDAY == tod) || !tod))
     {
         struct timeval adjtv;
 
@@ -485,11 +513,13 @@ int ntp_set_tod(
         saved_errno = errno;
         TRACE(1, ("ntp_set_tod: settimeofday: %d %m\n", rc));
         if (!tod && !rc)
+        {
             tod = SET_TOD_SETTIMEOFDAY;
+        }
     }
 #endif /* HAVE_SETTIMEOFDAY */
 #ifdef HAVE_STIME
-    if (rc && (SET_TOD_STIME == tod || !tod))
+    if (rc && ((SET_TOD_STIME == tod) || !tod))
     {
         long tp = tvp->tv_sec;
 
@@ -498,7 +528,9 @@ int ntp_set_tod(
         saved_errno = errno;
         TRACE(1, ("ntp_set_tod: stime: %d %m\n", rc));
         if (!tod && !rc)
+        {
             tod = SET_TOD_STIME;
+        }
     }
 #endif /* HAVE_STIME */
 
@@ -508,14 +540,16 @@ int ntp_set_tod(
     /*
      * Say how we're setting the time of day
      */
-    if (!rc && NULL != set_tod_using)
+    if (!rc && (NULL != set_tod_using))
     {
         (*set_tod_using)(set_tod_used[tod]);
         set_tod_using = NULL;
     }
 
     if (rc)
+    {
         errno = saved_errno;
+    }
 
     return rc;
 }
@@ -528,12 +562,12 @@ int ntp_set_tod(
 char* getpass(const char* prompt)
 {
     int c, i;
-    static char password[32];
+    static char password[32U];
 
     fprintf(stderr, "%s", prompt);
     fflush(stderr);
 
-    for (i = 0; i < sizeof(password) - 1 && ((c = _getch()) != '\n' && c != '\r'); i++)
+    for (i = 0; i < sizeof(password) - 1 && (((c = _getch()) != '\n') && (c != '\r')); ++i)
     {
         password[i] = (char)c;
     }
@@ -547,7 +581,7 @@ char* getpass(const char* prompt)
 #endif /* SYS_WINNT */
 
 
-static const int baudTable[][2] = {
+static const int baudTable[][2U] = {
     {      B0,      0 },
     {     B50,     50 },
     {     B75,     75 },

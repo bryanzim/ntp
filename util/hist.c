@@ -34,10 +34,14 @@ int main(
     /*
      * Force pages into memory
      */
-    for (i = 0; i < NBUF; i++)
+    for (i = 0; i < NBUF; ++i)
+    {
         gtod[i] = 0;
-    for (i = 0; i < NSRT; i++)
+    }
+    for (i = 0; i < NSRT; ++i)
+    {
         ovfl[i] = 0;
+    }
 
     /*
      * Construct histogram
@@ -51,7 +55,9 @@ int main(
         gettimeofday(&tr, &tzp);
         u = tr.tv_sec * 1000000 + tr.tv_usec;
         if (u - v > NCNT)
+        {
             break;
+        }
         w = u - t;
         if (w <= 0)
         {
@@ -64,7 +70,9 @@ int main(
         {
             ovfl[n] = w;
             if (n < NSRT - 1)
+            {
                 n++;
+            }
         }
         else
         {
@@ -77,30 +85,40 @@ int main(
     /*
      * Write out histogram
      */
-    for (i = 0; i < NBUF - 1; i++)
+    for (i = 0; i < NBUF - 1; ++i)
     {
         if (gtod[i] > 0)
+        {
             printf("%ld %ld\n", i, gtod[i]);
+        }
     }
     if (n == 0)
+    {
         return;
+    }
     qsort(&ovfl, (size_t)n, sizeof(ovfl[0U]), col);
     w = 0;
     j = 0;
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; ++i)
     {
         if (ovfl[i] != w)
         {
             if (j > 0)
+            {
                 printf("%ld %ld\n", w, j);
+            }
             w = ovfl[i];
             j = 1;
         }
         else
+        {
             j++;
+        }
     }
     if (j > 0)
+    {
         printf("%ld %ld\n", w, j);
+    }
 
     exit(0);
 }

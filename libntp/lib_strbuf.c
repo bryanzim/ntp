@@ -45,7 +45,7 @@ void init_lib(void)
      * so the compiler can see copying from one buffer to another is
      * not violating restrict qualifiers on, e.g. memcpy() args.
      */
-    for (u = 0; u < COUNTOF(lib_stringbuf); u++)
+    for (u = 0; u < COUNTOF(lib_stringbuf); ++u)
     {
         lib_stringbuf[u] = lib_stringbuf_storage[u];
     }

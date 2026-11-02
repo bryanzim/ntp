@@ -48,7 +48,9 @@ caltontp(
 
     if ((jt->month > 13) /* permit month 0..13! */
         || (jt->monthday > 32) || (jt->yearday > 366) || (jt->hour > 24) || (jt->minute > MINSPERHR) || (jt->second > SECSPERMIN))
+    {
         errno = ERANGE;
+    }
 
     /*
      * First convert the date to he corresponding RataDie
@@ -57,9 +59,13 @@ caltontp(
      * and day-of-month. Do a full evaluation otherwise.
      */
     if (jt->yearday)
+    {
         eraday = ntpcal_year_to_ystart(jt->year) + jt->yearday - 1;
+    }
     else
+    {
         eraday = ntpcal_date_to_rd(jt);
+    }
 
     ntptime = ntpcal_dayjoin(eraday - DAY_NTP_STARTS,
                              ntpcal_etime_to_seconds(jt->hour, jt->minute,

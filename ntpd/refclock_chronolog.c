@@ -98,7 +98,7 @@ chronolog_start(
     register struct chronolog_unit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port. Don't bother with CLK line discipline, since
@@ -107,11 +107,15 @@ chronolog_start(
     snprintf(device, sizeof(device), DEVICE, unit);
 #ifdef DEBUG
     if (debug)
+    {
         printf("starting Chronolog with device %s\n", device);
+    }
 #endif
     fd = refclock_open(&peer->srcadr, device, SPEED232, 0);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -156,9 +160,13 @@ chronolog_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -196,7 +204,9 @@ chronolog_receive(
             up->laststamp = trtmp;
         }
         else
+        {
             up->tcswitch = 0;
+        }
         return;
     }
     pp->lencode = temp;
@@ -206,8 +216,10 @@ chronolog_receive(
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("chronolog: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif
 
     /*
@@ -266,9 +278,11 @@ chronolog_receive(
         pp->second = gmtp->tm_sec;
 #ifdef DEBUG
         if (debug)
+        {
             printf("time is %04d/%02d/%02d %02d:%02d:%02d UTC\n",
                    adjyear, adjmon, gmtp->tm_mday, pp->hour, pp->minute,
                    pp->second);
+        }
 #endif
 
 #else
@@ -285,7 +299,9 @@ chronolog_receive(
     }
 
     if (!got_good)
+    {
         return;
+    }
 
 
     /*
@@ -327,16 +343,26 @@ chronolog_poll(
 
 	pp = peer->procptr;
 	up = pp->unitptr;
-	if (peer->burst == 0 && peer->reach == 0)
+	if ((peer->burst == 0) && (peer->reach == 0))
+	{
 		refclock_report(peer, CEVNT_TIMEOUT);
+	}
 	if (up->linect > 0)
+	{
 		pollchar = 'R';
+	}
 	else
+	{
 		pollchar = 'T';
+	}
 	if (write(pp->io.fd, &pollchar, 1) != 1)
+	{
 		refclock_report(peer, CEVNT_FAULT);
+	}
 	else
+	{
 		pp->polls++;
+	}
 #endif
 }
 

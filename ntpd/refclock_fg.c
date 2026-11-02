@@ -80,7 +80,9 @@ fg_init(
     int fd)
 {
     if (write(fd, fginit, LENFG) != LENFG)
+    {
         return 0;
+    }
 
     return 1;
 }
@@ -96,7 +98,7 @@ fg_start(
     struct refclockproc* pp;
     struct fgunit* up;
     int fd;
-    char device[20];
+    char device[20U];
 
 
     /*
@@ -108,7 +110,9 @@ fg_start(
 
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -143,7 +147,9 @@ fg_start(
      * GPS receiver should work before this operation.
      */
     if (!fg_init(pp->io.fd))
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
 
     return (1);
 }
@@ -163,9 +169,13 @@ fg_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (pp->io.fd != -1)
+    {
         io_closeclock(&pp->io);
+    }
     if (up != NULL)
+    {
         free(up);
+    }
 }
 
 
@@ -189,9 +199,13 @@ fg_poll(
      */
 
     if (write(pp->io.fd, fgdate, LENFG) != LENFG)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
     else
+    {
         pp->polls++;
+    }
 
     /*
     if (pp->coderecv == pp->codeproc) {
@@ -248,7 +262,9 @@ fg_receive(
 
     bpt = (char*)rbufp->recv_buffer;
     while (*bpt != '\x10')
+    {
         bpt++;
+    }
 
 #define BP2(x) (bpt[x] & 15)
 #define BP1(x) ((bpt[x] & 240) >> 4)
@@ -259,7 +275,9 @@ fg_receive(
     {
         refclock_report(peer, CEVNT_BADREPLY);
         if (!fg_init(pp->io.fd))
+        {
             refclock_report(peer, CEVNT_FAULT);
+        }
         return;
         /* GPS is just powered up. The date is invalid -
         discarding it. Initilize GPS one more time */
@@ -267,7 +285,9 @@ fg_receive(
     }
 
     if (pp->year < 99)
+    {
         pp->year += 100;
+    }
 
     pp->year += 1900;
     pp->day = 100 * BP2(3) + 10 * BP1(4) + BP2(4);
@@ -280,9 +300,13 @@ fg_receive(
        Below small code to avoid such situation.
     */
     if (up->y2kwarn > 10)
+    {
         pp->hour = BP1(6) * 10 + BP2(6);
+    }
     else
+    {
         pp->hour = BP1(5) * 10 + BP2(5);
+    }
 
     if ((up->y2kwarn > 10) && (pp->hour == 10))
     {
@@ -313,8 +337,10 @@ fg_receive(
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("fg: time is %04d/%03d %02d:%02d:%02d UTC\n",
                pp->year, pp->day, pp->hour, pp->minute, pp->second);
+    }
 #endif
     pp->disp = (10e-6);
     pp->lastrec = rbufp->recv_time; /* Is it better than get_systime()? */
@@ -326,7 +352,9 @@ fg_receive(
      */
 
     if (!refclock_process(pp))
+    {
         refclock_report(peer, CEVNT_BADTIME);
+    }
     pp->lastref = pp->lastrec;
     refclock_receive(peer);
     return;

@@ -13,7 +13,7 @@
 /*
  * Powers of 10
  */
-static u_long ten_to_the_n[10] = {
+static u_long ten_to_the_n[10U] = {
     0,
     10,
     100,
@@ -52,7 +52,9 @@ int atolfp(
      * [spaces][-|+][digits][.][digits][spaces|\n|\0]
      */
     while (isspace((unsigned char)*cp))
+    {
         cp++;
+    }
 
     if (*cp == '-')
     {
@@ -61,24 +63,30 @@ int atolfp(
     }
 
     if (*cp == '+')
+    {
         cp++;
+    }
 
-    if (*cp != '.' && !isdigit((unsigned char)*cp))
+    if ((*cp != '.') && !isdigit((unsigned char)*cp))
+    {
         return 0;
+    }
 
-    while (*cp != '\0' && (ind = strchr(digits, *cp)) != NULL)
+    while ((*cp != '\0') && ((ind = strchr(digits, *cp)) != NULL))
     {
         dec_i = (dec_i << 3) + (dec_i << 1); /* multiply by 10 */
         dec_i += (u_long)(ind - digits);
         cp++;
     }
 
-    if (*cp != '\0' && !isspace((unsigned char)*cp))
+    if ((*cp != '\0') && !isspace((unsigned char)*cp))
     {
         if (*cp++ != '.')
+        {
             return 0;
+        }
 
-        while (ndec < 9 && *cp != '\0' && (ind = strchr(digits, *cp)) != NULL)
+        while ((ndec < 9) && (*cp != '\0') && ((ind = strchr(digits, *cp)) != NULL))
         {
             ndec++;
             dec_f = (dec_f << 3) + (dec_f << 1); /* *10 */
@@ -87,10 +95,14 @@ int atolfp(
         }
 
         while (isdigit((unsigned char)*cp))
+        {
             cp++;
+        }
 
-        if (*cp != '\0' && !isspace((unsigned char)*cp))
+        if ((*cp != '\0') && !isspace((unsigned char)*cp))
+        {
             return 0;
+        }
     }
 
     if (ndec > 0)
@@ -114,12 +126,16 @@ int atolfp(
             bit >>= 1;
         }
         if ((dec_f << 1) > ten_fact)
+        {
             tmp++;
+        }
         dec_f = tmp;
     }
 
     if (isneg)
+    {
         M_NEG(dec_i, dec_f);
+    }
 
     lfp->l_ui = dec_i;
     lfp->l_uf = dec_f;

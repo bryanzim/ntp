@@ -34,10 +34,12 @@ char* strerror(
 {
     extern int sys_nerr;
     extern char* sys_errlist[];
-    static char ebuf[20];
+    static char ebuf[20U];
 
     if ((unsigned int)errnum < sys_nerr)
+    {
         return sys_errlist[errnum];
+    }
     snprintf(ebuf, sizeof(ebuf), "Unknown error: %d", errnum);
 
     return ebuf;

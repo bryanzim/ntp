@@ -22,8 +22,8 @@ struct key
     keyid_t key_id;
     size_t key_len;
     int typei;
-    char typen[20];
-    char key_seq[64];
+    char typen[20U];
+    char key_seq[64U];
 };
 
 extern int auth_init(const char* keyfile, struct key** keys);

@@ -109,12 +109,14 @@ cvt_trimtaip(
     void* local)
 {
     long gpsfix;
-    u_char calc_csum = 0;
+    u_char calc_csum = 0U;
     long recv_csum;
     int i;
 
     if (!Strok(buffer, format->fixed_string))
+    {
         return CVT_NONE;
+    }
 #define OFFS(x) format->field_offsets[(x)].offset
 #define STOI(x, y)            \
     Stoi(&buffer[OFFS(x)], y, \
@@ -127,18 +129,26 @@ cvt_trimtaip(
         STOI(O_SEC, &clock_time->second) ||
         STOI(O_USEC, &clock_time->usecond) ||
         STOI(O_GPSFIX, &gpsfix))
+    {
         return CVT_FAIL | CVT_BADFMT;
+    }
 
     clock_time->usecond *= 1000;
     /* Check that the checksum is right */
-    for (i = OFFS(O_CHKSUM) - 1; i >= 0; i--)
+    for (i = OFFS(O_CHKSUM) - 1; i >= 0; --i)
+    {
         calc_csum ^= buffer[i];
+    }
     recv_csum = (hexval(buffer[OFFS(O_CHKSUM)]) << 4) |
                 hexval(buffer[OFFS(O_CHKSUM) + 1]);
     if (recv_csum < 0)
+    {
         return CVT_FAIL | CVT_BADTIME;
+    }
     if (((u_char)recv_csum) != calc_csum)
+    {
         return CVT_FAIL | CVT_BADTIME;
+    }
 
     clock_time->utcoffset = 0;
 
@@ -146,8 +156,10 @@ cvt_trimtaip(
     clock_time->flags = PARSEB_UTC;
 
     /* if the current GPS fix is 9 (unknown), reject */
-    if (0 > gpsfix || gpsfix > 9)
+    if ((0 > gpsfix) || (gpsfix > 9))
+    {
         clock_time->flags |= PARSEB_POWERUP;
+    }
 
     return CVT_OK;
 }
@@ -180,9 +192,13 @@ inp_trimtaip(
     case '<':
         parseprintf(DD_PARSE, ("inp_trimtaip: END seen\n"));
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
 
     default:

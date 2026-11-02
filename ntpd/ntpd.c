@@ -219,7 +219,7 @@ struct passwd* pw;
 #endif /* HAVE_DROPROOT */
 
 #ifdef HAVE_WORKING_FORK
-int daemon_pipe[2] = { -1, -1 };
+int daemon_pipe[2U] = { -1, -1 };
 #endif
 
 /*
@@ -320,7 +320,9 @@ my_pthread_warmup_worker(
 {
     (void)thread_args;
     for (;;)
+    {
         sleep(10);
+    }
     return NULL;
 }
 
@@ -339,14 +341,18 @@ my_pthread_warmup(void)
     defined(HAVE_PTHREAD_ATTR_SETSTACKSIZE) && \
     defined(PTHREAD_STACK_MIN)
     {
-        size_t ssmin = 32 * 1024; /* 32kB should be minimum */
+        size_t ssmin = 32U * 1024; /* 32kB should be minimum */
         if (ssmin < PTHREAD_STACK_MIN)
+        {
             ssmin = PTHREAD_STACK_MIN;
+        }
         rc = pthread_attr_setstacksize(&thr_attr, ssmin);
         if (0 != rc)
+        {
             msyslog(LOG_ERR,
                     "my_pthread_warmup: pthread_attr_setstacksize() -> %s",
                     strerror(rc));
+        }
     }
 #endif
     rc = pthread_create(
@@ -387,7 +393,9 @@ void parse_cmdline_opts(
     static int optct;
 
     if (!parsed)
+    {
         optct = ntpOptionProcess(&ntpdOptions, *pargc, *pargv);
+    }
 
     parsed = 1;
 
@@ -483,11 +491,13 @@ set_process_priority(void)
 
 #ifdef DEBUG
     if (debug > 1)
+    {
         msyslog(LOG_DEBUG, "set_process_priority: %s: priority_done is <%d>",
                 ((priority_done)
                      ? "Leave priority alone"
                      : "Attempt to set priority"),
                 priority_done);
+    }
 #endif /* DEBUG */
 
 #if defined(HAVE_SCHED_SETSCHEDULER)
@@ -503,16 +513,26 @@ set_process_priority(void)
         {
             pmin = sched_get_priority_min(SCHED_FIFO);
             if (config_priority > pmax)
+            {
                 sched.sched_priority = pmax;
+            }
             else if (config_priority < pmin)
+            {
                 sched.sched_priority = pmin;
+            }
             else
+            {
                 sched.sched_priority = config_priority;
+            }
         }
         if (sched_setscheduler(0, SCHED_FIFO, &sched) == -1)
+        {
             msyslog(LOG_ERR, "sched_setscheduler(): %m");
+        }
         else
+        {
             ++priority_done;
+        }
     }
 #endif /* HAVE_SCHED_SETSCHEDULER */
 #ifdef HAVE_RTPRIO
@@ -525,17 +545,25 @@ set_process_priority(void)
         srtp.prio = 0;                 /* 0 (hi) -> RTP_PRIO_MAX (31,lo) */
 
         if (rtprio(RTP_SET, getpid(), &srtp) < 0)
+        {
             msyslog(LOG_ERR, "rtprio() error: %m");
+        }
         else
+        {
             ++priority_done;
+        }
     }
 #else  /* !RTP_SET follows */
     if (!priority_done)
     {
         if (rtprio(0, 120) < 0)
+        {
             msyslog(LOG_ERR, "rtprio() error: %m");
+        }
         else
+        {
             ++priority_done;
+        }
     }
 #endif /* !RTP_SET */
 #endif /* HAVE_RTPRIO */
@@ -544,24 +572,34 @@ set_process_priority(void)
     if (!priority_done)
     {
         errno = 0;
-        if (-1 == nice(NTPD_PRIO) && errno != 0)
+        if ((-1 == nice(NTPD_PRIO)) && (errno != 0))
+        {
             msyslog(LOG_ERR, "nice() error: %m");
+        }
         else
+        {
             ++priority_done;
+        }
     }
 #endif /* HAVE_ATT_NICE */
 #ifdef HAVE_BSD_NICE
     if (!priority_done)
     {
         if (-1 == setpriority(PRIO_PROCESS, 0, NTPD_PRIO))
+        {
             msyslog(LOG_ERR, "setpriority() error: %m");
+        }
         else
+        {
             ++priority_done;
+        }
     }
 #endif /* HAVE_BSD_NICE */
 #endif /* NTPD_PRIO && NTPD_PRIO != 0 */
     if (!priority_done)
+    {
         msyslog(LOG_ERR, "set_process_priority: No way found to improve our priority");
+    }
 }
 #endif /* !SIM */
 
@@ -573,7 +611,7 @@ set_process_priority(void)
 #ifdef HAVE_WORKING_FORK
 static void
 detach_from_terminal(
-    int pipes[2],
+    int pipes[2U],
     long wait_sync,
     const char* logfilename)
 {
@@ -628,7 +666,7 @@ detach_from_terminal(
     }
     close_all_except(pipes[1U]);
     pipes[0U] = -1;
-    INSIST(0 == open("/dev/null", 0) && 1 == dup2(0, 1) && 2 == dup2(0, 2));
+    INSIST((0 == open("/dev/null", 0)) && (1 == dup2(0, 1)) && (2 == dup2(0, 2)));
 
     init_logging(progname, 0, TRUE);
     /* we lost our logfile (if any) daemonizing */
@@ -645,10 +683,14 @@ detach_from_terminal(
 #endif /* SYS_DOMAINOS */
 #ifdef HAVE_SETSID
     if (setsid() == (pid_t)-1)
+    {
         msyslog(LOG_ERR, "setsid(): %m");
+    }
 #elif defined(HAVE_SETPGID)
     if (setpgid(0, 0) == -1)
+    {
         msyslog(LOG_ERR, "setpgid(): %m");
+    }
 #else /* !HAVE_SETSID && !HAVE_SETPGID follows */
 #ifdef TIOCNOTTY
     fid = open("/dev/tty", 2);
@@ -686,7 +728,9 @@ map_user(void)
     {
         sw_uid = (uid_t)strtoul(user, &endp, 0);
         if (*endp != '\0')
+        {
             goto getuser;
+        }
 
         if ((pw = getpwuid(sw_uid)) != NULL)
         {
@@ -713,9 +757,13 @@ map_user(void)
         else
         {
             if (errno)
+            {
                 msyslog(LOG_ERR, "getpwnam(%s) failed: %m", user);
+            }
             else
+            {
                 msyslog(LOG_ERR, "Cannot find user `%s'", user);
+            }
             return 0;
         }
     }
@@ -735,7 +783,9 @@ map_group(void)
     {
         sw_gid = (gid_t)strtoul(group, &endp, 0);
         if (*endp != '\0')
+        {
             goto getgroup;
+        }
     }
     else
     {
@@ -816,19 +866,27 @@ int set_user_group_ids(void)
     if ((NULL != user) && (0 == sw_uid))
     {
         if (0 == map_user())
+        {
             exit(-1);
+        }
     }
     /* same applies for the group */
     if ((NULL != group) && (0 == sw_gid))
     {
         if (0 == map_group())
+        {
             exit(-1);
+        }
     }
 
-    if (getegid() != sw_gid && 0 == set_group_ids())
+    if ((getegid() != sw_gid) && (0 == set_group_ids()))
+    {
         return 0;
-    if (geteuid() != sw_uid && 0 == set_user_ids())
+    }
+    if ((geteuid() != sw_uid) && (0 == set_user_ids()))
+    {
         return 0;
+    }
 
     return 1;
 }
@@ -867,9 +925,13 @@ int ntpdmain(
 #ifdef HAVE_UMASK
     uv = umask(0);
     if (uv)
+    {
         umask(uv);
+    }
     else
+    {
         umask(022);
+    }
 #endif
     saved_argc = argc;
     saved_argv = argv;
@@ -888,7 +950,9 @@ int ntpdmain(
         || debug
 #endif
         || HAVE_OPT(SAVECONFIGQUIT))
+    {
         nofork = TRUE;
+    }
 
     init_logging(progname, NLOG_SYNCMASK, TRUE);
     /* honor -l/--logfile option to log to a file */
@@ -902,15 +966,19 @@ int ntpdmain(
     {
         logfilename = NULL;
         if (nofork)
+        {
             msyslog_term = TRUE;
+        }
         if (HAVE_OPT(SAVECONFIGQUIT))
+        {
             syslogit = FALSE;
+        }
     }
     msyslog(LOG_NOTICE, "%s: Starting", Version);
 
     {
         int i;
-        char buf[1024]; /* Secret knowledge of msyslog buf length */
+        char buf[1024U]; /* Secret knowledge of msyslog buf length */
         char* cp = buf;
 
         /* Note that every arg has an initial space character */
@@ -970,7 +1038,9 @@ int ntpdmain(
  */
 #ifdef SYS_WINNT
     if (HAVE_OPT(MODIFYMMTIMER))
+    {
         set_mm_timer(MM_TIMER_HIRES);
+    }
 #endif
 
 #ifdef HAVE_DNSREGISTRATION
@@ -984,7 +1054,9 @@ int ntpdmain(
 #endif /* HAVE_DNSREGISTRATION */
 
     if (HAVE_OPT(NOVIRTUALIPS))
+    {
         listen_to_virtual_ips = 0;
+    }
 
     /*
      * --interface, listen on specified interfaces
@@ -1007,7 +1079,9 @@ int ntpdmain(
     }
 
     if (HAVE_OPT(NICE))
+    {
         priority_done = 0;
+    }
 
 #ifdef HAVE_SCHED_SETSCHEDULER
     if (HAVE_OPT(PRIORITY))
@@ -1029,9 +1103,13 @@ int ntpdmain(
     {
         wait_sync = OPT_VALUE_WAIT_SYNC;
         if (wait_sync <= 0)
+        {
             wait_sync = 0;
+        }
         else
+        {
             nofork = FALSE;
+        }
     }
     if (!nofork && pipe(daemon_pipe))
     {
@@ -1082,7 +1160,9 @@ int ntpdmain(
     {
         zero = 0;
         if (ioctl(fd, ACPU_LOCK, &zero) < 0)
+        {
             msyslog(LOG_ERR, "cannot lock to base CPU: %m");
+        }
         close(fd);
     }
 #endif
@@ -1110,8 +1190,10 @@ int ntpdmain(
      * see get_aix_stack() for more info.
      */
     if (ulimit(SET_STACKLIM, (get_aix_stack() - 8 * 4096)) < 0)
+    {
         msyslog(LOG_ERR,
                 "Cannot adjust stack limit for plock: %m");
+    }
 #endif /* _AIX */
 #endif /* PROCLOCK */
 #endif /* HAVE_PLOCK */
@@ -1188,22 +1270,28 @@ int ntpdmain(
             && -1 != DFLT_RLIMIT_MEMLOCK
 #endif
             && 0 != mlockall(MCL_CURRENT | MCL_FUTURE))
+        {
             msyslog(LOG_ERR, "mlockall(): %m");
+        }
 #else /* !HAVE_MLOCKALL follows */
 #ifdef HAVE_PLOCK
 #ifdef PROCLOCK
         /*
          * lock the process into memory
          */
-        if (!HAVE_OPT(SAVECONFIGQUIT) && 0 != plock(PROCLOCK))
+        if (!HAVE_OPT(SAVECONFIGQUIT) && (0 != plock(PROCLOCK)))
+        {
             msyslog(LOG_ERR, "plock(PROCLOCK): %m");
+        }
 #else /* !PROCLOCK follows  */
 #ifdef TXTLOCK
         /*
          * Lock text into ram
          */
-        if (!HAVE_OPT(SAVECONFIGQUIT) && 0 != plock(TXTLOCK))
+        if (!HAVE_OPT(SAVECONFIGQUIT) && (0 != plock(TXTLOCK)))
+        {
             msyslog(LOG_ERR, "plock(TXTLOCK) error: %m");
+        }
 #else  /* !TXTLOCK follows */
         msyslog(LOG_ERR, "plock() - don't know what to lock!");
 #endif /* !TXTLOCK */
@@ -1239,7 +1327,7 @@ int ntpdmain(
      * Privilege drop is opt-in via -u / -i or ntp.conf "user".
      * Warn loudly when still running as root without drop configured.
      */
-    if (!droproot && 0 == geteuid())
+    if (!droproot && (0 == geteuid()))
     {
         msyslog(LOG_WARNING,
                 "ntpd is running as root without privilege drop; "
@@ -1281,12 +1369,16 @@ int ntpdmain(
         if (user != NULL)
         {
             if (0 == map_user())
+            {
                 exit(-1);
+            }
         }
         if (group != NULL)
         {
             if (0 == map_group())
+            {
                 exit(-1);
+            }
         }
 
         if (chrootdir)
@@ -1328,7 +1420,9 @@ int ntpdmain(
         }
 #endif /* HAVE_SOLARIS_PRIVS */
         if (0 == set_user_group_ids())
+        {
             exit(-1);
+        }
 
 #if defined(HAVE_TRUSTEDBSD_MAC)
         /*
@@ -1336,7 +1430,7 @@ int ntpdmain(
          * following interface changes, we must either run as uid 0 or
          * the mac_ntpd policy module must be enabled.
          */
-        if (sw_uid != 0 && mac_is_present("ntpd") != 1)
+        if ((sw_uid != 0) && (mac_is_present("ntpd") != 1))
         {
             msyslog(LOG_ERR, "Need MAC 'ntpd' policy enabled to drop root privileges");
             exit(-1);
@@ -1409,7 +1503,9 @@ int ntpdmain(
     scmp_filter_ctx ctx;
 
     if ((ctx = seccomp_init(SCMP_ACT_KILL)) < 0)
+    {
         msyslog(LOG_ERR, "%s: seccomp_init(SCMP_ACT_KILL) failed: %m", __func__);
+    }
     else
     {
         msyslog(LOG_DEBUG, "%s: seccomp_init(SCMP_ACT_KILL) succeeded", __func__);
@@ -1491,7 +1587,7 @@ int ntpdmain(
     {
         int i;
 
-        for (i = 0; i < COUNTOF(scmp_sc); i++)
+        for (i = 0; i < COUNTOF(scmp_sc); ++i)
         {
             if (seccomp_rule_add(ctx,
                                  SCMP_ACT_ALLOW, scmp_sc[i], 0) < 0)
@@ -1504,8 +1600,10 @@ int ntpdmain(
     }
 
     if (seccomp_load(ctx) < 0)
+    {
         msyslog(LOG_ERR, "%s: seccomp_load() failed: %m",
                 __func__);
+    }
     else
     {
         msyslog(LOG_DEBUG, "%s: seccomp_load() succeeded", __func__);
@@ -1514,7 +1612,7 @@ int ntpdmain(
 
     ntservice_isup();
 #if defined(HAVE_WORKING_FORK)
-    if (daemon_pipe[1U] != -1 && 0 == wait_sync)
+    if ((daemon_pipe[1U] != -1) && (0 == wait_sync))
     {
         if (2 != write(daemon_pipe[1U], "R\n", 2))
         {
@@ -1539,7 +1637,9 @@ int ntpdmain(
     {
 #if !defined(SIM) && defined(SIGDIE1)
         if (signalled)
+        {
             finish_safe(signo);
+        }
 #endif
 #ifdef HAVE_IO_COMPLETION_PORT
         GetReceivedBuffers();
@@ -1553,7 +1653,9 @@ int ntpdmain(
 
         /* collect async name/addr results */
         if (!was_alarmed)
+        {
             harvest_blocking_responses();
+        }
 
         if (!was_alarmed && !has_full_recv_buffer())
         {
@@ -1651,7 +1753,7 @@ int ntpdmain(
          */
 
 #ifdef HAVE_DNSREGISTRATION
-        if (mdnsreg && (current_time - mdnsreg) > 60 && mdnstries && sys_leap != LEAP_NOTINSYNC)
+        if (mdnsreg && ((current_time - mdnsreg) > 60) && mdnstries && (sys_leap != LEAP_NOTINSYNC))
         {
             mdnsreg = current_time;
             msyslog(LOG_INFO, "Attempting to register mDNS");
@@ -1696,13 +1798,17 @@ finish_safe(
     sig_desc = strsignal(sig);
 #endif
     if (sig_desc == NULL)
+    {
         sig_desc = "";
+    }
     msyslog(LOG_NOTICE, "%s exiting on signal %d (%s)", progname,
             sig, sig_desc);
     /* See Bug 2513 and Bug 2522 re the unlink of PIDFILE */
 #ifdef HAVE_DNSREGISTRATION
     if (mdns != NULL)
+    {
         DNSServiceRefDeallocate(mdns);
+    }
 #endif
     peer_cleanup();
     exit(0);
@@ -1743,9 +1849,13 @@ wait_child_sync_if(
      */
     wait_end_time = time(NULL);
     if (wait_sync)
+    {
         wait_end_time += wait_sync;
+    }
     else
+    {
         wait_end_time += 30;
+    }
 
     do
     {
@@ -1762,7 +1872,9 @@ wait_child_sync_if(
         if (-1 == rc)
         {
             if (EINTR == errno)
+            {
                 continue;
+            }
             msyslog(LOG_ERR,
                     "daemon startup: select failed: %m");
             return EX_IOERR;
@@ -1781,8 +1893,10 @@ wait_child_sync_if(
             wtimeout.tv_usec = 0;
             rc = select(pipe_read_fd + 1, &readset, NULL,
                         NULL, &wtimeout);
-            if (0 == rc) /* select() timeout */
+            if (0 == rc)
+            { /* select() timeout */
                 break;
+            }
         }
         rc = read(pipe_read_fd, &ch, 1);
         if (rc == 0)
@@ -1793,7 +1907,7 @@ wait_child_sync_if(
         }
         else if (rc == 1)
         {
-            if (('S' == ch && wait_sync > 0) || ('R' == ch && 0 == wait_sync))
+            if ((('S' == ch) && (wait_sync > 0)) || (('R' == ch) && (0 == wait_sync)))
             {
                 return 0;
             }
@@ -1880,7 +1994,9 @@ assertion_failed(
 
 #if defined(DEBUG) && defined(SYS_WINNT)
     if (debug)
+    {
         DebugBreak();
+    }
 #endif
 
     abort();
@@ -1897,7 +2013,7 @@ library_fatal_error(
     const char* format,
     va_list args)
 {
-    char errbuf[256];
+    char errbuf[256U];
 
     isc_error_setfatal(NULL); /* Avoid recursion */
 
@@ -1908,7 +2024,9 @@ library_fatal_error(
 
 #if defined(DEBUG) && defined(SYS_WINNT)
     if (debug)
+    {
         DebugBreak();
+    }
 #endif
 
     abort();
@@ -1927,17 +2045,21 @@ library_unexpected_error(
     const char* format,
     va_list args)
 {
-    char errbuf[256];
+    char errbuf[256U];
 
     if (unexpected_error_cnt >= MAX_UNEXPECTED_ERRORS)
-        return; /* avoid clutter in log */
+    {
+        return;
+    } /* avoid clutter in log */
 
     msyslog(LOG_ERR, "%s:%d: unexpected error:", file, line);
     vsnprintf(errbuf, sizeof(errbuf), format, args);
     msyslog(LOG_ERR, "%s", errbuf);
 
     if (++unexpected_error_cnt == MAX_UNEXPECTED_ERRORS)
+    {
         msyslog(LOG_ERR, "Too many errors.  Shutting up.");
+    }
 }
 #endif /* !SIM */
 

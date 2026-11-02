@@ -72,9 +72,13 @@ IOCPLPoolAlloc(
     void* ptr = NULL;
 
     if (hHeapHandle != NULL)
+    {
         ptr = HeapAlloc(hHeapHandle, HEAP_ZERO_MEMORY, max(size, 1));
+    }
     if (ptr == NULL)
+    {
         errno = ENOMEM;
+    }
     DPRINTF(6, ("IOCPLPoolAlloc: '%s', heap=%p, ptr=%p\n",
                 desc, hHeapHandle, ptr));
     return ptr;
@@ -87,8 +91,10 @@ IOCPLPoolFree(
 {
     DPRINTF(6, ("IOCPLPoolFree: '%s', heap=%p, ptr=%p\n",
                 desc, hHeapHandle, ptr));
-    if (ptr != NULL && hHeapHandle != NULL)
+    if ((ptr != NULL) && (hHeapHandle != NULL))
+    {
         HeapFree(hHeapHandle, 0, ptr);
+    }
 }
 
 /* -------------------------------------------------------------------
@@ -107,10 +113,14 @@ IOCPLPoolMemDup(
     {
         ptr = HeapAlloc(hHeapHandle, 0, max(size, 1));
         if (ptr != NULL)
+        {
             memcpy(ptr, psrc, size);
+        }
     }
     if (ptr == NULL)
+    {
         errno = ENOMEM;
+    }
 
     DPRINTF(6, ("IOCPLPoolMemDup: '%s', heap=%p, ptr=%p\n",
                 desc, hHeapHandle, ptr));

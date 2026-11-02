@@ -31,7 +31,9 @@ int mstolfp(
      */
 
     while (isspace(ch = *(const unsigned char*)str))
+    {
         ++str;
+    }
 
     switch (ch)
     {
@@ -44,9 +46,13 @@ int mstolfp(
     }
 
     if (!isdigit(ch = *(const unsigned char*)str) && (ch != '.'))
+    {
         return 0;
+    }
     if (!atolfp(str, lfp))
+    {
         return 0;
+    }
 
     /* now do a chained/overlapping division by 1000 to get from
      * seconds to msec. 1000 is small enough to go with temporary
@@ -66,9 +72,13 @@ int mstolfp(
 
     /* fix sign */
     if (neg)
+    {
         L_NEG(lfp);
+    }
     /* round */
     if (r >= 500)
+    {
         L_ADDF(lfp, (neg ? -1 : 1));
+    }
     return 1;
 }

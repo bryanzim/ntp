@@ -153,7 +153,9 @@ keyacc_all_free(
     KeyAccT* head)
 {
     while (head)
+    {
         head = keyacc_pop_free(head);
+    }
     return head;
 }
 
@@ -173,7 +175,9 @@ keyacc_contains(
         {
             if (keyacc_amatch(&head->addr, addr,
                               head->subnetbits))
+            {
                 return TRUE;
+            }
         } while (NULL != (head = head->next));
         return FALSE;
     }
@@ -217,7 +221,9 @@ keyacc_amatch(
     /* 1st check: If any address is not an address, it's inequal. */
     if (!a1 || (AF_UNSPEC == AF(a1)) ||
         !a2 || (AF_UNSPEC == AF(a2)))
+    {
         return FALSE;
+    }
 
     /* We could check pointers for equality here and shortcut the
      * other checks if we find object identity. But that use case is
@@ -226,7 +232,9 @@ keyacc_amatch(
 
     /* 2nd check: Address families must be the same. */
     if (AF(a1) != AF(a2))
+    {
         return FALSE;
+    }
 
     /* type check: address family determines buffer & size */
     switch (AF(a1))
@@ -234,7 +242,9 @@ keyacc_amatch(
     case AF_INET:
         /* IPv4 is easy: clamp size, get byte pointers */
         if (mbits > sizeof(NSRCADR(a1)) * 8)
+        {
             mbits = sizeof(NSRCADR(a1)) * 8;
+        }
         pm1 = (const void*)&NSRCADR(a1);
         pm2 = (const void*)&NSRCADR(a2);
         break;
@@ -244,9 +254,13 @@ keyacc_amatch(
          * too, before we even consider doing a match!
          */
         if (!SCOPE_EQ(a1, a2))
+        {
             return FALSE;
+        }
         if (mbits > sizeof(NSRCADR6(a1)) * 8)
+        {
             mbits = sizeof(NSRCADR6(a1)) * 8;
+        }
         pm1 = (const void*)&NSRCADR6(a1);
         pm2 = (const void*)&NSRCADR6(a2);
         break;
@@ -266,11 +280,15 @@ keyacc_amatch(
 
     /* 3rd check: Do memcmp() over full bytes, if any */
     if (len && memcmp(pm1, pm2, len))
+    {
         return FALSE;
+    }
 
     /* 4th check: compare last incomplete byte, if any */
     if (msk && ((pm1[len] ^ pm2[len]) & msk))
+    {
         return FALSE;
+    }
 
     /* If none of the above failed, we're successfully through. */
     return TRUE;
@@ -380,7 +398,9 @@ void auth_prealloc_symkeys(
     allocated = authnumkeys + authnumfreekeys;
     additional = keycount - allocated;
     if (additional > 0)
+    {
         auth_moremem(additional);
+    }
     auth_resize_hashtable();
 }
 
@@ -408,9 +428,13 @@ auth_log2(size_t x)
     {
         m <<= s;
         if (x & m)
+        {
             r += s;
+        }
         else
+        {
             x <<= s;
+        }
     }
 
     return (u_short)r;
@@ -495,7 +519,9 @@ allocsymkey(
 
 
     if (authnumfreekeys < 1)
+    {
         auth_moremem(-1);
+    }
     UNLINK_HEAD_SLIST(sk, authfreekeys, llink.f);
     DEBUG_ENSURE(sk != NULL);
     sk->keyid = id;
@@ -523,7 +549,9 @@ freesymkey(
     symkey* unlinked;
 
     if (NULL == sk)
+    {
         return;
+    }
 
     authcache_flush_id(sk->keyid);
     keyacc_all_free(sk->keyacclist);
@@ -555,8 +583,12 @@ auth_findkey(
     symkey* sk;
 
     for (sk = key_hash[KEYHASH(id)]; sk != NULL; sk = sk->hlink)
+    {
         if (id == sk->keyid)
+        {
             return sk;
+        }
+    }
     return NULL;
 }
 
@@ -584,8 +616,10 @@ int authhavekey(
     symkey* sk;
 
     authkeylookups++;
-    if (0 == id || cache_keyid == id)
+    if ((0 == id) || (cache_keyid == id))
+    {
         return !!(KEY_TRUSTED & cache_flags);
+    }
 
     /*
      * Search the bin for the key. If not found, or found but the key
@@ -642,7 +676,7 @@ void authtrust(
      * we're done here.
      */
     sk = auth_findkey(id);
-    if (!trust && NULL == sk)
+    if (!trust && (NULL == sk))
     {
         return;
     }
@@ -704,11 +738,13 @@ int authistrusted(
     symkey* sk;
 
     if (id == cache_keyid)
+    {
         return !!(KEY_TRUSTED & cache_flags);
+    }
 
     authkeyuncached++;
     sk = auth_findkey(id);
-    if (sk == NULL || !(KEY_TRUSTED & sk->flags))
+    if ((sk == NULL) || !(KEY_TRUSTED & sk->flags))
     {
         authkeynotfound++;
         return FALSE;
@@ -753,11 +789,15 @@ int auth_getkeytype(
     symkey* sk;
 
     if (keyno == cache_keyid)
+    {
         return cache_type;
+    }
 
     sk = auth_findkey(keyno);
     if (NULL == sk)
+    {
         return 0;
+    }
     return sk->type;
 }
 
@@ -771,11 +811,15 @@ int auth_key_has_access_list(
     symkey* sk;
 
     if (keyno == cache_keyid)
+    {
         return (NULL != cache_keyacclist);
+    }
 
     sk = auth_findkey(keyno);
     if (NULL == sk)
+    {
         return FALSE;
+    }
     return (NULL != sk->keyacclist);
 }
 
@@ -793,7 +837,9 @@ int auth_approve_mgmt_key(
     int keytype;
 
     if (0 == keyno)
+    {
         return FALSE;
+    }
 
     keytype = auth_getkeytype(keyno);
     if (0 == keytype)
@@ -856,7 +902,7 @@ void MD5auth_setkey(
      * new value.
      */
     sk = auth_findkey(keyno);
-    if (sk != NULL && keyno == sk->keyid)
+    if ((sk != NULL) && (keyno == sk->keyid))
     {
         /* TALOS-CAN-0054: make sure we have a new buffer! */
         if (NULL != sk->secret)
@@ -903,7 +949,7 @@ void MD5auth_setkey(
 
         printf("auth_setkey: key %d type %d len %d ", (int)keyno,
                keytype, (int)secretsize);
-        for (j = 0; j < secretsize; j++)
+        for (j = 0; j < secretsize; ++j)
         {
             printf("%02x", secret[j]);
         }
@@ -960,7 +1006,7 @@ void auth_agekeys(void)
     symkey* sk;
 
     ITER_DLIST_BEGIN(key_listhead, sk, llink, symkey)
-    if (sk->lifetime > 0 && current_time > sk->lifetime)
+    if ((sk->lifetime > 0) && (current_time > sk->lifetime))
     {
         freesymkey(sk);
         authkeyexpired++;
@@ -1022,7 +1068,7 @@ int authdecrypt(
      * purpose this is an invalid authenticator.
      */
     authdecryptions++;
-    if (0 == keyno || !authhavekey(keyno) || size < 4)
+    if ((0 == keyno) || !authhavekey(keyno) || (size < 4))
     {
         return FALSE;
     }
@@ -1083,9 +1129,13 @@ pwdecode_hex(
             }
             tmp = (u_char)((ptr - hex) >> 1);
             if (j & 1)
+            {
                 dst[j >> 1] |= tmp;
+            }
             else
+            {
                 dst[j >> 1] = tmp << 4;
+            }
         }
     }
     return reslen;
@@ -1114,9 +1164,13 @@ authdecodepw(
         {
         case AUTHPWD_UNSPEC:
             if (strlen(src) <= 20)
+            {
                 reslen = pwdecode_plain(dst, dstlen, src);
+            }
             else
+            {
                 reslen = pwdecode_hex(dst, dstlen, src);
+            }
             break;
         case AUTHPWD_PLAIN:
             reslen = pwdecode_plain(dst, dstlen, src);

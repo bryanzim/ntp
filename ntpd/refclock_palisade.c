@@ -86,7 +86,7 @@ extern int async_write(int, const void*, unsigned int);
 #include "refclock_palisade.h"
 
 #ifdef DEBUG
-const char* Tracking_Status[15][15] = {
+const char* Tracking_Status[15U][15U] = {
     { "Doing Fixes\0" }, { "Good 1SV\0" }, { "Approx. 1SV\0" }, { "Need Time\0" }, { "Need INIT\0" }, { "PDOP too High\0" }, { "Bad 1SV\0" }, { "0SV Usable\0" }, { "1SV Usable\0" }, { "2SV Usable\0" }, { "3SV Usable\0" }, { "No Integrity\0" }, { "Diff Corr\0" }, { "Overdet Clock\0" }, { "Invalid\0" }
 };
 #endif
@@ -163,7 +163,9 @@ sendbyte(
     int b)
 {
     if (b == DLE)
+    {
         *(buffer->data + buffer->size++) = DLE;
+    }
     *(buffer->data + buffer->size++) = (unsigned char)b;
 }
 
@@ -194,9 +196,13 @@ sendetx(
     result = write(fd, buffer->data, (unsigned long)buffer->size);
 
     if (result != -1)
+    {
         return (result);
+    }
     else
+    {
         return (-1);
+    }
 }
 
 /*
@@ -290,7 +296,7 @@ palisade_start(
     struct palisade_unit* up;
     struct refclockproc* pp;
     int fd;
-    char gpsdev[20];
+    char gpsdev[20U];
     struct termios tio;
     u_int speed;
 
@@ -412,11 +418,17 @@ palisade_start(
     up->rpt_cnt = 0;
 
     if (up->type == CLK_THUNDERBOLT)
+    {
         init_thunderbolt(fd);
+    }
     if (up->type == CLK_ACUTIME)
+    {
         init_acutime(fd);
+    }
     if (up->type == CLK_RESOLUTION)
+    {
         init_resolution(fd);
+    }
 
     return 1;
 }
@@ -435,9 +447,13 @@ palisade_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -496,7 +512,9 @@ int decode_date(
     if ((jd.monthday != get_u8(cp)) ||
         (jd.month != get_u8(cp + 1)) ||
         (jd.year != get_u16(cp + 2)))
+    {
         return -1;
+    }
 
     /* calculate cycle shift to base day and calculate re-folded
      * date
@@ -505,7 +523,9 @@ int decode_date(
      * loop is probably faster for the next few rollovers...
      */
     while (rd < s_baseday)
+    {
         rd += 7 * 1024;
+    }
     ntpcal_rd_to_date(&jd, rd);
 
     /* fill refclock structure & indicate success */
@@ -575,8 +595,10 @@ int TSIP_decode(
          */
         event = (unsigned short)(getint((u_char*)&mb(1)) & 0xffff);
         if (!((pp->sloppyclockflag & CLK_FLAG2) || event))
+        {
             /* Ignore Packet */
             return 0;
+        }
 
         switch (mb(0) & 0xff)
         {
@@ -584,10 +606,14 @@ int TSIP_decode(
         case PACKET_8F0B:
 
             if (up->polled <= 0)
+            {
                 return 0;
+            }
 
-            if (up->rpt_cnt != LENCODE_8F0B) /* check length */
+            if (up->rpt_cnt != LENCODE_8F0B)
+            { /* check length */
                 break;
+            }
 
 #ifdef DEBUG
             if (debug > 1)
@@ -602,11 +628,13 @@ int TSIP_decode(
                        up->unit, lat, lon, alt);
                 printf("TSIP_decode: unit %d: Sats:",
                        up->unit);
-                for (st = 66, ts = 0; st <= 73; st++)
+                for (st = 66, ts = 0; st <= 73; ++st)
                     if (mb(st))
                     {
                         if (mb(st) > 0)
+                        {
                             ts++;
+                        }
                         printf(" %02d", mb(st));
                     }
                 printf(" : Tracking %d\n", ts);
@@ -637,13 +665,17 @@ int TSIP_decode(
 
             mmday = decode_date(pp, &mb(11));
             if (mmday < 0)
+            {
                 break;
+            }
 
 #ifdef DEBUG
             if (debug > 1)
+            {
                 printf("TSIP_decode: unit %d: %02X #%d %02d:%02d:%02d.%09ld %02d/%02d/%04d UTC %02d\n",
                        up->unit, mb(0) & 0xff, event, pp->hour, pp->minute,
                        pp->second, pp->nsec, (mmday >> 5), (mmday & 31), pp->year, GPS_UTC_Offset);
+            }
 #endif
             /* Only use this packet when no
              * 8F-AD's are being received
@@ -661,19 +693,25 @@ int TSIP_decode(
         case PACKET_NTP:
             /* Palisade-NTP Packet */
 
-            if (up->rpt_cnt != LENCODE_NTP) /* check length */
+            if (up->rpt_cnt != LENCODE_NTP)
+            { /* check length */
                 break;
+            }
 
             up->leap_status = mb(19);
 
             if (up->polled <= 0)
+            {
                 return 0;
+            }
 
             /* Check Tracking Status */
             st = mb(18);
-            if (st < 0 || st > 14)
+            if ((st < 0) || (st > 14))
+            {
                 st = 14;
-            if ((st >= 2 && st <= 7) || st == 11 || st == 12)
+            }
+            if (((st >= 2) && (st <= 7)) || (st == 11) || (st == 12))
             {
 #ifdef DEBUG
                 printf("TSIP_decode: Not Tracking Sats : %s\n",
@@ -687,20 +725,28 @@ int TSIP_decode(
 
             mmday = decode_date(pp, &mb(14));
             if (mmday < 0)
+            {
                 break;
+            }
             up->month = (mmday >> 5); /* Save for LEAP check */
 
             if ((up->leap_status & PALISADE_LEAP_PENDING) &&
                 /* Avoid early announce: https://bugs.ntp.org/2773 */
-                (6 == up->month || 12 == up->month))
+                ((6 == up->month) || (12 == up->month)))
             {
                 if (up->leap_status & PALISADE_UTC_TIME)
+                {
                     pp->leap = LEAP_ADDSECOND;
+                }
                 else
+                {
                     pp->leap = LEAP_DELSECOND;
+                }
             }
             else if (up->leap_status)
+            {
                 pp->leap = LEAP_NOWARNING;
+            }
 
             else
             { /* UTC flag is not set:
@@ -724,20 +770,26 @@ int TSIP_decode(
 
 #ifdef DEBUG
             if (debug > 1)
+            {
                 printf("TSIP_decode: unit %d: %02X #%d %02d:%02d:%02d.%09ld %02d/%02d/%04d UTC %02x %s\n",
                        up->unit, mb(0) & 0xff, event, pp->hour, pp->minute,
                        pp->second, pp->nsec, (mmday >> 5), (mmday & 31), pp->year,
                        mb(19), *Tracking_Status[st]);
+            }
 #endif
             return 1;
             break;
 
         case PACKET_8FAC:
             if (up->polled <= 0)
+            {
                 return 0;
+            }
 
-            if (up->rpt_cnt != LENCODE_8FAC) /* check length */
+            if (up->rpt_cnt != LENCODE_8FAC)
+            { /* check length */
                 break;
+            }
 
 #ifdef DEBUG
             if (debug > 1)
@@ -754,46 +806,78 @@ int TSIP_decode(
 #endif
             if ((getint((u_char*)&mb(10)) & 0x80) &&
                 /* Avoid early announce: https://bugs.ntp.org/2773 */
-                (6 == up->month || 12 == up->month))
-                pp->leap = LEAP_ADDSECOND; /* we ASSUME addsecond */
+                ((6 == up->month) || (12 == up->month)))
+            {
+                pp->leap = LEAP_ADDSECOND;
+            } /* we ASSUME addsecond */
             else
+            {
                 pp->leap = LEAP_NOWARNING;
+            }
 
 #ifdef DEBUG
             if (debug > 1)
+            {
                 printf("TSIP_decode: unit %d: 0x%02x leap %d\n",
                        up->unit, mb(0) & 0xff, pp->leap);
+            }
             if (debug > 1)
             {
                 printf("Receiver MODE: 0x%02X\n", (u_char)mb(1));
                 if (mb(1) == 0x00)
+                {
                     printf("                AUTOMATIC\n");
+                }
                 if (mb(1) == 0x01)
+                {
                     printf("                SINGLE SATELLITE\n");
+                }
                 if (mb(1) == 0x03)
+                {
                     printf("                HORIZONTAL(2D)\n");
+                }
                 if (mb(1) == 0x04)
+                {
                     printf("                FULL POSITION(3D)\n");
+                }
                 if (mb(1) == 0x05)
+                {
                     printf("                DGPR REFERENCE\n");
+                }
                 if (mb(1) == 0x06)
+                {
                     printf("                CLOCK HOLD(2D)\n");
+                }
                 if (mb(1) == 0x07)
+                {
                     printf("                OVERDETERMINED CLOCK\n");
+                }
 
                 printf("\n** Disciplining MODE 0x%02X:\n", (u_char)mb(2));
                 if (mb(2) == 0x00)
+                {
                     printf("                NORMAL\n");
+                }
                 if (mb(2) == 0x01)
+                {
                     printf("                POWER-UP\n");
+                }
                 if (mb(2) == 0x02)
+                {
                     printf("                AUTO HOLDOVER\n");
+                }
                 if (mb(2) == 0x03)
+                {
                     printf("                MANUAL HOLDOVER\n");
+                }
                 if (mb(2) == 0x04)
+                {
                     printf("                RECOVERY\n");
+                }
                 if (mb(2) == 0x06)
+                {
                     printf("                DISCIPLINING DISABLED\n");
+                }
             }
 #endif
             return 0;
@@ -802,11 +886,15 @@ int TSIP_decode(
         case PACKET_8FAB:
             /* Thunderbolt Primary Timing Packet */
 
-            if (up->rpt_cnt != LENCODE_8FAB) /* check length */
+            if (up->rpt_cnt != LENCODE_8FAB)
+            { /* check length */
                 break;
+            }
 
             if (up->polled <= 0)
+            {
                 return 0;
+            }
 
             GPS_UTC_Offset = getint((u_char*)&mb(7));
 
@@ -835,30 +923,52 @@ int TSIP_decode(
             printf("\nTiming Flags are:\n");
             printf("Timing flag value is: 0x%X\n", mb(9));
             if ((mb(9) & 0x01) != 0)
+            {
                 printf("	Getting UTC time\n");
+            }
             else
+            {
                 printf("	Getting GPS time\n");
+            }
             if ((mb(9) & 0x02) != 0)
+            {
                 printf("	PPS is from UTC\n");
+            }
             else
+            {
                 printf("	PPS is from GPS\n");
+            }
             if ((mb(9) & 0x04) != 0)
+            {
                 printf("	Time is not Set\n");
+            }
             else
+            {
                 printf("	Time is Set\n");
+            }
             if ((mb(9) & 0x08) != 0)
+            {
                 printf("	I dont have UTC info\n");
+            }
             else
+            {
                 printf("	I have UTC info\n");
+            }
             if ((mb(9) & 0x10) != 0)
+            {
                 printf("	Time is from USER\n\n");
+            }
             else
+            {
                 printf("	Time is from GPS\n\n");
+            }
 #endif
 
             mmday = decode_date(pp, &mb(13));
             if (mmday < 0)
+            {
                 break;
+            }
             tow = getlong((u_char*)&mb(1));
 #ifdef DEBUG
             if (debug > 1)
@@ -875,9 +985,11 @@ int TSIP_decode(
 
 #ifdef DEBUG
             if (debug > 1)
+            {
                 printf("TSIP_decode: unit %d: %02X #%d %02d:%02d:%02d.%09ld %02d/%02d/%04d ",
                        up->unit, mb(0) & 0xff, event, pp->hour, pp->minute, pp->second,
                        pp->nsec, (mmday >> 5), (mmday & 31), pp->year);
+            }
 #endif
             return 1;
             break;
@@ -919,9 +1031,13 @@ int TSIP_decode(
     {
 #ifdef DEBUG
         if ((debug > 1) && (up->type == CLK_ACE))
+        {
             printf("TSIP_decode: Packet 0x41 seen in ACE III mode\n");
+        }
         if ((debug > 1) && (up->type == CLK_COPERNICUS))
+        {
             printf("TSIP_decode: Packet 0x41 seen in Copernicus II mode\n");
+        }
 #endif
         if (up->rpt_cnt != LENCODE_41)
         { /* check length */
@@ -934,7 +1050,9 @@ int TSIP_decode(
             return 0;
         }
         if (up->polled <= 0)
+        {
             return 0;
+        }
         tow = (long)getsingle((u_char*)&mb(0));
         wn = (uint16_t)getint((u_char*)&mb(4));
         GPS_UTC_Offset = (int)getsingle((u_char*)&mb(6));
@@ -1022,15 +1140,25 @@ int TSIP_decode(
             if (debug > 1)
             {
                 if (mb(1) & 0x01)
+                {
                     printf("Signal Processor Error, reset unit.\n");
+                }
                 if (mb(1) & 0x02)
+                {
                     printf("Alignment error, channel or chip 1, reset unit.\n");
+                }
                 if (mb(1) & 0x03)
+                {
                     printf("Alignment error, channel or chip 2, reset unit.\n");
+                }
                 if (mb(1) & 0x04)
+                {
                     printf("Antenna feed line fault (open or short)\n");
+                }
                 if (mb(1) & 0x05)
+                {
                     printf("Excessive reference frequency error, refer to packet 0x2D and packet 0x4D documentation for further information\n");
+                }
             }
 #endif
 
@@ -1081,9 +1209,13 @@ int TSIP_decode(
             if (debug > 1)
             {
                 if ((mb(1) & 0x18) == 0x08)
+                {
                     printf("Antenna feed line fault (open)\n");
+                }
                 if ((mb(1) & 0x18) == 0x18)
+                {
                     printf("Antenna feed line fault (short)\n");
+                }
             }
 #endif
         }
@@ -1102,15 +1234,21 @@ int TSIP_decode(
     {
 #ifdef DEBUG
         if ((debug > 1) && (up->type == CLK_ACE))
+        {
             printf("TSIP_decode: Packet 0x%2x seen in ACE III mode\n", (up->rpt_buf[0U] & 0XFF));
+        }
         if ((debug > 1) && (up->type == CLK_COPERNICUS))
+        {
             printf("TSIP_decode: Packet 0x%2x seen in Copernicus II mode\n", (up->rpt_buf[0U] & 0XFF));
+        }
 #endif
         return 0;
     }
 
     else if (up->rpt_buf[0U] == 0x54)
+    {
         return 0;
+    }
 
     else if (up->rpt_buf[0U] == PACKET_6D)
     {
@@ -1118,14 +1256,22 @@ int TSIP_decode(
         int sats;
 
         if ((mb(0) & 0x01) && (mb(0) & 0x02))
+        {
             printf("2d Fix Dimension\n");
+        }
         if (mb(0) & 0x04)
+        {
             printf("3d Fix Dimension\n");
+        }
 
         if (mb(0) & 0x08)
+        {
             printf("Fix Mode is MANUAL\n");
+        }
         else
+        {
             printf("Fix Mode is AUTO\n");
+        }
 
         sats = mb(0) & 0xF0;
         sats = sats >> 4;
@@ -1161,19 +1307,25 @@ palisade_receive(
     up = pp->unitptr;
 
     if (!TSIP_decode(peer))
+    {
         return;
+    }
 
     if (up->polled <= 0)
-        return; /* no poll pending, already received or timeout */
+    {
+        return;
+    } /* no poll pending, already received or timeout */
 
     up->polled = 0;  /* Poll reply received */
     pp->lencode = 0; /* clear time code */
 #ifdef DEBUG
     if (debug)
+    {
         printf(
             "palisade_receive: unit %d: %4d %03d %02d:%02d:%02d.%09ld\n",
             up->unit, pp->year, pp->day, pp->hour, pp->minute,
             pp->second, pp->nsec);
+    }
 #endif
 
     /*
@@ -1203,8 +1355,10 @@ palisade_receive(
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("palisade_receive: unit %d: %s\n",
                up->unit, prettydate(&pp->lastrec));
+    }
 #endif
     pp->lastref = pp->lastrec;
     refclock_receive(peer);
@@ -1227,19 +1381,25 @@ palisade_poll(
     up = pp->unitptr;
 
     pp->polls++;
-    if (up->polled > 0) /* last reply never arrived or error */
+    if (up->polled > 0)
+    { /* last reply never arrived or error */
         refclock_report(peer, CEVNT_TIMEOUT);
+    }
 
     up->polled = 2; /* synchronous packet + 1 event */
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("palisade_poll: unit %d: polling %s\n", unit,
                (pp->sloppyclockflag & CLK_FLAG2) ? "synchronous packet" : "event");
+    }
 #endif
 
     if (pp->sloppyclockflag & CLK_FLAG2)
-        return; /* using synchronous packet input */
+    {
+        return;
+    } /* using synchronous packet input */
 
     if (up->type == CLK_PRAECIS)
     {
@@ -1255,7 +1415,9 @@ palisade_poll(
     }
 
     if (HW_poll(pp) < 0)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
 }
 
 static void
@@ -1263,7 +1425,7 @@ praecis_parse(
     struct recvbuf* rbufp,
     struct peer* peer)
 {
-    static char buf[100];
+    static char buf[100U];
     static int p = 0;
     struct refclockproc* pp;
 
@@ -1303,7 +1465,7 @@ praecis_parse(
     memcpy(buf + p, rbufp->recv_buffer, rbufp->recv_length);
     p += rbufp->recv_length;
 
-    if (p >= 2 && buf[p - 2] == '\r' && buf[p - 1] == '\n')
+    if ((p >= 2) && (buf[p - 2] == '\r') && (buf[p - 1] == '\n'))
     {
         buf[p - 2] = '\0';
         record_clock_stats(&peer->srcadr, buf);
@@ -1374,9 +1536,13 @@ palisade_io(
 
         case TSIP_PARSED_DATA:
             if (*c == DLE)
+            {
                 up->rpt_status = TSIP_PARSED_DLE_2;
+            }
             else
+            {
                 mb(up->rpt_cnt++) = *c;
+            }
             break;
 
         case TSIP_PARSED_DLE_2:
@@ -1387,7 +1553,9 @@ palisade_io(
                     *c;
             }
             else if (*c == ETX)
+            {
                 up->rpt_status = TSIP_PARSED_FULL;
+            }
             else
             {
                 /* error: start new report packet */
@@ -1400,9 +1568,13 @@ palisade_io(
         case TSIP_PARSED_EMPTY:
         default:
             if (*c != DLE)
+            {
                 up->rpt_status = TSIP_PARSED_EMPTY;
+            }
             else
+            {
                 up->rpt_status = TSIP_PARSED_DLE_1;
+            }
             break;
         }
 
@@ -1412,17 +1584,25 @@ palisade_io(
         {
             up->rpt_cnt = 0;
             if (pp->sloppyclockflag & CLK_FLAG2)
+            {
                 /* stamp it */
                 get_systime(&pp->lastrec);
+            }
         }
         else if (up->rpt_status == TSIP_PARSED_EMPTY)
+        {
             up->rpt_cnt = 0;
+        }
 
         else if (up->rpt_cnt > BMAX)
+        {
             up->rpt_status = TSIP_PARSED_EMPTY;
+        }
 
         if (up->rpt_status == TSIP_PARSED_FULL)
+        {
             palisade_receive(peer);
+        }
 
     } /* while chars in buffer */
 }
@@ -1470,16 +1650,22 @@ long HW_poll(
 
         /* Edge trigger */
         if (up->type == CLK_ACUTIME)
+        {
             if (write(pp->io.fd, "", 1) != 1)
+            {
                 msyslog(LOG_WARNING,
                         "Palisade(%d) HW_poll: failed to send trigger: %m",
                         up->unit);
+            }
+        }
 
         if (ioctl(pp->io.fd, TIOCMSET, &x) < 0)
         {
 #ifdef DEBUG
             if (debug)
+            {
                 printf("Palisade HW_poll: unit %d: SET \n", up->unit);
+            }
 #endif
             msyslog(LOG_ERR,
                     "Palisade(%d) HW_poll: ioctl(fd, SET, RTS_on): %m",
@@ -1500,7 +1686,9 @@ long HW_poll(
         {
 #ifdef DEBUG
             if (debug)
+            {
                 printf("Palisade HW_poll: unit %d: UNSET \n", up->unit);
+            }
 #endif
             msyslog(LOG_ERR,
                     "Palisade(%d) HW_poll: ioctl(fd, UNSET, RTS_off): %m",
@@ -1527,14 +1715,14 @@ getdbl(
 #else
     union
     {
-        u_char ch[8];
-        u_int32 u32[2];
+        u_char ch[8U];
+        u_int32 u32[2U];
     } ui;
 
     union
     {
         double out;
-        u_int32 u32[2];
+        u_int32 u32[2U];
     } uo;
 
     memcpy(ui.ch, bp, sizeof(ui.ch));
@@ -1591,9 +1779,13 @@ getsingle(
     exponent = (int8_t)exp_field - 127;
     sign = ((uint8_t)bp[0U] >> 7);
     if (exponent > 23)
+    {
         res = (int32)(mantissa << (exponent - 23));
+    }
     else
+    {
         res = (int32)(mantissa >> (23 - exponent));
+    }
     return sign ? -res : res;
 }
 

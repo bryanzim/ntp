@@ -124,7 +124,7 @@ struct instance
     int wantid;              /* don't reconfig on channel id msg */
     u_int moving;            /* mobile platform? */
     u_char sloppyclockflag;  /* fudge flags */
-    u_short sbuf[512];       /* local input buffer */
+    u_short sbuf[512U];      /* local input buffer */
     int ssize;               /* space used in sbuf */
 };
 
@@ -177,7 +177,7 @@ jupiter_start(
     struct refclockproc* const pp = peer->procptr;
     struct instance* up;
     int fd;
-    char gpsdev[20];
+    char gpsdev[20U];
 
     /*
      * Open serial port
@@ -227,11 +227,15 @@ jupiter_start(
                 "refclock_jupiter: time_pps_create failed: %m");
     }
     else if (!jupiter_ppsapi(up))
+    {
         goto clean_up;
+    }
 
     /* Ensure the receiver is properly configured */
     if (!jupiter_config(up))
+    {
         goto clean_up;
+    }
 
     jupiter_pps(up); /* get current PPS state */
     return (1);
@@ -252,7 +256,9 @@ jupiter_shutdown(int unit, struct peer* peer)
     struct instance* const up = pp->unitptr;
 
     if (!up)
+    {
         return;
+    }
 
     if (up->pps_handle)
     {
@@ -261,7 +267,9 @@ jupiter_shutdown(int unit, struct peer* peer)
     }
 
     if (pp->io.fd != -1)
+    {
         io_closeclock(&pp->io);
+    }
     free(up);
 }
 
@@ -279,7 +287,9 @@ jupiter_config(struct instance* const up)
     up->sloppyclockflag = up->peer->procptr->sloppyclockflag;
     up->moving = !!(up->sloppyclockflag & CLK_FLAG2);
     if (up->moving)
+    {
         jupiter_debug(up->peer, __func__, "mobile platform");
+    }
 
     ZERO(up->rcv_next);
     ZERO(up->ref_next);
@@ -303,9 +313,13 @@ jupiter_config(struct instance* const up)
 
     /* Set application platform type */
     if (up->moving)
+    {
         jupiter_platform(up, JUPITER_I_PLAT_MED);
+    }
     else
+    {
         jupiter_platform(up, JUPITER_I_PLAT_LOW);
+    }
 
     return (1);
 }
@@ -319,12 +333,14 @@ jupiter_checkpps(
     struct calendar cd;
 
     if (jupiter_pps(up) || !up->piv_next.weeks)
+    {
         return;
+    }
 
     /* check delay between pulse message and pulse. */
     delta = up->rcv_pps;          /* set by jupiter_pps() */
     L_SUB(&delta, &up->rcv_next); /* recv time pulse message */
-    if (delta.l_ui != 0 || delta.l_uf >= 0xC0000000)
+    if ((delta.l_ui != 0) || (delta.l_uf >= 0xC0000000))
     {
         up->ref_next.weeks = 0; /* consider as consumed... */
         return;
@@ -351,19 +367,27 @@ jupiter_ticker(int unit, struct peer* peer)
     struct instance* const up = pp->unitptr;
 
     if (!up)
+    {
         return;
+    }
 
     /* check if we can add another sample now */
     jupiter_checkpps(pp, up);
 
     /* check the pivot update cycle */
     if (up->piv_hold && !--up->piv_hold)
+    {
         ZERO(up->piv_next);
+    }
 
     if (up->rcvtout)
+    {
         --up->rcvtout;
+    }
     else if (pp->coderecv != pp->codeproc)
+    {
         refclock_samples_expire(pp, 1);
+    }
 }
 
 /*
@@ -383,9 +407,13 @@ int jupiter_ppsapi(
     }
     memset(&up->pps_params, 0, sizeof(pps_params_t));
     if (!up->assert)
+    {
         up->pps_params.mode = capability & PPS_CAPTURECLEAR;
+    }
     else
+    {
         up->pps_params.mode = capability & PPS_CAPTUREASSERT;
+    }
     if (!(up->pps_params.mode & (PPS_CAPTUREASSERT | PPS_CAPTURECLEAR)))
     {
         msyslog(LOG_ERR,
@@ -444,25 +472,33 @@ jupiter_pps(struct instance* const up)
      * Convert the timespec nanoseconds field to ntp l_fp units.
      */
     if (up->pps_handle == 0)
+    {
         return 1;
+    }
     timeout.tv_sec = 0;
     timeout.tv_nsec = 0;
     memcpy(&pps_info, &up->pps_info, sizeof(pps_info_t));
     if (time_pps_fetch(up->pps_handle, PPS_TSFMT_TSPEC, &up->pps_info,
                        &timeout) < 0)
+    {
         return 1;
+    }
     if (up->pps_params.mode & PPS_CAPTUREASSERT)
     {
         if (pps_info.assert_sequence ==
             up->pps_info.assert_sequence)
+        {
             return 1;
+        }
         ts = up->pps_info.assert_timestamp;
     }
     else if (up->pps_params.mode & PPS_CAPTURECLEAR)
     {
         if (pps_info.clear_sequence ==
             up->pps_info.clear_sequence)
+        {
             return 1;
+        }
         ts = up->pps_info.clear_timestamp;
     }
     else
@@ -472,7 +508,9 @@ jupiter_pps(struct instance* const up)
 
     tstmp = tspec_stamp_to_lfp(ts);
     if (L_ISEQU(&tstmp, &up->rcv_pps))
+    {
         return 1;
+    }
 
     up->rcv_pps = tstmp;
     return 0;
@@ -564,14 +602,16 @@ jupiter_receive(struct recvbuf* const rbufp)
 
     /* This shouldn't happen */
     if (bpcnt > sizeof(up->sbuf) - up->ssize)
+    {
         bpcnt = sizeof(up->sbuf) - up->ssize;
+    }
 
     /* Append to input buffer */
     memcpy((u_char*)up->sbuf + up->ssize, bp, bpcnt);
     up->ssize += bpcnt;
 
     /* While there's at least a header and we parse an intact message */
-    while (up->ssize > (int)sizeof(*hp) && (cc = jupiter_recv(up)) > 0)
+    while (up->ssize > (int)sizeof(*hp) && ((cc = jupiter_recv(up)) > 0))
     {
         hp = (struct jheader*)up->sbuf;
         sp = (u_short*)(hp + 1);
@@ -651,7 +691,9 @@ jupiter_receive(struct recvbuf* const rbufp)
                     "jupiter_receive: %s chan ver %s, %s (%s)",
                     ip->chans, ip->vers, ip->date, ip->opts);
             if (up->wantid)
+            {
                 up->wantid = 0;
+            }
             else
             {
                 jupiter_debug(peer, __func__, "reset receiver");
@@ -676,7 +718,9 @@ jupiter_receive(struct recvbuf* const rbufp)
             abort();
         }
         else if (up->ssize > 0)
+        {
             memcpy(up->sbuf, (u_char*)up->sbuf + cc, up->ssize);
+        }
     }
 }
 
@@ -802,7 +846,7 @@ jupiter_debug(
     const char* fmt,
     ...)
 {
-    char buffer[200];
+    char buffer[200U];
     va_list ap;
 
     va_start(ap, fmt);
@@ -832,7 +876,7 @@ jupiter_send(
     u_int len, size;
     ssize_t cc;
     u_short* sp;
-    static char errstr[132];
+    static char errstr[132U];
 
     size = sizeof(*hp);
     hp->hsum = putshort(jupiter_cksum((u_short*)hp,
@@ -887,7 +931,9 @@ jupiter_reqmsg(
     rp->trigger = putshort(interval == 0);
     rp->interval = putshort(interval);
     if ((cp = jupiter_send(up, hp)) != NULL)
+    {
         jupiter_debug(up->peer, __func__, "%u: %s", id, cp);
+    }
 }
 
 /* Cancel periodic message output */
@@ -908,7 +954,9 @@ jupiter_canmsg(
     hp = &canmsg;
     hp->id = putshort(id);
     if ((cp = jupiter_send(up, hp)) != NULL)
+    {
         jupiter_debug(up->peer, __func__, "%u: %s", id, cp);
+    }
 }
 
 /* Request a single message output */
@@ -929,7 +977,9 @@ jupiter_reqonemsg(
     hp = &reqonemsg;
     hp->id = putshort(id);
     if ((cp = jupiter_send(up, hp)) != NULL)
+    {
         jupiter_debug(up->peer, __func__, "%u: %s", id, cp);
+    }
 }
 
 /* Set the platform dynamics */
@@ -957,7 +1007,9 @@ jupiter_platform(
     pp = &platmsg.jplat;
     pp->platform = putshort(platform);
     if ((cp = jupiter_send(up, hp)) != NULL)
+    {
         jupiter_debug(up->peer, __func__, "%u: %s", platform, cp);
+    }
 }
 
 /* Checksum "len" shorts */
@@ -989,7 +1041,9 @@ jupiter_recv(
     cc = sizeof(*hp);
     size = up->ssize;
     if (size < cc)
+    {
         return (0);
+    }
 
     /* Search for the sync short if missing */
     sp = up->sbuf;
@@ -1013,7 +1067,9 @@ jupiter_recv(
                 continue;
             }
             if (bp[1U] == ((JUPITER_SYNC >> 8) & 0xff))
+            {
                 break;
+            }
             /*
             jupiter_debug(up->peer, __func__,
                 "{0x%x 0x%x}", bp[0], bp[1]);
@@ -1026,11 +1082,15 @@ jupiter_recv(
         */
         /* Shuffle data to front of input buffer */
         if (n > 0)
+        {
             memcpy(sp, bp, n);
+        }
         size = n;
         up->ssize = size;
-        if (size < cc || hp->sync != JUPITER_SYNC)
+        if ((size < cc) || (hp->sync != JUPITER_SYNC))
+        {
             return (0);
+        }
     }
 
     if (jupiter_cksum(sp, (cc / sizeof(u_short) - 1)) !=
@@ -1049,7 +1109,9 @@ jupiter_recv(
         n = (len + 1) * sizeof(u_short);
         /* Not enough data yet */
         if (size < cc + n)
+        {
             return (0);
+        }
 
         /* Check payload checksum */
         sp = (u_short*)(hp + 1);

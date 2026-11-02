@@ -101,7 +101,9 @@ int main(
             }
 
             if (ch == 'k')
+            {
                 exit(0);
+            }
 
             break;
 
@@ -172,10 +174,14 @@ int main(
 
     msyslog(LOG_INFO, "started");
     if (verbose)
+    {
         printf("adjtimed: started\n");
+    }
 
     if (InitClockRate() == -1)
+    {
         Exit(2);
+    }
 
     (void)signal(SIGHUP, SIG_IGN);
     (void)signal(SIGINT, SIG_IGN);
@@ -233,7 +239,9 @@ int main(
         if (msgrcv(mqid, &msg.msgp, MSGSIZE, CLIENT, 0) == -1)
         {
             if (errno == EINTR)
+            {
                 continue;
+            }
             msyslog(LOG_ERR, "read message: %m");
             perror("adjtimed: read message");
             Cleanup();
@@ -253,7 +261,9 @@ int main(
                 while (msgsnd(mqid, &msg.msgp, MSGSIZE, 0) == -1)
                 {
                     if (errno == EINTR)
+                    {
                         continue;
+                    }
                     msyslog(LOG_ERR, "send message: %m");
                     perror("adjtimed: send message");
                     Cleanup();
@@ -303,13 +313,21 @@ int AdjustClockRate(
     dt = (delta->tv_sec * MILLION) + delta->tv_usec;
 
     if (verbose)
+    {
         printf("adjtimed: new correction %.6fs\n", (double)dt / (double)MILLION);
+    }
     if (sysdebug)
+    {
         msyslog(LOG_INFO, "new correction %.6fs", (double)dt / (double)MILLION);
+    }
     if (verbose > 2)
+    {
         printf("adjtimed: leftover %ldus\n", leftover);
+    }
     if (sysdebug > 2)
+    {
         msyslog(LOG_INFO, "leftover %ldus", leftover);
+    }
     rate = dt;
 
     /*
@@ -334,11 +352,15 @@ int AdjustClockRate(
      */
 
     if (verbose > 1)
+    {
         printf("adjtimed: will be complete in %lds %ldus\n",
                period.it_value.tv_sec, period.it_value.tv_usec);
+    }
     if (sysdebug > 1)
+    {
         msyslog(LOG_INFO, "will be complete in %lds %ldus",
                 period.it_value.tv_sec, period.it_value.tv_usec);
+    }
     /*
      * adjust the clock rate
      */
@@ -394,12 +416,16 @@ long GetClockRate(void)
     long rate, mask;
 
     if (lseek(kmem, (off_t)nl[0U].n_value, 0) == -1L)
+    {
         return (-1L);
+    }
 
     mask = sigblock(sigmask(SIGALRM));
 
     if (read(kmem, (caddr_t)&rate, sizeof(rate)) != sizeof(rate))
+    {
         rate = UNKNOWN_RATE;
+    }
 
     sigsetmask(mask);
     return (rate);
@@ -414,7 +440,9 @@ int SetClockRate(
     long mask;
 
     if (lseek(kmem, (off_t)nl[0U].n_value, 0) == -1L)
+    {
         return (-1);
+    }
 
     mask = sigblock(sigmask(SIGALRM));
 
@@ -465,7 +493,9 @@ int InitClockRate(void)
      */
     default_rate = GetClockRate();
     if (default_rate == UNKNOWN_RATE)
+    {
         default_rate = DEFAULT_RATE;
+    }
     tick_rate = (MILLION / default_rate);
     slew_rate = TICK_ADJ * tick_rate;
     fprintf(stderr, "default_rate=%ld, tick_rate=%ld, slew_rate=%ld\n", default_rate, tick_rate, slew_rate);
@@ -484,9 +514,13 @@ void ResetClockRate(void)
     setitimer(ITIMER_REAL, &it, (struct itimerval*)0);
 
     if (verbose > 2)
+    {
         puts("adjtimed: resetting the clock");
+    }
     if (sysdebug > 2)
+    {
         msyslog(LOG_INFO, "resetting the clock");
+    }
 
     if (GetClockRate() != default_rate)
     {
@@ -522,6 +556,8 @@ void
     msyslog(LOG_ERR, "terminated");
     closelog();
     if (kmem != -1)
+    {
         close(kmem);
+    }
     exit(status);
 } /* Exit */

@@ -526,7 +526,7 @@ jjy_start(int unit, struct peer* peer)
         rc = jjy_start_telephone(unit, peer, up);
         break;
     default:
-        if (101 <= peer->ttl && peer->ttl <= 180)
+        if ((101 <= peer->ttl) && (peer->ttl <= 180))
         {
             rc = jjy_start_telephone(unit, peer, up);
         }
@@ -594,7 +594,7 @@ jjy_shutdown(int unit, struct peer* peer)
     struct jjyunit* up;
     struct refclockproc* pp;
 
-    char sLog[60];
+    char sLog[60U];
 
     pp = peer->procptr;
     up = pp->unitptr;
@@ -653,7 +653,7 @@ jjy_receive(struct recvbuf* rbufp)
          * Append received characters to temporary buffer
          */
         for (i = 0;
-             i < pp->lencode && up->iRawBufLen < MAX_RAWBUF - 2;
+             (i < pp->lencode) && (up->iRawBufLen < MAX_RAWBUF - 2);
              i++, up->iRawBufLen++)
         {
             up->sRawBuf[up->iRawBufLen] = pp->a_lastcode[i];
@@ -667,7 +667,7 @@ jjy_receive(struct recvbuf* rbufp)
     }
 #ifdef DEBUG
     printf("\nrefclock_jjy.c : %s : Len=%d  ", sFunctionName, pp->lencode);
-    for (i = 0; i < pp->lencode; i++)
+    for (i = 0; i < pp->lencode; ++i)
     {
         if (iscntrl((u_char)(pp->a_lastcode[i] & 0x7F)))
         {
@@ -686,13 +686,15 @@ jjy_receive(struct recvbuf* rbufp)
      */
 
     if (pp->lencode == 0)
+    {
         return;
+    }
 
     /*
      * Receiving data is not expected
      */
 
-    if (up->iProcessState == JJY_PROCESS_STATE_IDLE || up->iProcessState == JJY_PROCESS_STATE_DONE || up->iProcessState == JJY_PROCESS_STATE_ERROR)
+    if ((up->iProcessState == JJY_PROCESS_STATE_IDLE) || (up->iProcessState == JJY_PROCESS_STATE_DONE) || (up->iProcessState == JJY_PROCESS_STATE_ERROR))
     {
         /* Discard received data */
         up->iRawBufLen = 0;
@@ -730,7 +732,7 @@ jjy_receive(struct recvbuf* rbufp)
                 if (iBreakPosition == -1)
                 {
                     /* Break string have not come yet */
-                    if (up->iRawBufLen < MAX_RAWBUF - 2 || iReadRawBuf > 0)
+                    if ((up->iRawBufLen < MAX_RAWBUF - 2) || (iReadRawBuf > 0))
                     {
                         /* Temporary buffer is not full */
                         break;
@@ -749,7 +751,7 @@ jjy_receive(struct recvbuf* rbufp)
 
             /* Copy characters from temporary buffer to process buffer */
             up->iLineBufLen = up->iTextBufLen = 0;
-            for (i = iReadRawBuf; i <= iBreakPosition; i++)
+            for (i = iReadRawBuf; i <= iBreakPosition; ++i)
             {
 
                 /* Copy all characters */
@@ -770,7 +772,7 @@ jjy_receive(struct recvbuf* rbufp)
                    sFunctionName, up->iLineBufLen, up->iTextBufLen);
 #endif
 
-            if (up->bSkipCntrlCharOnly && up->iTextBufLen == 0)
+            if (up->bSkipCntrlCharOnly && (up->iTextBufLen == 0))
             {
 #ifdef DEBUG
                 printf("refclock_jjy.c : %s : Skip cntrl char only : up->iRawBufLen=%d iReadRawBuf=%d iBreakPosition=%d\n",
@@ -873,7 +875,7 @@ jjy_receive(struct recvbuf* rbufp)
         }
     }
 
-    if (up->linediscipline == LDISC_RAW && iReadRawBuf > 0)
+    if ((up->linediscipline == LDISC_RAW) && (iReadRawBuf > 0))
     {
         for (i = 0, j = iReadRawBuf; j < up->iRawBufLen; i++, j++)
         {
@@ -905,10 +907,10 @@ getRawDataBreakPosition(struct jjyunit* up, int iStart)
         return -1;
     }
 
-    for (i = iStart; i < up->iRawBufLen; i++)
+    for (i = iStart; i < up->iRawBufLen; ++i)
     {
 
-        for (j = 0; up->pRawBreak[j].pString != NULL; j++)
+        for (j = 0; up->pRawBreak[j].pString != NULL; ++j)
         {
 
             if (i + up->pRawBreak[j].iLength <= up->iRawBufLen)
@@ -942,7 +944,7 @@ static void
 jjy_poll(int unit, struct peer* peer)
 {
 
-    char sLog[40], sReach[9];
+    char sLog[40U], sReach[9U];
 
     struct jjyunit* up;
     struct refclockproc* pp;
@@ -956,7 +958,7 @@ jjy_poll(int unit, struct peer* peer)
         return;
     }
 
-    if (pp->polls > 0 && up->iLineCount == 0)
+    if ((pp->polls > 0) && (up->iLineCount == 0))
     {
         /*
          * No reply for last command
@@ -1072,7 +1074,7 @@ static void
 jjy_synctime(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
 {
 
-    char sLog[80], cStatus;
+    char sLog[80U], cStatus;
     const char* pStatus;
 
     pp->year = up->year;
@@ -1216,7 +1218,7 @@ static struct
     const char commandNumber;
     const char* command;
     int commandLength;
-    int iExpectedReplyLength[2];
+    int iExpectedReplyLength[2U];
 } tristate_jjy01_command_sequence[] = {
     {                            0,       NULL, 0,                                                                       { 0, 0 } }, /* Idle */
     { TS_JJY01_COMMAND_NUMBER_DCST, "dcst\r\n", 6,       { TS_JJY01_REPLY_LENGTH_DCST_VALID, TS_JJY01_REPLY_LENGTH_DCST_INVALID } },
@@ -1298,7 +1300,7 @@ jjy_receive_tristate_jjy01(struct recvbuf* rbufp)
 
     /* Check reply length */
 
-    if (iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[0U] && iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[1U])
+    if ((iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[0U]) && (iLen != tristate_jjy01_command_sequence[up->iCommandSeq].iExpectedReplyLength[1U]))
     {
         /* Unexpected reply length */
         snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_INVALID_LENGTH,
@@ -1318,7 +1320,7 @@ jjy_receive_tristate_jjy01(struct recvbuf* rbufp)
         rc = sscanf(pBuf, "%4d/%2d/%2d",
                     &up->year, &up->month, &up->day);
 
-        if (rc != 3 || up->year < 2000 || 2099 <= up->year || up->month < 1 || 12 < up->month || up->day < 1 || 31 < up->day)
+        if ((rc != 3) || (up->year < 2000) || (2099 <= up->year) || (up->month < 1) || (12 < up->month) || (up->day < 1) || (31 < up->day))
         {
             /* Invalid date */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATE,
@@ -1346,8 +1348,8 @@ jjy_receive_tristate_jjy01(struct recvbuf* rbufp)
         rc = sscanf(pBuf, "%2d:%2d:%2d",
                     &up->hour, &up->minute, &up->second);
 
-        if (rc != 3 || up->hour > 23 || up->minute > 59 ||
-            up->second > 60)
+        if ((rc != 3) || (up->hour > 23) || (up->minute > 59) ||
+            (up->second > 60))
         {
             /* Invalid time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_TIME,
@@ -1395,10 +1397,10 @@ jjy_receive_tristate_jjy01(struct recvbuf* rbufp)
 
     case TS_JJY01_COMMAND_NUMBER_DCST:
 
-        if (strncmp(pBuf, TS_JJY01_REPLY_DCST_VALID,
-                    TS_JJY01_REPLY_LENGTH_DCST_VALID) == 0 ||
-            strncmp(pBuf, TS_JJY01_REPLY_DCST_INVALID,
-                    TS_JJY01_REPLY_LENGTH_DCST_INVALID) == 0)
+        if ((strncmp(pBuf, TS_JJY01_REPLY_DCST_VALID,
+                     TS_JJY01_REPLY_LENGTH_DCST_VALID) == 0) ||
+            (strncmp(pBuf, TS_JJY01_REPLY_DCST_INVALID,
+                     TS_JJY01_REPLY_LENGTH_DCST_INVALID) == 0))
         {
             /* Valid reply */
         }
@@ -1430,7 +1432,7 @@ jjy_receive_tristate_jjy01(struct recvbuf* rbufp)
         time(&now);
         fSeconds = difftime(now, up->tLastAdjustedTimestamp);
 
-        if ((pp->sloppyclockflag & CLK_FLAG2) != 0 && (!up->bStusReplyAdjusted) && (fSeconds >= (pp->fudgetime2 * 3600) || (!up->bStusReplyAdjustedAtLeastOnce)))
+        if (((pp->sloppyclockflag & CLK_FLAG2) != 0) && (!up->bStusReplyAdjusted) && ((fSeconds >= (pp->fudgetime2 * 3600)) || (!up->bStusReplyAdjustedAtLeastOnce)))
         {
             /* STUS is not ADJUSTED */
             if (fSeconds < 60)
@@ -1452,7 +1454,7 @@ jjy_receive_tristate_jjy01(struct recvbuf* rbufp)
             jjy_write_clockstats(peer, JJY_CLOCKSTATS_MARK_INFORMATION, sLog);
             return JJY_RECEIVE_SKIP;
         }
-        else if (up->iTimestamp[1U] - 2 <= up->iTimestamp[0U] && up->iTimestamp[0U] <= up->iTimestamp[1U])
+        else if ((up->iTimestamp[1U] - 2 <= up->iTimestamp[0U]) && (up->iTimestamp[0U] <= up->iTimestamp[1U]))
         {
             /* 3 commands (time,date,stim) was executed in two seconds */
             jjy_synctime(peer, pp, up);
@@ -1645,7 +1647,7 @@ jjy_receive_cdex_jst2000(struct recvbuf* rbufp)
 
     /* Wait until ETX comes */
 
-    if (up->iLineBufLen < 17 || up->sLineBuf[up->iLineBufLen - 1] != 0x03)
+    if ((up->iLineBufLen < 17) || (up->sLineBuf[up->iLineBufLen - 1] != 0x03))
     {
         return JJY_RECEIVE_UNPROCESS;
     }
@@ -1669,9 +1671,9 @@ jjy_receive_cdex_jst2000(struct recvbuf* rbufp)
                 &up->hour, &up->minute, &up->second,
                 &up->msecond);
 
-    if (rc != 7 || up->month < 1 || up->month > 12 ||
-        up->day < 1 || up->day > 31 || up->hour > 23 ||
-        up->minute > 59 || up->second > 60)
+    if ((rc != 7) || (up->month < 1) || (up->month > 12) ||
+        (up->day < 1) || (up->day > 31) || (up->hour > 23) ||
+        (up->minute > 59) || (up->second > 60))
     {
         /* Invalid date and time */
         snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATETIME,
@@ -1776,7 +1778,7 @@ jjy_receive_echokeisokuki_lt2000(struct recvbuf* rbufp)
     struct refclockproc* pp;
     struct peer* peer;
 
-    char *pBuf, sLog[100], sErr[60];
+    char *pBuf, sLog[100U], sErr[60U];
     int iLen;
     int rc;
     int i, ibcc, ibcc1, ibcc2;
@@ -1802,7 +1804,7 @@ jjy_receive_echokeisokuki_lt2000(struct recvbuf* rbufp)
 
     /* Check reply length */
 
-    if ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND && iLen != 15) || (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS && iLen != 17) || (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS && iLen != 17))
+    if (((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND) && (iLen != 15)) || ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS) && (iLen != 17)) || ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS) && (iLen != 17)))
     {
         /* Unexpected reply length */
         snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_INVALID_LENGTH,
@@ -1812,21 +1814,21 @@ jjy_receive_echokeisokuki_lt2000(struct recvbuf* rbufp)
         return JJY_RECEIVE_ERROR;
     }
 
-    if (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND && iLen == 15)
+    if ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND) && (iLen == 15))
     {
         /* YYMMDDWHHMMSS<BCC1><BCC2> */
 
-        for (i = ibcc = 0; i < 13; i++)
+        for (i = ibcc = 0; i < 13; ++i)
         {
             ibcc ^= pBuf[i];
         }
 
         ibcc1 = 0x30 | ((ibcc >> 4) & 0xF);
         ibcc2 = 0x30 | ((ibcc) & 0xF);
-        if (pBuf[13U] != ibcc1 || pBuf[14U] != ibcc2)
+        if ((pBuf[13U] != ibcc1) || (pBuf[14U] != ibcc2))
         {
             snprintf(sErr, sizeof(sErr) - 1, " BCC error : Recv=%02X,%02X / Calc=%02X,%02X ",
-                     pBuf[13U] & 0xFF, pBuf[14] & 0xFF,
+                     pBuf[13U] & 0xFF, pBuf[14U] & 0xFF,
                      ibcc1, ibcc2);
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_INVALID_REPLY,
                      sErr);
@@ -1836,7 +1838,7 @@ jjy_receive_echokeisokuki_lt2000(struct recvbuf* rbufp)
         }
     }
 
-    if ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND && iLen == 15) || (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS && iLen == 17) || (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS && iLen == 17))
+    if (((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_REQUEST_SEND) && (iLen == 15)) || ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS) && (iLen == 17)) || ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS) && (iLen == 17)))
     {
         /* YYMMDDWHHMMSS<BCC1><BCC2> or YYMMDDWHHMMSS<ST1><ST2><ST3><ST4> */
 
@@ -1844,7 +1846,7 @@ jjy_receive_echokeisokuki_lt2000(struct recvbuf* rbufp)
                     &up->year, &up->month, &up->day,
                     &up->hour, &up->minute, &up->second);
 
-        if (rc != 6 || up->month < 1 || up->month > 12 || up->day < 1 || up->day > 31 || up->hour > 23 || up->minute > 59 || up->second > 60)
+        if ((rc != 6) || (up->month < 1) || (up->month > 12) || (up->day < 1) || (up->day > 31) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
         {
             /* Invalid date and time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATETIME,
@@ -1857,7 +1859,7 @@ jjy_receive_echokeisokuki_lt2000(struct recvbuf* rbufp)
 
         up->year += 2000;
 
-        if (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS || up->operationmode == ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS)
+        if ((up->operationmode == ECHOKEISOKUKI_LT2000_MODE_CONTINUOUS) || (up->operationmode == ECHOKEISOKUKI_LT2000_MODE_SWITCHING_CONTINUOUS))
         {
             /* A time stamp comes on every 0.5 second in the mode 2 of the LT-2000. */
 
@@ -1917,7 +1919,7 @@ jjy_poll_echokeisokuki_lt2000(int unit, struct peer* peer)
     struct refclockproc* pp;
     struct jjyunit* up;
 
-    char sCmd[2];
+    char sCmd[2U];
 
     pp = peer->procptr;
     up = pp->unitptr;
@@ -1987,10 +1989,10 @@ jjy_receive_citizentic_jjy200(struct recvbuf* rbufp)
     struct refclockproc* pp;
     struct peer* peer;
 
-    char *pBuf, sLog[100], sMsg[16];
+    char *pBuf, sLog[100U], sMsg[16U];
     int iLen;
     int rc;
-    char cApostrophe, sStatus[3];
+    char cApostrophe, sStatus[3U];
     int iWeekday;
 
     /* Initialize pointers */
@@ -2042,7 +2044,7 @@ jjy_receive_citizentic_jjy200(struct recvbuf* rbufp)
                 &up->hour, &up->minute, &up->second);
     sStatus[2U] = 0;
 
-    if (rc != 9 || cApostrophe != '\'' || (strcmp(sStatus, "OK") != 0 && strcmp(sStatus, "NG") != 0 && strcmp(sStatus, "ER") != 0) || up->month < 1 || up->month > 12 || up->day < 1 || up->day > 31 || iWeekday > 6 || up->hour > 23 || up->minute > 59 || up->second > 60)
+    if ((rc != 9) || (cApostrophe != '\'') || ((strcmp(sStatus, "OK") != 0) && (strcmp(sStatus, "NG") != 0) && (strcmp(sStatus, "ER") != 0)) || (up->month < 1) || (up->month > 12) || (up->day < 1) || (up->day > 31) || (iWeekday > 6) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
     {
         /* Invalid date and time */
         snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATETIME,
@@ -2052,7 +2054,7 @@ jjy_receive_citizentic_jjy200(struct recvbuf* rbufp)
         up->bLineError = TRUE;
         return JJY_RECEIVE_ERROR;
     }
-    else if (strcmp(sStatus, "NG") == 0 || strcmp(sStatus, "ER") == 0)
+    else if ((strcmp(sStatus, "NG") == 0) || (strcmp(sStatus, "ER") == 0))
     {
         /* Timestamp is unsure */
         snprintf(sMsg, sizeof(sMsg) - 1, "status=%s", sStatus);
@@ -2197,7 +2199,7 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
 
     /* Ignore NMEA data stream */
 
-    if (iLen > 5 && (strncmp(pBuf, "$GP", 3) == 0 || strncmp(pBuf, "$PFEC", 5) == 0))
+    if ((iLen > 5) && ((strncmp(pBuf, "$GP", 3) == 0) || (strncmp(pBuf, "$PFEC", 5) == 0)))
     {
 #ifdef DEBUG
         if (debug)
@@ -2212,11 +2214,11 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
     /*
      * Skip command prompt '$Cmd>' from the TS-GPSclock-01
      */
-    if (iLen == 5 && strncmp(pBuf, "$Cmd>", 5) == 0)
+    if ((iLen == 5) && (strncmp(pBuf, "$Cmd>", 5) == 0))
     {
         return JJY_RECEIVE_WAIT;
     }
-    else if (iLen > 5 && strncmp(pBuf, "$Cmd>", 5) == 0)
+    else if ((iLen > 5) && (strncmp(pBuf, "$Cmd>", 5) == 0))
     {
         pBuf += 5;
         iLen -= 5;
@@ -2225,7 +2227,7 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
     /*
      * Ignore NMEA data stream after command prompt
      */
-    if (iLen > 5 && (strncmp(pBuf, "$GP", 3) == 0 || strncmp(pBuf, "$PFEC", 5) == 0))
+    if ((iLen > 5) && ((strncmp(pBuf, "$GP", 3) == 0) || (strncmp(pBuf, "$PFEC", 5) == 0)))
     {
 #ifdef DEBUG
         if (debug)
@@ -2270,7 +2272,7 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
 
         rc = sscanf(pBuf, "%4d/%2d/%2d", &up->year, &up->month, &up->day);
 
-        if (rc != 3 || up->year < 2000 || 2099 <= up->year || up->month < 1 || 12 < up->month || up->day < 1 || 31 < up->day)
+        if ((rc != 3) || (up->year < 2000) || (2099 <= up->year) || (up->month < 1) || (12 < up->month) || (up->day < 1) || (31 < up->day))
         {
             /* Invalid date */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATE,
@@ -2297,7 +2299,7 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
         rc = sscanf(pBuf, "%2d:%2d:%2d",
                     &up->hour, &up->minute, &up->second);
 
-        if (rc != 3 || up->hour > 23 || up->minute > 59 || up->second > 60)
+        if ((rc != 3) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
         {
             /* Invalid time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_TIME,
@@ -2317,7 +2319,7 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
 
     case TS_GPS01_COMMAND_NUMBER_STUS:
 
-        if (strncmp(pBuf, TS_GPS01_REPLY_STUS_RTC, TS_GPS01_REPLY_LENGTH_STUS) == 0 || strncmp(pBuf, TS_GPS01_REPLY_STUS_GPS, TS_GPS01_REPLY_LENGTH_STUS) == 0 || strncmp(pBuf, TS_GPS01_REPLY_STUS_UTC, TS_GPS01_REPLY_LENGTH_STUS) == 0 || strncmp(pBuf, TS_GPS01_REPLY_STUS_PPS, TS_GPS01_REPLY_LENGTH_STUS) == 0)
+        if ((strncmp(pBuf, TS_GPS01_REPLY_STUS_RTC, TS_GPS01_REPLY_LENGTH_STUS) == 0) || (strncmp(pBuf, TS_GPS01_REPLY_STUS_GPS, TS_GPS01_REPLY_LENGTH_STUS) == 0) || (strncmp(pBuf, TS_GPS01_REPLY_STUS_UTC, TS_GPS01_REPLY_LENGTH_STUS) == 0) || (strncmp(pBuf, TS_GPS01_REPLY_STUS_PPS, TS_GPS01_REPLY_LENGTH_STUS) == 0))
         {
             /* Good */
         }
@@ -2345,7 +2347,7 @@ jjy_receive_tristate_gpsclock01(struct recvbuf* rbufp)
     {
         /* Process date and time */
 
-        if (up->iTimestamp[1U] - 2 <= up->iTimestamp[0U] && up->iTimestamp[0U] <= up->iTimestamp[1U])
+        if ((up->iTimestamp[1U] - 2 <= up->iTimestamp[0U]) && (up->iTimestamp[0U] <= up->iTimestamp[1U]))
         {
             /* 3 commands (time,date,stim) was executed in two seconds */
             jjy_synctime(peer, pp, up);
@@ -2553,7 +2555,7 @@ jjy_receive_seiko_tsys_tdc_300(struct recvbuf* rbufp)
 
     case 8: /* Type 1 : <STX>HH:MM:SS<ETX> */
 
-        for (i = 0; i < iLen; i++)
+        for (i = 0; i < iLen; ++i)
         {
             pBuf[i] &= 0x7F;
         }
@@ -2561,7 +2563,7 @@ jjy_receive_seiko_tsys_tdc_300(struct recvbuf* rbufp)
         rc = sscanf(pBuf + 1, "%2d:%2d:%2d",
                     &up->hour, &up->minute, &up->second);
 
-        if (rc != 3 || up->hour > 23 || up->minute > 59 || up->second > 60)
+        if ((rc != 3) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
         {
             /* Invalid time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_TIME,
@@ -2570,7 +2572,7 @@ jjy_receive_seiko_tsys_tdc_300(struct recvbuf* rbufp)
             up->bLineError = TRUE;
             return JJY_RECEIVE_ERROR;
         }
-        else if (up->hour == 23 && up->minute == 59 && up->second >= 55)
+        else if ((up->hour == 23) && (up->minute == 59) && (up->second >= 55))
         {
             /* Uncertainty date guard */
             return JJY_RECEIVE_WAIT;
@@ -2586,7 +2588,7 @@ jjy_receive_seiko_tsys_tdc_300(struct recvbuf* rbufp)
 
     case 17: /* Type 2 : <STX>YYMMDDHHMMSSWLSCU<ETX> */
 
-        for (i = 0; i < iLen; i++)
+        for (i = 0; i < iLen; ++i)
         {
             pBuf[i] &= 0x7F;
         }
@@ -2595,7 +2597,7 @@ jjy_receive_seiko_tsys_tdc_300(struct recvbuf* rbufp)
                     &up->year, &up->month, &up->day,
                     &up->hour, &up->minute, &up->second, &iWeekday);
 
-        if (rc != 7 || up->month < 1 || up->month > 12 || up->day < 1 || up->day > 31 || iWeekday > 6 || up->hour > 23 || up->minute > 59 || up->second > 60)
+        if ((rc != 7) || (up->month < 1) || (up->month > 12) || (up->day < 1) || (up->day > 31) || (iWeekday > 6) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
         {
             /* Invalid date and time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATETIME,
@@ -2614,7 +2616,7 @@ jjy_receive_seiko_tsys_tdc_300(struct recvbuf* rbufp)
                     &up->year, &up->month, &up->day, &iWeekday,
                     &up->hour, &up->minute, &up->second);
 
-        if (rc != 7 || up->month < 1 || up->month > 12 || up->day < 1 || up->day > 31 || iWeekday > 6 || up->hour > 23 || up->minute > 59 || up->second > 60)
+        if ((rc != 7) || (up->month < 1) || (up->month > 12) || (up->day < 1) || (up->day > 31) || (iWeekday > 6) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
         {
             /* Invalid date and time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATETIME,
@@ -2759,7 +2761,7 @@ static int teljjy_bye_ignore(struct peer* peer, struct refclockproc*, struct jjy
 static int teljjy_bye_disc(struct peer* peer, struct refclockproc*, struct jjyunit*);
 static int teljjy_bye_modem(struct peer* peer, struct refclockproc*, struct jjyunit*);
 
-static int (*pTeljjyHandler[][5])(struct peer*, struct refclockproc*, struct jjyunit*) = {
+static int (*pTeljjyHandler[][5U])(struct peer*, struct refclockproc*, struct jjyunit*) = {
     /*STATE_IDLE           STATE_DAILOUT       STATE_LOGIN           STATE_CONNECT       STATE_BYE        */
     /* NULL       */ {  teljjy_idle_ignore, teljjy_dial_ignore, teljjy_login_ignore, teljjy_conn_ignore, teljjy_bye_ignore },
     /* START      */
@@ -2784,7 +2786,7 @@ static int (*pTeljjyHandler[][5])(struct peer*, struct refclockproc*, struct jjy
     {  teljjy_idle_ignore,   teljjy_dial_disc,  teljjy_login_error,  teljjy_conn_error,  teljjy_bye_modem }
 };
 
-static short iTeljjyNextState[][5] = {
+static short iTeljjyNextState[][5U] = {
     /*STATE_IDLE            STATE_DAILOUT         STATE_LOGIN           STATE_CONNECT         STATE_BYE         */
     /* NULL       */ {    TELJJY_STATE_IDLE, TELJJY_STATE_DAILOUT,   TELJJY_STATE_LOGIN, TELJJY_STATE_CONNECT,  TELJJY_STATE_BYE },
     /* START      */
@@ -2809,7 +2811,7 @@ static short iTeljjyNextState[][5] = {
     {    TELJJY_STATE_IDLE,    TELJJY_STATE_IDLE,     TELJJY_STATE_BYE,     TELJJY_STATE_BYE,  TELJJY_STATE_BYE }
 };
 
-static short iTeljjyPostEvent[][5] = {
+static short iTeljjyPostEvent[][5U] = {
     /*STATE_IDLE         STATE_DAILOUT      STATE_LOGIN           STATE_CONNECT         STATE_BYE         */
     /* NULL       */ { TELJJY_EVENT_NULL, TELJJY_EVENT_NULL,    TELJJY_EVENT_NULL,    TELJJY_EVENT_NULL, TELJJY_EVENT_NULL },
     /* START      */
@@ -2834,8 +2836,8 @@ static short iTeljjyPostEvent[][5] = {
     { TELJJY_EVENT_NULL, TELJJY_EVENT_NULL, TELJJY_EVENT_COMMAND, TELJJY_EVENT_COMMAND, TELJJY_EVENT_NULL }
 };
 
-static short iTeljjySilentTimeout[5] = { 0, 0, 10, 5, 0 };
-static short iTeljjyStateTimeout[5] = { 0, 120, 60, 60, 40 };
+static short iTeljjySilentTimeout[5U] = { 0, 0, 10, 5, 0 };
+static short iTeljjyStateTimeout[5U] = { 0, 120, 60, 60, 40 };
 
 #define TELJJY_STAY_CLOCK_STATE 0
 #define TELJJY_CHANGE_CLOCK_STATE 1
@@ -2899,7 +2901,7 @@ static int
 jjy_start_telephone(int unit, struct peer* peer, struct jjyunit* up)
 {
 
-    char sLog[80], sFirstThreeDigits[4];
+    char sLog[80U], sFirstThreeDigits[4U];
     int iNumberOfDigitsOfPhoneNumber, iCommaCount, iCommaPosition;
     size_t i;
     size_t iFirstThreeDigitsCount;
@@ -2935,7 +2937,7 @@ jjy_start_telephone(int unit, struct peer* peer, struct jjyunit* up)
     }
 
     iNumberOfDigitsOfPhoneNumber = iCommaCount = iCommaPosition = iFirstThreeDigitsCount = 0;
-    for (i = 0; i < strlen(sys_phone[0U]); i++)
+    for (i = 0; i < strlen(sys_phone[0U]); ++i)
     {
         if (isdigit((u_char)sys_phone[0U][i]))
         {
@@ -2968,7 +2970,7 @@ jjy_start_telephone(int unit, struct peer* peer, struct jjyunit* up)
 
     if (iCommaCount == 1)
     {
-        if (iCommaPosition != 1 || *sys_phone[0U] != '0')
+        if ((iCommaPosition != 1) || (*sys_phone[0U] != '0'))
         {
             msyslog(LOG_ERR, "refclock_jjy.c : jjy_start_telephone : Getting an outside line should be '0,'.");
             up->bInitError = TRUE;
@@ -2976,7 +2978,7 @@ jjy_start_telephone(int unit, struct peer* peer, struct jjyunit* up)
         }
     }
 
-    if (iNumberOfDigitsOfPhoneNumber - iCommaPosition < 6 || 10 < iNumberOfDigitsOfPhoneNumber - iCommaPosition)
+    if ((iNumberOfDigitsOfPhoneNumber - iCommaPosition < 6) || (10 < iNumberOfDigitsOfPhoneNumber - iCommaPosition))
     {
         /* Too short or too long */
         msyslog(LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone=%s : Number of digits should be 6 to 10.", sys_phone[0U]);
@@ -2984,7 +2986,7 @@ jjy_start_telephone(int unit, struct peer* peer, struct jjyunit* up)
         return 1;
     }
 
-    if (strncmp(sFirstThreeDigits + iCommaPosition, "00", 2) == 0 || strncmp(sFirstThreeDigits + iCommaPosition, "10", 2) == 0 || strncmp(sFirstThreeDigits + iCommaPosition, "11", 2) == 0 || strncmp(sFirstThreeDigits + iCommaPosition, "12", 2) == 0 || strncmp(sFirstThreeDigits + iCommaPosition, "171", 3) == 0 || strncmp(sFirstThreeDigits + iCommaPosition, "177", 3) == 0 || (sFirstThreeDigits[0U] == '0' && sFirstThreeDigits[2U] == '0'))
+    if ((strncmp(sFirstThreeDigits + iCommaPosition, "00", 2) == 0) || (strncmp(sFirstThreeDigits + iCommaPosition, "10", 2) == 0) || (strncmp(sFirstThreeDigits + iCommaPosition, "11", 2) == 0) || (strncmp(sFirstThreeDigits + iCommaPosition, "12", 2) == 0) || (strncmp(sFirstThreeDigits + iCommaPosition, "171", 3) == 0) || (strncmp(sFirstThreeDigits + iCommaPosition, "177", 3) == 0) || ((sFirstThreeDigits[0U] == '0') && (sFirstThreeDigits[2U] == '0')))
     {
         /* Not allowed because of emergency numbers or special service numbers */
         msyslog(LOG_ERR, "refclock_jjy.c : jjy_start_telephone : phone=%s : First 2 or 3 digits are not allowed.", sys_phone[0U]);
@@ -3037,7 +3039,7 @@ jjy_receive_telephone(struct recvbuf* rbufp)
 
     DEBUG_TELJJY_PRINTF(sFunctionName);
 
-    if (up->iClockState == TELJJY_STATE_IDLE || up->iClockState == TELJJY_STATE_DAILOUT || up->iClockState == TELJJY_STATE_BYE)
+    if ((up->iClockState == TELJJY_STATE_IDLE) || (up->iClockState == TELJJY_STATE_DAILOUT) || (up->iClockState == TELJJY_STATE_BYE))
     {
 
         iPreviousModemState = getModemState(up);
@@ -3074,15 +3076,15 @@ jjy_receive_telephone(struct recvbuf* rbufp)
     }
 
     up->iTeljjySilentTimer = 0;
-    if (iLen == 7 && strncmp(pBuf, "Name ? ", 7) == 0)
+    if ((iLen == 7) && (strncmp(pBuf, "Name ? ", 7) == 0))
     {
         up->iClockEvent = TELJJY_EVENT_LOGIN;
     }
-    else if (iLen == 1 && strncmp(pBuf, ">", 1) == 0)
+    else if ((iLen == 1) && (strncmp(pBuf, ">", 1) == 0))
     {
         up->iClockEvent = TELJJY_EVENT_PROMPT;
     }
-    else if (iLen >= 1 && strncmp(pBuf, "?", 1) == 0)
+    else if ((iLen >= 1) && (strncmp(pBuf, "?", 1) == 0))
     {
         up->iClockEvent = TELJJY_EVENT_ERROR;
     }
@@ -3218,7 +3220,7 @@ teljjy_control(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
             up->iClockCommandSeq = 0;
             up->iTimestampCount = 0;
             up->iLoopbackCount = 0;
-            for (i = 0; i < MAX_LOOPBACK; i++)
+            for (i = 0; i < MAX_LOOPBACK; ++i)
             {
                 up->bLoopbackTimeout[i] = FALSE;
             }
@@ -3246,7 +3248,7 @@ static void
 teljjy_setDelay(struct peer* peer, struct jjyunit* up)
 {
 
-    char sLog[60];
+    char sLog[60U];
     int milliSecond, microSecond;
 
     gettimeofday(&(up->delayTime[up->iLoopbackCount]), NULL);
@@ -3298,9 +3300,9 @@ teljjy_getDelay(struct peer* peer, struct jjyunit* up)
 
     up->iLoopbackValidCount = 0;
 
-    for (i = 0; i < MAX_LOOPBACK && i < up->iLoopbackCount; i++)
+    for (i = 0; (i < MAX_LOOPBACK) && (i < up->iLoopbackCount); ++i)
     {
-        if (up->bLoopbackTimeout[i] || up->delayTime[i].tv_sec > iThresholdSecond || (up->delayTime[i].tv_sec == iThresholdSecond && up->delayTime[i].tv_usec > iThresholdMicroSecond))
+        if (up->bLoopbackTimeout[i] || (up->delayTime[i].tv_sec > iThresholdSecond) || ((up->delayTime[i].tv_sec == iThresholdSecond) && (up->delayTime[i].tv_usec > iThresholdMicroSecond)))
         {
             continue;
         }
@@ -3312,13 +3314,13 @@ teljjy_getDelay(struct peer* peer, struct jjyunit* up)
             maxTime.tv_usec = up->delayTime[i].tv_usec;
             minIndex = maxIndex = i;
         }
-        else if (minTime.tv_sec > up->delayTime[i].tv_sec || (minTime.tv_sec == up->delayTime[i].tv_sec && minTime.tv_usec > up->delayTime[i].tv_usec))
+        else if ((minTime.tv_sec > up->delayTime[i].tv_sec) || ((minTime.tv_sec == up->delayTime[i].tv_sec) && (minTime.tv_usec > up->delayTime[i].tv_usec)))
         {
             minTime.tv_sec = up->delayTime[i].tv_sec;
             minTime.tv_usec = up->delayTime[i].tv_usec;
             minIndex = i;
         }
-        else if (maxTime.tv_sec < up->delayTime[i].tv_sec || (maxTime.tv_sec == up->delayTime[i].tv_sec && maxTime.tv_usec < up->delayTime[i].tv_usec))
+        else if ((maxTime.tv_sec < up->delayTime[i].tv_sec) || ((maxTime.tv_sec == up->delayTime[i].tv_sec) && (maxTime.tv_usec < up->delayTime[i].tv_usec)))
         {
             maxTime.tv_sec = up->delayTime[i].tv_sec;
             maxTime.tv_usec = up->delayTime[i].tv_usec;
@@ -3334,17 +3336,17 @@ teljjy_getDelay(struct peer* peer, struct jjyunit* up)
 
     averTime.tv_usec = 0;
 
-    for (i = 0; i < MAX_LOOPBACK && i < up->iLoopbackCount; i++)
+    for (i = 0; (i < MAX_LOOPBACK) && (i < up->iLoopbackCount); ++i)
     {
-        if (up->bLoopbackTimeout[i] || up->delayTime[i].tv_sec > iThresholdSecond || (up->delayTime[i].tv_sec == iThresholdSecond && up->delayTime[i].tv_usec > iThresholdMicroSecond))
+        if (up->bLoopbackTimeout[i] || (up->delayTime[i].tv_sec > iThresholdSecond) || ((up->delayTime[i].tv_sec == iThresholdSecond) && (up->delayTime[i].tv_usec > iThresholdMicroSecond)))
         {
             continue;
         }
-        if (up->iLoopbackValidCount >= 3 && i == maxIndex)
+        if ((up->iLoopbackValidCount >= 3) && (i == maxIndex))
         {
             continue;
         }
-        if (up->iLoopbackValidCount >= 4 && i == minIndex)
+        if ((up->iLoopbackValidCount >= 4) && (i == minIndex))
         {
             continue;
         }
@@ -3454,7 +3456,7 @@ teljjy_login_conn(struct peer* peer, struct refclockproc* pp, struct jjyunit* up
     up->iClockCommandSeq = 0;
     up->iTimestampCount = 0;
     up->iLoopbackCount = 0;
-    for (i = 0; i < MAX_LOOPBACK; i++)
+    for (i = 0; i < MAX_LOOPBACK; ++i)
     {
         up->bLoopbackTimeout[i] = FALSE;
     }
@@ -3543,33 +3545,33 @@ teljjy_conn_send(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
 
     const char* pCmd;
     int i, iLen, iNextClockState;
-    char sLog[120];
+    char sLog[120U];
 
     DEBUG_TELJJY_PRINTF("teljjy_conn_send");
 
-    if (up->iClockCommandSeq > 0 && teljjy_command_sequence[up->iClockCommandSeq].command == NULL)
+    if ((up->iClockCommandSeq > 0) && (teljjy_command_sequence[up->iClockCommandSeq].command == NULL))
     {
         /* Command sequence has been completed */
         return TELJJY_CHANGE_CLOCK_STATE;
     }
 
-    if (up->iClockCommandSeq == 0 && peer->ttl == 100)
+    if ((up->iClockCommandSeq == 0) && (peer->ttl == 100))
     {
         /* Skip loopback */
 
         up->iClockCommandSeq = TELJJY_COMMAND_START_SKIP_LOOPBACK;
     }
-    else if (up->iClockCommandSeq == 0 && peer->ttl != 100)
+    else if ((up->iClockCommandSeq == 0) && (peer->ttl != 100))
     {
         /* Loopback start */
 
         up->iLoopbackCount = 0;
-        for (i = 0; i < MAX_LOOPBACK; i++)
+        for (i = 0; i < MAX_LOOPBACK; ++i)
         {
             up->bLoopbackTimeout[i] = FALSE;
         }
     }
-    else if (up->iClockCommandSeq > 0 && peer->ttl != 100 && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK && up->iLoopbackCount < MAX_LOOPBACK)
+    else if ((up->iClockCommandSeq > 0) && (peer->ttl != 100) && (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK) && (up->iLoopbackCount < MAX_LOOPBACK))
     {
         /* Loopback character comes */
 #ifdef DEBUG
@@ -3669,7 +3671,7 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
         iLen = pp->lencode;
     }
 
-    if (teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength == iLen && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK && up->sTextBuf[0U] == *(teljjy_command_sequence[up->iClockCommandSeq].command) && up->iLoopbackCount < MAX_LOOPBACK)
+    if ((teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength == iLen) && (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK) && (up->sTextBuf[0U] == *(teljjy_command_sequence[up->iClockCommandSeq].command)) && (up->iLoopbackCount < MAX_LOOPBACK))
     {
         /* Loopback */
 
@@ -3677,19 +3679,19 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
 
         up->iLoopbackCount++;
     }
-    else if (teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength == iLen && strncmp(pBuf, teljjy_command_sequence[up->iClockCommandSeq].command, iLen) == 0)
+    else if ((teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength == iLen) && (strncmp(pBuf, teljjy_command_sequence[up->iClockCommandSeq].command, iLen) == 0))
     {
         /* Maybe echoback */
 
         jjy_write_clockstats(peer, JJY_CLOCKSTATS_MARK_INFORMATION, JJY_CLOCKSTATS_MESSAGE_ECHOBACK);
     }
-    else if (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyLength == iLen && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_4DATE)
+    else if ((teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyLength == iLen) && (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_4DATE))
     {
         /* 4DATE<CR> -> YYYYMMDD<CR> */
 
         rc = sscanf(pBuf, "%4d%2d%2d", &up->year, &up->month, &up->day);
 
-        if (rc != 3 || up->year < 2000 || 2099 <= up->year || up->month < 1 || 12 < up->month || up->day < 1 || 31 < up->day)
+        if ((rc != 3) || (up->year < 2000) || (2099 <= up->year) || (up->month < 1) || (12 < up->month) || (up->day < 1) || (31 < up->day))
         {
             /* Invalid date */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_DATE,
@@ -3698,13 +3700,13 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
             up->bLineError = TRUE;
         }
     }
-    else if (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyLength == iLen && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LEAPSEC && (strncmp(pBuf, " 0", 2) == 0 || strncmp(pBuf, "+1", 2) == 0 || strncmp(pBuf, "-1", 2) == 0))
+    else if ((teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyLength == iLen) && (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LEAPSEC) && ((strncmp(pBuf, " 0", 2) == 0) || (strncmp(pBuf, "+1", 2) == 0) || (strncmp(pBuf, "-1", 2) == 0)))
     {
         /* LEAPSEC<CR> -> XX<CR> ( One of <SP>0, +1, -1 ) */
 
         rc = sscanf(pBuf, "%2d", &up->leapsecond);
 
-        if (rc != 1 || up->leapsecond < -1 || 1 < up->leapsecond)
+        if ((rc != 1) || (up->leapsecond < -1) || (1 < up->leapsecond))
         {
             /* Invalid leap second */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_LEAP,
@@ -3713,13 +3715,13 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
             up->bLineError = TRUE;
         }
     }
-    else if (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyLength == iLen && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_TIME)
+    else if ((teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyLength == iLen) && (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_TIME))
     {
         /* TIME<CR> -> HHMMSS<CR> ( 3 times on second ) */
 
         rc = sscanf(pBuf, "%2d%2d%2d", &up->hour, &up->minute, &up->second);
 
-        if (rc != 3 || up->hour > 23 || up->minute > 59 || up->second > 60)
+        if ((rc != 3) || (up->hour > 23) || (up->minute > 59) || (up->second > 60))
         {
             /* Invalid time */
             snprintf(sLog, sizeof(sLog) - 1, JJY_CLOCKSTATS_MESSAGE_SSCANF_INVALID_TIME,
@@ -3731,7 +3733,7 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
 
         up->iTimestampCount++;
 
-        if (up->iTimestampCount == 6 && !up->bLineError)
+        if ((up->iTimestampCount == 6) && !up->bLineError)
         {
 #if DEBUG
             printf("refclock_jjy.c : teljjy_conn_data : bLineError=%d iTimestamp=%d, %d, %d\n",
@@ -3756,7 +3758,7 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
                 }
             }
 
-            if ((up->iTimestamp[3U] - 15) <= up->iTimestamp[2U] && up->iTimestamp[2U] <= up->iTimestamp[3U] && (up->iTimestamp[3U] + 1) == up->iTimestamp[4U] && (up->iTimestamp[4U] + 1) == up->iTimestamp[5U])
+            if (((up->iTimestamp[3U] - 15) <= up->iTimestamp[2U]) && (up->iTimestamp[2U] <= up->iTimestamp[3U]) && ((up->iTimestamp[3U] + 1) == up->iTimestamp[4U]) && ((up->iTimestamp[4U] + 1) == up->iTimestamp[5U]))
             {
                 /* Non over midnight */
 
@@ -3782,7 +3784,7 @@ teljjy_conn_data(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
             }
         }
     }
-    else if (teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength != iLen && teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK)
+    else if ((teljjy_command_sequence[up->iClockCommandSeq].iEchobackReplyLength != iLen) && (teljjy_command_sequence[up->iClockCommandSeq].iExpectedReplyType == TELJJY_REPLY_LOOPBACK))
     {
         /* Loopback noise ( Unexpected replay ) */
 
@@ -3812,7 +3814,7 @@ teljjy_conn_silent(struct peer* peer, struct refclockproc* pp, struct jjyunit* u
 
     DEBUG_TELJJY_PRINTF("teljjy_conn_silent");
 
-    if (up->iClockCommandSeq >= 1 && up->iClockCommandSeq < TELJJY_COMMAND_START_SKIP_LOOPBACK)
+    if ((up->iClockCommandSeq >= 1) && (up->iClockCommandSeq < TELJJY_COMMAND_START_SKIP_LOOPBACK))
     {
         /* Loopback */
 #ifdef DEBUG
@@ -3946,7 +3948,7 @@ static int modem_esc_data(struct peer*, struct refclockproc*, struct jjyunit*);
 static int modem_esc_silent(struct peer*, struct refclockproc*, struct jjyunit*);
 static int modem_esc_disc(struct peer*, struct refclockproc*, struct jjyunit*);
 
-static int (*pModemHandler[][5])(struct peer*, struct refclockproc*, struct jjyunit*) = {
+static int (*pModemHandler[][5U])(struct peer*, struct refclockproc*, struct jjyunit*) = {
     /*STATE_DISCONNECT   STATE_INITIALIZE   STATE_DAILING       STATE_CONNECT      STATE_ESCAPE     */
     /* NULL                 */ { modem_disc_ignore, modem_init_ignore,  modem_dial_ignore, modem_conn_ignore, modem_esc_ignore },
     /* INITIALIZE           */
@@ -3981,7 +3983,7 @@ static int (*pModemHandler[][5])(struct peer*, struct refclockproc*, struct jjyu
     { modem_disc_ignore,   modem_init_disc,  modem_dial_escape, modem_conn_escape,   modem_esc_disc }
 };
 
-static short iModemNextState[][5] = {
+static short iModemNextState[][5U] = {
     /*STATE_DISCONNECT        STATE_INITIALIZE        STATE_DAILING        STATE_CONNECT        STATE_ESCAPE           */
     /* NULL                 */ { MODEM_STATE_DISCONNECT, MODEM_STATE_INITIALIZE,    MODEM_STATE_DAILING, MODEM_STATE_CONNECT,     MODEM_STATE_ESCAPE },
     /* INITIALIZE           */
@@ -4016,7 +4018,7 @@ static short iModemNextState[][5] = {
     { MODEM_STATE_DISCONNECT, MODEM_STATE_DISCONNECT,     MODEM_STATE_ESCAPE,  MODEM_STATE_ESCAPE, MODEM_STATE_DISCONNECT }
 };
 
-static short iModemPostEvent[][5] = {
+static short iModemPostEvent[][5U] = {
     /*STATE_DISCONNECT        STATE_INITIALIZE     STATE_DAILING           STATE_CONNECT           STATE_ESCAPE     */
     /* NULL                 */ {       MODEM_EVENT_NULL,    MODEM_EVENT_NULL,       MODEM_EVENT_NULL,       MODEM_EVENT_NULL, MODEM_EVENT_NULL },
     /* INITIALIZE           */
@@ -4051,8 +4053,8 @@ static short iModemPostEvent[][5] = {
     {       MODEM_EVENT_NULL,    MODEM_EVENT_NULL, MODEM_EVENT_DISCONNECT, MODEM_EVENT_DISCONNECT, MODEM_EVENT_NULL }
 };
 
-static short iModemSilentTimeout[5] = { 0, 0, 0, 0, 5 };
-static short iModemStateTimeout[5] = { 0, 20, 90, 0, 20 };
+static short iModemSilentTimeout[5U] = { 0, 0, 0, 0, 5 };
+static short iModemStateTimeout[5U] = { 0, 20, 90, 0, 20 };
 
 #define STAY_MODEM_STATE 0
 #define CHANGE_MODEM_STATE 1
@@ -4098,7 +4100,7 @@ isModemStateDisconnect(short iCheckState)
 static int
 isModemStateTimerOn(struct jjyunit* up)
 {
-    return (iModemSilentTimeout[up->iModemState] != 0 || iModemStateTimeout[up->iModemState] != 0);
+    return ((iModemSilentTimeout[up->iModemState] != 0) || (iModemStateTimeout[up->iModemState] != 0));
 }
 
 /**************************************************************************************************/
@@ -4170,39 +4172,39 @@ modem_receive(struct recvbuf* rbufp)
         iLen = pp->lencode;
     }
 
-    if (iLen == 2 && strncmp(pBuf, "OK", 2) == 0)
+    if ((iLen == 2) && (strncmp(pBuf, "OK", 2) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_OK;
     }
-    else if (iLen == 7 && strncmp(pBuf, "CONNECT", 7) == 0)
+    else if ((iLen == 7) && (strncmp(pBuf, "CONNECT", 7) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_CONNECT;
     }
-    else if (iLen == 4 && strncmp(pBuf, "RING", 4) == 0)
+    else if ((iLen == 4) && (strncmp(pBuf, "RING", 4) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_RING;
     }
-    else if (iLen == 10 && strncmp(pBuf, "NO CARRIER", 10) == 0)
+    else if ((iLen == 10) && (strncmp(pBuf, "NO CARRIER", 10) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_NO_CARRIER;
     }
-    else if (iLen == 5 && strncmp(pBuf, "ERROR", 5) == 0)
+    else if ((iLen == 5) && (strncmp(pBuf, "ERROR", 5) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_ERROR;
     }
-    else if (iLen >= 8 && strncmp(pBuf, "CONNECT ", 8) == 0)
+    else if ((iLen >= 8) && (strncmp(pBuf, "CONNECT ", 8) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_CONNECT_X;
     }
-    else if (iLen == 11 && strncmp(pBuf, "NO DAILTONE", 11) == 0)
+    else if ((iLen == 11) && (strncmp(pBuf, "NO DAILTONE", 11) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_NO_DAILTONE;
     }
-    else if (iLen == 4 && strncmp(pBuf, "BUSY", 4) == 0)
+    else if ((iLen == 4) && (strncmp(pBuf, "BUSY", 4) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_BUSY;
     }
-    else if (iLen == 9 && strncmp(pBuf, "NO ANSWER", 9) == 0)
+    else if ((iLen == 9) && (strncmp(pBuf, "NO ANSWER", 9) == 0))
     {
         up->iModemEvent = MODEM_EVENT_RESP_NO_ANSWER;
     }
@@ -4214,7 +4216,7 @@ modem_receive(struct recvbuf* rbufp)
 #ifdef DEBUG
     if (debug)
     {
-        char sResp[40];
+        char sResp[40U];
         size_t iCopyLen;
         iCopyLen = (iLen <= sizeof(sResp) - 1 ? iLen : sizeof(sResp) - 1);
         strncpy(sResp, pBuf, iLen <= sizeof(sResp) - 1 ? iLen : sizeof(sResp) - 1);
@@ -4360,7 +4362,7 @@ modem_init_resp00(struct peer* peer, struct refclockproc* pp, struct jjyunit* up
 {
 
     const char* pCmd;
-    char cBuf[46];
+    char cBuf[46U];
     int iCmdLen;
     int iErrorCorrection, iSpeakerSwitch, iSpeakerVolume;
     int iNextModemState = STAY_MODEM_STATE;
@@ -4512,7 +4514,7 @@ static int
 modem_dial_dialout(struct peer* peer, struct refclockproc* pp, struct jjyunit* up)
 {
 
-    char sCmd[46];
+    char sCmd[46U];
     int iCmdLen;
     char cToneOrPulse;
 
@@ -4723,7 +4725,7 @@ static void
 jjy_write_clockstats(struct peer* peer, int iMark, const char* pData)
 {
 
-    char sLog[100];
+    char sLog[100U];
     const char* pMark;
     int iMarkLen, iDataLen;
 
@@ -4801,13 +4803,15 @@ printableString(char* sOutput, int iOutputLen, const char* sInput, int iInputLen
 
     InputLen = (size_t)iInputLen;
     OutputLen = (size_t)iOutputLen;
-    for (i = j = 0; i < InputLen && j < OutputLen; i++)
+    for (i = j = 0; (i < InputLen) && (j < OutputLen); ++i)
     {
         if (isprint((unsigned char)sInput[i]))
         {
             n = 1;
             if (j + 1 >= OutputLen)
+            {
                 break;
+            }
             sOutput[j] = sInput[i];
         }
         else if ((sInput[i] & 0xFF) <
@@ -4815,7 +4819,9 @@ printableString(char* sOutput, int iOutputLen, const char* sInput, int iInputLen
         {
             n = strlen(printableControlChar[sInput[i] & 0xFF]);
             if (j + n + 1 >= OutputLen)
+            {
                 break;
+            }
             strlcpy(sOutput + j,
                     printableControlChar[sInput[i] & 0xFF],
                     OutputLen - j);
@@ -4824,7 +4830,9 @@ printableString(char* sOutput, int iOutputLen, const char* sInput, int iInputLen
         {
             n = 5;
             if (j + n + 1 >= OutputLen)
+            {
                 break;
+            }
             snprintf(sOutput + j, OutputLen - j, "<x%X>",
                      sInput[i] & 0xFF);
         }

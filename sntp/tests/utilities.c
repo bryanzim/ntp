@@ -64,7 +64,9 @@ void FinishDebugTest(const char* expected,
                      const char* actual)
 {
     if (outputFileOpened)
+    {
         fclose(outputFile);
+    }
 
     FILE* e = fopen(expected, "rb");
     FILE* a = fopen(actual, "rb");

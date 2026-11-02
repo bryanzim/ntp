@@ -80,8 +80,10 @@ void connection_reset_fix(
                           sizeof(bNewBehavior), NULL, 0,
                           &dw, NULL, NULL);
         if (SOCKET_ERROR == status)
+        {
             msyslog(LOG_ERR,
                     "connection_reset_fix() failed for address %s: %m",
                     stoa(addr));
+        }
     }
 }

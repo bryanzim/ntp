@@ -571,8 +571,8 @@ int main(
 #define RUNNING_STABILITY_BAND (5)         // When running, stability is defined as difference within +/- this value.
 
     struct tm* TimeStructure = NULL; /* Structure returned by gmtime */
-    char device[200];                /* audio device */
-    char code[200];                  /* timecode */
+    char device[200U];               /* audio device */
+    char code[200U];                 /* timecode */
     int temp;
     int arg = 0;
     int sw = 0;
@@ -608,8 +608,8 @@ int main(
     int OffsetOnes = 0;
     int OffsetHalf = 0;
 
-    int TimeQuality = 0;    /* Time quality for IEEE 1344 indication. */
-    char ParityString[200]; /* Partial output string, to calculate parity on. */
+    int TimeQuality = 0;     /* Time quality for IEEE 1344 indication. */
+    char ParityString[200U]; /* Partial output string, to calculate parity on. */
     int ParitySum = 0;
     int ParityValue;
     char* StringPointer;
@@ -761,7 +761,9 @@ int main(
                 AddCycle = FALSE;
 
                 if (Verbose)
+                {
                     printf("\n> Forcing rate correction removal of cycle...\n");
+                }
             }
             else
             {
@@ -771,7 +773,9 @@ int main(
                     AddCycle = TRUE;
 
                     if (Verbose)
+                    {
                         printf("\n> Forcing rate correction addition of cycle...\n");
+                    }
                 }
             }
             break;
@@ -793,9 +797,13 @@ int main(
                     OffsetOnes = TimeOffset;
 
                     if ((TimeOffset - floor(TimeOffset)) >= 0.4)
+                    {
                         OffsetHalf = 1;
+                    }
                     else
+                    {
                         OffsetHalf = 0;
+                    }
                 }
                 else
                 {
@@ -809,9 +817,13 @@ int main(
                 OffsetOnes = -TimeOffset;
 
                 if ((ceil(TimeOffset) - TimeOffset) >= 0.4)
+                {
                     OffsetHalf = 1;
+                }
                 else
+                {
                     OffsetHalf = 0;
+                }
             }
 
             /*printf ("\nGot TimeOffset = %3.1f, OffsetSignBit = %d, OffsetOnes = %d, OffsetHalf = %d...\n",
@@ -841,9 +853,13 @@ int main(
         case 'u': /* set DUT1 offset (-7 to +7) */
             sscanf(optarg, "%d", &dut1);
             if (dut1 < 0)
+            {
                 dut1 = abs(dut1);
+            }
             else
+            {
                 dut1 |= 0x8;
+            }
             break;
 
 #ifndef HAVE_SYS_SOUNDCARD_H
@@ -874,7 +890,9 @@ int main(
     }
 
     if (Debug)
+    {
         Verbose = TRUE;
+    }
 
     if (InsertLeapSecond || DeleteLeapSecond)
     {
@@ -1025,7 +1043,9 @@ int main(
     SampleRateDifference = SampleRate - SetSampleRate;
 
     if (SampleRateDifference < 0)
+    {
         SampleRateDifference = -SampleRateDifference;
+    }
 
     /* Fixed allowable sample rate error 0.1% */
     if (SampleRateDifference > (SetSampleRate / 1000))
@@ -1074,9 +1094,13 @@ int main(
     {
         /* Apply offset to time. */
         if (UseOffsetSecondsInt >= 0)
+        {
             SecondsPartOfTime += (time_t)UseOffsetSecondsInt;
+        }
         else
+        {
             SecondsPartOfTime -= (time_t)(-UseOffsetSecondsInt);
+        }
 
         TimeStructure = gmtime(&SecondsPartOfTime);
         Minute = TimeStructure->tm_min;
@@ -1115,16 +1139,22 @@ int main(
                    Year, DayOfYear, Hour, Minute, Second, code);
 
             if ((EnableRateCorrection) || (RemoveCycle) || (AddCycle))
+            {
                 printf(", CountOfSecondsSent = %d, TotalCyclesAdded = %d, TotalCyclesRemoved = %d\n", CountOfSecondsSent, TotalCyclesAdded, TotalCyclesRemoved);
+            }
             else
+            {
                 printf("\n");
+            }
         }
 
         ptr = 8;
-        for (BitNumber = 0; BitNumber <= Second; BitNumber++)
+        for (BitNumber = 0; BitNumber <= Second; ++BitNumber)
         {
             if (progx[BitNumber].sw == DEC)
+            {
                 ptr--;
+            }
         }
         break;
 
@@ -1161,7 +1191,7 @@ int main(
      * Run the signal generator to generate new timecode strings
      * once per minute for WWV/H and once per second for IRIG.
      */
-    for (CountOfSecondsSent = 0; ((SecondsToSend == 0) || (CountOfSecondsSent < SecondsToSend)); CountOfSecondsSent++)
+    for (CountOfSecondsSent = 0; ((SecondsToSend == 0) || (CountOfSecondsSent < SecondsToSend)); ++CountOfSecondsSent)
     {
         if ((encode == IRIG) && (((Second % 20) == 0) || (CountOfSecondsSent == 0)))
         {
@@ -1180,7 +1210,9 @@ int main(
                 }
             }
             else
+            {
                 printf("\n");
+            }
 
             /* printf ("|Seconds | Minutes |  Hours  |    Day_of_Year    |   Year  | IEEE_1344_Control |  StraightBinSecs  |\n");
             printf ("|------- | ------- |  -----  |    -----------    |   ----  | ----------------- |-------------------|\n");
@@ -1203,7 +1235,9 @@ int main(
                 RateCorrection = +1;
             }
             else
+            {
                 RateCorrection = 0;
+            }
         }
 
         /*
@@ -1224,7 +1258,9 @@ int main(
                     LeapState = LEAPSTATE_DELETING;
 
                     if (Debug)
+                    {
                         printf("\n<--- Ready to delete a leap second...\n");
+                    }
                 }
                 else
                 { /* Delete takes precedence over insert. */
@@ -1234,7 +1270,9 @@ int main(
                         LeapState = LEAPSTATE_INSERTING;
 
                         if (Debug)
+                        {
                             printf("\n<--- Ready to insert a leap second...\n");
+                        }
                     }
                 }
             }
@@ -1251,7 +1289,9 @@ int main(
             LeapState = LEAPSTATE_NORMAL;
 
             if (Debug)
+            {
                 printf("\n<--- Deleting a leap second...\n");
+            }
             break;
 
         case LEAPSTATE_INSERTING:
@@ -1259,7 +1299,9 @@ int main(
             LeapState = LEAPSTATE_ZERO_AFTER_INSERT;
 
             if (Debug)
+            {
                 printf("\n<--- Inserting a leap second...\n");
+            }
             break;
 
         case LEAPSTATE_ZERO_AFTER_INSERT:
@@ -1267,7 +1309,9 @@ int main(
             LeapState = LEAPSTATE_NORMAL;
 
             if (Debug)
+            {
                 printf("\n<--- Inserted a leap second, now back to zero...\n");
+            }
             break;
 
         default:
@@ -1311,7 +1355,9 @@ int main(
                                 OffsetOnes = (OffsetHalf == 0) ? 8 : 7;
                             }
                             else
+                            {
                                 OffsetOnes++;
+                            }
                         }
                         else
                         { /* Offset is negative */
@@ -1321,11 +1367,15 @@ int main(
                                 OffsetOnes = (OffsetHalf == 0) ? 1 : 0;
                             }
                             else
+                            {
                                 OffsetOnes--;
+                            }
                         }
 
                         if (Debug)
+                        {
                             printf("\n<--- DST activated, spring ahead an hour, new offset !...\n");
+                        }
                     }
                     else
                     { /* DST flag is non zero, in DST, going out of DST, "fall back", so no increment of hour. */
@@ -1342,7 +1392,9 @@ int main(
                                 OffsetOnes = (OffsetHalf == 0) ? 1 : 0;
                             }
                             else
+                            {
                                 OffsetOnes--;
+                            }
                         }
                         else
                         { /* Offset is negative */
@@ -1352,11 +1404,15 @@ int main(
                                 OffsetOnes = (OffsetHalf == 0) ? 8 : 7;
                             }
                             else
+                            {
                                 OffsetOnes++;
+                            }
                         }
 
                         if (Debug)
+                        {
                             printf("\n<--- DST de-activated, fall back an hour!...\n");
+                        }
                     }
 
                     DstSwitchFlag = FALSE; /* One time deal, not intended to run this program past two switches... */
@@ -1379,7 +1435,9 @@ int main(
                 {
                     WWV_Second(DATA0, RateCorrection);
                     if (Verbose)
+                    {
                         printf("\nLeap!");
+                    }
                     leap = 0;
                 }
                 DayOfYear = 1;
@@ -1391,8 +1449,10 @@ int main(
                          "%01d%03d%02d%02d%01d", Year / 10,
                          DayOfYear, Hour, Minute, Year % 10);
                 if (Verbose)
+                {
                     printf("\n Year = %2.2d, Day of year = %3d, Time = %2.2d:%2.2d:%2.2d, Code = %s",
                            Year, DayOfYear, Hour, Minute, Second, code);
+                }
 
                 if ((EnableRateCorrection) || (RemoveCycle) || (AddCycle))
                 {
@@ -1405,7 +1465,9 @@ int main(
                     }
                 }
                 else
+                {
                     printf("\n");
+                }
 
                 ptr = 8;
             }
@@ -1444,7 +1506,9 @@ int main(
             if (IrigIncludeIeee)
             {
                 if ((OffsetOnes == 0) && (OffsetHalf == 0))
+                {
                     OffsetSignBit = 0;
+                }
 
                 ControlFunctions = (LeapSecondPending == 0 ? 0x00000 : 0x00001) | (LeapSecondPolarity == 0 ? 0x00000 : 0x00002) | (DstPendingFlag == 0 ? 0x00000 : 0x00004) | (DstFlag == 0 ? 0x00000 : 0x00008) | (OffsetSignBit == 0 ? 0x00000 : 0x00010) | ((OffsetOnes & 0x0F) << 5) | (OffsetHalf == 0 ? 0x00000 : 0x00200) | ((TimeQuality & 0x0F) << 10);
                 /* if  (Verbose)
@@ -1453,7 +1517,9 @@ int main(
                 */
             }
             else
+            {
                 ControlFunctions = 0;
+            }
 
             /*
                               YearDay HourMin Sec
@@ -1478,7 +1544,7 @@ int main(
             if (IrigIncludeIeee)
             {
                 ParitySum = 0;
-                for (StringPointer = ParityString; *StringPointer != NUL; StringPointer++)
+                for (StringPointer = ParityString; *StringPointer != NUL; ++StringPointer)
                 {
                     switch (toupper(*StringPointer))
                     {
@@ -1512,12 +1578,18 @@ int main(
                 }
 
                 if ((ParitySum & 0x01) == 0x01)
+                {
                     ParityValue = 0x01;
+                }
                 else
+                {
                     ParityValue = 0;
+                }
             }
             else
+            {
                 ParityValue = 0;
+            }
 
             ControlFunctions |= ((ParityValue & 0x01) << 14);
 
@@ -1541,7 +1613,9 @@ int main(
             }
 
             if (Debug)
+            {
                 printf("\nCode string: %s, ParityString = %s, ParitySum = 0x%2.2X, ParityValue = %d, DstFlag = %d...\n", code, ParityString, ParitySum, ParityValue, DstFlag);
+            }
 
             ptr = strlen(code) - 1;
             OldPtr = 0;
@@ -1562,7 +1636,7 @@ int main(
             /* Initialize the output string */
             OutputDataString[0U] = '\0';
 
-            for (BitNumber = 0; BitNumber < 100; BitNumber++)
+            for (BitNumber = 0; BitNumber < 100; ++BitNumber)
             {
                 FrameNumber = (BitNumber / 10) + 1;
                 switch (FrameNumber)
@@ -1818,20 +1892,28 @@ int main(
                     break;
                 }
                 if (ptr < 0)
+                {
                     break;
+                }
             }
             ReverseString(OutputDataString);
             if (Verbose)
             {
                 printf("%s", OutputDataString);
                 if (RateCorrection > 0)
+                {
                     printf(" fast\n");
+                }
                 else
                 {
                     if (RateCorrection < 0)
+                    {
                         printf(" slow\n");
+                    }
                     else
+                    {
                         printf("\n");
+                    }
                 }
             }
             break;
@@ -1851,17 +1933,25 @@ int main(
                 if (Verbose)
                 {
                     if (arg == DATA0)
+                    {
                         printf("0");
+                    }
                     else
                     {
                         if (arg == DATA1)
+                        {
                             printf("1");
+                        }
                         else
                         {
                             if (arg == PI)
+                            {
                                 printf("P");
+                            }
                             else
+                            {
                                 printf("?");
+                            }
                         }
                     }
                 }
@@ -1872,17 +1962,25 @@ int main(
                 if (Verbose)
                 {
                     if (arg == DATA0)
+                    {
                         printf("0");
+                    }
                     else
                     {
                         if (arg == DATA1)
+                        {
                             printf("1");
+                        }
                         else
                         {
                             if (arg == PI)
+                            {
                                 printf("P");
+                            }
                             else
+                            {
                                 printf("?");
+                            }
                         }
                     }
                 }
@@ -1893,13 +1991,17 @@ int main(
                 {
                     WWV_Second(DATA1, RateCorrection);
                     if (Verbose)
+                    {
                         printf("1");
+                    }
                 }
                 else
                 {
                     WWV_Second(DATA0, RateCorrection);
                     if (Verbose)
+                    {
                         printf("0");
+                    }
                 }
                 break;
 
@@ -1908,13 +2010,17 @@ int main(
                 {
                     WWV_Second(DATA1, RateCorrection);
                     if (Verbose)
+                    {
                         printf("L");
+                    }
                 }
                 else
                 {
                     WWV_Second(DATA0, RateCorrection);
                     if (Verbose)
+                    {
                         printf("0");
+                    }
                 }
                 break;
 
@@ -1924,17 +2030,25 @@ int main(
                 if (Verbose)
                 {
                     if (arg == DATA0)
+                    {
                         printf("0");
+                    }
                     else
                     {
                         if (arg == DATA1)
+                        {
                             printf("1");
+                        }
                         else
                         {
                             if (arg == PI)
+                            {
                                 printf("P");
+                            }
                             else
+                            {
                                 printf("?");
+                            }
                         }
                     }
                 }
@@ -1946,17 +2060,25 @@ int main(
                 if (Verbose)
                 {
                     if (arg == DATA0)
+                    {
                         printf("0");
+                    }
                     else
                     {
                         if (arg == DATA1)
+                        {
                             printf("1");
+                        }
                         else
                         {
                             if (arg == PI)
+                            {
                                 printf("P");
+                            }
                             else
+                            {
                                 printf("?");
+                            }
                         }
                     }
                 }
@@ -1973,7 +2095,9 @@ int main(
                         TotalCyclesRemoved += 10;
 
                         if (Debug)
+                        {
                             printf("\n* Shorter Second: ");
+                        }
                     }
                     else
                     {
@@ -1984,7 +2108,9 @@ int main(
                             TotalCyclesAdded += 10;
 
                             if (Debug)
+                            {
                                 printf("\n* Longer Second: ");
+                            }
                         }
                         else
                         {
@@ -1993,7 +2119,9 @@ int main(
                     }
 
                     if (Verbose)
+                    {
                         printf("H");
+                    }
                 }
                 else
                 {
@@ -2005,7 +2133,9 @@ int main(
                         TotalCyclesRemoved += 10;
 
                         if (Debug)
+                        {
                             printf("\n* Shorter Second: ");
+                        }
                     }
                     else
                     {
@@ -2016,7 +2146,9 @@ int main(
                             TotalCyclesAdded += 10;
 
                             if (Debug)
+                            {
                                 printf("\n* Longer Second: ");
+                            }
                         }
                         else
                         {
@@ -2025,7 +2157,9 @@ int main(
                     }
 
                     if (Verbose)
+                    {
                         printf("M");
+                    }
                 }
                 break;
 
@@ -2034,13 +2168,17 @@ int main(
                 {
                     WWV_Second(DATA1, RateCorrection);
                     if (Verbose)
+                    {
                         printf("1");
+                    }
                 }
                 else
                 {
                     WWV_Second(DATA0, RateCorrection);
                     if (Verbose)
+                    {
                         printf("0");
+                    }
                 }
                 break;
 
@@ -2050,13 +2188,17 @@ int main(
                 {
                     WWV_Second(DATA1, RateCorrection);
                     if (Verbose)
+                    {
                         printf("1");
+                    }
                 }
                 else
                 {
                     WWV_Second(DATA0, RateCorrection);
                     if (Verbose)
+                    {
                         printf("0");
+                    }
                 }
                 break;
 
@@ -2065,13 +2207,17 @@ int main(
                 {
                     WWV_Second(DATA1, RateCorrection);
                     if (Verbose)
+                    {
                         printf("1");
+                    }
                 }
                 else
                 {
                     WWV_Second(DATA0, RateCorrection);
                     if (Verbose)
+                    {
                         printf("0");
+                    }
                 }
                 break;
             }
@@ -2106,7 +2252,9 @@ int main(
                             ExpectedRunningDifference = SecondsRunningDifference;
                             StabilityCount++;
                             if (Debug)
+                            {
                                 printf("> Starting stability check.\n");
+                            }
                         }
                         else
                         { // Else for "if  (StabilityCount == 0)"
@@ -2114,13 +2262,17 @@ int main(
                             { // So far, still within stability band, increment count.
                                 StabilityCount++;
                                 if (Debug)
+                                {
                                     printf("> StabilityCount = %d.\n", StabilityCount);
+                                }
                             }
                             else
                             { // Outside of stability band, start over.
                                 StabilityCount = 0;
                                 if (Debug)
+                                {
                                     printf("> Out of stability band, start over.\n");
+                                }
                             }
                         } // End of else for "if  (StabilityCount == 0)"
                     } // End of true clause for "if  (StabilityCount < MINIMUM_STABILITY_COUNT))"
@@ -2131,7 +2283,9 @@ int main(
                             if (ExpectedRunningDifference >= SecondsRunningDifference)
                             {
                                 if (Debug)
+                                {
                                     printf("> Was adding cycles, ExpectedRunningDifference >= SecondsRunningDifference, can stop it now.\n");
+                                }
 
                                 AddCycle = FALSE;
                                 RemoveCycle = FALSE;
@@ -2139,7 +2293,9 @@ int main(
                             else
                             {
                                 if (Debug)
+                                {
                                     printf("> Was adding cycles, not done yet.\n");
+                                }
                             }
                         }
                         else
@@ -2149,7 +2305,9 @@ int main(
                                 if (ExpectedRunningDifference <= SecondsRunningDifference)
                                 {
                                     if (Debug)
+                                    {
                                         printf("> Was removing cycles, ExpectedRunningDifference <= SecondsRunningDifference, can stop it now.\n");
+                                    }
 
                                     AddCycle = FALSE;
                                     RemoveCycle = FALSE;
@@ -2157,7 +2315,9 @@ int main(
                                 else
                                 {
                                     if (Debug)
+                                    {
                                         printf("> Was removing cycles, not done yet.\n");
+                                    }
                                 }
                             }
                             else
@@ -2165,14 +2325,18 @@ int main(
                                 if ((ExpectedRunningDifference + RUNNING_STABILITY_BAND > SecondsRunningDifference) && (ExpectedRunningDifference - RUNNING_STABILITY_BAND < SecondsRunningDifference))
                                 { // All is well, within tolerances.
                                     if (Debug)
+                                    {
                                         printf("> All is well, within tolerances.\n");
+                                    }
                                 }
                                 else
                                 { // Oops, outside tolerances.  Else clause of "if  ((ExpectedRunningDifference...SecondsRunningDifference)"
                                     if (ExpectedRunningDifference > SecondsRunningDifference)
                                     {
                                         if (Debug)
+                                        {
                                             printf("> ExpectedRunningDifference > SecondsRunningDifference, running behind real time.\n");
+                                        }
 
                                         // Behind real time, have to add a cycle to slow down and get back in sync.
                                         AddCycle = FALSE;
@@ -2183,7 +2347,9 @@ int main(
                                         if (ExpectedRunningDifference < SecondsRunningDifference)
                                         {
                                             if (Debug)
+                                            {
                                                 printf("> ExpectedRunningDifference < SecondsRunningDifference, running ahead of real time.\n");
+                                            }
 
                                             // Ahead of real time, have to remove a cycle to speed up and get back in sync.
                                             AddCycle = TRUE;
@@ -2192,7 +2358,9 @@ int main(
                                         else
                                         {
                                             if (Debug)
+                                            {
                                                 printf("> Oops, outside tolerances, but doesn't fit the profiles, how can this be?\n");
+                                            }
                                         }
                                     } // End of else clause of "if  (ExpectedRunningDifference > SecondsRunningDifference)"
                                 } // End of else clause of "if  ((ExpectedRunningDifference...SecondsRunningDifference)"
@@ -2204,7 +2372,9 @@ int main(
             else
             {
                 if (Debug)
+                {
                     printf("> Hmm, time going backwards?\n");
+                }
             }
         } // End of true clause for "if  (EnableRateCorrection)"
 
@@ -2247,7 +2417,9 @@ void WWV_Second(
         TotalCyclesRemoved += 10;
 
         if (Debug)
+        {
             printf("\n* Shorter Second: ");
+        }
     }
     else
     {
@@ -2258,10 +2430,14 @@ void WWV_Second(
             TotalCyclesAdded += 10;
 
             if (Debug)
+            {
                 printf("\n* Longer Second: ");
+            }
         }
         else
+        {
             peep(1000 - code, 100, OFF);
+        }
     }
 }
 
@@ -2294,7 +2470,9 @@ void WWV_SecondNoTick(
         TotalCyclesRemoved += 10;
 
         if (Debug)
+        {
             printf("\n* Shorter Second: ");
+        }
     }
     else
     {
@@ -2305,10 +2483,14 @@ void WWV_SecondNoTick(
             TotalCyclesAdded += 10;
 
             if (Debug)
+            {
                 printf("\n* Longer Second: ");
+            }
         }
         else
+        {
             peep(1000 - code, 100, OFF);
+        }
     }
 }
 
@@ -2324,12 +2506,16 @@ void peep(
     int increm; /* phase increment */
     int i, j;
 
-    if (amp == OFF || freq == 0)
+    if ((amp == OFF) || (freq == 0))
+    {
         increm = 10;
+    }
     else
+    {
         increm = freq / 100;
+    }
     j = 0;
-    for (i = 0; i < pulse * 8; i++)
+    for (i = 0; i < pulse * 8; ++i)
     {
         switch (amp)
         {
@@ -2368,28 +2554,40 @@ void poop(
     int increm; /* phase increment */
     int i, j;
 
-    if (amp == OFF || freq == 0)
+    if ((amp == OFF) || (freq == 0))
+    {
         increm = 10;
+    }
     else
+    {
         increm = freq / 100;
+    }
     j = 0;
-    for (i = 0; i < pulse * 8; i++)
+    for (i = 0; i < pulse * 8; ++i)
     {
         switch (amp)
         {
 
         case HIGH:
             if (inverted)
+            {
                 buffer[bufcnt++] = ~u3000[j];
+            }
             else
+            {
                 buffer[bufcnt++] = ~u6000[j];
+            }
             break;
 
         case LOW:
             if (inverted)
+            {
                 buffer[bufcnt++] = ~u6000[j];
+            }
             else
+            {
                 buffer[bufcnt++] = ~u3000[j];
+            }
             break;
 
         default:
@@ -2456,13 +2654,15 @@ int ConvertMonthDayToDayOfYear(int YearValue, int MonthValue, int DayOfMonthValu
     }
 
     if (Debug)
+    {
         printf("\nConvertMonthDayToDayOfYear(): Year %d %s a leap year.\n", YearValue + 2000, LeapYear ? "is" : "is not");
+    }
 
     /* Day of month given us starts in this algorithm. */
     ReturnValue = DayOfMonthValue;
 
     /* Add in days in month for each month past January. */
-    for (MonthCounter = 1; MonthCounter < MonthValue; MonthCounter++)
+    for (MonthCounter = 1; MonthCounter < MonthValue; ++MonthCounter)
     {
         ReturnValue += DaysInMonth[MonthCounter - 1];
     }
@@ -2474,8 +2674,10 @@ int ConvertMonthDayToDayOfYear(int YearValue, int MonthValue, int DayOfMonthValu
     }
 
     if (Debug)
+    {
         printf("\nConvertMonthDayToDayOfYear(): %4.4d-%2.2d-%2.2d represents day %3d of year.\n",
                YearValue + 2000, MonthValue, DayOfMonthValue, ReturnValue);
+    }
 
     return (ReturnValue);
 }
@@ -2529,7 +2731,7 @@ void ReverseString(char* str)
 
     StringLength = strlen(str);
     CentreOfString = (StringLength / 2) + 1;
-    for (IndexCounter = StringLength; IndexCounter >= CentreOfString; IndexCounter--)
+    for (IndexCounter = StringLength; IndexCounter >= CentreOfString; --IndexCounter)
     {
         TemporaryCharacter = str[IndexCounter - 1];
         str[IndexCounter - 1] = str[StringLength - IndexCounter];

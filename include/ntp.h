@@ -180,7 +180,7 @@ struct endpt_tag
     sockaddr_u sin;     /* unicast address */
     sockaddr_u mask;    /* subnet mask */
     sockaddr_u bcast;   /* broadcast address */
-    char name[32];      /* name of interface */
+    char name[32U];     /* name of interface */
     u_short family;     /* AF_INET/AF_INET6 */
     u_short phase;      /* phase in update cycle */
     u_int32 flags;      /* INT_ flags */

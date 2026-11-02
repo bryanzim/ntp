@@ -183,7 +183,7 @@ wwvb_start(
     register struct wwvbunit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port. Use CLK line discipline, if available.
@@ -191,7 +191,9 @@ wwvb_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -235,9 +237,13 @@ wwvb_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -313,7 +319,9 @@ wwvb_receive(
                 "       using %s minus one char\n",
                 prettydate(&trtmp), prettydate(&pp->lastrec)));
     if (L_ISZERO(&pp->lastrec))
+    {
         return;
+    }
 
     /*
      * We get down to business, check the timecode format and decode
@@ -432,11 +440,17 @@ wwvb_receive(
         break;
     }
     if (syncchar != ' ')
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else if (leapchar == 'L')
+    {
         pp->leap = LEAP_ADDSECOND;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
 
     /*
      * Process the new sample in the median filter and determine the
@@ -445,11 +459,15 @@ wwvb_receive(
 #ifdef HAVE_PPSAPI
     up->tcount++;
     if (peer->flags & FLAG_PPS)
+    {
         return;
+    }
 
 #endif /* HAVE_PPSAPI */
     if (!refclock_process_f(pp, pp->fudgetime2))
+    {
         refclock_report(peer, CEVNT_BADTIME);
+    }
 }
 
 
@@ -478,19 +496,27 @@ wwvb_timer(
     pp = peer->procptr;
     up = pp->unitptr;
     if (up->linect > 0)
+    {
         pollchar = 'R';
+    }
     else
+    {
         pollchar = 'T';
+    }
     if (write(pp->io.fd, &pollchar, 1) != 1)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
 #ifdef DEBUG
     get_systime(&now);
     if (debug)
+    {
         printf("%c poll at %s\n", pollchar, prettydate(&now));
+    }
 #endif
 #ifdef HAVE_PPSAPI
     if (up->ppsapi_lit &&
-        refclock_pps(peer, &up->atom, pp->sloppyclockflag) > 0)
+        (refclock_pps(peer, &up->atom, pp->sloppyclockflag) > 0))
     {
         up->pcount++,
             peer->flags |= FLAG_PPS;
@@ -523,9 +549,11 @@ wwvb_poll(
      * If the monitor flag is set (flag4), we dump the internal
      * quality table at the first timecode beginning the day.
      */
-    if (pp->sloppyclockflag & CLK_FLAG4 && pp->hour <
-                                               (int)up->lasthour)
+    if ((pp->sloppyclockflag & CLK_FLAG4) && (pp->hour <
+                                              (int)up->lasthour))
+    {
         up->linect = MONLIN;
+    }
     up->lasthour = (u_char)pp->hour;
 
     /*
@@ -556,8 +584,10 @@ wwvb_poll(
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("wwvb: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif
 }
 
@@ -582,10 +612,14 @@ wwvb_control(
     if (!(pp->sloppyclockflag & CLK_FLAG1))
     {
         if (!up->ppsapi_tried)
+        {
             return;
+        }
         up->ppsapi_tried = 0;
         if (!up->ppsapi_lit)
+        {
             return;
+        }
         peer->flags &= ~FLAG_PPS;
         peer->precision = PRECISION;
         time_pps_destroy(up->atom.handle);
@@ -595,7 +629,9 @@ wwvb_control(
     }
 
     if (up->ppsapi_tried)
+    {
         return;
+    }
     /*
      * Light up the PPSAPI interface.
      */

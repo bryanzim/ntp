@@ -84,7 +84,9 @@ namespace timeStruct
             L_SUB(&diff, &m);
         }
         if (L_ISGEQ(&limit, &diff))
+        {
             return ::testing::AssertionSuccess();
+        }
 
         return ::testing::AssertionFailure()
                << m_expr << " which is " << l_fp_wrap(m)
@@ -114,7 +116,9 @@ namespace timeStruct
 
         diff = abs_tval(sub_tval(m, n));
         if (cmp_tval(limit, diff) >= 0)
+        {
             return ::testing::AssertionSuccess();
+        }
 
         return ::testing::AssertionFailure()
                << m_expr << " which is " << timeval_wrap(m)
@@ -144,7 +148,9 @@ namespace timeStruct
 
         diff = abs_tspec(sub_tspec(m, n));
         if (cmp_tspec(limit, diff) >= 0)
+        {
             return ::testing::AssertionSuccess();
+        }
 
         return ::testing::AssertionFailure()
                << m_expr << " which is " << timespec_wrap(m)

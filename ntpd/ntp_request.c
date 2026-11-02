@@ -244,8 +244,10 @@ void init_request(void)
     auth_timereset = 0;
     info_auth_keyid = 0; /* by default, can't do this */
 
-    for (i = 0; i < sizeof(errorcounter) / sizeof(errorcounter[0U]); i++)
+    for (i = 0; i < sizeof(errorcounter) / sizeof(errorcounter[0U]); ++i)
+    {
         errorcounter[i] = 0;
+    }
 }
 
 
@@ -364,7 +366,9 @@ more_pkt(void)
          */
         DPRINTF(4, ("request: into extra buffer\n"));
         if (seqno == MAXSEQ)
+        {
             return NULL;
+        }
         else
         {
             usingexbuf = 1;
@@ -385,9 +389,11 @@ flush_pkt(void)
      * Must send the last packet.  If nothing in here and nothing
      * has been sent, send an error saying no data to be found.
      */
-    if (seqno == 0 && nitems == 0)
+    if ((seqno == 0) && (nitems == 0))
+    {
         req_ack(toaddr, frominter, (struct req_pkt*)&rpkt,
                 INFO_ERR_NODATA);
+    }
     else
     {
         rpkt.rm_vn_mode = RM_VN_MODE(RESP_BIT, 0, reqver);
@@ -468,10 +474,14 @@ void process_private(
      * Get the appropriate procedure list to search.
      */
     if (inpkt->implementation == IMPL_UNIV)
+    {
         proc = univ_codes;
+    }
     else if ((inpkt->implementation == IMPL_XNTPD) ||
              (inpkt->implementation == IMPL_XNTPD_OLD))
+    {
         proc = ntp_codes;
+    }
     else
     {
         req_ack(srcadr, inter, inpkt, INFO_ERR_IMPL);
@@ -485,7 +495,9 @@ void process_private(
     while (proc->request_code != NO_REQUEST)
     {
         if (proc->request_code == (short)inpkt->request)
+        {
             break;
+        }
         proc++;
     }
     if (proc->request_code == NO_REQUEST)
@@ -508,11 +520,11 @@ void process_private(
      * Handle the exception of REQ_CONFIG. It can have two data sizes.
      */
     temp_size = INFO_ITEMSIZE(inpkt->mbz_itemsize);
-    if ((temp_size != proc->sizeofitem &&
-         temp_size != proc->v6_sizeofitem) &&
-        !(inpkt->implementation == IMPL_XNTPD &&
-          inpkt->request == REQ_CONFIG &&
-          temp_size == sizeof(struct old_conf_peer)))
+    if (((temp_size != proc->sizeofitem) &&
+         (temp_size != proc->v6_sizeofitem)) &&
+        !((inpkt->implementation == IMPL_XNTPD) &&
+          (inpkt->request == REQ_CONFIG) &&
+          (temp_size == sizeof(struct old_conf_peer))))
     {
         DPRINTF(3, ("process_private: wrong item size, received %d, should be %d or %d\n",
                     temp_size, proc->sizeofitem, proc->v6_sizeofitem));
@@ -576,9 +588,13 @@ void process_private(
         /* 32-bit alignment */
         noslop_len = (noslop_len + 3) & ~3;
         if (recv_len > (noslop_len + MAX_MAC_LEN))
+        {
             mac_len = 20;
+        }
         else
+        {
             mac_len = recv_len - noslop_len;
+        }
 
         tailinpkt = (void*)((char*)inpkt + recv_len -
                             (mac_len + sizeof(inpkt->tstamp)));
@@ -589,7 +605,7 @@ void process_private(
          * have mac, return.  Also enforce key IP ACLs the same
          * way mode 6 does via authistrustedip().
          */
-        if (!INFO_IS_AUTH(inpkt->auth_seq) || !info_auth_keyid || ntohl(tailinpkt->keyid) != info_auth_keyid || !authistrustedip(info_auth_keyid, srcadr)
+        if (!INFO_IS_AUTH(inpkt->auth_seq) || !info_auth_keyid || (ntohl(tailinpkt->keyid) != info_auth_keyid) || !authistrustedip(info_auth_keyid, srcadr)
 #ifdef OPENSSL
             || NID_md5 == auth_getkeytype(info_auth_keyid)
 #endif
@@ -687,12 +703,14 @@ list_peers(
 
     ip = (struct info_peer_list*)prepare_pkt(srcadr, inter, inpkt,
                                              v6sizeof(struct info_peer_list));
-    for (pp = peer_list; pp != NULL && ip != NULL; pp = pp->p_link)
+    for (pp = peer_list; (pp != NULL) && (ip != NULL); pp = pp->p_link)
     {
         if (IS_IPV6(&pp->srcadr))
         {
             if (!client_v6_capable)
+            {
                 continue;
+            }
             ip->addr6 = SOCK_ADDR6(&pp->srcadr);
             ip->v6_flag = 1;
         }
@@ -700,20 +718,30 @@ list_peers(
         {
             ip->addr = NSRCADR(&pp->srcadr);
             if (client_v6_capable)
+            {
                 ip->v6_flag = 0;
+            }
         }
 
         ip->port = NSRCPORT(&pp->srcadr);
         ip->hmode = pp->hmode;
         ip->flags = 0;
         if (pp->flags & FLAG_CONFIG)
+        {
             ip->flags |= INFO_FLAG_CONFIG;
+        }
         if (pp == sys_peer)
+        {
             ip->flags |= INFO_FLAG_SYSPEER;
+        }
         if (pp->status == CTL_PST_SEL_SYNCCAND)
+        {
             ip->flags |= INFO_FLAG_SEL_CANDIDATE;
+        }
         if (pp->status >= CTL_PST_SEL_SYSPEER)
+        {
             ip->flags |= INFO_FLAG_SHORTLIST;
+        }
         ip = (struct info_peer_list*)more_pkt();
     } /* for pp */
 
@@ -738,7 +766,7 @@ list_peers_sum(
 
     ips = (struct info_peer_summary*)prepare_pkt(srcadr, inter, inpkt,
                                                  v6sizeof(struct info_peer_summary));
-    for (pp = peer_list; pp != NULL && ips != NULL; pp = pp->p_link)
+    for (pp = peer_list; (pp != NULL) && (ips != NULL); pp = pp->p_link)
     {
         DPRINTF(4, ("sum: got one\n"));
         /*
@@ -748,33 +776,47 @@ list_peers_sum(
         if (IS_IPV6(&pp->srcadr))
         {
             if (!client_v6_capable)
+            {
                 continue;
+            }
             ips->srcadr6 = SOCK_ADDR6(&pp->srcadr);
             ips->v6_flag = 1;
             if (pp->dstadr)
+            {
                 ips->dstadr6 = SOCK_ADDR6(&pp->dstadr->sin);
+            }
             else
+            {
                 ZERO(ips->dstadr6);
+            }
         }
         else
         {
             ips->srcadr = NSRCADR(&pp->srcadr);
             if (client_v6_capable)
+            {
                 ips->v6_flag = 0;
+            }
 
             if (pp->dstadr)
             {
                 if (!pp->processed)
+                {
                     ips->dstadr = NSRCADR(&pp->dstadr->sin);
+                }
                 else
                 {
                     if (MDF_BCAST == pp->cast_flags)
+                    {
                         ips->dstadr = NSRCADR(&pp->dstadr->bcast);
+                    }
                     else if (pp->cast_flags)
                     {
                         ips->dstadr = NSRCADR(&pp->dstadr->sin);
                         if (!ips->dstadr)
+                        {
                             ips->dstadr = NSRCADR(&pp->dstadr->bcast);
+                        }
                     }
                 }
             }
@@ -791,19 +833,33 @@ list_peers_sum(
         ips->reach = pp->reach;
         ips->flags = 0;
         if (pp == sys_peer)
+        {
             ips->flags |= INFO_FLAG_SYSPEER;
+        }
         if (pp->flags & FLAG_CONFIG)
+        {
             ips->flags |= INFO_FLAG_CONFIG;
+        }
         if (pp->flags & FLAG_REFCLOCK)
+        {
             ips->flags |= INFO_FLAG_REFCLOCK;
+        }
         if (pp->flags & FLAG_PREFER)
+        {
             ips->flags |= INFO_FLAG_PREFER;
+        }
         if (pp->flags & FLAG_BURST)
+        {
             ips->flags |= INFO_FLAG_BURST;
+        }
         if (pp->status == CTL_PST_SEL_SYNCCAND)
+        {
             ips->flags |= INFO_FLAG_SEL_CANDIDATE;
+        }
         if (pp->status >= CTL_PST_SEL_SYSPEER)
+        {
             ips->flags |= INFO_FLAG_SHORTLIST;
+        }
         ips->hmode = pp->hmode;
         ips->delay = HTONS_FP(DTOFP(pp->delay));
         DTOLFP(pp->offset, &ltmp);
@@ -847,7 +903,7 @@ peer_info(
     }
     ip = prepare_pkt(srcadr, inter, inpkt,
                      v6sizeof(struct info_peer));
-    while (items-- > 0 && ip != NULL)
+    while ((items-- > 0) && (ip != NULL))
     {
         ZERO(ipl);
         memcpy(&ipl, datap, item_sz);
@@ -870,16 +926,22 @@ peer_info(
 
         pp = findexistingpeer(&addr, NULL, NULL, -1, 0, NULL);
         if (NULL == pp)
+        {
             continue;
+        }
         if (IS_IPV6(&pp->srcadr))
         {
             if (pp->dstadr)
+            {
                 ip->dstadr6 =
                     (MDF_BCAST == pp->cast_flags)
                         ? SOCK_ADDR6(&pp->dstadr->bcast)
                         : SOCK_ADDR6(&pp->dstadr->sin);
+            }
             else
+            {
                 ZERO(ip->dstadr6);
+            }
 
             ip->srcadr6 = SOCK_ADDR6(&pp->srcadr);
             ip->v6_flag = 1;
@@ -889,42 +951,66 @@ peer_info(
             if (pp->dstadr)
             {
                 if (!pp->processed)
+                {
                     ip->dstadr = NSRCADR(&pp->dstadr->sin);
+                }
                 else
                 {
                     if (MDF_BCAST == pp->cast_flags)
+                    {
                         ip->dstadr = NSRCADR(&pp->dstadr->bcast);
+                    }
                     else if (pp->cast_flags)
                     {
                         ip->dstadr = NSRCADR(&pp->dstadr->sin);
                         if (!ip->dstadr)
+                        {
                             ip->dstadr = NSRCADR(&pp->dstadr->bcast);
+                        }
                     }
                 }
             }
             else
+            {
                 ip->dstadr = 0;
+            }
 
             ip->srcadr = NSRCADR(&pp->srcadr);
             if (client_v6_capable)
+            {
                 ip->v6_flag = 0;
+            }
         }
         ip->srcport = NSRCPORT(&pp->srcadr);
         ip->flags = 0;
         if (pp == sys_peer)
+        {
             ip->flags |= INFO_FLAG_SYSPEER;
+        }
         if (pp->flags & FLAG_CONFIG)
+        {
             ip->flags |= INFO_FLAG_CONFIG;
+        }
         if (pp->flags & FLAG_REFCLOCK)
+        {
             ip->flags |= INFO_FLAG_REFCLOCK;
+        }
         if (pp->flags & FLAG_PREFER)
+        {
             ip->flags |= INFO_FLAG_PREFER;
+        }
         if (pp->flags & FLAG_BURST)
+        {
             ip->flags |= INFO_FLAG_BURST;
+        }
         if (pp->status == CTL_PST_SEL_SYNCCAND)
+        {
             ip->flags |= INFO_FLAG_SEL_CANDIDATE;
+        }
         if (pp->status >= CTL_PST_SEL_SYSPEER)
+        {
             ip->flags |= INFO_FLAG_SHORTLIST;
+        }
         ip->leap = pp->leap;
         ip->hmode = pp->hmode;
         ip->pmode = pp->pmode;
@@ -952,7 +1038,9 @@ peer_info(
         for (i = 0; i < NTP_SHIFT; i++, j--)
         {
             if (j < 0)
+            {
                 j = NTP_SHIFT - 1;
+            }
             ip->filtdelay[i] = HTONS_FP(DTOFP(pp->filter_delay[j]));
             DTOLFP(pp->filter_offset[j], &ltmp);
             HTONL_FP(&ltmp, &ip->filtoffset[i]);
@@ -960,7 +1048,9 @@ peer_info(
                                      NTP_SHIFT - 1) -
                                     pp->filter_order[i]);
             if (ip->order[i] >= NTP_SHIFT)
+            {
                 ip->order[i] -= NTP_SHIFT;
+            }
         }
         DTOLFP(pp->offset, &ltmp);
         HTONL_FP(&ltmp, &ip->offset);
@@ -1001,7 +1091,7 @@ peer_stats(
     }
     ip = prepare_pkt(srcadr, inter, inpkt,
                      v6sizeof(struct info_peer_stats));
-    while (items-- > 0 && ip != NULL)
+    while ((items-- > 0) && (ip != NULL))
     {
         ZERO(ipl);
         memcpy(&ipl, datap, item_sz);
@@ -1027,7 +1117,9 @@ peer_stats(
 
         pp = findexistingpeer(&addr, NULL, NULL, -1, 0, NULL);
         if (NULL == pp)
+        {
             continue;
+        }
 
         DPRINTF(1, ("peer_stats: found %s\n", stoa(&addr)));
 
@@ -1036,35 +1128,49 @@ peer_stats(
             if (pp->dstadr)
             {
                 if (!pp->processed)
+                {
                     ip->dstadr = NSRCADR(&pp->dstadr->sin);
+                }
                 else
                 {
                     if (MDF_BCAST == pp->cast_flags)
+                    {
                         ip->dstadr = NSRCADR(&pp->dstadr->bcast);
+                    }
                     else if (pp->cast_flags)
                     {
                         ip->dstadr = NSRCADR(&pp->dstadr->sin);
                         if (!ip->dstadr)
+                        {
                             ip->dstadr = NSRCADR(&pp->dstadr->bcast);
+                        }
                     }
                 }
             }
             else
+            {
                 ip->dstadr = 0;
+            }
 
             ip->srcadr = NSRCADR(&pp->srcadr);
             if (client_v6_capable)
+            {
                 ip->v6_flag = 0;
+            }
         }
         else
         {
             if (pp->dstadr)
+            {
                 ip->dstadr6 =
                     (MDF_BCAST == pp->cast_flags)
                         ? SOCK_ADDR6(&pp->dstadr->bcast)
                         : SOCK_ADDR6(&pp->dstadr->sin);
+            }
             else
+            {
                 ZERO(ip->dstadr6);
+            }
 
             ip->srcadr6 = SOCK_ADDR6(&pp->srcadr);
             ip->v6_flag = 1;
@@ -1072,21 +1178,37 @@ peer_stats(
         ip->srcport = NSRCPORT(&pp->srcadr);
         ip->flags = 0;
         if (pp == sys_peer)
+        {
             ip->flags |= INFO_FLAG_SYSPEER;
+        }
         if (pp->flags & FLAG_CONFIG)
+        {
             ip->flags |= INFO_FLAG_CONFIG;
+        }
         if (pp->flags & FLAG_REFCLOCK)
+        {
             ip->flags |= INFO_FLAG_REFCLOCK;
+        }
         if (pp->flags & FLAG_PREFER)
+        {
             ip->flags |= INFO_FLAG_PREFER;
+        }
         if (pp->flags & FLAG_BURST)
+        {
             ip->flags |= INFO_FLAG_BURST;
+        }
         if (pp->flags & FLAG_IBURST)
+        {
             ip->flags |= INFO_FLAG_IBURST;
+        }
         if (pp->status == CTL_PST_SEL_SYNCCAND)
+        {
             ip->flags |= INFO_FLAG_SEL_CANDIDATE;
+        }
         if (pp->status >= CTL_PST_SEL_SYSPEER)
+        {
             ip->flags |= INFO_FLAG_SHORTLIST;
+        }
         ip->flags = htons(ip->flags);
         ip->timereceived = htonl((u_int32)(current_time - pp->timereceived));
         ip->timetosend = htonl(pp->nextdate - current_time);
@@ -1125,7 +1247,9 @@ sys_info(
         {
             is->peer = NSRCADR(&sys_peer->srcadr);
             if (client_v6_capable)
+            {
                 is->v6_flag = 0;
+            }
         }
         else if (client_v6_capable)
         {
@@ -1158,23 +1282,39 @@ sys_info(
 
     is->flags = 0;
     if (sys_authenticate)
+    {
         is->flags |= INFO_FLAG_AUTHENTICATE;
+    }
     if (sys_bclient || sys_mclient)
+    {
         is->flags |= INFO_FLAG_BCLIENT;
+    }
 #ifdef REFCLOCK
     if (cal_enable)
+    {
         is->flags |= INFO_FLAG_CAL;
+    }
 #endif /* REFCLOCK */
     if (kern_enable)
+    {
         is->flags |= INFO_FLAG_KERNEL;
+    }
     if (mon_enabled != MON_OFF)
+    {
         is->flags |= INFO_FLAG_MONITOR;
+    }
     if (ntp_enable)
+    {
         is->flags |= INFO_FLAG_NTP;
+    }
     if (hardpps_enable)
+    {
         is->flags |= INFO_FLAG_PPS_SYNC;
+    }
     if (stats_control)
+    {
         is->flags |= INFO_FLAG_FILEGEN;
+    }
     is->bdelay = HTONS_FP(DTOFP(sys_bdelay));
     HTONL_UF(sys_authdelay.l_uf, &is->authdelay);
     (void)more_pkt();
@@ -1235,9 +1375,11 @@ mem_stats(
     ms->allocations = htonl((u_int32)peer_allocations);
     ms->demobilizations = htonl((u_int32)peer_demobilizations);
 
-    for (i = 0; i < NTP_HASH_SIZE; i++)
+    for (i = 0; i < NTP_HASH_SIZE; ++i)
+    {
         ms->hashcount[i] = (u_char)
             min((u_int)peer_hash_count[i], UCHAR_MAX);
+    }
 
     (void)more_pkt();
     flush_pkt();
@@ -1367,14 +1509,22 @@ do_conf(
 
         fl = 0;
         if (temp_cp.flags & CONF_FLAG_PREFER)
+        {
             fl |= FLAG_PREFER;
+        }
         if (temp_cp.flags & CONF_FLAG_BURST)
+        {
             fl |= FLAG_BURST;
+        }
         if (temp_cp.flags & CONF_FLAG_IBURST)
+        {
             fl |= FLAG_IBURST;
+        }
 #ifdef AUTOKEY
         if (temp_cp.flags & CONF_FLAG_SKEY)
+        {
             fl |= FLAG_SKEY;
+        }
 #endif /* AUTOKEY */
         if (client_v6_capable && temp_cp.v6_flag)
         {
@@ -1605,21 +1755,37 @@ setclr_flags(
     }
 
     if (flags & SYS_FLAG_BCLIENT)
+    {
         proto_config(PROTO_BROADCLIENT, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_PPS)
+    {
         proto_config(PROTO_PPS, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_NTP)
+    {
         proto_config(PROTO_NTP, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_KERNEL)
+    {
         proto_config(PROTO_KERNEL, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_MONITOR)
+    {
         proto_config(PROTO_MONITOR, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_FILEGEN)
+    {
         proto_config(PROTO_FILEGEN, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_AUTH)
+    {
         proto_config(PROTO_AUTHENTICATE, set, 0., NULL);
+    }
     if (flags & SYS_FLAG_CAL)
+    {
         proto_config(PROTO_CAL, set, 0., NULL);
+    }
     req_ack(srcadr, inter, inpkt, INFO_OKAY);
 }
 
@@ -1635,7 +1801,7 @@ struct RestrictStack
 {
     RestrictStackT* link;
     size_t fcnt;
-    const restrict_u* pres[63];
+    const restrict_u* pres[63U];
 };
 
 static size_t
@@ -1643,7 +1809,9 @@ getStackSheetSize(
     RestrictStackT* sp)
 {
     if (sp)
+    {
         return sizeof(sp->pres) / sizeof(sp->pres[0U]);
+    }
     return 0u;
 }
 
@@ -1654,7 +1822,7 @@ pushRestriction(
 {
     RestrictStackT* sp;
 
-    if (NULL == (sp = *spp) || 0 == sp->fcnt)
+    if ((NULL == (sp = *spp)) || (0 == sp->fcnt))
     {
         /* need another sheet in the scratch pad */
         sp = emalloc(sizeof(*sp));
@@ -1673,8 +1841,10 @@ popRestriction(
 {
     RestrictStackT* sp;
 
-    if (NULL == (sp = *spp) || sp->fcnt >= getStackSheetSize(sp))
+    if ((NULL == (sp = *spp)) || (sp->fcnt >= getStackSheetSize(sp)))
+    {
         return FALSE;
+    }
 
     *opp = sp->pres[sp->fcnt++];
     if (sp->fcnt >= getStackSheetSize(sp))
@@ -1713,14 +1883,20 @@ list_restrict4(
 
     pir = *ppir;
     for (rpad = NULL; res; res = res->link)
+    {
         if (!pushRestriction(&rpad, res))
+        {
             break;
+        }
+    }
 
     while (pir && popRestriction(&rpad, &res))
     {
         pir->addr = htonl(res->u.v4.addr);
         if (client_v6_capable)
+        {
             pir->v6_flag = 0;
+        }
         pir->mask = htonl(res->u.v4.mask);
         pir->count = htonl(res->count);
         pir->rflags = htons(res->rflags);
@@ -1745,8 +1921,12 @@ list_restrict6(
 
     pir = *ppir;
     for (rpad = NULL; res; res = res->link)
+    {
         if (!pushRestriction(&rpad, res))
+        {
             break;
+        }
+    }
 
     while (pir && popRestriction(&rpad, &res))
     {
@@ -1786,7 +1966,9 @@ list_restrict(
      */
     list_restrict4(restrictlist4, &ir);
     if (client_v6_capable)
+    {
         list_restrict6(restrictlist6, &ir);
+    }
     flush_pkt();
 }
 
@@ -1878,26 +2060,34 @@ do_restrict(
     }
 
     bad = 0;
-    while (items-- > 0 && !bad)
+    while ((items-- > 0) && !bad)
     {
         memcpy(&cr, datap, item_sz);
         cr.flags = ntohs(cr.flags); /* XXX */
         cr.mflags = ntohs(cr.mflags);
         if (~RESM_NTPONLY & cr.mflags)
+        {
             bad |= 1;
+        }
         if (~RES_ALLFLAGS & cr.flags)
+        {
             bad |= 2;
+        }
         if (INADDR_ANY != cr.mask)
         {
             if (client_v6_capable && cr.v6_flag)
             {
                 if (IN6_IS_ADDR_UNSPECIFIED(&cr.addr6))
+                {
                     bad |= 4;
+                }
             }
             else
             {
                 if (INADDR_ANY == cr.addr)
+                {
                     bad |= 8;
+                }
             }
         }
         datap += item_sz;
@@ -2021,10 +2211,12 @@ reset_stats(
         return;
     }
 
-    for (rent = reset_entries; rent->flag != 0; rent++)
+    for (rent = reset_entries; rent->flag != 0; ++rent)
     {
         if (flags & rent->flag)
+        {
             (*rent->handler)();
+        }
     }
     req_ack(srcadr, inter, inpkt, INFO_OKAY);
 }
@@ -2062,7 +2254,7 @@ reset_peer(
     }
 
     bad = FALSE;
-    while (items-- > 0 && !bad)
+    while ((items-- > 0) && !bad)
     {
         ZERO(cp);
         memcpy(&cp, datap, item_sz);
@@ -2083,7 +2275,9 @@ reset_peer(
 #endif
         p = findexistingpeer(&peeraddr, NULL, NULL, -1, 0, NULL);
         if (NULL == p)
+        {
             bad++;
+        }
         datap += item_sz;
     }
 
@@ -2264,24 +2458,32 @@ req_get_traps(
     it = (struct info_trap*)prepare_pkt(srcadr, inter, inpkt,
                                         v6sizeof(struct info_trap));
 
-    for (i = 0, tr = ctl_traps; it && i < COUNTOF(ctl_traps); i++, tr++)
+    for (i = 0, tr = ctl_traps; it && (i < COUNTOF(ctl_traps)); i++, tr++)
     {
         if (tr->tr_flags & TRAP_INUSE)
         {
             if (IS_IPV4(&tr->tr_addr))
             {
                 if (tr->tr_localaddr == any_interface)
+                {
                     it->local_address = 0;
+                }
                 else
+                {
                     it->local_address = NSRCADR(&tr->tr_localaddr->sin);
+                }
                 it->trap_address = NSRCADR(&tr->tr_addr);
                 if (client_v6_capable)
+                {
                     it->v6_flag = 0;
+                }
             }
             else
             {
                 if (!client_v6_capable)
+                {
                     continue;
+                }
                 it->local_address6 = SOCK_ADDR6(&tr->tr_localaddr->sin);
                 it->trap_address6 = SOCK_ADDR6(&tr->tr_addr);
                 it->v6_flag = 1;
@@ -2371,9 +2573,13 @@ do_setclr_trap(
     else
     {
         if (IS_IPV4(&laddr))
+        {
             NSRCADR(&laddr) = ct->local_address;
+        }
         else
+        {
             SOCK_ADDR6(&laddr) = ct->local_address6;
+        }
         linter = findinterface(&laddr);
         if (NULL == linter)
         {
@@ -2383,13 +2589,21 @@ do_setclr_trap(
     }
 
     if (IS_IPV4(&laddr))
+    {
         NSRCADR(&laddr) = ct->trap_address;
+    }
     else
+    {
         SOCK_ADDR6(&laddr) = ct->trap_address6;
+    }
     if (ct->trap_port)
+    {
         NSRCPORT(&laddr) = ct->trap_port;
+    }
     else
+    {
         SET_PORT(&laddr, TRAPPORT);
+    }
 
     if (set)
     {
@@ -2442,7 +2656,7 @@ set_keyid_checked(
     tmpkey = ntohl(*pkeyid);
 
     /* validate the new key id, claim data error on failure */
-    if (tmpkey < 1 || tmpkey > NTP_MAXKEY || !auth_havekey(tmpkey) || !auth_approve_mgmt_key(tmpkey, what))
+    if ((tmpkey < 1) || (tmpkey > NTP_MAXKEY) || !auth_havekey(tmpkey) || !auth_approve_mgmt_key(tmpkey, what))
     {
         msyslog(LOG_ERR, "set_keyid_checked[%s]: invalid key id: %ld",
                 what, (long)tmpkey);
@@ -2541,7 +2755,9 @@ get_kernel_info(
 
     ZERO(ntx);
     if (ntp_adjtime(&ntx) < 0)
+    {
         msyslog(LOG_ERR, "get_kernel_info: ntp_adjtime() failed: %m");
+    }
     ik = (struct info_kernel*)prepare_pkt(srcadr, inter, inpkt,
                                           sizeof(struct info_kernel));
 
@@ -2604,11 +2820,11 @@ get_clock_info(
     ic = (struct info_clock*)prepare_pkt(srcadr, inter, inpkt,
                                          sizeof(struct info_clock));
 
-    while (items-- > 0 && ic)
+    while ((items-- > 0) && ic)
     {
         NSRCADR(&addr) = *clkaddr++;
-        if (!ISREFCLOCKADR(&addr) || NULL ==
-                                         findexistingpeer(&addr, NULL, NULL, -1, 0, NULL))
+        if (!ISREFCLOCKADR(&addr) || (NULL ==
+                                      findexistingpeer(&addr, NULL, NULL, -1, 0, NULL)))
         {
             req_ack(srcadr, inter, inpkt, INFO_ERR_NODATA);
             return;
@@ -2680,8 +2896,8 @@ set_clock_fudge(
         addr.sa.sa_len = SOCKLEN(&addr);
 #endif
         SET_PORT(&addr, NTP_PORT);
-        if (!ISREFCLOCKADR(&addr) || NULL ==
-                                         findexistingpeer(&addr, NULL, NULL, -1, 0, NULL))
+        if (!ISREFCLOCKADR(&addr) || (NULL ==
+                                      findexistingpeer(&addr, NULL, NULL, -1, 0, NULL)))
         {
             req_ack(srcadr, inter, inpkt, INFO_ERR_NODATA);
             return;
@@ -2754,11 +2970,11 @@ get_clkbug_info(
     ic = (struct info_clkbug*)prepare_pkt(srcadr, inter, inpkt,
                                           sizeof(struct info_clkbug));
 
-    while (items-- > 0 && ic)
+    while ((items-- > 0) && ic)
     {
         NSRCADR(&addr) = *clkaddr++;
-        if (!ISREFCLOCKADR(&addr) || NULL ==
-                                         findexistingpeer(&addr, NULL, NULL, -1, 0, NULL))
+        if (!ISREFCLOCKADR(&addr) || (NULL ==
+                                      findexistingpeer(&addr, NULL, NULL, -1, 0, NULL)))
         {
             req_ack(srcadr, inter, inpkt, INFO_ERR_NODATA);
             return;
@@ -2766,7 +2982,7 @@ get_clkbug_info(
 
         ZERO(bug);
         refclock_buginfo(&addr, &bug);
-        if (bug.nvalues == 0 && bug.ntimes == 0)
+        if ((bug.nvalues == 0) && (bug.ntimes == 0))
         {
             req_ack(srcadr, inter, inpkt, INFO_ERR_NODATA);
             return;
@@ -2775,15 +2991,21 @@ get_clkbug_info(
         ic->clockadr = NSRCADR(&addr);
         i = bug.nvalues;
         if (i > NUMCBUGVALUES)
+        {
             i = NUMCBUGVALUES;
+        }
         ic->nvalues = (u_char)i;
         ic->svalues = htons((u_short)(bug.svalues & ((1 << i) - 1)));
         while (--i >= 0)
+        {
             ic->values[i] = htonl(bug.values[i]);
+        }
 
         i = bug.ntimes;
         if (i > NUMCBUGTIMES)
+        {
             i = NUMCBUGTIMES;
+        }
         ic->ntimes = (u_char)i;
         ic->stimes = htonl(bug.stimes);
         while (--i >= 0)
@@ -2808,14 +3030,18 @@ fill_info_if_stats(void* data, interface_info_t* interface_info)
     endpt* ep = interface_info->ep;
 
     if (NULL == ifs)
+    {
         return;
+    }
 
     ZERO(*ifs);
 
     if (IS_IPV6(&ep->sin))
     {
         if (!client_v6_capable)
+        {
             return;
+        }
         ifs->v6_flag = 1;
         ifs->unaddr.addr6 = SOCK_ADDR6(&ep->sin);
         ifs->unbcast.addr6 = SOCK_ADDR6(&ep->bcast);

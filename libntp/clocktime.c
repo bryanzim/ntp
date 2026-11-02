@@ -59,9 +59,9 @@ int clocktime(
     u_long* yearstart, /* cached start-of-year, should be fixed to u_int32 */
     u_int32* ts_ui)    /* effective time stamp */
 {
-    u_int32 ystt[3]; /* year start */
-    u_int32 test[3]; /* result time stamp */
-    u_int32 diff[3]; /* abs difference to receive */
+    u_int32 ystt[3U]; /* year start */
+    u_int32 test[3U]; /* result time stamp */
+    u_int32 diff[3U]; /* abs difference to receive */
     int32 y, tmp, idx, min;
 
     /*
@@ -86,12 +86,14 @@ int clocktime(
         /* -- calc absolute difference to receive time */
         diff[0U] = test[0U] - rec_ui;
         if (diff[0U] >= 0x80000000u)
+        {
             diff[0U] = ~diff[0U] + 1;
+        }
         /* -- can't get closer if diff < NEARTIME */
         if (diff[0U] < NEARTIME)
         {
             *ts_ui = test[0U];
-            return diff[0] < CLOSETIME;
+            return diff[0U] < CLOSETIME;
         }
     }
 
@@ -106,7 +108,7 @@ int clocktime(
      * absolute difference to the receive time stamp.
      */
     y = ntp_to_year(rec_ui - tmp);
-    for (idx = 0; idx < 3; idx++)
+    for (idx = 0; idx < 3; ++idx)
     {
         /* -- get year start of potential solution */
         ystt[idx] = year_to_ntp(y + idx - 1);
@@ -115,12 +117,18 @@ int clocktime(
         /* -- calc absolute difference to receive time */
         diff[idx] = test[idx] - rec_ui;
         if (diff[idx] >= 0x80000000u)
+        {
             diff[idx] = ~diff[idx] + 1;
+        }
     }
     /* -*- assume current year fits best, then search best fit */
-    for (min = 1, idx = 0; idx < 3; idx++)
+    for (min = 1, idx = 0; idx < 3; ++idx)
+    {
         if (diff[idx] < diff[min])
+        {
             min = idx;
+        }
+    }
     /* -*- store results and update year start */
     *ts_ui = test[min];
     *yearstart = ystt[min];

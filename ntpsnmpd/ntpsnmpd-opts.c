@@ -66,7 +66,7 @@ extern FILE* option_usage_fp;
 /**
  *  static const strings for ntpsnmpd options
  */
-static char const ntpsnmpd_opt_strs[1611] =
+static char const ntpsnmpd_opt_strs[1611U] =
     /*     0 */ "ntpsnmpd 4.3.109\n"
                 "Copyright (C) 1992-2025 The University of Delaware and Network Time Foundation, all rights reserved.\n"
                 "This is free software. It is licensed for use, modification and\n"
@@ -311,7 +311,7 @@ static tOptDesc optDesc[OPTION_CT] = {
 /** ntpsnmpd configuration file name. */
 #define zRcName (ntpsnmpd_opt_strs + 1550)
 /** Directories to search for ntpsnmpd config files. */
-static char const* const apzHomeList[3] = {
+static char const* const apzHomeList[3U] = {
     ntpsnmpd_opt_strs + 1542,
     ntpsnmpd_opt_strs + 1548,
     NULL
@@ -473,7 +473,9 @@ AO_gettext(char const* pz)
 {
     char* res;
     if (pz == NULL)
+    {
         return NULL;
+    }
 #ifdef HAVE_DCGETTEXT
     /*
      * While processing the option_xlateable_txt data, try to use the
@@ -484,15 +486,21 @@ AO_gettext(char const* pz)
     {
         res = dgettext("libopts", pz);
         if (res == pz)
+        {
             res = (char*)VOIDP(_(pz));
+        }
     }
     else
+    {
         res = (char*)VOIDP(_(pz));
+    }
 #else
     res = (char*)VOIDP(_(pz));
 #endif
     if (res == pz)
+    {
         return res;
+    }
     res = strdup(res);
     if (res == NULL)
     {
@@ -550,7 +558,9 @@ translate_option_strings(void)
         {
             tOptDesc* od = opts->pOptDesc;
             for (ix = opts->optCt; ix > 0; ix--, od++)
+            {
                 coerce_it(VOIDP(&(od->pzText)));
+            }
         }
     }
 }

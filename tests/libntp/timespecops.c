@@ -90,7 +90,7 @@ const bool
 timespec_isValid(struct timespec V)
 {
 
-    return V.tv_nsec >= 0 && V.tv_nsec < 1000000000;
+    return (V.tv_nsec >= 0) && (V.tv_nsec < 1000000000);
 }
 
 
@@ -151,7 +151,9 @@ bool AssertTimespecClose(const struct timespec m, const struct timespec n,
 
     diff = abs_tspec(sub_tspec(m, n));
     if (cmp_tspec(limit, diff) >= 0)
+    {
         return TRUE;
+    }
 
     printf("m_expr which is %lld.%09lu \nand\n"
            "n_expr which is %lld.%09lu\nare not close; diff=%lld.%09lunsec\n",
@@ -608,7 +610,7 @@ void test_Helpers2(void)
             {
                 y = x;
                 y.tv_nsec += i;
-                if (i >= -2 && i <= 2)
+                if ((i >= -2) && (i <= 2))
                 {
                     TEST_ASSERT_TRUE(AssertTimespecClose(x, y, limit));
                 }

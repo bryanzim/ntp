@@ -147,7 +147,7 @@ typedef union pps_timeu
 { /* timestamp format */
     struct timespec tspec;
     ntp_fp_t ntpfp;
-    unsigned long longpad[3];
+    unsigned long longpad[3U];
 } pps_timeu_t; /* generic data type to represent time stamps */
 
 /*
@@ -552,8 +552,10 @@ time_pps_fetch(
         /* NTP format requires conversion to fraction form */
         PPS_TSPECTONTP(infobuf.assert_timestamp_ntpfp);
         if (punit->params.mode & PPS_OFFSETASSERT)
+        {
             NTPFP_L_ADDS(&infobuf.assert_timestamp_ntpfp,
                          &punit->params.assert_offset_ntpfp);
+        }
         break;
 
     default:

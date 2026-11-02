@@ -398,7 +398,7 @@ static addrinfoT* s_gpsd_addr;
 static gpsd_unitT* s_clock_units;
 
 /* list of service/socket names we want to resolve against */
-static const char* const s_svctab[][2] = {
+static const char* const s_svctab[][2U] = {
     { "localhost", "gpsd" },
     { "localhost", "2947" },
     { "127.0.0.1", "2947" },
@@ -421,7 +421,9 @@ syslogok(
 {
     int res = (0 != (pp->sloppyclockflag & CLK_FLAG3)) || (0 == up->logthrottle) || (LOGTHROTTLE == up->logthrottle);
     if (res)
+    {
         up->logthrottle = LOGTHROTTLE;
+    }
     return res;
 }
 
@@ -444,13 +446,15 @@ gpsd_init(void)
     hints.ai_protocol = IPPROTO_TCP;
     hints.ai_socktype = SOCK_STREAM;
 
-    for (idx = 0; s_svctab[idx][0U] && !s_gpsd_addr; idx++)
+    for (idx = 0; s_svctab[idx][0U] && !s_gpsd_addr; ++idx)
     {
         rc = getaddrinfo(s_svctab[idx][0U], s_svctab[idx][1U],
                          &hints, &s_gpsd_addr);
         s_svcerr[idx] = rc;
         if (0 == rc)
+        {
             break;
+        }
         s_gpsd_addr = NULL;
     }
     s_svcidx = idx;
@@ -466,7 +470,9 @@ gpsd_init_check(void)
 
     /* Check if there is something to log */
     if (s_svcidx == 0)
+    {
         return (s_gpsd_addr != NULL);
+    }
 
     /* spool out the resolver errors */
     for (idx = 0; idx < s_svcidx; ++idx)
@@ -479,13 +485,17 @@ gpsd_init_check(void)
 
     /* check if it was fatal, or if we can proceed */
     if (s_gpsd_addr == NULL)
+    {
         msyslog(LOG_ERR, "%s",
                 "GPSD_JSON: failed to get socket address, giving up.");
+    }
     else if (idx != 0)
+    {
         msyslog(LOG_WARNING,
                 "GPSD_JSON: using '%s:%s' instead of '%s:%s'",
                 s_svctab[idx][0U], s_svctab[idx][1U],
-                s_svctab[0U][0U], s_svctab[0][1]);
+                s_svctab[0U][0U], s_svctab[0U][1U]);
+    }
 
     /* make sure this gets logged only once and tell if we can
      * proceed or not
@@ -512,11 +522,15 @@ gpsd_start(
 
     /* check if we can proceed at all or if init failed */
     if (!gpsd_init_check())
+    {
         return FALSE;
+    }
 
     /* search for matching unit */
-    while ((up = *uscan) != NULL && up->unit != (unit & 0x7F))
+    while (((up = *uscan) != NULL) && (up->unit != (unit & 0x7F)))
+    {
         uscan = &up->next_unit;
+    }
     if (up == NULL)
     {
         /* alloc unit, add to list and increment use count ASAP. */
@@ -590,9 +604,13 @@ gpsd_start(
 
     /* Initialize miscellaneous variables */
     if (unit >= 128)
+    {
         peer->precision = PPS_PRECISION;
+    }
     else
+    {
         peer->precision = PRECISION;
+    }
 
     /* If the daemon name lookup failed, just give up now. */
     if (NULL == up->addr)
@@ -607,11 +625,17 @@ gpsd_start(
            refnumtoa(&peer->srcadr), up->device));
     up->mode = MODE_OP_MODE(peer->ttl);
     if (up->mode > MODE_OP_MAXVAL)
+    {
         up->mode = 0;
+    }
     if (unit >= 128)
+    {
         up->pps_peer = peer;
+    }
     else
+    {
         enter_opmode(peer, up->mode);
+    }
     return TRUE;
 
 dev_fail:
@@ -644,7 +668,9 @@ gpsd_shutdown(
 
     /* The unit pointer might have been removed already. */
     if (up == NULL)
+    {
         return;
+    }
 
     /* now check if we must close IO resources */
     if (peer != up->pps_peer)
@@ -657,17 +683,25 @@ gpsd_shutdown(
             pp->io.fd = -1;
         }
         if (up->fdt != -1)
+        {
             close(up->fdt);
+        }
     }
     /* decrement use count and eventually remove this unit. */
     if (!--up->refcount)
     {
         /* unlink this unit */
         while (*uscan != NULL)
+        {
             if (*uscan == up)
+            {
                 *uscan = up->next_unit;
-            else
-                uscan = &(*uscan)->next_unit;
+            }
+        }
+        else
+        {
+            uscan = &(*uscan)->next_unit;
+        }
         free(up->logname);
         free(up->device);
         free(up);
@@ -715,8 +749,10 @@ gpsd_receive(
         if (ch == '\n')
         {
             /* trim trailing whitespace & terminate buffer */
-            while (pdst != up->buffer && pdst[-1] <= ' ')
+            while ((pdst != up->buffer) && (pdst[-1] <= ' '))
+            {
                 --pdst;
+            }
             *pdst = '\0';
             /* process data and reset buffer */
             up->buflen = pdst - up->buffer;
@@ -726,8 +762,10 @@ gpsd_receive(
         else if (pdst != edst)
         {
             /* add next char, ignoring leading whitespace */
-            if (ch > ' ' || pdst != up->buffer)
+            if ((ch > ' ') || (pdst != up->buffer))
+            {
                 *pdst++ = ch;
+            }
         }
     }
     up->buflen = pdst - up->buffer;
@@ -758,20 +796,28 @@ poll_primary(
          */
         peer->precision = PRECISION;
         if (-1 == pp->io.fd)
+        {
             refclock_report(peer, CEVNT_FAULT);
+        }
         else if (0 != up->tc_breply)
+        {
             refclock_report(peer, CEVNT_BADREPLY);
+        }
         else
+        {
             refclock_report(peer, CEVNT_TIMEOUT);
+        }
     }
 
     if (pp->sloppyclockflag & CLK_FLAG4)
+    {
         mprintf_clock_stats(
             &peer->srcadr, "%u %u %u %u %u %u %u",
             up->tc_recv,
             up->tc_breply, up->tc_nosync,
             up->tc_sti_recv, up->tc_sti_used,
             up->tc_pps_recv, up->tc_pps_used);
+    }
 
     /* clear tallies for next round */
     up->tc_breply = 0;
@@ -814,9 +860,13 @@ gpsd_poll(
 
     ++pp->polls;
     if (peer == up->pps_peer)
+    {
         poll_secondary(peer, pp, up);
+    }
     else
+    {
         poll_primary(peer, pp, up);
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -835,7 +885,9 @@ gpsd_control(
     {
         DTOLFP(pp->fudgetime1, &up->pps_fudge2);
         if (!(pp->sloppyclockflag & CLK_FLAG1))
+        {
             peer->flags &= ~FLAG_PPS;
+        }
     }
     else
     {
@@ -871,9 +923,13 @@ timer_primary(
      * functions set it to another value.
      */
     if (up->logthrottle)
+    {
         --up->logthrottle;
+    }
     if (up->tickover)
+    {
         --up->tickover;
+    }
     switch (up->tickover)
     {
     case 4:
@@ -898,16 +954,24 @@ timer_primary(
 
     case 0:
         if (-1 != pp->io.fd)
+        {
             gpsd_stop_socket(peer);
+        }
         else if (-1 != up->fdt)
+        {
             gpsd_test_socket(peer);
+        }
         else if (NULL != s_gpsd_addr)
+        {
             gpsd_init_socket(peer);
+        }
         break;
 
     default:
-        if (-1 == pp->io.fd && -1 != up->fdt)
+        if ((-1 == pp->io.fd) && (-1 != up->fdt))
+        {
             gpsd_test_socket(peer);
+        }
     }
 }
 
@@ -941,9 +1005,13 @@ gpsd_timer(
     gpsd_unitT* const up = (gpsd_unitT*)pp->unitptr;
 
     if (peer == up->pps_peer)
+    {
         timer_secondary(peer, pp, up);
+    }
     else
+    {
         timer_primary(peer, pp, up);
+    }
 }
 
 /* =====================================================================
@@ -1005,7 +1073,9 @@ add_clock_sample(
 {
     pp->lastref = stamp;
     if (pp->coderecv == pp->codeproc)
+    {
         refclock_report(peer, CEVNT_NOMINAL);
+    }
     refclock_process_offset(pp, stamp, recvt, 0.0);
 }
 
@@ -1050,7 +1120,9 @@ eval_pps_secondary(
         up->ppscount2 = min(PPS2_MAXCOUNT, (up->ppscount2 + 2));
         if ((PPS2_MAXCOUNT == up->ppscount2) &&
             (pp->sloppyclockflag & CLK_FLAG1))
+        {
             peer->flags |= FLAG_PPS;
+        }
         /* mark time stamp as burned... */
         up->fl_pps2 = 0;
         ++up->tc_pps_used;
@@ -1084,7 +1156,9 @@ eval_auto(
 {
     /* If there's no TPV available, stop working here... */
     if (!up->fl_sti)
+    {
         return;
+    }
 
     /* check how to handle STI+PPS: Can PPS be used to augment STI
      * (or vice versae), do we drop the sample because there is a
@@ -1119,9 +1193,13 @@ eval_auto(
 
     /* now eventually feed the sample */
     if (up->fl_rawsti)
+    {
         eval_serial(peer, pp, up);
+    }
     else
+    {
         eval_strict(peer, pp, up);
+    }
 }
 
 /* =====================================================================
@@ -1182,9 +1260,13 @@ strtojint(
     }
     /* Check for empty conversion (no digits seen). */
     if (hold != cp)
+    {
         vep.c = cp;
+    }
     else
-        errno = EINVAL; /* accu is still zero */
+    {
+        errno = EINVAL;
+    } /* accu is still zero */
     /* Check for range overflow */
     if (flags & 1)
     {
@@ -1193,14 +1275,20 @@ strtojint(
     }
     /* If possible, store back the end-of-conversion pointer */
     if (ep)
+    {
         *ep = vep.v;
+    }
     /* If negative, return the negated result if the accu is not
      * zero. Avoid negation overflows.
      */
     if ((flags & 2) && accu)
+    {
         return -(json_int)(accu - 1) - 1;
+    }
     else
+    {
         return (json_int)accu;
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -1210,7 +1298,7 @@ json_token_skip(
     const json_ctx* ctx,
     tok_ref tid)
 {
-    if (tid >= 0 && tid < ctx->ntok)
+    if ((tid >= 0) && (tid < ctx->ntok))
     {
         int len = ctx->tok[tid].size;
         /* For arrays and objects, the size is the number of
@@ -1230,7 +1318,9 @@ json_token_skip(
             /* FALLTHROUGH */
         case JSMN_ARRAY:
             for (++tid; len; --len)
+            {
                 tid = json_token_skip(ctx, tid);
+            }
             break;
 
         default:
@@ -1240,8 +1330,10 @@ json_token_skip(
         /* The next condition should never be true, but paranoia
          * prevails...
          */
-        if (tid < 0 || tid > ctx->ntok)
+        if ((tid < 0) || (tid > ctx->ntok))
+        {
             tid = ctx->ntok;
+        }
     }
     return tid;
 }
@@ -1257,12 +1349,14 @@ json_object_lookup(
 {
     int len;
 
-    if (tid < 0 || tid >= ctx->ntok ||
-        ctx->tok[tid].type != JSMN_OBJECT)
+    if ((tid < 0) || (tid >= ctx->ntok) ||
+        (ctx->tok[tid].type != JSMN_OBJECT))
+    {
         return INVALID_TOKEN;
+    }
 
     len = ctx->tok[tid].size;
-    for (++tid; len && tid + 1 < ctx->ntok; --len)
+    for (++tid; len && (tid + 1 < ctx->ntok); --len)
     {
         if (ctx->tok[tid].type != JSMN_STRING)
         {                                    /* Blooper! */
@@ -1273,7 +1367,7 @@ json_object_lookup(
         {
             tid = json_token_skip(ctx, tid + 1); /* skip key+val */
         }
-        else if (what < 0 || (u_int)what == ctx->tok[tid + 1].type)
+        else if ((what < 0) || ((u_int)what == ctx->tok[tid + 1].type))
         {
             return tid + 1;
         }
@@ -1283,7 +1377,9 @@ json_object_lookup(
         }
         /* if skipping ahead returned an error, bail out here. */
         if (tid < 0)
+        {
             break;
+        }
     }
     return INVALID_TOKEN;
 }
@@ -1298,9 +1394,13 @@ json_object_lookup_primitive(
 {
     tid = json_object_lookup(ctx, tid, key, JSMN_PRIMITIVE);
     if (INVALID_TOKEN != tid)
+    {
         return ctx->buf + ctx->tok[tid].start;
+    }
     else
+    {
         return NULL;
+    }
 }
 /* ------------------------------------------------------------------ */
 /* look up a boolean value. This essentially returns a tribool:
@@ -1335,7 +1435,9 @@ json_object_lookup_string(
 {
     tid = json_object_lookup(ctx, tid, key, JSMN_STRING);
     if (INVALID_TOKEN != tid)
+    {
         return ctx->buf + ctx->tok[tid].start;
+    }
     return NULL;
 }
 
@@ -1348,7 +1450,9 @@ json_object_lookup_string_default(
 {
     tid = json_object_lookup(ctx, tid, key, JSMN_STRING);
     if (INVALID_TOKEN != tid)
+    {
         return ctx->buf + ctx->tok[tid].start;
+    }
     return def;
 }
 
@@ -1368,8 +1472,10 @@ json_object_lookup_int(
     if (NULL != cp)
     {
         ret = strtojint(cp, &ep);
-        if (cp != ep && '\0' == *ep)
+        if ((cp != ep) && ('\0' == *ep))
+        {
             return ret;
+        }
     }
     else
     {
@@ -1393,8 +1499,10 @@ json_object_lookup_int_default(
     if (NULL != cp)
     {
         ret = strtojint(cp, &ep);
-        if (cp != ep && '\0' == *ep)
+        if ((cp != ep) && ('\0' == *ep))
+        {
             return ret;
+        }
     }
     return def;
 }
@@ -1414,8 +1522,10 @@ json_object_lookup_float(
 	cp = json_object_lookup_primitive(ctx, tid, key);
 	if (NULL != cp) {
 		ret = strtod(cp, &ep);
-		if (cp != ep && '\0' == *ep)
+		if ((cp != ep) && ('\0' == *ep))
+		{
 			return ret;
+		}
 	} else {
 		errno = EINVAL;
 	}
@@ -1438,8 +1548,10 @@ json_object_lookup_float_default(
     if (NULL != cp)
     {
         ret = strtod(cp, &ep);
-        if (cp != ep && '\0' == *ep)
+        if ((cp != ep) && ('\0' == *ep))
+        {
             return ret;
+        }
     }
     return def;
 }
@@ -1458,20 +1570,28 @@ json_parse_record(
     jsmn_init(&jsm);
     rc = jsmn_parse(&jsm, buf, len, ctx->tok, JSMN_MAXTOK);
     if (rc <= 0)
+    {
         return FALSE;
+    }
     ctx->buf = buf;
     ctx->ntok = rc;
 
     if (JSMN_OBJECT != ctx->tok[0U].type)
-        return FALSE; /* not object!?! */
+    {
+        return FALSE;
+    } /* not object!?! */
 
     /* Make all tokens NUL terminated by overwriting the
      * terminator symbol. Makes string compares and number parsing a
      * lot easier!
      */
     for (idx = 0; idx < ctx->ntok; ++idx)
+    {
         if (ctx->tok[idx].end > ctx->tok[idx].start)
+        {
             ctx->buf[ctx->tok[idx].end] = '\0';
+        }
+    }
     return TRUE;
 }
 
@@ -1520,14 +1640,20 @@ process_watch(
     const char* path;
 
     path = json_object_lookup_string(jctx, 0, "device");
-    if (NULL == path || strcmp(path, up->device))
+    if ((NULL == path) || strcmp(path, up->device))
+    {
         return;
+    }
 
-    if (json_object_lookup_bool(jctx, 0, "enable") > 0 &&
-        json_object_lookup_bool(jctx, 0, "json") > 0)
+    if ((json_object_lookup_bool(jctx, 0, "enable") > 0) &&
+        (json_object_lookup_bool(jctx, 0, "json") > 0))
+    {
         up->fl_watch = -1;
+    }
     else
+    {
         up->fl_watch = 0;
+    }
     DPRINTF(2, ("%s: process_watch, enabled=%d\n",
                 up->logname, (up->fl_watch & 1)));
 }
@@ -1561,19 +1687,23 @@ process_version(
     if (0 == errno)
     {
         if (!up->fl_vers)
+        {
             msyslog(LOG_INFO,
                     "%s: GPSD revision=%s release=%s protocol=%u.%u",
                     up->logname, revision, release,
                     pvhi, pvlo);
+        }
         up->proto_version = PROTO_VERSION(pvhi, pvlo);
         up->fl_vers = -1;
     }
     else
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_INFO,
                     "%s: could not evaluate version data",
                     up->logname);
+        }
         return;
     }
     /* With the 3.9 GPSD protocol, '*_musec' vanished from the PPS
@@ -1600,7 +1730,9 @@ process_version(
      * request. We handle that when it happens.)
      */
     if (up->fl_watch)
+    {
         return;
+    }
 
     /* The logon string is actually the ?WATCH command of GPSD,
      * using JSON data and selecting the GPS device name we created
@@ -1613,7 +1745,7 @@ process_version(
     buf = up->buffer;
     len = strlen(buf);
     log_data(peer, 2, "send", buf, len);
-    if (len != write(pp->io.fd, buf, len) && (syslogok(pp, up)))
+    if ((len != write(pp->io.fd, buf, len)) && (syslogok(pp, up)))
     {
         /* Note: if the server fails to read our request, the
          * resulting data timeout will take care of the
@@ -1647,11 +1779,13 @@ process_tpv(
         jctx, 0, "time");
 
     /* accept time stamps only in 2d or 3d fix */
-    if (gps_mode < 2 || NULL == gps_time)
+    if ((gps_mode < 2) || (NULL == gps_time))
     {
         /* receiver has no fix; tell about and avoid stale data */
         if (!up->pf_toff)
+        {
             ++up->tc_sti_recv;
+        }
         ++up->tc_nosync;
         up->fl_sti = 0;
         up->fl_pps = 0;
@@ -1704,9 +1838,13 @@ process_tpv(
     ept = json_object_lookup_float_default(jctx, 0, "ept", 2.0e-3);
     ept = frexp(fabs(ept) * 0.70710678, &xlog2); /* ~ sqrt(0.5) */
     if (ept < 0.25)
+    {
         xlog2 = INT_MIN;
+    }
     if (ept > 2.0)
+    {
         xlog2 = INT_MAX;
+    }
     up->sti_prec = clamped_precision(xlog2);
 }
 
@@ -1729,7 +1867,9 @@ process_pps(
      * if we're explicitely requested to ignore PPS data.
      */
     if (up->fl_nosync)
+    {
         return;
+    }
 
     up->pps_local = *rtime;
     /* Now grab the time values. 'clock_*' is the event time of the
@@ -1740,19 +1880,27 @@ process_pps(
     {
         if (!get_binary_time(&up->pps_recvt2, jctx,
                              "clock_sec", "clock_nsec", 1))
+        {
             goto fail;
+        }
         if (!get_binary_time(&up->pps_stamp2, jctx,
                              "real_sec", "real_nsec", 1))
+        {
             goto fail;
+        }
     }
     else
     {
         if (!get_binary_time(&up->pps_recvt2, jctx,
                              "clock_sec", "clock_musec", 1000))
+        {
             goto fail;
+        }
         if (!get_binary_time(&up->pps_stamp2, jctx,
                              "real_sec", "real_musec", 1000))
+        {
             goto fail;
+        }
     }
 
     /* Try to read the precision field from the PPS record. If it's
@@ -1776,8 +1924,10 @@ process_pps(
     up->pps_stamp.l_uf = 0;
 
     if (NULL != up->pps_peer)
+    {
         save_ltc(up->pps_peer->procptr,
                  gmprettydate(&up->pps_stamp2));
+    }
     DPRINTF(2, ("%s: PPS record processed,"
                 " stamp='%s', recvt='%s'\n",
                 up->logname,
@@ -1812,14 +1962,20 @@ process_toff(
 
     /* bail out if there's indication that time sync is bad */
     if (up->fl_nosync)
+    {
         return;
+    }
 
     if (!get_binary_time(&up->sti_recvt, jctx,
                          "clock_sec", "clock_nsec", 1))
+    {
         goto fail;
+    }
     if (!get_binary_time(&up->sti_stamp, jctx,
                          "real_sec", "real_nsec", 1))
+    {
         goto fail;
+    }
     L_SUB(&up->sti_recvt, &up->sti_fudge);
     up->sti_local = *rtime;
     up->fl_sti = -1;
@@ -1872,23 +2028,37 @@ gpsd_parse(
     }
 
     if (!strcmp("TPV", clsid))
+    {
         process_tpv(peer, &up->json_parse, rtime);
+    }
     else if (!strcmp("PPS", clsid))
+    {
         process_pps(peer, &up->json_parse, rtime);
+    }
     else if (!strcmp("TOFF", clsid))
+    {
         process_toff(peer, &up->json_parse, rtime);
+    }
     else if (!strcmp("VERSION", clsid))
+    {
         process_version(peer, &up->json_parse, rtime);
+    }
     else if (!strcmp("WATCH", clsid))
+    {
         process_watch(peer, &up->json_parse, rtime);
+    }
     else
-        return; /* nothing we know about... */
+    {
+        return;
+    } /* nothing we know about... */
     ++up->tc_recv;
 
     /* if possible, feed the PPS side channel */
     if (up->pps_peer)
+    {
         eval_pps_secondary(
             up->pps_peer, up->pps_peer->procptr, up);
+    }
 
     /* check PPS vs. STI receive times:
      * If STI is before PPS, then clearly the STI is too old. If PPS
@@ -1901,9 +2071,13 @@ gpsd_parse(
         diff = up->sti_local;
         L_SUB(&diff, &up->pps_local);
         if (diff.l_i > 0)
-            up->fl_pps = 0; /* pps too old */
+        {
+            up->fl_pps = 0;
+        } /* pps too old */
         else if (diff.l_i < 0)
-            up->fl_sti = 0; /* serial data too old */
+        {
+            up->fl_sti = 0;
+        } /* serial data too old */
     }
 
     /* dispatch to the mode-dependent processing functions */
@@ -1936,12 +2110,16 @@ gpsd_stop_socket(
     if (-1 != pp->io.fd)
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_INFO,
                     "%s: closing socket to GPSD, fd=%d",
                     up->logname, pp->io.fd);
+        }
         else
+        {
             DPRINTF(1, ("%s: closing socket to GPSD, fd=%d\n",
                         up->logname, pp->io.fd));
+        }
         io_closeclock(&pp->io);
         pp->io.fd = -1;
     }
@@ -1967,7 +2145,9 @@ gpsd_init_socket(
 
     /* draw next address to try */
     if (NULL == up->addr)
+    {
         up->addr = s_gpsd_addr;
+    }
     ai = up->addr;
     up->addr = ai->ai_next;
 
@@ -1977,9 +2157,11 @@ gpsd_init_socket(
     if (-1 == up->fdt)
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_ERR,
                     "%s: cannot create GPSD socket: %m",
                     up->logname);
+        }
         goto no_socket;
     }
 
@@ -1991,9 +2173,11 @@ gpsd_init_socket(
     if (-1 == rc)
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_ERR,
                     "%s: cannot set GPSD socket to non-blocking: %m",
                     up->logname);
+        }
         goto no_socket;
     }
     /* Disable nagling. The way both GPSD and NTPD handle the
@@ -2008,9 +2192,11 @@ gpsd_init_socket(
     if (-1 == rc)
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_INFO,
                     "%s: cannot disable TCP nagle: %m",
                     up->logname);
+        }
     }
 
     /* Start a non-blocking connect. There might be a synchronous
@@ -2027,9 +2213,11 @@ gpsd_init_socket(
         }
 
         if (syslogok(pp, up))
+        {
             msyslog(LOG_ERR,
                     "%s: cannot connect GPSD socket: %m",
                     up->logname);
+        }
         goto no_socket;
     }
 
@@ -2046,9 +2234,11 @@ gpsd_init_socket(
     if (0 == io_addclock(&pp->io))
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_ERR,
                     "%s: failed to register with I/O engine",
                     up->logname);
+        }
         goto no_socket;
     }
 
@@ -2056,9 +2246,13 @@ gpsd_init_socket(
 
 no_socket:
     if (-1 != pp->io.fd)
+    {
         close(pp->io.fd);
+    }
     if (-1 != up->fdt)
+    {
         close(up->fdt);
+    }
     pp->io.fd = -1;
     up->fdt = -1;
     up->tickover = up->tickpres;
@@ -2091,8 +2285,10 @@ gpsd_test_socket(
         pfd.events = POLLOUT;
         pfd.fd = up->fdt;
         rc = poll(&pfd, 1, 0);
-        if (1 != rc || !(pfd.revents & POLLOUT))
+        if ((1 != rc) || !(pfd.revents & POLLOUT))
+        {
             return;
+        }
     }
 #elif defined(HAVE_SYS_SELECT_H)
     {
@@ -2103,8 +2299,10 @@ gpsd_test_socket(
         FD_ZERO(&wset);
         FD_SET(up->fdt, &wset);
         rc = select(up->fdt + 1, NULL, &wset, NULL, &tout);
-        if (0 == rc || !(FD_ISSET(up->fdt, &wset)))
+        if ((0 == rc) || !(FD_ISSET(up->fdt, &wset)))
+        {
             return;
+        }
     }
 #else
 #error Blooper! That should have been found earlier!
@@ -2117,21 +2315,27 @@ gpsd_test_socket(
     ec = 0;
     lc = sizeof(ec);
     rc = getsockopt(up->fdt, SOL_SOCKET, SO_ERROR, (void*)&ec, &lc);
-    if (-1 == rc || 0 != ec)
+    if ((-1 == rc) || (0 != ec))
     {
         const char* errtxt;
         if (0 == ec)
+        {
             ec = errno;
+        }
         errtxt = strerror(ec);
         if (syslogok(pp, up))
+        {
             msyslog(LOG_ERR,
                     "%s: async connect to GPSD failed,"
                     " fd=%d, ec=%d(%s)",
                     up->logname, up->fdt, ec, errtxt);
+        }
         else
+        {
             DPRINTF(1, ("%s: async connect to GPSD failed,"
                         " fd=%d, ec=%d(%s)\n",
                         up->logname, up->fdt, ec, errtxt));
+        }
         goto no_socket;
     }
     else
@@ -2146,9 +2350,11 @@ gpsd_test_socket(
     if (0 == io_addclock(&pp->io))
     {
         if (syslogok(pp, up))
+        {
             msyslog(LOG_ERR,
                     "%s: failed to register with I/O engine",
                     up->logname);
+        }
         goto no_socket;
     }
     return;
@@ -2177,9 +2383,13 @@ clamped_precision(
     int rawprec)
 {
     if (rawprec > 0)
+    {
         rawprec = 0;
+    }
     if (rawprec < -32)
+    {
         rawprec = -32;
+    }
     return (int16_t)rawprec;
 }
 
@@ -2203,7 +2413,9 @@ convert_ascii_time(
     ts.tv_nsec = 0;
     ep = strptime(gps_time, "%Y-%m-%dT%H:%M:%S", &gd);
     if (NULL == ep)
-        return FALSE; /* could not parse the mandatory stuff! */
+    {
+        return FALSE;
+    } /* could not parse the mandatory stuff! */
     if (*ep == '.')
     {
         dw = 100000000u;
@@ -2213,8 +2425,10 @@ convert_ascii_time(
             dw /= 10u;
         }
     }
-    if (ep[0U] != 'Z' || ep[1U] != '\0')
-        return FALSE; /* trailing garbage */
+    if ((ep[0U] != 'Z') || (ep[1U] != '\0'))
+    {
+        return FALSE;
+    } /* trailing garbage */
 
     /* Now convert the whole thing into a 'l_fp'. We do not use
      * 'mkgmtime()' since its not standard and going through the
@@ -2235,13 +2449,15 @@ save_ltc(
     clockprocT* const pp,
     const char* const tc)
 {
-    size_t len = 0;
+    size_t len = 0U;
 
     if (tc)
     {
         len = strlen(tc);
         if (len >= sizeof(pp->a_lastcode))
+        {
             len = sizeof(pp->a_lastcode) - 1;
+        }
         memcpy(pp->a_lastcode, tc, len);
     }
     pp->lencode = (u_short)len;
@@ -2269,7 +2485,9 @@ myasprintf(
         free(*spp);
         *spp = (char*)malloc(alen);
         if (NULL == *spp)
+        {
             return -1;
+        }
 
         va_start(va, fmt);
         plen = (size_t)vsnprintf(*spp, alen, fmt, va);
@@ -2289,8 +2507,10 @@ add_string(
     char* ep,
     const char* sp)
 {
-    while (dp != ep && *sp)
+    while ((dp != ep) && *sp)
+    {
         *dp++ = *sp++;
+    }
     return dp;
 }
 
@@ -2303,7 +2523,7 @@ log_data(
     size_t len)
 {
     /* we're running single threaded with regards to the clocks. */
-    static char s_lbuf[2048];
+    static char s_lbuf[2048U];
 
     clockprocT* const pp = peer->procptr;
     gpsd_unitT* const up = (gpsd_unitT*)pp->unitptr;
@@ -2315,7 +2535,7 @@ log_data(
         char* dptr = s_lbuf;
         char* dtop = s_lbuf + sizeof(s_lbuf) - 1; /* for NUL */
 
-        while (sptr != stop && dptr != dtop)
+        while ((sptr != stop) && (dptr != dtop))
         {
             u_char uch = (u_char)*sptr++;
             if (uch == '\\')
@@ -2328,7 +2548,7 @@ log_data(
             }
             else
             {
-                char fbuf[6];
+                char fbuf[6U];
                 snprintf(fbuf, sizeof(fbuf), "\\%03o", uch);
                 dptr = add_string(dptr, dtop, fbuf);
             }

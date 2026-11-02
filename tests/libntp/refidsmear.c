@@ -47,7 +47,7 @@ void rtol(uint32_t r, char* es)
 {
     l_fp l;
     char* as;
-    char msg[100];
+    char msg[100U];
 
     TEST_ASSERT_NOT_NULL(es);
 
@@ -70,7 +70,7 @@ void rtoltor(uint32_t er, char* es)
     l_fp l;
     char* as;
     uint32_t ar;
-    char msg[100];
+    char msg[100U];
 
     TEST_ASSERT_NOT_NULL(es);
 

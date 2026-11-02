@@ -79,40 +79,40 @@ struct jrequest
 /* JUPITER_O_GPOS (1000) */
 struct jgpos
 {
-    u_short stime[2];   /* set time (10 ms ticks) */
-    u_short seq;        /* sequence number */
-    u_short sseq;       /* sat measurement sequence number */
-    u_short navval;     /* navigation soltuion validity */
-    u_short navtype;    /* navigation solution type */
-    u_short nmeas;      /* # of measurements used in solution */
-    u_short polar;      /* if 1 then polar navigation */
-    u_short gweek;      /* GPS week number */
-    u_short sweek[2];   /* GPS seconds into week */
-    u_short nsweek[2];  /* GPS nanoseconds into second */
-    u_short utcday;     /* 1 to 31 */
-    u_short utcmon;     /* 1 to 12 */
-    u_short utcyear;    /* 1980 to 2079 */
-    u_short utchour;    /* 0 to 23 */
-    u_short utcmin;     /* 0 to 59 */
-    u_short utcsec;     /* 0 to 59 */
-    u_short utcnsec[2]; /* 0 to 999999999 */
-    u_short lat[2];     /* latitude (radians) */
-    u_short lon[2];     /* longitude (radians) */
-    u_short height[2];  /* height (meters) */
-    u_short gsep;       /* geoidal separation */
-    u_short speed[2];   /* ground speed (meters/sec) */
-    u_short course;     /* true course (radians) */
+    u_short stime[2U];   /* set time (10 ms ticks) */
+    u_short seq;         /* sequence number */
+    u_short sseq;        /* sat measurement sequence number */
+    u_short navval;      /* navigation soltuion validity */
+    u_short navtype;     /* navigation solution type */
+    u_short nmeas;       /* # of measurements used in solution */
+    u_short polar;       /* if 1 then polar navigation */
+    u_short gweek;       /* GPS week number */
+    u_short sweek[2U];   /* GPS seconds into week */
+    u_short nsweek[2U];  /* GPS nanoseconds into second */
+    u_short utcday;      /* 1 to 31 */
+    u_short utcmon;      /* 1 to 12 */
+    u_short utcyear;     /* 1980 to 2079 */
+    u_short utchour;     /* 0 to 23 */
+    u_short utcmin;      /* 0 to 59 */
+    u_short utcsec;      /* 0 to 59 */
+    u_short utcnsec[2U]; /* 0 to 999999999 */
+    u_short lat[2U];     /* latitude (radians) */
+    u_short lon[2U];     /* longitude (radians) */
+    u_short height[2U];  /* height (meters) */
+    u_short gsep;        /* geoidal separation */
+    u_short speed[2U];   /* ground speed (meters/sec) */
+    u_short course;      /* true course (radians) */
     u_short mvar;
     u_short climb;
     u_short mapd;
-    u_short herr[2];
-    u_short verr[2];
-    u_short terr[2];
+    u_short herr[2U];
+    u_short verr[2U];
+    u_short terr[2U];
     u_short hverr;
-    u_short bias[2];
-    u_short biassd[2];
-    u_short drift[2];
-    u_short driftsd[2];
+    u_short bias[2U];
+    u_short biassd[2U];
+    u_short drift[2U];
+    u_short driftsd[2U];
     u_short dsum; /* checksum */
 };
 #define JUPITER_O_GPOS_NAV_NOALT 0x01  /* altitude used */
@@ -124,12 +124,12 @@ struct jgpos
 /* JUPITER_O_CHAN (1002) */
 struct jchan
 {
-    u_short stime[2]; /* set time (10 ms ticks) */
-    u_short seq;      /* sequence number */
-    u_short sseq;     /* sat measurement sequence number */
-    u_short gweek;    /* GPS week number */
-    u_short sweek[2]; /* GPS seconds into week */
-    u_short gpsns[2]; /* GPS nanoseconds from epoch */
+    u_short stime[2U]; /* set time (10 ms ticks) */
+    u_short seq;       /* sequence number */
+    u_short sseq;      /* sat measurement sequence number */
+    u_short gweek;     /* GPS week number */
+    u_short sweek[2U]; /* GPS seconds into week */
+    u_short gpsns[2U]; /* GPS nanoseconds from epoch */
     struct jchan2
     {
         u_short flags; /* flags */
@@ -142,14 +142,14 @@ struct jchan
 /* JUPITER_O_VIS (1003) */
 struct jvis
 {
-    u_short stime[2]; /* set time (10 ms ticks) */
-    u_short seq;      /* sequence number */
-    u_short gdop;     /* best possible GDOP */
-    u_short pdop;     /* best possible PDOP */
-    u_short hdop;     /* best possible HDOP */
-    u_short vdop;     /* best possible VDOP */
-    u_short tdop;     /* best possible TDOP */
-    u_short nvis;     /* number of visible satellites */
+    u_short stime[2U]; /* set time (10 ms ticks) */
+    u_short seq;       /* sequence number */
+    u_short gdop;      /* best possible GDOP */
+    u_short pdop;      /* best possible PDOP */
+    u_short hdop;      /* best possible HDOP */
+    u_short vdop;      /* best possible VDOP */
+    u_short tdop;      /* best possible TDOP */
+    u_short nvis;      /* number of visible satellites */
     struct jvis2
     {
         u_short prn;  /* satellite PRN */
@@ -162,45 +162,45 @@ struct jvis
 /* JUPITER_O_ID (1011) */
 struct jid
 {
-    u_short stime[2]; /* set time (10 ms ticks) */
-    u_short seq;      /* sequence number */
-    char chans[20];   /* number of channels (ascii) */
-    char vers[20];    /* software version (ascii) */
-    char date[20];    /* software date (ascii) */
-    char opts[20];    /* software options (ascii) */
-    char reserved[20];
+    u_short stime[2U]; /* set time (10 ms ticks) */
+    u_short seq;       /* sequence number */
+    char chans[20U];   /* number of channels (ascii) */
+    char vers[20U];    /* software version (ascii) */
+    char date[20U];    /* software date (ascii) */
+    char opts[20U];    /* software options (ascii) */
+    char reserved[20U];
     u_short dsum; /* checksum */
 };
 
 /* JUPITER_O_USER (1012) */
 struct juser
 {
-    u_short stime[2];   /* set time (10 ms ticks) */
-    u_short seq;        /* sequence number */
-    u_short status;     /* operatinoal status */
-    u_short coldtmo;    /* cold start time-out */
-    u_short dgpstmo;    /* DGPS correction time-out*/
-    u_short emask;      /* elevation mask */
-    u_short selcand[2]; /* selected candidate */
-    u_short solflags;   /* solution validity criteria */
-    u_short nsat;       /* number of satellites in track */
-    u_short herr[2];    /* minimum expected horizontal error */
-    u_short verr[2];    /* minimum expected vertical error */
-    u_short platform;   /* application platform */
-    u_short dsum;       /* checksum */
+    u_short stime[2U];   /* set time (10 ms ticks) */
+    u_short seq;         /* sequence number */
+    u_short status;      /* operatinoal status */
+    u_short coldtmo;     /* cold start time-out */
+    u_short dgpstmo;     /* DGPS correction time-out*/
+    u_short emask;       /* elevation mask */
+    u_short selcand[2U]; /* selected candidate */
+    u_short solflags;    /* solution validity criteria */
+    u_short nsat;        /* number of satellites in track */
+    u_short herr[2U];    /* minimum expected horizontal error */
+    u_short verr[2U];    /* minimum expected vertical error */
+    u_short platform;    /* application platform */
+    u_short dsum;        /* checksum */
 };
 
 /* JUPITER_O_PULSE (1108) */
 struct jpulse
 {
-    u_short stime[2]; /* set time (10 ms ticks) */
-    u_short seq;      /* sequence number */
-    u_short reserved[5];
-    u_short sweek[2]; /* GPS seconds into week */
-    short offs;       /* GPS to UTC time offset (seconds) */
-    u_short offns[2]; /* GPS to UTC offset (nanoseconds) */
-    u_short flags;    /* flags */
-    u_short dsum;     /* checksum */
+    u_short stime[2U]; /* set time (10 ms ticks) */
+    u_short seq;       /* sequence number */
+    u_short reserved[5U];
+    u_short sweek[2U]; /* GPS seconds into week */
+    short offs;        /* GPS to UTC time offset (seconds) */
+    u_short offns[2U]; /* GPS to UTC offset (nanoseconds) */
+    u_short flags;     /* flags */
+    u_short dsum;      /* checksum */
 };
 #define JUPITER_O_PULSE_VALID 0x1 /* time mark validity */
 #define JUPITER_O_PULSE_UTC 0x2   /* GPS/UTC sync */
@@ -208,11 +208,11 @@ struct jpulse
 /* JUPITER_O_EUP (1135) */
 struct jeup
 {
-    u_short stime[2]; /* set time (10 ms ticks) */
-    u_short seq;      /* sequence number */
-    u_char dataid;    /* data id */
-    u_char prn;       /* satellite PRN */
-    u_short dsum;     /* checksum */
+    u_short stime[2U]; /* set time (10 ms ticks) */
+    u_short seq;       /* sequence number */
+    u_char dataid;     /* data id */
+    u_char prn;        /* satellite PRN */
+    u_short dsum;      /* checksum */
 };
 
 /* JUPITER_I_RESTART (1303) */
@@ -231,19 +231,19 @@ struct jrestart
 struct jpvtinit
 {
     u_short flags;
-    u_short gweek;     /* GPS week number */
-    u_short sweek[2];  /* GPS seconds into week */
-    u_short utcday;    /* 1 to 31 */
-    u_short utcmon;    /* 1 to 12 */
-    u_short utcyear;   /* 1980 to 2079 */
-    u_short utchour;   /* 0 to 23 */
-    u_short utcmin;    /* 0 to 59 */
-    u_short utcsec;    /* 0 to 59 */
-    u_short lat[2];    /* latitude (radians) */
-    u_short lon[2];    /* longitude (radians) */
-    u_short height[2]; /* height (meters) */
-    u_short speed[2];  /* ground speed (meters/sec) */
-    u_short course;    /* true course (radians) */
+    u_short gweek;      /* GPS week number */
+    u_short sweek[2U];  /* GPS seconds into week */
+    u_short utcday;     /* 1 to 31 */
+    u_short utcmon;     /* 1 to 12 */
+    u_short utcyear;    /* 1980 to 2079 */
+    u_short utchour;    /* 0 to 23 */
+    u_short utcmin;     /* 0 to 59 */
+    u_short utcsec;     /* 0 to 59 */
+    u_short lat[2U];    /* latitude (radians) */
+    u_short lon[2U];    /* longitude (radians) */
+    u_short height[2U]; /* height (meters) */
+    u_short speed[2U];  /* ground speed (meters/sec) */
+    u_short course;     /* true course (radians) */
     u_short climb;
     u_short dsum;
 };

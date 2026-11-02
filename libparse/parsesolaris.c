@@ -119,7 +119,9 @@ int _init(
             s++;
         }
         if (*s == ' ')
+        {
             s++;
+        }
     }
 
     t = modlstrmod.strmod_linkinfo;
@@ -128,7 +130,9 @@ int _init(
         t++;
     }
     if (*t == ' ')
+    {
         t++;
+    }
 
     S = s;
     while (*S && (((*S >= '0') && (*S <= '9')) || (*S == '.')))
@@ -162,7 +166,9 @@ int _fini(
         return EBUSY;
     }
     else
+    {
         return DDI_SUCCESS;
+    }
 }
 
 /*--------------- stream module definition ----------------------------*/
@@ -251,7 +257,9 @@ void ntp_memset(
     int c)
 {
     while (c-- > 0)
+    {
         *a++ = x;
+    }
 }
 
 static void
@@ -265,7 +273,9 @@ pprintf(
     va_start(ap, form);
 
     if (lev & parsedebug)
+    {
         vcmn_err(CE_CONT, form, ap);
+    }
 
     va_end(ap);
 }
@@ -291,7 +301,9 @@ setup_stream(
         mp->b_datap->db_type = M_SETOPTS;
         mp->b_wptr += sizeof(struct stroptions);
         if (!q)
+        {
             panic("NULL q - strange");
+        }
         putnext(q, mp);
         return putctl1(WR(q)->q_next, M_CTL, (mode == M_PARSE) ? MC_SERVICEIMM : MC_SERVICEDEF);
     }
@@ -407,7 +419,9 @@ parseclose(
     s = splhigh();
 
     if (parse->parse_dqueue)
+    {
         close_linemon(parse->parse_dqueue, q);
+    }
     parse->parse_dqueue = (queue_t*)0;
 
     (void)splx(s);
@@ -485,12 +499,14 @@ parsewput(
              * taken from Craig Leres ppsclock module (and modified)
              */
             datap = allocb(sizeof(struct ppsclockev), BPRI_MED);
-            if (datap == NULL || mp->b_cont)
+            if ((datap == NULL) || mp->b_cont)
             {
                 mp->b_datap->db_type = M_IOCNAK;
                 iocp->ioc_error = (datap == NULL) ? ENOMEM : EINVAL;
                 if (datap != NULL)
+                {
                     freeb(datap);
+                }
                 qreply(q, mp);
                 break;
             }
@@ -616,7 +632,9 @@ parserput(
             putnext(q, mp);
         }
         else
+        {
             putq(q, mp);
+        }
         break;
 
     case M_BREAK:
@@ -642,7 +660,9 @@ parserput(
                 putnext(q, mp);
             }
             else
+            {
                 putq(q, mp);
+            }
         }
         else
         {
@@ -655,7 +675,7 @@ parserput(
                 while (mp != (mblk_t*)NULL)
                 {
                     ch = rdchar(&mp);
-                    if (ch != ~0 && parse_ioread(&parse->parse_io, (unsigned int)ch, &c_time))
+                    if ((ch != ~0) && parse_ioread(&parse->parse_io, (unsigned int)ch, &c_time))
                     {
                         /*
                          * up up and away (hopefully ...)
@@ -669,7 +689,9 @@ parserput(
                             putnext(parse->parse_queue, nmp);
                         }
                         else if (nmp)
+                        {
                             freemsg(nmp);
+                        }
                         parse_iodone(&parse->parse_io);
                     }
                 }
@@ -690,7 +712,9 @@ parserput(
                         putnext(parse->parse_queue, nmp);
                     }
                     else if (nmp)
+                    {
                         freemsg(nmp);
+                    }
                     parse_iodone(&parse->parse_io);
                 }
                 freemsg(mp);
@@ -727,7 +751,9 @@ parserput(
                 putnext(parse->parse_queue, nmp);
             }
             else if (nmp)
+            {
                 freemsg(nmp);
+            }
             parse_iodone(&parse->parse_io);
             freemsg(mp);
         }
@@ -736,7 +762,9 @@ parserput(
             putnext(q, mp);
         }
         else
+        {
             putq(q, mp);
+        }
 
         if (status)
         {
@@ -1046,10 +1074,14 @@ zs_xsisr(
             }
         }
 
-        if (cdstate) /* fake CARRIER status - XXX currently not coordinated */
+        if (cdstate)
+        { /* fake CARRIER status - XXX currently not coordinated */
             za->za_flags |= ZAS_CARR_ON;
+        }
         else
+        {
             za->za_flags &= ~ZAS_CARR_ON;
+        }
 
         /*
          * only pretend that CD and ignored transistion (SYNC,CTS)
@@ -1100,9 +1132,13 @@ zs_xsisr(
                  * prove dangerous to your health)
                  */
                 if ((zsisr = ((struct savedzsops*)((parsestream_t*)q->q_ptr)->parse_data)->oldzsops->zsop_xsint))
+                {
                     zsisr(zs);
+                }
                 else
+                {
                     panic("zs_xsisr: unable to locate original ISR");
+                }
 
                 pprintf(DD_ISR, "zs_xsisr: non CD event was processed for \"%s\"\n", dname);
                 /*
@@ -1127,9 +1163,13 @@ zs_xsisr(
     printf("zs_zsisr: looking for \"%s\" - found \"%s\" - taking EMERGENCY path\n", parseinfo.st_rdinit->qi_minfo->mi_idname, dname ? dname : "-NIL-");
 
     if (emergencyzs && emergencyzs->zsop_xsint)
+    {
         emergencyzs->zsop_xsint(zs);
+    }
     else
+    {
         panic("zs_xsisr: no emergency ISR handler");
+    }
 }
 #endif /* sun */
 

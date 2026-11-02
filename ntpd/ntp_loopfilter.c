@@ -191,7 +191,7 @@ static sigjmp_buf env;             /* environment var. for pll_trap() */
 static void
 sync_status(const char* what, int ostatus, int nstatus)
 {
-    char obuf[256], nbuf[256], tbuf[1024];
+    char obuf[256U], nbuf[256U], tbuf[1024U];
 #if defined(USE_SNPRINTB) && defined(STA_FMT)
     snprintb(obuf, sizeof(obuf), STA_FMT, ostatus);
     snprintb(nbuf, sizeof(nbuf), STA_FMT, nstatus);
@@ -213,8 +213,10 @@ static char* file_name(void)
         (void)strncpy(relative_path, __FILE__, PATH_MAX);
         for (this_file = relative_path;
              *this_file && !isalnum((unsigned char)*this_file);
-             this_file++)
+             ++this_file)
+        {
             ;
+        }
     }
     return this_file;
 }
@@ -248,7 +250,7 @@ ntp_adjtime_error_handler(
     int line              /* line number of ntp_adjtime call */
 )
 {
-    char des[1024] = ""; /* Decoded Error Status */
+    char des[1024U] = ""; /* Decoded Error Status */
     char *dbp, *ebp;
 
     dbp = des;
@@ -335,70 +337,90 @@ from the reference implementation of ntp_gettime():
          * PPS signal lost when either time or frequency synchronization
          * requested
          */
-	|| (time_status & (STA_PPSFREQ | STA_PPSTIME)
+	|| ((time_status & (STA_PPSFREQ | STA_PPSTIME))
 	    && !(time_status & STA_PPSSIGNAL))
 
         /*
          * PPS jitter exceeded when time synchronization requested
          */
-	|| (time_status & STA_PPSTIME &&
-            time_status & STA_PPSJITTER)
+	|| ((time_status & STA_PPSTIME) &&
+            (time_status & STA_PPSJITTER))
 
         /*
          * PPS wander exceeded or calibration error when frequency
          * synchronization requested
          */
-	|| (time_status & STA_PPSFREQ &&
-            time_status & (STA_PPSWANDER | STA_PPSERROR)))
+	|| ((time_status & STA_PPSFREQ) &&
+            (time_status & (STA_PPSWANDER | STA_PPSERROR))))
+        {
                 return (TIME_ERROR);
+        }
 
 or, from ntp_adjtime():
 
 	if (  (time_status & (STA_UNSYNC | STA_CLOCKERR))
-	    || (time_status & (STA_PPSFREQ | STA_PPSTIME)
+	    || ((time_status & (STA_PPSFREQ | STA_PPSTIME))
 		&& !(time_status & STA_PPSSIGNAL)) 
-	    || (time_status & STA_PPSTIME
-		&& time_status & STA_PPSJITTER)
-	    || (time_status & STA_PPSFREQ
-		&& time_status & (STA_PPSWANDER | STA_PPSERROR))
+	    || ((time_status & STA_PPSTIME)
+		&& (time_status & STA_PPSJITTER))
+	    || ((time_status & STA_PPSFREQ)
+		&& (time_status & (STA_PPSWANDER | STA_PPSERROR)))
 	   )
+	{
 		return (TIME_ERROR);
+	}
 #endif
 
     case TIME_ERROR: /* 5: unsynchronized, or loss of synchronization */
                      /* error (see status word) */
 
         if (ptimex->status & STA_UNSYNC)
+        {
             xsbprintf(&dbp, ebp, "%sClock Unsynchronized",
                       (*des) ? "; " : "");
+        }
 
         if (ptimex->status & STA_CLOCKERR)
+        {
             xsbprintf(&dbp, ebp, "%sClock Error",
                       (*des) ? "; " : "");
+        }
 
-        if (!(ptimex->status & STA_PPSSIGNAL) && ptimex->status & STA_PPSFREQ)
+        if (!(ptimex->status & STA_PPSSIGNAL) && (ptimex->status & STA_PPSFREQ))
+        {
             xsbprintf(&dbp, ebp, "%sPPS Frequency Sync wanted but no PPS",
                       (*des) ? "; " : "");
+        }
 
-        if (!(ptimex->status & STA_PPSSIGNAL) && ptimex->status & STA_PPSTIME)
+        if (!(ptimex->status & STA_PPSSIGNAL) && (ptimex->status & STA_PPSTIME))
+        {
             xsbprintf(&dbp, ebp, "%sPPS Time Sync wanted but no PPS signal",
                       (*des) ? "; " : "");
+        }
 
-        if (ptimex->status & STA_PPSTIME && ptimex->status & STA_PPSJITTER)
+        if ((ptimex->status & STA_PPSTIME) && (ptimex->status & STA_PPSJITTER))
+        {
             xsbprintf(&dbp, ebp, "%sPPS Time Sync wanted but PPS Jitter exceeded",
                       (*des) ? "; " : "");
+        }
 
-        if (ptimex->status & STA_PPSFREQ && ptimex->status & STA_PPSWANDER)
+        if ((ptimex->status & STA_PPSFREQ) && (ptimex->status & STA_PPSWANDER))
+        {
             xsbprintf(&dbp, ebp, "%sPPS Frequency Sync wanted but PPS Wander exceeded",
                       (*des) ? "; " : "");
+        }
 
-        if (ptimex->status & STA_PPSFREQ && ptimex->status & STA_PPSERROR)
+        if ((ptimex->status & STA_PPSFREQ) && (ptimex->status & STA_PPSERROR))
+        {
             xsbprintf(&dbp, ebp, "%sPPS Frequency Sync wanted but Calibration error detected",
                       (*des) ? "; " : "");
+        }
 
         if (pps_call && !(ptimex->status & STA_PPSSIGNAL))
+        {
             report_event(EVNT_KERN, NULL,
                          "no PPS signal");
+        }
         DPRINTF(1, ("kernel loop status %#x (%s)\n",
                     ptimex->status, des));
         /*
@@ -455,7 +477,7 @@ int local_clock(
     double mu;              /* interval since last update */
     double clock_frequency; /* clock frequency */
     double dtemp, etemp;    /* double temps */
-    char tbuf[80];          /* report buffer */
+    char tbuf[80U];         /* report buffer */
 
     (void)ntp_adj_ret; /* not always used below... */
                        /*
@@ -482,7 +504,7 @@ int local_clock(
      * But, allow_panic will be set FALSE when the update is less
      * than the step threshold; so, subsequent panics will exit.
      */
-    if (fabs(fp_offset) > clock_panic && clock_panic > 0 &&
+    if ((fabs(fp_offset) > clock_panic) && (clock_panic > 0) &&
         !allow_panic)
     {
         snprintf(tbuf, sizeof(tbuf),
@@ -505,7 +527,7 @@ int local_clock(
      */
     if (mode_ntpdate)
     {
-        if ((fp_offset > clock_max_fwd && clock_max_fwd > 0) || (-fp_offset > clock_max_back && clock_max_back > 0))
+        if (((fp_offset > clock_max_fwd) && (clock_max_fwd > 0)) || ((-fp_offset > clock_max_back) && (clock_max_back > 0)))
         {
             step_systime(fp_offset);
             msyslog(LOG_NOTICE, "ntpd: time set %+.6f s",
@@ -535,13 +557,21 @@ int local_clock(
     if (sys_huffpuff != NULL)
     {
         if (peer->delay < sys_huffpuff[sys_huffptr])
+        {
             sys_huffpuff[sys_huffptr] = peer->delay;
+        }
         if (peer->delay < sys_mindly)
+        {
             sys_mindly = peer->delay;
+        }
         if (fp_offset > 0)
+        {
             dtemp = -(peer->delay - sys_mindly) / 2;
+        }
         else
+        {
             dtemp = (peer->delay - sys_mindly) / 2;
+        }
         fp_offset += dtemp;
         DPRINTF(1, ("local_clock: size %d mindly %.6f huffpuff %.6f\n",
                     sys_hufflen, sys_mindly, dtemp));
@@ -561,13 +591,17 @@ int local_clock(
      */
     osys_poll = sys_poll;
     if (sys_poll < peer->minpoll)
+    {
         sys_poll = peer->minpoll;
+    }
     if (sys_poll > peer->maxpoll)
+    {
         sys_poll = peer->maxpoll;
+    }
     mu = current_time - clock_epoch;
     clock_frequency = drift_comp;
     rval = 1;
-    if ((fp_offset > clock_max_fwd && clock_max_fwd > 0) || (-fp_offset > clock_max_back && clock_max_back > 0) || force_step_once)
+    if (((fp_offset > clock_max_fwd) && (clock_max_fwd > 0)) || ((-fp_offset > clock_max_back) && (clock_max_back > 0)) || force_step_once)
     {
         if (force_step_once)
         {
@@ -596,7 +630,9 @@ int local_clock(
          */
         case EVNT_FREQ:
             if (mu < clock_minstep)
+            {
                 return (0);
+            }
 
             clock_frequency = direct_freq(fp_offset);
 
@@ -609,7 +645,9 @@ int local_clock(
          */
         case EVNT_SPIK:
             if (mu < clock_minstep)
+            {
                 return (0);
+            }
 
             /* fall through to default */
 
@@ -688,7 +726,9 @@ int local_clock(
          */
         case EVNT_FREQ:
             if (mu < clock_minstep)
+            {
                 return (0);
+            }
 
             clock_frequency = direct_freq(fp_offset);
             /* fall through */
@@ -728,7 +768,9 @@ int local_clock(
             }
             rstclock(EVNT_SYNC, fp_offset);
             if (fabs(fp_offset) < CLOCK_FLOOR)
+            {
                 freq_cnt = 0;
+            }
             break;
         }
     }
@@ -749,7 +791,7 @@ int local_clock(
      * lead to overflow problems. This might occur if some misguided
      * lad set the step threshold to something ridiculous.
      */
-    if (pll_control && kern_enable && freq_cnt == 0)
+    if (pll_control && kern_enable && (freq_cnt == 0))
     {
 
         /*
@@ -779,7 +821,9 @@ int local_clock(
             ntv.constant = sys_poll - 4;
 #endif /* STA_NANO */
             if (ntv.constant < 0)
+            {
                 ntv.constant = 0;
+            }
 
             ntv.esterror = usec_long_from_dbl(
                 clock_jitter);
@@ -794,22 +838,30 @@ int local_clock(
             {
                 ntv.status |= (STA_PPSTIME | STA_PPSFREQ);
                 if (!(pll_status & STA_PPSTIME))
+                {
                     sync_status("PPS enabled",
                                 pll_status,
                                 ntv.status);
+                }
             }
             else
             {
                 ntv.status &= ~(STA_PPSTIME | STA_PPSFREQ);
                 if (pll_status & STA_PPSTIME)
+                {
                     sync_status("PPS disabled",
                                 pll_status,
                                 ntv.status);
+                }
             }
             if (sys_leap == LEAP_ADDSECOND)
+            {
                 ntv.status |= STA_INS;
+            }
             else if (sys_leap == LEAP_DELSECOND)
+            {
                 ntv.status |= STA_DEL;
+            }
         }
 
         /*
@@ -862,16 +914,24 @@ int local_clock(
      * the frequency difference since the last update.
      */
     if (fabs(clock_frequency) > NTP_MAXFREQ)
+    {
         msyslog(LOG_NOTICE,
                 "frequency error %.0f PPM exceeds tolerance %.0f PPM",
                 clock_frequency * 1e6, NTP_MAXFREQ * 1e6);
+    }
     dtemp = SQUARE(clock_frequency - drift_comp);
     if (clock_frequency > NTP_MAXFREQ)
+    {
         drift_comp = NTP_MAXFREQ;
+    }
     else if (clock_frequency < -NTP_MAXFREQ)
+    {
         drift_comp = -NTP_MAXFREQ;
+    }
     else
+    {
         drift_comp = clock_frequency;
+    }
 
     /*
      * Calculate the wander as the exponentially weighted RMS
@@ -903,7 +963,9 @@ int local_clock(
         {
             tc_counter = CLOCK_LIMIT;
             if (sys_poll < peer->maxpoll)
+            {
                 sys_poll += (current_time >= tc_twinhi);
+            }
         }
     }
     else
@@ -913,7 +975,9 @@ int local_clock(
         {
             tc_counter = -CLOCK_LIMIT;
             if (sys_poll > peer->minpoll)
+            {
                 sys_poll -= (current_time >= tc_twinlo);
+            }
         }
     }
 
@@ -979,7 +1043,9 @@ void adj_host_clock(
     sys_rootdisp += clock_phi;
 #ifndef LOCKCLOCK
     if (!ntp_enable || mode_ntpdate)
+    {
         return;
+    }
     /*
      * Determine the phase adjustment. The gain factor (denominator)
      * increases with poll interval, so is dominated by the FLL
@@ -1014,16 +1080,22 @@ void adj_host_clock(
      */
 #ifdef KERNEL_PLL
     if (pll_control && kern_enable)
+    {
         freq_adj = 0.;
+    }
     else
 #endif /* KERNEL_PLL */
         freq_adj = drift_comp;
 
     /* Bound absolute value of total adjustment to NTP_MAXFREQ. */
     if (offset_adj + freq_adj > NTP_MAXFREQ)
+    {
         offset_adj = NTP_MAXFREQ - freq_adj;
+    }
     else if (offset_adj + freq_adj < -NTP_MAXFREQ)
+    {
         offset_adj = -NTP_MAXFREQ - freq_adj;
+    }
 
     clock_offset -= offset_adj;
     /*
@@ -1053,10 +1125,12 @@ rstclock(
     DPRINTF(2, ("rstclock: mu %lu state %d poll %d count %d\n",
                 current_time - clock_epoch, trans, sys_poll,
                 tc_counter));
-    if (trans != state && trans != EVNT_FSET)
+    if ((trans != state) && (trans != EVNT_FSET))
+    {
         report_event(trans, NULL, NULL);
+    }
 #ifdef HAVE_WORKING_FORK
-    if (trans != state && EVNT_SYNC == trans)
+    if ((trans != state) && (EVNT_SYNC == trans))
     {
         /*
          * If our parent process is waiting for the
@@ -1219,7 +1293,9 @@ start_kern_loop(void)
         }
 #ifdef STA_NANO
         if (pll_status & STA_CLK)
+        {
             ext_enable = TRUE;
+        }
 #endif /* STA_NANO */
         report_event(EVNT_KERN, NULL,
                      "kernel time sync enabled");
@@ -1233,8 +1309,10 @@ static void
 stop_kern_loop(void)
 {
     if (pll_control && kern_enable)
+    {
         report_event(EVNT_KERN, NULL,
                      "kernel time sync disabled");
+    }
 }
 #endif /* KERNEL_PLL */
 
@@ -1246,15 +1324,21 @@ void select_loop(
     int use_kern_loop)
 {
     if (kern_enable == use_kern_loop)
+    {
         return;
+    }
 #ifdef KERNEL_PLL
     if (pll_control && !use_kern_loop)
+    {
         stop_kern_loop();
+    }
 #endif
     kern_enable = use_kern_loop;
 #ifdef KERNEL_PLL
     if (pll_control && use_kern_loop)
+    {
         start_kern_loop();
+    }
 #endif
     /*
      * If this loop selection change occurs after initial startup,
@@ -1263,7 +1347,9 @@ void select_loop(
      */
 #ifdef KERNEL_PLL
     if (pll_control && loop_started)
+    {
         set_freq(drift_comp);
+    }
 #endif
 }
 
@@ -1276,15 +1362,19 @@ void huffpuff(void)
     int i;
 
     if (sys_huffpuff == NULL)
+    {
         return;
+    }
 
     sys_huffptr = (sys_huffptr + 1) % sys_hufflen;
     sys_huffpuff[sys_huffptr] = 1e9;
     sys_mindly = 1e9;
-    for (i = 0; i < sys_hufflen; i++)
+    for (i = 0; i < sys_hufflen; ++i)
     {
         if (sys_huffpuff[i] < sys_mindly)
+        {
             sys_mindly = sys_huffpuff[i];
+        }
     }
 }
 
@@ -1314,7 +1404,9 @@ void loop_config(
 #ifndef LOCKCLOCK
 #ifdef KERNEL_PLL
         if (mode_ntpdate)
+        {
             break;
+        }
 
         start_kern_loop();
 #endif /* KERNEL_PLL */
@@ -1325,14 +1417,22 @@ void loop_config(
          */
         ftemp = init_drift_comp / 1e6;
         if (ftemp > NTP_MAXFREQ)
+        {
             ftemp = NTP_MAXFREQ;
+        }
         else if (ftemp < -NTP_MAXFREQ)
+        {
             ftemp = -NTP_MAXFREQ;
+        }
         set_freq(ftemp);
         if (freq_set)
+        {
             rstclock(EVNT_FSET, 0);
+        }
         else
+        {
             rstclock(EVNT_NSET, 0);
+        }
         loop_started = TRUE;
 #endif /* LOCKCLOCK */
         break;
@@ -1382,11 +1482,15 @@ void loop_config(
 
     case LOOP_HUFFPUFF: /* huff-n'-puff length (huffpuff) */
         if (freq < HUFFPUFF)
+        {
             freq = HUFFPUFF;
+        }
         sys_hufflen = (int)(freq / HUFFPUFF);
         sys_huffpuff = eallocarray(sys_hufflen, sizeof(sys_huffpuff[0U]));
-        for (i = 0; i < sys_hufflen; i++)
+        for (i = 0; i < sys_hufflen; ++i)
+        {
             sys_huffpuff[i] = 1e9;
+        }
         sys_mindly = 1e9;
         break;
 
@@ -1396,8 +1500,10 @@ void loop_config(
 
     case LOOP_MAX: /* step threshold (step) */
         clock_max_fwd = clock_max_back = freq;
-        if (freq == 0 || freq > 0.5)
+        if ((freq == 0) || (freq > 0.5))
+        {
             select_loop(FALSE);
+        }
         break;
 
     case LOOP_MAX_BACK: /* step threshold (step) */
@@ -1407,21 +1513,29 @@ void loop_config(
          * limits are massive.  This assumes the reason to stop
          * using it is that it's pointless, not that it goes wrong.
          */
-        if ((clock_max_back == 0 || clock_max_back > 0.5) || (clock_max_fwd == 0 || clock_max_fwd > 0.5))
+        if (((clock_max_back == 0) || (clock_max_back > 0.5)) || ((clock_max_fwd == 0) || (clock_max_fwd > 0.5)))
+        {
             select_loop(FALSE);
+        }
         break;
 
     case LOOP_MAX_FWD: /* step threshold (step) */
         clock_max_fwd = freq;
-        if ((clock_max_back == 0 || clock_max_back > 0.5) || (clock_max_fwd == 0 || clock_max_fwd > 0.5))
+        if (((clock_max_back == 0) || (clock_max_back > 0.5)) || ((clock_max_fwd == 0) || (clock_max_fwd > 0.5)))
+        {
             select_loop(FALSE);
+        }
         break;
 
     case LOOP_MINSTEP: /* stepout threshold (stepout) */
         if (freq < CLOCK_MINSTEP)
+        {
             clock_minstep = CLOCK_MINSTEP;
+        }
         else
+        {
             clock_minstep = freq;
+        }
         break;
 
     case LOOP_TICK: /* tick increment (tick) */

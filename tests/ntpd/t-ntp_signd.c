@@ -30,14 +30,16 @@ int connect(int socket, const struct sockaddr* address, socklen_t address_len)
 ** This is so write_all can be properly tested.
 */
 
-static char rw_buf[4];
+static char rw_buf[4U];
 
 ssize_t
 write(int fd, void const* buf, size_t len)
 {
     REQUIRE(0 <= len);
     if (len >= 4)
-        len = 4; /* 4 bytes, max */
+    {
+        len = 4;
+    } /* 4 bytes, max */
     (void)memcpy(rw_buf, buf, len);
 
     return len;
@@ -48,7 +50,9 @@ read(int fd, void* buf, size_t len)
 {
     REQUIRE(0 <= len);
     if (len >= 4)
+    {
         len = 4;
+    }
     (void)memcpy(buf, rw_buf, len);
     return len;
 }
@@ -144,7 +148,7 @@ void test_recv_packet(void)
 
 	TEST_ASSERT_TRUE(isGE(fd, 0));
 
-	uint32_t size = 256;	
+	uint32_t size = 256U;	
 	char *str = NULL;
 	int temp = recv_packet(fd, &str, &size);
 
@@ -163,7 +167,7 @@ void test_send_via_ntp_signd(void)
 {
     struct recvbuf* rbufp = (struct recvbuf*)malloc(sizeof(struct recvbuf));
     int xmode = 1;
-    keyid_t xkeyid = 12345;
+    keyid_t xkeyid = 12345U;
     int flags = 0;
     struct pkt* xpkt = (struct pkt*)malloc(sizeof(struct pkt)); // defined in ntp.h
 

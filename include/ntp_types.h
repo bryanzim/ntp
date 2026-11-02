@@ -246,7 +246,7 @@ typedef uint32_t ntp_u_int32_t;
 
 typedef struct ntp_uint64_t
 {
-    u_int32 val[2];
+    u_int32 val[2U];
 } ntp_uint64_t;
 
 typedef uint16_t associd_t; /* association ID */

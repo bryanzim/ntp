@@ -68,7 +68,7 @@
 struct btfp_time /* Structure for reading 5 time words   */
                  /* in one ioctl(2) operation.           */
 {
-    unsigned short btfp_time[5]; /* Time words 0,1,2,3, and 4. (16bit)*/
+    unsigned short btfp_time[5U]; /* Time words 0,1,2,3, and 4. (16bit)*/
 };
 /* SunOS5 ioctl commands definitions.*/
 #define BTFPIOC ('b' << 8)
@@ -170,7 +170,7 @@ static void vme_shutdown(int, struct peer*);
 static void vme_receive(struct recvbuf*);
 static void vme_poll(int unit, struct peer*);
 struct vmedate* get_datumtime(struct vmedate*);
-void tvme_fill(struct vmedate*, uint32_t btm[2]);
+void tvme_fill(struct vmedate*, uint32_t btm[2U]);
 void stfp_time2tvme(struct vmedate* time_vme, struct stfp_time* stfp);
 static const char* get_devicename(int n);
 
@@ -275,7 +275,7 @@ get_devicename(int n)
 #else
     static const char* const template = "/dev/btfp%d";
 #endif
-    static char namebuf[20];
+    static char namebuf[20U];
 
     snprintf(namebuf, sizeof(namebuf), template, n);
     namebuf[sizeof(namebuf) - 1] = '\0'; /* paranoia rulez! */
@@ -293,7 +293,7 @@ vme_start(
     register struct vmeunit* vme;
     struct refclockproc* pp;
     int dummy;
-    char vmedev[20];
+    char vmedev[20U];
 
     tfp_type = (int)(peer->ttl);
     switch (tfp_type)
@@ -332,11 +332,15 @@ vme_start(
         default:
             /* Release capture lockout in case it was set before. */
             if (ioctl(fd_vme, RUNLOCK, &dummy))
+            {
                 msyslog(LOG_ERR, "vme_start: RUNLOCK failed %m");
+            }
 
             regvalue = 0; /* More esoteric stuff to do... */
             if (ioctl(fd_vme, WCR0, &regvalue))
+            {
                 msyslog(LOG_ERR, "vme_start: WCR0 failed %m");
+            }
             break;
         }
     }
@@ -390,9 +394,13 @@ vme_shutdown(
     io_closeclock(&pp->io);
     pp->unitptr = NULL;
     if (NULL != vme)
+    {
         free(vme);
+    }
     if (tfp_type == 2)
+    {
         bcStopPci(stfp_handle);
+    }
 }
 
 
@@ -466,9 +474,11 @@ vme_poll(
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("pp: %3d %02d:%02d:%02d.%06ld %1x\n",
                pp->day, pp->hour, pp->minute, pp->second,
                pp->nsec, tptr->status);
+    }
 #endif
     if (tptr->status)
     { /*  Status 0 is locked to ref., 1 is not */
@@ -497,14 +507,16 @@ vme_poll(
 struct vmedate*
 get_datumtime(struct vmedate* time_vme)
 {
-    char cbuf[7];
+    char cbuf[7U];
     struct btfp_time vts;
-    uint32_t btm[2];
+    uint32_t btm[2U];
     uint8_t dmy;
     struct stfp_time stfpm;
 
     if (time_vme == NULL)
+    {
         time_vme = emalloc(sizeof(*time_vme));
+    }
 
     switch (tfp_type)
     {
@@ -592,12 +604,16 @@ get_datumtime(struct vmedate* time_vme)
     }
 
     if (time_vme->status)
+    {
         return ((void*)NULL);
+    }
     else
+    {
         return (time_vme);
+    }
 }
 /* Assign values to time_vme struct. Mostly for readability */
-void tvme_fill(struct vmedate* time_vme, uint32_t btm[2])
+void tvme_fill(struct vmedate* time_vme, uint32_t btm[2U])
 {
     struct tm maj;
     time_t dmaj;

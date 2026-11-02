@@ -39,7 +39,7 @@ void test_InitializeLexStack(void)
 {
 
     // Some sort of server is required for this to work.
-    char origin[128] = { "" };
+    char origin[128U] = { "" };
     strcat(origin, "127.0.0.1");
     TEST_ASSERT_TRUE(lex_init_stack(origin, NULL)); // path, mode -> NULL is ok!
     lex_drop_stack();

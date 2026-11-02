@@ -29,7 +29,7 @@ int sau_from_string(
     struct addrinfo hints;
     struct addrinfo* result;
     struct sockaddr_in6* resaddr6;
-    char tmpbuf[128];
+    char tmpbuf[128U];
     char* pch;
 
     DEBUG_REQUIRE(host != NULL);
@@ -46,7 +46,7 @@ int sau_from_string(
      * addresses (up to 46 bytes), the delimiter character and the
      * terminating NULL character.
      */
-    if (AF_UNSPEC == af || AF_INET == af)
+    if ((AF_UNSPEC == af) || (AF_INET == af))
         if (inet_pton(AF_INET, host, &in4) == 1)
         {
             AF(addr) = AF_INET;
@@ -55,7 +55,7 @@ int sau_from_string(
             return TRUE;
         }
 
-    if (AF_UNSPEC == af || AF_INET6 == af)
+    if ((AF_UNSPEC == af) || (AF_INET6 == af))
         if (sizeof(tmpbuf) > strlen(host))
         {
             if ('[' == host[0U])
@@ -63,7 +63,9 @@ int sau_from_string(
                 strlcpy(tmpbuf, &host[1U], sizeof(tmpbuf));
                 pch = strchr(tmpbuf, ']');
                 if (pch != NULL)
+                {
                     *pch = '\0';
+                }
             }
             else
             {

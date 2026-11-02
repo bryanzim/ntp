@@ -183,12 +183,12 @@ ext_bf(
     int idx,
     const unsigned char* zero)
 {
-    u_long sum = 0;
+    u_long sum = 0U;
     int i, first;
 
     first = rawdcfcode[idx].offset;
 
-    for (i = rawdcfcode[idx + 1].offset - 1; i >= first; i--)
+    for (i = rawdcfcode[idx + 1].offset - 1; i >= first; --i)
     {
         sum <<= 1;
         sum |= (buf[i] != zero[i]);
@@ -203,12 +203,14 @@ pcheck(
     const unsigned char* zero)
 {
     int i, last;
-    unsigned psum = 1;
+    unsigned psum = 1U;
 
     last = partab[idx + 1].offset;
 
-    for (i = partab[idx].offset; i < last; i++)
+    for (i = partab[idx].offset; i < last; ++i)
+    {
         psum ^= (buf[i] != zero[i]);
+    }
 
     return psum;
 }
@@ -225,17 +227,23 @@ zeller_expand(
 
     /* Check basic constraints first. */
     if ((y >= 100u) || (m >= 12u) || (d >= 31u) || (--wd >= 7u))
+    {
         return FALSE;
+    }
 
     /* Get weekday of date in 1st century by a variation on Zeller's
      * congruence. All operands are non-negative, and the month
      * formula is adjusted to use a divider of 32, so we can do a
      * shift instead of a 'true' division:
      */
-    if ((m += 10u) >= 12u) /* shift base to 0000-03-01 */
+    if ((m += 10u) >= 12u)
+    { /* shift base to 0000-03-01 */
         m -= 12u;
+    }
     else if (--y >= 100u)
+    {
         y += 100;
+    }
     d += y + (y >> 2) + 2u;    /* year-related share */
     d += (m * 83u + 16u) >> 5; /* month-related share */
 
@@ -252,7 +260,9 @@ zeller_expand(
      */
     c = (((252u + wd - d) * 0x6db6db6eU) >> 29) & 7u;
     if (c >= 4)
+    {
         return FALSE;
+    }
     /* undo calendar base shift now */
     if ((m > 9u) && (++y >= 100u))
     {
@@ -287,7 +297,7 @@ convert_rawdcf(
         return CVT_FAIL | CVT_BADFMT;
     }
 
-    for (i = 0; i < size; i++)
+    for (i = 0; i < size; ++i)
     {
         if ((*s != *b) && (*s != *c))
         {
@@ -300,9 +310,13 @@ convert_rawdcf(
             return CVT_FAIL | CVT_BADFMT;
         }
         if (*b)
+        {
             b++;
+        }
         if (*c)
+        {
             c++;
+        }
         s++;
     }
 
@@ -335,7 +349,9 @@ convert_rawdcf(
         clock_time->year = TIMES10(clock_time->year) + ext_bf(buffer, DCF_Y1, dcfprm->zerobits);
 
         if (!zeller_expand(clock_time, ext_bf(buffer, DCF_DW, dcfprm->zerobits)))
+        {
             return CVT_FAIL | CVT_BADFMT;
+        }
 
         switch (ext_bf(buffer, DCF_Z, dcfprm->zerobits))
         {
@@ -354,13 +370,19 @@ convert_rawdcf(
         }
 
         if (ext_bf(buffer, DCF_A1, dcfprm->zerobits))
+        {
             clock_time->flags |= PARSEB_ANNOUNCE;
+        }
 
         if (ext_bf(buffer, DCF_A2, dcfprm->zerobits))
-            clock_time->flags |= PARSEB_LEAPADD; /* default: DCF77 data format deficiency */
+        {
+            clock_time->flags |= PARSEB_LEAPADD;
+        } /* default: DCF77 data format deficiency */
 
         if (ext_bf(buffer, DCF_R, dcfprm->zerobits))
+        {
             clock_time->flags |= PARSEB_CALLBIT;
+        }
 
         parseprintf(DD_RAWDCF, ("parse: convert_rawdcf: TIME CODE OK: %02d:%02d, %02d.%02d.%02d, flags 0x%lx\n",
                                 (int)clock_time->hour, (int)clock_time->minute, (int)clock_time->day, (int)clock_time->month, (int)clock_time->year,
@@ -410,7 +432,7 @@ cvt_rawdcf(
      * a 200ms pulse would create all zeroes (and probably a frame error)
      */
 
-    for (i = 0; i < BITS; i++)
+    for (i = 0; i < BITS; ++i)
     {
         histbuf[i] = 0;
     }
@@ -427,7 +449,7 @@ cvt_rawdcf(
         if (!((ch + 1) & ch) || !*s)
         {
 
-            for (i = 0; ch; i++)
+            for (i = 0; ch; ++i)
             {
                 ch >>= 1;
             }
@@ -461,7 +483,7 @@ cvt_rawdcf(
     highmax = 0;
 
     parseprintf(DD_RAWDCF, ("parse: cvt_rawdcf: histogram:"));
-    for (i = 0; i <= cutoff; i++)
+    for (i = 0; i <= cutoff; ++i)
     {
         lowmax += histbuf[i] * i;
         highmax += histbuf[i];
@@ -483,7 +505,7 @@ cvt_rawdcf(
     highmax = 0;
     cutoff = 0;
 
-    for (; i < BITS; i++)
+    for (; i < BITS; ++i)
     {
         highmax += histbuf[i] * i;
         cutoff += histbuf[i];
@@ -501,7 +523,7 @@ cvt_rawdcf(
     }
 
     span = cutoff = lowmax;
-    for (i = lowmax; i <= highmax; i++)
+    for (i = lowmax; i <= highmax; ++i)
     {
         if (histbuf[cutoff] > histbuf[i])
         {
@@ -531,9 +553,13 @@ cvt_rawdcf(
         }
         s++;
         if (*b)
+        {
             b++;
+        }
         if (*c)
+        {
             c++;
+        }
     }
 
     *s = '\0';
@@ -632,18 +658,20 @@ snt_rawdcf(
     last_tcode_t* t = (last_tcode_t*)parseio->parse_pdata;
     long delta_usec = -1;
 
-    if (t != NULL && t->tminute.tv.tv_sec != 0)
+    if ((t != NULL) && (t->tminute.tv.tv_sec != 0))
     {
         delta_usec = calc_usecdiff(ptime, &t->tminute, parseio->parse_index - 1);
         if (delta_usec < 0)
+        {
             delta_usec = -delta_usec;
+        }
     }
 
     parseprintf(DD_RAWDCF, ("parse: snt_rawdcf: synth for offset %d seconds - absolute usec error %ld\n",
                             parseio->parse_index - 1, delta_usec));
 
     if (((parseio->parse_dtime.parse_status & CVT_MASK) == CVT_OK) &&
-        (delta_usec < 500000 && delta_usec >= 0)) /* only if minute marker is available */
+        ((delta_usec < 500000) && (delta_usec >= 0))) /* only if minute marker is available */
     {
         parseio->parse_dtime.parse_stime = *ptime;
 
@@ -693,14 +721,16 @@ inp_rawdcf(
             {
                 delta_usec = calc_usecdiff(tstamp, &t->timeout, 60);
                 if (delta_usec < 0)
+                {
                     delta_usec = -delta_usec;
+                }
             }
             else
             {
                 delta_usec = -1;
             }
 
-            if (delta_usec < 500000 && delta_usec >= 0)
+            if ((delta_usec < 500000) && (delta_usec >= 0))
             {
                 parseprintf(DD_RAWDCF, ("inp_rawdcf: timeout time difference %ld usec - minute marker set\n", delta_usec));
                 /* collect minute markers only if spaced by 60 seconds */
@@ -726,7 +756,9 @@ inp_rawdcf(
         if (rtc == PARSE_INP_SKIP)
         {
             if (snt_rawdcf(parseio, tstamp) == CVT_OK)
+            {
                 return PARSE_INP_SYNTH;
+            }
         }
         return rtc;
     }

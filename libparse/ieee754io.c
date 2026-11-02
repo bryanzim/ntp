@@ -103,12 +103,12 @@ fmt_hex(
     int length)
 {
     char* buf;
-    char hex[4];
+    char hex[4U];
     int i;
 
     LIB_GETBUF(buf);
     buf[0U] = '\0';
-    for (i = 0; i < length; i++)
+    for (i = 0; i < length; ++i)
     {
         snprintf(hex, sizeof(hex), "%02x", bufp[i]);
         strlcat(buf, hex, LIB_BUFLENGTH);
@@ -130,7 +130,9 @@ get_byte(
     val = *(bufp + offset[*fieldindex]);
 #ifdef LIBDEBUG
     if (debug > 4)
+    {
         printf("fetchieee754: getbyte(0x%08x, %d) = 0x%02x\n", (unsigned int)(bufp) + offset[*fieldindex], *fieldindex, val);
+    }
 #endif
     (*fieldindex)++;
     return val;
@@ -245,7 +247,7 @@ int fetch_ieee754(
         {
             int i;
 
-            for (i = 0; i < length; i++)
+            for (i = 0; i < length; ++i)
             {
                 *((unsigned char*)(&f) + i) = *(*buffpp + offsets[i]);
             }
@@ -255,7 +257,7 @@ int fetch_ieee754(
         {
             int i;
 
-            for (i = 0; i < length; i++)
+            for (i = 0; i < length; ++i)
             {
                 *((unsigned char*)(&d) + i) = *(*buffpp + offsets[i]);
             }
@@ -331,9 +333,13 @@ int fetch_ieee754(
                  * adjust for implied 1
                  */
                 if (mbits > 31)
+                {
                     mantissa_high |= 1 << (mbits - 32);
+                }
                 else
+                {
                     mantissa_low |= 1 << mbits;
+                }
 
                 /*
                  * take mantissa apart - if only all machine would support
@@ -419,10 +425,10 @@ int put_ieee754(
     /*unsigned int maxexp;*/
     int mbits;
     int msb;
-    u_long mantissa_low = 0;
-    u_long mantissa_high = 0;
+    u_long mantissa_low = 0U;
+    u_long mantissa_high = 0U;
 #ifdef LIBDEBUG
-    u_long characteristic = 0;
+    u_long characteristic = 0U;
     long exponent;
 #endif
     /*int length;*/
@@ -537,7 +543,9 @@ int put_ieee754(
         characteristic = exponent + bias;
 
         if (debug > 4)
+        {
             printf("FP: %s\n", fmt_flt(sign, mantissa_high, mantissa_low, characteristic));
+        }
 #endif
     }
     return IEEE_OK;

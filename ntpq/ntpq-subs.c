@@ -246,7 +246,7 @@ typedef struct ifstats_row_tag
     int enabled;
     u_int flags;
     u_int mcast_count;
-    char name[32];
+    char name[32U];
     u_int peer_count;
     u_int received;
     u_int sent;
@@ -261,7 +261,7 @@ typedef struct reslist_row_tag
     sockaddr_u addr;
     sockaddr_u mask;
     u_long hits;
-    char flagstr[128];
+    char flagstr[128U];
 } reslist_row;
 
 typedef struct var_display_collection_tag
@@ -372,7 +372,7 @@ checkassocid(
     u_long ulvalue;
 
     associd = (associd_t)value;
-    if (0 == associd || value != associd)
+    if ((0 == associd) || (value != associd))
     {
         ulvalue = value;
         xprintf(stderr,
@@ -398,11 +398,17 @@ findlistvar(
 {
     struct varlist* vl;
 
-    for (vl = list; vl < list + MAXLIST && vl->name != NULL; vl++)
+    for (vl = list; (vl < list + MAXLIST) && (vl->name != NULL); ++vl)
+    {
         if (!strcmp(name, vl->name))
+        {
             return vl;
+        }
+    }
     if (vl < list + MAXLIST)
+    {
         return vl;
+    }
 
     return NULL;
 }
@@ -443,7 +449,9 @@ doaddvlist(
         }
 
         if (value != NULL)
+        {
             vl->value = estrdup(value);
+        }
     }
 }
 
@@ -466,7 +474,7 @@ dormvlist(
     {
         INSIST(name && value);
         vl = findlistvar(vlist, name);
-        if (vl == 0 || vl->name == 0)
+        if ((vl == 0) || (vl->name == 0))
         {
             (void)xprintf(stderr, "Variable `%s' not found\n",
                           name);
@@ -475,8 +483,10 @@ dormvlist(
         {
             free((void*)(intptr_t)vl->name);
             if (vl->value != 0)
+            {
                 free(vl->value);
-            for (; (vl + 1) < (g_varlist + MAXLIST) && (vl + 1)->name != 0; vl++)
+            }
+            for (; ((vl + 1) < (g_varlist + MAXLIST)) && ((vl + 1)->name != 0); ++vl)
             {
                 vl->name = (vl + 1)->name;
                 vl->value = (vl + 1)->value;
@@ -496,7 +506,7 @@ doclearvlist(
 {
     register struct varlist* vl;
 
-    for (vl = vlist; vl < vlist + MAXLIST && vl->name != 0; vl++)
+    for (vl = vlist; (vl < vlist + MAXLIST) && (vl->name != 0); ++vl)
     {
         free((void*)(intptr_t)vl->name);
         vl->name = 0;
@@ -526,13 +536,17 @@ makequerydata(
     cp = data;
     cpend = data + *datalen;
 
-    for (vl = vlist; vl < vlist + MAXLIST && vl->name != 0; vl++)
+    for (vl = vlist; (vl < vlist + MAXLIST) && (vl->name != 0); ++vl)
     {
         namelen = strlen(vl->name);
         if (vl->value == 0)
+        {
             valuelen = 0;
+        }
         else
+        {
             valuelen = strlen(vl->value);
+        }
         totallen = namelen + valuelen + (valuelen != 0) + (cp != data);
         if (cp + totallen > cpend)
         {
@@ -543,7 +557,9 @@ makequerydata(
         }
 
         if (cp != data)
+        {
             *cp++ = ',';
+        }
         memcpy(cp, vl->name, (size_t)namelen);
         cp += namelen;
         if (valuelen != 0)
@@ -596,13 +612,17 @@ doprintvlist(
         xprintf(fp, "No variables on list\n");
         return;
     }
-    for (n = 0; n < MAXLIST && vlist[n].name != NULL; n++)
+    for (n = 0; (n < MAXLIST) && (vlist[n].name != NULL); ++n)
     {
         if (NULL == vlist[n].value)
+        {
             xprintf(fp, "%s\n", vlist[n].name);
+        }
         else
+        {
             xprintf(fp, "%s=%s\n", vlist[n].name,
                     vlist[n].value);
+        }
     }
 }
 
@@ -680,32 +700,46 @@ dolist(
      * status header line in the output.
      */
     if (old_rv)
+    {
         quiet = 0;
+    }
     else
+    {
         quiet = (vlist->name != NULL);
+    }
 
     res = doquerylist(vlist, op, associd, 0, &rstatus, &dsize, &datap);
 
     if (res != 0)
+    {
         return 0;
+    }
 
     if (numhosts > 1)
+    {
         xprintf(fp, "server=%s ", currenthost);
+    }
     if (dsize == 0)
     {
         if (associd == 0)
+        {
             xprintf(fp, "No system%s variables returned\n",
                     (type == TYPE_CLOCK) ? " clock" : "");
+        }
         else
+        {
             xprintf(fp,
                     "No information returned for%s association %u\n",
                     (type == TYPE_CLOCK) ? " clock" : "",
                     associd);
+        }
         return 1;
     }
 
     if (!quiet)
+    {
         xprintf(fp, "associd=%u ", associd);
+    }
     printvars(dsize, datap, (int)rstatus, type, quiet, fp);
     return 1;
 }
@@ -730,9 +764,13 @@ readlist(
     {
         /* HMS: I think we want the u_int32 target here, not the u_long */
         if (pcmd->argval[0U].uval == 0)
+        {
             associd = 0;
+        }
         else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
+        {
             return;
+        }
     }
 
     type = (0 == associd)
@@ -764,21 +802,31 @@ writelist(
     {
         /* HMS: Do we really want uval here? */
         if (pcmd->argval[0U].uval == 0)
+        {
             associd = 0;
+        }
         else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
+        {
             return;
+        }
     }
 
     res = doquerylist(g_varlist, CTL_OP_WRITEVAR, associd, 1, &rstatus,
                       &dsize, &datap);
 
     if (res != 0)
+    {
         return;
+    }
 
     if (numhosts > 1)
+    {
         (void)xprintf(fp, "server=%s ", currenthost);
+    }
     if (dsize == 0)
+    {
         (void)xprintf(fp, "done! (no data returned)\n");
+    }
     else
     {
         (void)xprintf(fp, "associd=%u ", associd);
@@ -805,17 +853,23 @@ readvar(
 
 
     /* HMS: uval? */
-    if (pcmd->nargs == 0 || pcmd->argval[0U].uval == 0)
+    if ((pcmd->nargs == 0) || (pcmd->argval[0U].uval == 0))
+    {
         associd = 0;
+    }
     else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
+    {
         return;
+    }
 
     ZERO(tmplist);
     if (pcmd->nargs > 1)
     {
         tmpcount = pcmd->nargs - 1;
-        for (u = 0; u < tmpcount; u++)
-            doaddvlist(tmplist, pcmd->argval[1 + u].string);
+        for (u = 0; u < tmpcount; ++u)
+        {
+            doaddvlist(tmplist, pcmd->argval[1U + u].string);
+        }
     }
 
     type = (0 == associd)
@@ -845,9 +899,13 @@ writevar(
 
     /* HMS: uval? */
     if (pcmd->argval[0U].uval == 0)
+    {
         associd = 0;
+    }
     else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
+    {
         return;
+    }
 
     ZERO(tmplist);
     doaddvlist(tmplist, pcmd->argval[1U].string);
@@ -858,12 +916,18 @@ writevar(
     doclearvlist(tmplist);
 
     if (res != 0)
+    {
         return;
+    }
 
     if (numhosts > 1)
+    {
         xprintf(fp, "server=%s ", currenthost);
+    }
     if (dsize == 0)
+    {
         xprintf(fp, "done! (no data returned)\n");
+    }
     else
     {
         xprintf(fp, "associd=%u ", associd);
@@ -894,9 +958,13 @@ clocklist(
     else
     {
         if (pcmd->argval[0U].uval == 0)
+        {
             associd = 0;
+        }
         else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
+        {
             return;
+        }
     }
 
     dolist(g_varlist, associd, CTL_OP_READCLOCK, TYPE_CLOCK, fp);
@@ -915,14 +983,20 @@ clockvar(
     struct varlist tmplist[MAXLIST];
 
     /* HMS: uval? */
-    if (pcmd->nargs == 0 || pcmd->argval[0U].uval == 0)
+    if ((pcmd->nargs == 0) || (pcmd->argval[0U].uval == 0))
+    {
         associd = 0;
+    }
     else if ((associd = checkassocid(pcmd->argval[0U].uval)) == 0)
+    {
         return;
+    }
 
     ZERO(tmplist);
     if (pcmd->nargs >= 2)
+    {
         doaddvlist(tmplist, pcmd->argval[1U].string);
+    }
 
     dolist(tmplist, associd, CTL_OP_READCLOCK, TYPE_CLOCK, fp);
 
@@ -941,30 +1015,40 @@ findassidrange(
     int* to,
     FILE* fp)
 {
-    associd_t assids[2];
+    associd_t assids[2U];
     int ind[COUNTOF(assids)];
     u_int i;
     size_t a;
 
 
     if (0 == numassoc)
+    {
         dogetassoc(fp);
+    }
 
     assids[0U] = checkassocid(assid1);
     if (0 == assids[0U])
+    {
         return 0;
+    }
     assids[1U] = checkassocid(assid2);
     if (0 == assids[1U])
+    {
         return 0;
+    }
 
-    for (a = 0; a < COUNTOF(assids); a++)
+    for (a = 0; a < COUNTOF(assids); ++a)
     {
         ind[a] = -1;
-        for (i = 0; i < numassoc; i++)
+        for (i = 0; i < numassoc; ++i)
+        {
             if (assoc_cache[i].assid == assids[a])
+            {
                 ind[a] = i;
+            }
+        }
     }
-    for (a = 0; a < COUNTOF(assids); a++)
+    for (a = 0; a < COUNTOF(assids); ++a)
         if (-1 == ind[a])
         {
             xprintf(stderr,
@@ -1002,15 +1086,21 @@ mreadlist(
 
     if (!findassidrange(pcmd->argval[0U].uval, pcmd->argval[1U].uval,
                         &from, &to, fp))
+    {
         return;
+    }
 
-    for (i = from; i <= to; i++)
+    for (i = from; i <= to; ++i)
     {
         if (i != from)
+        {
             xprintf(fp, "\n");
+        }
         if (!dolist(g_varlist, assoc_cache[i].assid,
                     CTL_OP_READVAR, TYPE_PEER, fp))
+        {
             return;
+        }
     }
     return;
 }
@@ -1032,7 +1122,9 @@ mreadvar(
 
     if (!findassidrange(pcmd->argval[0U].uval, pcmd->argval[1U].uval,
                         &from, &to, fp))
+    {
         return;
+    }
 
     ZERO(tmplist);
     if (pcmd->nargs >= 3)
@@ -1045,15 +1137,19 @@ mreadvar(
         pvars = g_varlist;
     }
 
-    for (i = from; i <= to; i++)
+    for (i = from; i <= to; ++i)
     {
         if (!dolist(pvars, assoc_cache[i].assid, CTL_OP_READVAR,
                     TYPE_PEER, fp))
+        {
             break;
+        }
     }
 
     if (pvars == tmplist)
+    {
         doclearvlist(tmplist);
+    }
 
     return;
 }
@@ -1075,12 +1171,16 @@ int dogetassoc(
                   &dsize, &datap);
 
     if (res != 0)
+    {
         return 0;
+    }
 
     if (dsize == 0)
     {
         if (numhosts > 1)
+        {
             xprintf(fp, "server=%s ", currenthost);
+        }
         xprintf(fp, "No association ID's returned\n");
         return 0;
     }
@@ -1088,7 +1188,9 @@ int dogetassoc(
     if (dsize & 0x3)
     {
         if (numhosts > 1)
+        {
             xprintf(stderr, "server=%s ", currenthost);
+        }
         xprintf(stderr,
                 "***Server returned %zu octets, should be multiple of 4\n",
                 dsize);
@@ -1144,8 +1246,8 @@ printassoc(
     const char* auth;
     const char* condition = "";
     const char* last_event;
-    char buf[128];
-    char numev[32];
+    char buf[128U];
+    char numev[32U];
 
     if (numassoc == 0)
     {
@@ -1160,37 +1262,55 @@ printassoc(
                   "ind assid status  conf reach auth condition  last_event cnt\n");
     (void)xprintf(fp,
                   "===========================================================\n");
-    for (i = 0; i < numassoc; i++)
+    for (i = 0; i < numassoc; ++i)
     {
         statval = (u_char)CTL_PEER_STATVAL(assoc_cache[i].status);
         if (!showall && !(statval & (CTL_PST_CONFIG | CTL_PST_REACH)))
+        {
             continue;
+        }
         event = CTL_PEER_EVENT(assoc_cache[i].status);
         event_count = CTL_PEER_NEVNT(assoc_cache[i].status);
         if (statval & CTL_PST_CONFIG)
+        {
             conf = "yes";
+        }
         else
+        {
             conf = "no";
+        }
         if (statval & CTL_PST_BCAST)
         {
             reach = "none";
             if (statval & CTL_PST_AUTHENABLE)
+            {
                 auth = "yes";
+            }
             else
+            {
                 auth = "none";
+            }
         }
         else
         {
             if (statval & CTL_PST_REACH)
+            {
                 reach = "yes";
+            }
             else
+            {
                 reach = "no";
+            }
             if (statval & CTL_PST_AUTHENABLE)
             {
                 if (statval & CTL_PST_AUTHENTIC)
+                {
                     auth = "ok ";
+                }
                 else
+                {
                     auth = "bad";
+                }
             }
             else
             {
@@ -1242,11 +1362,17 @@ printassoc(
 
             case OLD_CTL_PST_SEL_REJECT:
                 if (!(statval & OLD_CTL_PST_SANE))
+                {
                     condition = "insane";
+                }
                 else if (!(statval & OLD_CTL_PST_DISP))
+                {
                     condition = "hi_disp";
+                }
                 else
+                {
                     condition = "";
+                }
                 break;
 
             case OLD_CTL_PST_SEL_SELCAND:
@@ -1336,8 +1462,10 @@ printassoc(
                  assoc_cache[i].status, conf, reach, auth,
                  condition, last_event, event_count);
         bp = buf + strlen(buf);
-        while (bp > buf && ' ' == bp[-1])
+        while ((bp > buf) && (' ' == bp[-1]))
+        {
             --bp;
+        }
         bp[0U] = '\0';
         xprintf(fp, "%s\n", buf);
     }
@@ -1354,7 +1482,9 @@ associations(
     FILE* fp)
 {
     if (dogetassoc(fp))
+    {
         printassoc(0, fp);
+    }
 }
 
 
@@ -1368,7 +1498,9 @@ lassociations(
     FILE* fp)
 {
     if (dogetassoc(fp))
+    {
         printassoc(1, fp);
+    }
 }
 
 
@@ -1412,7 +1544,9 @@ saveconfig(
     u_short rstatus;
 
     if (0 == pcmd->nargs)
+    {
         return;
+    }
 
     res = doquery(CTL_OP_SAVECONFIG, 0, 1,
                   strlen(pcmd->argval[0U].string),
@@ -1420,12 +1554,18 @@ saveconfig(
                   &datap);
 
     if (res != 0)
+    {
         return;
+    }
 
     if (0 == dsize)
+    {
         xprintf(fp, "(no response message, curiously)");
+    }
     else
-        xprintf(fp, "%.*s", (int)dsize, datap); /* cast is wobbly */
+    {
+        xprintf(fp, "%.*s", (int)dsize, datap);
+    } /* cast is wobbly */
 }
 
 
@@ -1448,10 +1588,14 @@ radiostatus(
                   &dsize, &datap);
 
     if (res != 0)
+    {
         return;
+    }
 
     if (numhosts > 1)
+    {
         (void)xprintf(fp, "server=%s ", currenthost);
+    }
     if (dsize == 0)
     {
         (void)xprintf(fp, "No radio status string returned\n");
@@ -1474,14 +1618,22 @@ when(
     l_fp* lasttime;
 
     if (rec->l_ui != 0)
+    {
         lasttime = rec;
+    }
     else if (reftime->l_ui != 0)
+    {
         lasttime = reftime;
+    }
     else
+    {
         return 0;
+    }
 
     if (ts->l_ui < lasttime->l_ui)
+    {
         return -1;
+    }
     return (ts->l_ui - lasttime->l_ui);
 }
 
@@ -1559,9 +1711,13 @@ decodeaddrtype(
         break;
     case AF_INET6:
         if (IN6_IS_ADDR_MULTICAST(PSOCK_ADDR6(sock)))
+        {
             ch = 'm';
+        }
         else
+        {
             ch = 'u';
+        }
         break;
     default:
         ch = '-';
@@ -1657,16 +1813,16 @@ doprintpeers(
     sockaddr_u dum_store;
     sockaddr_u refidadr;
     long hmode = 0;
-    u_long srcport = 0;
+    u_long srcport = 0U;
     u_int32 u32;
     const char* dstadr_refid = "0.0.0.0";
     const char* serverlocal;
     char* drbuf = NULL;
     size_t drlen;
-    u_long stratum = 0;
+    u_long stratum = 0U;
     long ppoll = 0;
     long hpoll = 0;
-    u_long reach = 0;
+    u_long reach = 0U;
     l_fp estoffset;
     l_fp estdelay;
     l_fp estjitter;
@@ -1675,10 +1831,10 @@ doprintpeers(
     l_fp rec;
     l_fp ts;
     u_long poll_sec;
-    u_long flash = 0;
+    u_long flash = 0U;
     char type = '?';
     char clock_name[LENHOSTNAME];
-    char whenbuf[12], pollbuf[12];
+    char whenbuf[12U], pollbuf[12U];
     /* [Bug 3482] formally whenbuf & pollbuf should be able to hold
      * a full signed int. Not that we would use that much string
      * data for it...
@@ -1704,16 +1860,18 @@ doprintpeers(
             !strcmp("peeradr", name))
         {
             if (!decodenetnum(value, &srcadr))
+            {
                 xprintf(stderr, "malformed %s=%s\n",
                         name, value);
+            }
         }
         else if (!strcmp("srchost", name))
         {
-            if (pvl == peervarlist || pvl == apeervarlist)
+            if ((pvl == peervarlist) || (pvl == apeervarlist))
             {
                 len = strlen(value);
-                if (2 < len &&
-                    (size_t)len < sizeof(clock_name))
+                if ((2 < len) &&
+                    ((size_t)len < sizeof(clock_name)))
                 {
                     /* strip quotes */
                     value++;
@@ -1761,7 +1919,9 @@ doprintpeers(
                 else if (decodenetnum(value, &refidadr))
                 {
                     if (SOCK_UNSPEC(&refidadr))
+                    {
                         dstadr_refid = "0.0.0.0";
+                    }
                     else if (ISREFCLOCKADR(&refidadr))
                     {
                         dstadr_refid =
@@ -1797,7 +1957,9 @@ doprintpeers(
                 else if (decodenetnum(value, &refidadr))
                 {
                     if (SOCK_UNSPEC(&refidadr))
+                    {
                         dstadr_refid = "0.0.0.0";
+                    }
                     else if (ISREFCLOCKADR(&refidadr))
                     {
                         dstadr_refid =
@@ -1834,13 +1996,17 @@ doprintpeers(
         }
         else if (!strcmp("hpoll", name))
         {
-            if (decodeint(value, &hpoll) && hpoll < 0)
+            if (decodeint(value, &hpoll) && (hpoll < 0))
+            {
                 hpoll = NTP_MINPOLL;
+            }
         }
         else if (!strcmp("ppoll", name))
         {
-            if (decodeint(value, &ppoll) && ppoll < 0)
+            if (decodeint(value, &ppoll) && (ppoll < 0))
+            {
                 ppoll = NTP_MINPOLL;
+            }
         }
         else if (!strcmp("reach", name))
         {
@@ -1856,8 +2022,10 @@ doprintpeers(
         }
         else if (!strcmp("jitter", name))
         {
-            if ((pvl == peervarlist || pvl == apeervarlist) && decodetime(value, &estjitter))
+            if (((pvl == peervarlist) || (pvl == apeervarlist)) && decodetime(value, &estjitter))
+            {
                 have_jitter = 1;
+            }
         }
         else if (!strcmp("rootdisp", name) ||
                  !strcmp("dispersion", name))
@@ -1876,7 +2044,9 @@ doprintpeers(
         else if (!strcmp("reftime", name))
         {
             if (!decodets(value, &reftime))
+            {
                 L_CLR(&reftime);
+            }
         }
         else if (!strcmp("flash", name))
         {
@@ -1903,20 +2073,32 @@ doprintpeers(
     case MODE_BROADCAST:
         /* broadcast or multicast server */
         if (IS_MCAST(&srcadr))
+        {
             type = 'M';
+        }
         else
+        {
             type = 'B';
+        }
         break;
 
     case MODE_CLIENT:
         if (ISREFCLOCKADR(&srcadr))
-            type = 'l'; /* local refclock*/
+        {
+            type = 'l';
+        } /* local refclock*/
         else if (SOCK_UNSPEC(&srcadr))
-            type = 'p'; /* pool */
+        {
+            type = 'p';
+        } /* pool */
         else if (IS_MCAST(&srcadr))
-            type = 'a'; /* manycastclient */
+        {
+            type = 'a';
+        } /* manycastclient */
         else
-            type = 'u'; /* unicast */
+        {
+            type = 'u';
+        } /* unicast */
         break;
 
     case MODE_ACTIVE:
@@ -1933,12 +2115,16 @@ doprintpeers(
      */
     poll_sec = 1 << min(ppoll, hpoll);
     if (pktversion > NTP_OLDVERSION)
+    {
         c = flash3[CTL_PEER_STATVAL(rstatus) & 0x7];
+    }
     else
+    {
         c = flash2[CTL_PEER_STATVAL(rstatus) & 0x3];
+    }
     if (numhosts > 1)
     {
-        if ((pvl == peervarlist || pvl == apeervarlist) && have_dstadr)
+        if (((pvl == peervarlist) || (pvl == apeervarlist)) && have_dstadr)
         {
             serverlocal = nntohost_col(&dstadr,
                                        (size_t)min(LIB_BUFLENGTH - 1, maxhostlen),
@@ -1947,25 +2133,35 @@ doprintpeers(
         else
         {
             if (currenthostisnum)
+            {
                 serverlocal = trunc_left(currenthost,
                                          maxhostlen);
+            }
             else
+            {
                 serverlocal = currenthost;
+            }
         }
         xprintf(fp, "%-*s ", (int)maxhostlen, serverlocal);
     }
-    if (AF_UNSPEC == af || AF(&srcadr) == af)
+    if ((AF_UNSPEC == af) || (AF(&srcadr) == af))
     {
         if (!have_srchost)
+        {
             strlcpy(clock_name, nntohost(&srcadr),
                     sizeof(clock_name));
+        }
         /* wide and long source - space over on next line */
         /* allow for host + sp if > 1 and regular tally + source + sp */
-        if (wideremote && 15 < strlen(clock_name))
+        if (wideremote && (15 < strlen(clock_name)))
+        {
             xprintf(fp, "%c%s\n%*s", c, clock_name,
                     ((numhosts > 1) ? (int)maxhostlen + 1 : 0) + 1 + 15 + 1, "");
+        }
         else
+        {
             xprintf(fp, "%c%-15.15s ", c, clock_name);
+        }
         if ((flash & TEST12) && (pvl != opeervarlist))
         {
             drlen = xprintf(fp, "(loop)");
@@ -1983,13 +2179,17 @@ doprintpeers(
         if (pvl == apeervarlist)
         {
             while (drlen++ < 9)
+            {
                 xputc(' ', fp);
+            }
             xprintf(fp, "%-6d", associd);
         }
         else
         {
             while (drlen++ < 15)
+            {
                 xputc(' ', fp);
+            }
         }
         xprintf(fp,
                 " %2ld %c %4.4s %4.4s  %3lo  %7.7s %8.7s %7.7s\n",
@@ -2006,7 +2206,9 @@ doprintpeers(
         return (1);
     }
     else
+    {
         return (1);
+    }
 }
 
 
@@ -2038,12 +2240,16 @@ dogetpeers(
 #endif
 
     if (res != 0)
+    {
         return 0;
+    }
 
     if (dsize == 0)
     {
         if (numhosts > 1)
+        {
             xprintf(stderr, "server=%s ", currenthost);
+        }
         xprintf(stderr,
                 "***No information returned for association %u\n",
                 associd);
@@ -2071,11 +2277,13 @@ dopeers(
     size_t sl;
 
     if (!dogetassoc(fp))
+    {
         return;
+    }
 
     if (numhosts > 1)
     {
-        for (u = 0; u < numhosts; u++)
+        for (u = 0; u < numhosts; ++u)
         {
             if (getnetnum(chosts[u].name, &netnum, fullname, af))
             {
@@ -2090,24 +2298,32 @@ dopeers(
     xprintf(fp,
             "     remote           refid      st t when poll reach   delay   offset  jitter\n");
     if (numhosts > 1)
-        for (u = 0; u <= maxhostlen; u++)
+    {
+        for (u = 0; u <= maxhostlen; ++u)
+        {
             xprintf(fp, "=");
+        }
+    }
     xprintf(fp,
             "==============================================================================\n");
 
-    for (u = 0; u < numassoc; u++)
+    for (u = 0; u < numassoc; ++u)
     {
         if (!showall &&
             !(CTL_PEER_STATVAL(assoc_cache[u].status) & (CTL_PST_CONFIG | CTL_PST_REACH)))
         {
             if (debug)
+            {
                 xprintf(stderr, "eliding [%d]\n",
                         (int)assoc_cache[u].assid);
+            }
             continue;
         }
         if (!dogetpeers(peervarlist, (int)assoc_cache[u].assid,
                         fp, af))
+        {
             return;
+        }
     }
     return;
 }
@@ -2129,11 +2345,13 @@ doapeers(
     size_t sl;
 
     if (!dogetassoc(fp))
+    {
         return;
+    }
 
     if (numhosts > 1)
     {
-        for (u = 0; u < numhosts; u++)
+        for (u = 0; u < numhosts; ++u)
         {
             if (getnetnum(chosts[u].name, &netnum, fullname, af))
             {
@@ -2148,24 +2366,32 @@ doapeers(
     xprintf(fp,
             "     remote       refid   assid  st t when poll reach   delay   offset  jitter\n");
     if (numhosts > 1)
-        for (u = 0; u <= maxhostlen; u++)
+    {
+        for (u = 0; u <= maxhostlen; ++u)
+        {
             xprintf(fp, "=");
+        }
+    }
     xprintf(fp,
             "==============================================================================\n");
 
-    for (u = 0; u < numassoc; u++)
+    for (u = 0; u < numassoc; ++u)
     {
         if (!showall &&
             !(CTL_PEER_STATVAL(assoc_cache[u].status) & (CTL_PST_CONFIG | CTL_PST_REACH)))
         {
             if (debug)
+            {
                 xprintf(stderr, "eliding [%d]\n",
                         (int)assoc_cache[u].assid);
+            }
             continue;
         }
         if (!dogetpeers(apeervarlist, (int)assoc_cache[u].assid,
                         fp, af))
+        {
             return;
+        }
     }
     return;
 }
@@ -2191,9 +2417,13 @@ peers(
         if (pcmd->nargs == 1)
         {
             if (pcmd->argval->ival == 6)
+            {
                 af = AF_INET6;
+            }
             else
+            {
                 af = AF_INET;
+            }
         }
         dopeers(0, fp, af);
     }
@@ -2214,9 +2444,13 @@ apeers(
     if (pcmd->nargs == 1)
     {
         if (pcmd->argval->ival == 6)
+        {
             af = AF_INET6;
+        }
         else
+        {
             af = AF_INET;
+        }
     }
     doapeers(0, fp, af);
 }
@@ -2236,9 +2470,13 @@ lpeers(
     if (pcmd->nargs == 1)
     {
         if (pcmd->argval->ival == 6)
+        {
             af = AF_INET6;
+        }
         else
+        {
             af = AF_INET;
+        }
     }
     dopeers(1, fp, af);
 }
@@ -2258,7 +2496,9 @@ doopeers(
     sockaddr_u netnum;
 
     if (!dogetassoc(fp))
+    {
         return;
+    }
 
     if (numhosts > 1)
     {
@@ -2275,19 +2515,27 @@ doopeers(
     xprintf(fp,
             "     remote           local      st t when poll reach   delay   offset    disp\n");
     if (numhosts > 1)
+    {
         for (i = 0; i <= maxhostlen; ++i)
+        {
             xprintf(fp, "=");
+        }
+    }
     xprintf(fp,
             "==============================================================================\n");
 
-    for (i = 0; i < numassoc; i++)
+    for (i = 0; i < numassoc; ++i)
     {
         if (!showall &&
             !(CTL_PEER_STATVAL(assoc_cache[i].status) &
               (CTL_PST_CONFIG | CTL_PST_REACH)))
+        {
             continue;
+        }
         if (!dogetpeers(opeervarlist, assoc_cache[i].assid, fp, af))
+        {
             return;
+        }
     }
     return;
 }
@@ -2307,9 +2555,13 @@ opeers(
     if (pcmd->nargs == 1)
     {
         if (pcmd->argval->ival == 6)
+        {
             af = AF_INET6;
+        }
         else
+        {
             af = AF_INET;
+        }
     }
     doopeers(0, fp, af);
 }
@@ -2329,9 +2581,13 @@ lopeers(
     if (pcmd->nargs == 1)
     {
         if (pcmd->argval->ival == 6)
+        {
             af = AF_INET6;
+        }
         else
+        {
             af = AF_INET;
+        }
     }
     doopeers(1, fp, af);
 }
@@ -2357,35 +2613,47 @@ config(
     cfgcmd = pcmd->argval[0U].string;
 
     if (debug > 2)
+    {
         xprintf(stderr,
                 "In Config\n"
                 "Keyword = %s\n"
                 "Command = %s\n",
                 pcmd->keyword, cfgcmd);
+    }
 
     res = doquery(CTL_OP_CONFIGURE, 0, 1,
                   strlen(cfgcmd), cfgcmd,
                   &rstatus, &rsize, &rdata);
 
     if (res != 0)
+    {
         return;
+    }
 
-    if (rsize > 0 && '\n' == rdata[rsize - 1])
+    if ((rsize > 0) && ('\n' == rdata[rsize - 1]))
+    {
         rsize--;
+    }
 
     resp = emalloc(rsize + 1);
     memcpy(resp, rdata, rsize);
     resp[rsize] = '\0';
 
     col = -1;
-    if (1 == sscanf(resp, "column %d syntax error", &col) && col >= 0 && (size_t)col <= strlen(cfgcmd) + 1)
+    if ((1 == sscanf(resp, "column %d syntax error", &col)) && (col >= 0) && ((size_t)col <= strlen(cfgcmd) + 1))
     {
         if (interactive)
-            xputs("             *", stdout); /* "ntpq> :config " */
+        {
+            xputs("             *", stdout);
+        } /* "ntpq> :config " */
         else
+        {
             printf("%s\n", cfgcmd);
-        for (i = 0; i < col; i++)
+        }
+        for (i = 0; i < col; ++i)
+        {
             xputc('_', stdout);
+        }
         xputs("^\n", stdout);
     }
     printf("%s\n", resp);
@@ -2427,12 +2695,14 @@ config_from_file(
     int retry_limit;
 
     if (debug > 2)
+    {
         xprintf(stderr,
                 "In Config\n"
                 "Keyword = %s\n"
                 "Filename = %s\n",
                 pcmd->keyword,
                 pcmd->argval[0U].string);
+    }
 
     config_fd = fopen(pcmd->argval[0U].string, "r");
     if (NULL == config_fd)
@@ -2457,21 +2727,26 @@ config_from_file(
          * those. And don't transmit empty lines, as this would
          * just be waste.
          */
-        while (config_len != 0 &&
-               (u_char)config_cmd[config_len - 1] <= ' ')
+        while ((config_len != 0) &&
+               ((u_char)config_cmd[config_len - 1] <= ' '))
+        {
             --config_len;
+        }
         config_cmd[config_len] = '\0';
 
         ++i;
         if (0 == config_len)
+        {
             continue;
+        }
 
         retry_limit = 2;
         do
+        {
             res = doquery(CTL_OP_CONFIGURE, 0, 1,
                           config_len, config_cmd,
                           &rstatus, &rsize, &rdata);
-        while (res != 0 && retry_limit--);
+        } while ((res != 0) && retry_limit--);
         if (res != 0)
         {
             printf("Line No: %d query failed: %.*s\n"
@@ -2483,8 +2758,10 @@ config_from_file(
 
         /* Right-strip the result code string, then output the
          * last line executed, with result code. */
-        while (rsize != 0 && (u_char)rdata[rsize - 1] <= ' ')
+        while ((rsize != 0) && ((u_char)rdata[rsize - 1] <= ' '))
+        {
             --rsize;
+        }
         printf("Line No: %d %.*s: %.*s\n", i,
                (int)rsize, rdata,
                (int)config_len, config_cmd);
@@ -2528,11 +2805,13 @@ fetch_nonce(
     }
     chars = rsize - (sizeof(nonce_eq) - 1);
     if (chars >= cb_nonce)
+    {
         return FALSE;
+    }
     memcpy(nonce, rdata + sizeof(nonce_eq) - 1, chars);
     nonce[chars] = '\0';
-    while (chars > 0 &&
-           ('\r' == nonce[chars - 1] || '\n' == nonce[chars - 1]))
+    while ((chars > 0) &&
+           (('\r' == nonce[chars - 1]) || ('\n' == nonce[chars - 1])))
     {
         chars--;
         nonce[chars] = '\0';
@@ -2559,8 +2838,12 @@ add_mru(
     hash = NTP_HASH_ADDR(&add->addr);
     /* see if we have it among previously received entries */
     for (mon = hash_table[hash]; mon != NULL; mon = mon->hlink)
+    {
         if (SOCK_EQ(&mon->addr, &add->addr))
+        {
             break;
+        }
+    }
     if (mon != NULL)
     {
         if (!L_ISGEQ(&add->first, &mon->first))
@@ -2623,7 +2906,7 @@ collect_mru_list(
     const char* parms,
     l_fp* pnow)
 {
-    const u_int sleep_msecs = 5;
+    const u_int sleep_msecs = 5U;
     static int ntpd_row_limit = MRU_ROW_LIMIT;
     int c_mru_l_rc; /* this function's return code */
     u_char got;     /* MRU_GOT_* bits */
@@ -2633,8 +2916,8 @@ collect_mru_list(
     mru* head;
     mru* recent;
     int list_complete;
-    char nonce[128];
-    char buf[128];
+    char nonce[128U];
+    char buf[128U];
     char req_buf[CTL_MAX_DATA_LEN];
     char* req;
     char* req_end;
@@ -2664,7 +2947,9 @@ collect_mru_list(
     mru* unlinked;
 
     if (!fetch_nonce(nonce, sizeof(nonce)))
+    {
         return FALSE;
+    }
 
     nonce_uses = 0;
     restarted_count = 0;
@@ -2695,30 +2980,36 @@ collect_mru_list(
     while (TRUE)
     {
         if (debug)
+        {
             xprintf(stderr, "READ_MRU parms: %s\n", req_buf);
+        }
 
         qres = doqueryex(CTL_OP_READ_MRU, 0, 0,
                          strlen(req_buf), req_buf,
                          &rstatus, &rsize, &rdata, TRUE);
 
-        if (CERR_UNKNOWNVAR == qres && ri > 0)
+        if ((CERR_UNKNOWNVAR == qres) && (ri > 0))
         {
             /*
              * None of the supplied prior entries match, so
              * toss them from our list and try again.
              */
             if (debug)
+            {
                 xprintf(stderr,
                         "no overlap between %d prior entries and server MRU list\n",
                         ri);
+            }
             while (ri--)
             {
                 recent = HEAD_DLIST(mru_list, mlink);
                 INSIST(recent != NULL);
                 if (debug)
+                {
                     xprintf(stderr,
                             "tossing prior entry %s to resync\n",
                             sptoa(&recent->addr));
+                }
                 UNLINK_DLIST(recent, mlink);
                 hash = NTP_HASH_ADDR(&recent->addr);
                 UNLINK_SLIST(unlinked, hash_table[hash],
@@ -2740,9 +3031,11 @@ collect_mru_list(
                     goto cleanup_return;
                 }
                 if (debug)
+                {
                     xprintf(stderr,
                             "--->   Restarting from the beginning, retry #%u\n",
                             restarted_count);
+                }
             }
         }
         else if (CERR_UNKNOWNVAR == qres)
@@ -2757,8 +3050,10 @@ collect_mru_list(
             {
                 cap_frags = FALSE;
                 if (debug)
+                {
                     xprintf(stderr,
                             "Reverted to row limit from fragments limit.\n");
+                }
             }
             else
             {
@@ -2766,13 +3061,15 @@ collect_mru_list(
                 ntpd_row_limit--;
                 limit = min(limit, ntpd_row_limit);
                 if (debug)
+                {
                     xprintf(stderr,
                             "Row limit reduced to %d following CERR_BADVALUE.\n",
                             limit);
+                }
             }
         }
-        else if (ERR_INCOMPLETE == qres ||
-                 ERR_TIMEOUT == qres)
+        else if ((ERR_INCOMPLETE == qres) ||
+                 (ERR_TIMEOUT == qres))
         {
             /*
              * Reduce the number of rows/frags requested by
@@ -2782,17 +3079,21 @@ collect_mru_list(
             {
                 frags = max(2, frags / 2);
                 if (debug)
+                {
                     xprintf(stderr,
                             "Frag limit reduced to %d following incomplete response.\n",
                             frags);
+                }
             }
             else
             {
                 limit = max(2, limit / 2);
                 if (debug)
+                {
                     xprintf(stderr,
                             "Row limit reduced to %d following incomplete response.\n",
                             limit);
+                }
             }
         }
         else if (qres)
@@ -2810,7 +3111,9 @@ collect_mru_list(
          * coalesced.
          */
         if (!qres && rawmode)
+        {
             printvars(rsize, rdata, rstatus, TYPE_SYS, 1, stdout);
+        }
         ci = 0;
         have_addr_older = FALSE;
         have_last_older = FALSE;
@@ -2818,8 +3121,10 @@ collect_mru_list(
         {
             INSIST(tag && val);
             if (debug > 1)
+            {
                 xprintf(stderr, "nextvar gave: %s = %s\n",
                         tag, val);
+            }
             switch (tag[0U])
             {
 
@@ -2844,10 +3149,14 @@ collect_mru_list(
                     for (recent = hash_table[hash];
                          recent != NULL;
                          recent = recent->hlink)
+                    {
                         if (ADDR_PORT_EQ(
                                 &addr_older,
                                 &recent->addr))
+                        {
                             break;
+                        }
+                    }
                     if (NULL == recent)
                     {
                         xprintf(stderr,
@@ -2868,17 +3177,21 @@ collect_mru_list(
                     }
                     have_addr_older = TRUE;
                 }
-                else if (1 != sscanf(tag, "addr.%d", &si) || si != ci)
+                else if ((1 != sscanf(tag, "addr.%d", &si)) || (si != ci))
+                {
                     goto nomatch;
+                }
                 else if (decodenetnum(val, &mon->addr))
+                {
                     MGOT(MRU_GOT_ADDR);
+                }
                 break;
 
             case 'l':
                 if (!strcmp(tag, "last.older"))
                 {
-                    if ('0' != val[0U] ||
-                        'x' != val[1U] ||
+                    if (('0' != val[0U]) ||
+                        ('x' != val[1U]) ||
                         !hextolfp(val + 2, &last_older))
                     {
                         xprintf(stderr,
@@ -2907,8 +3220,8 @@ collect_mru_list(
                     head = HEAD_DLIST(mru_list, mlink);
                     if (NULL != head)
                     {
-                        if ('0' != val[0U] ||
-                            'x' != val[1U] ||
+                        if (('0' != val[0U]) ||
+                            ('x' != val[1U]) ||
                             !hextolfp(val + 2, &newest) ||
                             !L_ISEQU(&newest,
                                      &head->last))
@@ -2923,9 +3236,9 @@ collect_mru_list(
                     }
                     list_complete = TRUE;
                 }
-                else if (1 != sscanf(tag, "last.%d", &si) ||
-                         si != ci || '0' != val[0U] ||
-                         'x' != val[1U] ||
+                else if ((1 != sscanf(tag, "last.%d", &si)) ||
+                         (si != ci) || ('0' != val[0U]) ||
+                         ('x' != val[1U]) ||
                          !hextolfp(val + 2, &mon->last))
                 {
                     goto nomatch;
@@ -2944,11 +3257,13 @@ collect_mru_list(
                 break;
 
             case 'f':
-                if (1 != sscanf(tag, "first.%d", &si) ||
-                    si != ci || '0' != val[0U] ||
-                    'x' != val[1U] ||
+                if ((1 != sscanf(tag, "first.%d", &si)) ||
+                    (si != ci) || ('0' != val[0U]) ||
+                    ('x' != val[1U]) ||
                     !hextolfp(val + 2, &mon->first))
+                {
                     goto nomatch;
+                }
                 MGOT(MRU_GOT_FIRST);
                 break;
 
@@ -2960,36 +3275,44 @@ collect_mru_list(
                     break; /* case */
                 }
                 else if (strcmp(tag, "now") ||
-                         '0' != val[0U] ||
-                         'x' != val[1U] ||
+                         ('0' != val[0U]) ||
+                         ('x' != val[1U]) ||
                          !hextolfp(val + 2, pnow))
+                {
                     goto nomatch;
+                }
                 have_now = TRUE;
                 break;
 
             case 'c':
-                if (1 != sscanf(tag, "ct.%d", &si) ||
-                    si != ci ||
-                    1 != sscanf(val, "%d", &mon->count) || mon->count < 1)
+                if ((1 != sscanf(tag, "ct.%d", &si)) ||
+                    (si != ci) ||
+                    (1 != sscanf(val, "%d", &mon->count)) || (mon->count < 1))
+                {
                     goto nomatch;
+                }
                 MGOT(MRU_GOT_COUNT);
                 break;
 
             case 'm':
-                if (1 != sscanf(tag, "mv.%d", &si) ||
-                    si != ci ||
-                    1 != sscanf(val, "%d", &mv))
+                if ((1 != sscanf(tag, "mv.%d", &si)) ||
+                    (si != ci) ||
+                    (1 != sscanf(val, "%d", &mv)))
+                {
                     goto nomatch;
+                }
                 mon->mode = PKT_MODE(mv);
                 mon->ver = PKT_VERSION(mv);
                 MGOT(MRU_GOT_MV);
                 break;
 
             case 'r':
-                if (1 != sscanf(tag, "rs.%d", &si) ||
-                    si != ci ||
-                    1 != sscanf(val, "0x%hx", &mon->rs))
+                if ((1 != sscanf(tag, "rs.%d", &si)) ||
+                    (si != ci) ||
+                    (1 != sscanf(val, "0x%hx", &mon->rs)))
+                {
                     goto nomatch;
+                }
                 MGOT(MRU_GOT_RS);
                 break;
 
@@ -3000,10 +3323,12 @@ collect_mru_list(
             }
         }
         if (have_now)
+        {
             list_complete = TRUE;
+        }
         if (list_complete)
         {
-            INSIST(0 == ri || have_addr_older);
+            INSIST((0 == ri) || have_addr_older);
         }
         if (mrulist_interrupted)
         {
@@ -3083,7 +3408,9 @@ collect_mru_list(
         if (nonce_uses >= 4)
         {
             if (!fetch_nonce(nonce, sizeof(nonce)))
+            {
                 goto cleanup_return;
+            }
             nonce_uses = 0;
         }
 
@@ -3099,7 +3426,9 @@ collect_mru_list(
                      recent->last.l_ui, recent->last.l_uf);
             chars = strlen(buf);
             if ((size_t)REQ_ROOM <= chars)
+            {
                 break;
+            }
             memcpy(req, buf, chars + 1);
             req += chars;
         }
@@ -3114,7 +3443,9 @@ cleanup_return:
 
 retain_hash_table:
     if (mon != NULL)
+    {
         free(mon);
+    }
 
     return c_mru_l_rc;
 }
@@ -3147,9 +3478,11 @@ qcmp_mru_addr(
     af2 = AF(&pm2->addr);
 
     if (af1 != af2)
+    {
         return (AF_INET == af1)
                    ? -1
                    : 1;
+    }
 
     cmplen = SIZEOF_INADDR(af1);
     addr_off = (AF_INET == af1)
@@ -3234,17 +3567,27 @@ qcmp_mru_avgint(
     avg2 /= pm2->count;
 
     if (avg1 < avg2)
+    {
         return -1;
+    }
     else if (avg1 > avg2)
+    {
         return 1;
+    }
 
     /* secondary sort on lstint - rarely tested */
     if (L_ISEQU(&pm1->last, &pm2->last))
+    {
         return 0;
+    }
     else if (L_ISGEQ(&pm1->last, &pm2->last))
+    {
         return -1;
+    }
     else
+    {
         return 1;
+    }
 }
 
 
@@ -3291,8 +3634,8 @@ mrulist(
     const char sort_eq[] = "sort=";
     mru_sort_order order;
     size_t n;
-    char parms_buf[128];
-    char buf[24];
+    char parms_buf[128U];
+    char buf[24U];
     char* parms;
     const char* arg;
     size_t cb;
@@ -3316,14 +3659,14 @@ mrulist(
     order = MRUSORT_DEF;
     parms_buf[0U] = '\0';
     parms = parms_buf;
-    for (i = 0; i < pcmd->nargs; i++)
+    for (i = 0; i < pcmd->nargs; ++i)
     {
         arg = pcmd->argval[i].string;
         if (arg != NULL)
         {
             cb = strlen(arg) + 1;
-            if ((!strncmp(resall_eq, arg, sizeof(resall_eq) - 1) || !strncmp(resany_eq, arg, sizeof(resany_eq) - 1) || !strncmp(mincount_eq, arg, sizeof(mincount_eq) - 1) || !strncmp(laddr_eq, arg, sizeof(laddr_eq) - 1) || !strncmp(maxlstint_eq, arg, sizeof(laddr_eq) - 1)) && parms + cb + 2 <=
-                                                                                                                                                                                                                                                                                         parms_buf + sizeof(parms_buf))
+            if ((!strncmp(resall_eq, arg, sizeof(resall_eq) - 1) || !strncmp(resany_eq, arg, sizeof(resany_eq) - 1) || !strncmp(mincount_eq, arg, sizeof(mincount_eq) - 1) || !strncmp(laddr_eq, arg, sizeof(laddr_eq) - 1) || !strncmp(maxlstint_eq, arg, sizeof(laddr_eq) - 1)) && (parms + cb + 2 <=
+                                                                                                                                                                                                                                                                                      parms_buf + sizeof(parms_buf)))
             {
                 /* these are passed intact to ntpd */
                 memcpy(parms, ", ", 2);
@@ -3337,12 +3680,18 @@ mrulist(
                 arg += sizeof(sort_eq) - 1;
                 for (n = 0;
                      n < COUNTOF(mru_sort_keywords);
-                     n++)
+                     ++n)
+                {
                     if (!strcmp(mru_sort_keywords[n],
                                 arg))
+                    {
                         break;
+                    }
+                }
                 if (n < COUNTOF(mru_sort_keywords))
+                {
                     order = n;
+                }
             }
             else if (!strcmp("limited", arg) ||
                      !strcmp("kod", arg))
@@ -3362,19 +3711,25 @@ mrulist(
                 }
             }
             else
+            {
                 xprintf(stderr,
                         "ignoring unrecognized mrulist parameter: %s\n",
                         arg);
+            }
         }
     }
     parms = parms_buf;
 
     if (!collect_mru_list(parms, &now))
+    {
         return;
+    }
 
     /* display the results */
     if (rawmode)
+    {
         goto cleanup_return;
+    }
 
     /* construct an array of entry pointers in default order */
     sorted = eallocarray(mru_count, sizeof(*sorted));
@@ -3407,14 +3762,16 @@ mrulist(
 
     /* re-sort sorted[] if not default or reverse default */
     if (MRUSORT_R_DEF < order)
+    {
         qsort(sorted, mru_count, sizeof(sorted[0U]),
               mru_qcmp_table[order]);
+    }
 
     mrulist_interrupted = FALSE;
     printf("lstint avgint rstr r m v  count rport remote address\n"
            "==============================================================================\n");
     /* '=' x 78 */
-    for (ppentry = sorted; ppentry < sorted + mru_count; ppentry++)
+    for (ppentry = sorted; ppentry < sorted + mru_count; ++ppentry)
     {
         recent = *ppentry;
         interval = now;
@@ -3437,7 +3794,9 @@ mrulist(
                 recent->count, SRCPORT(&recent->addr),
                 nntohost(&recent->addr));
         if (showhostnames)
+        {
             fflush(fp);
+        }
         if (mrulist_interrupted)
         {
             xputs("\n --interrupted--\n", fp);
@@ -3489,12 +3848,16 @@ validate_ifnum(
     ifstats_row* prow)
 {
     if (prow->ifnum == ifnum)
+    {
         return;
+    }
     if (prow->ifnum + 1 <= ifnum)
     {
         if (*pfields < IFSTATS_FIELDS)
+        {
             xprintf(fp, "Warning: incomplete row with %d (of %d) fields\n",
                     *pfields, IFSTATS_FIELDS);
+        }
         *pfields = 0;
         prow->ifnum = ifnum;
         return;
@@ -3522,7 +3885,9 @@ another_ifstats_field(
     (*pfields)++;
     /* we understand 12 tags */
     if (IFSTATS_FIELDS > *pfields)
+    {
         return;
+    }
     /*
     "    interface name                                        send\n"
     " #  address/broadcast     drop flag ttl mc received sent failed peers   uptime\n"
@@ -3539,7 +3904,9 @@ another_ifstats_field(
             prow->received, prow->sent, prow->send_errors,
             prow->peer_count, prow->uptime, sptoa(&prow->addr));
     if (!SOCK_UNSPEC(&prow->bcast))
+    {
         xprintf(fp, "    %s\n", sptoa(&prow->bcast));
+    }
     ifnum = prow->ifnum;
     ZERO(*prow);
     prow->ifnum = ifnum;
@@ -3580,8 +3947,10 @@ ifstats(
 
     qres = doquery(CTL_OP_READ_ORDLIST_A, 0, TRUE, 0, NULL, &rstatus,
                    &dsize, &datap);
-    if (qres) /* message already displayed */
+    if (qres)
+    { /* message already displayed */
         return;
+    }
 
     xprintf(fp,
             "    interface name                                        send\n"
@@ -3596,40 +3965,52 @@ ifstats(
     {
         INSIST(tag && val);
         if (debug > 1)
+        {
             xprintf(stderr, "nextvar gave: %s = %s\n", tag, val);
+        }
         comprende = FALSE;
         switch (tag[0U])
         {
 
         case 'a':
-            if (1 == sscanf(tag, addr_fmt, &ui) &&
+            if ((1 == sscanf(tag, addr_fmt, &ui)) &&
                 decodenetnum(val, &row.addr))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'b':
-            if (1 == sscanf(tag, bcast_fmt, &ui) &&
-                ('\0' == *val ||
+            if ((1 == sscanf(tag, bcast_fmt, &ui)) &&
+                (('\0' == *val) ||
                  decodenetnum(val, &row.bcast)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'e':
-            if (1 == sscanf(tag, en_fmt, &ui) &&
-                1 == sscanf(val, "%d", &row.enabled))
+            if ((1 == sscanf(tag, en_fmt, &ui)) &&
+                (1 == sscanf(val, "%d", &row.enabled)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'f':
-            if (1 == sscanf(tag, flags_fmt, &ui) &&
-                1 == sscanf(val, "0x%x", &row.flags))
+            if ((1 == sscanf(tag, flags_fmt, &ui)) &&
+                (1 == sscanf(val, "0x%x", &row.flags)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'm':
-            if (1 == sscanf(tag, mc_fmt, &ui) &&
-                1 == sscanf(val, "%u", &row.mcast_count))
+            if ((1 == sscanf(tag, mc_fmt, &ui)) &&
+                (1 == sscanf(val, "%u", &row.mcast_count)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'n':
@@ -3637,8 +4018,8 @@ ifstats(
             {
                 /* strip quotes */
                 len = strlen(val);
-                if (len >= 2 &&
-                    len - 2 < sizeof(row.name))
+                if ((len >= 2) &&
+                    (len - 2U < sizeof(row.name)))
                 {
                     len -= 2;
                     memcpy(row.name, val + 1, len);
@@ -3649,33 +4030,45 @@ ifstats(
             break;
 
         case 'p':
-            if (1 == sscanf(tag, pc_fmt, &ui) &&
-                1 == sscanf(val, "%u", &row.peer_count))
+            if ((1 == sscanf(tag, pc_fmt, &ui)) &&
+                (1 == sscanf(val, "%u", &row.peer_count)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'r':
-            if (1 == sscanf(tag, rx_fmt, &ui) &&
-                1 == sscanf(val, "%u", &row.received))
+            if ((1 == sscanf(tag, rx_fmt, &ui)) &&
+                (1 == sscanf(val, "%u", &row.received)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 't':
-            if (1 == sscanf(tag, tl_fmt, &ui) &&
-                1 == sscanf(val, "%u", &row.ttl))
+            if ((1 == sscanf(tag, tl_fmt, &ui)) &&
+                (1 == sscanf(val, "%u", &row.ttl)))
+            {
                 comprende = TRUE;
-            else if (1 == sscanf(tag, tx_fmt, &ui) &&
-                     1 == sscanf(val, "%u", &row.sent))
+            }
+            else if ((1 == sscanf(tag, tx_fmt, &ui)) &&
+                     (1 == sscanf(val, "%u", &row.sent)))
+            {
                 comprende = TRUE;
-            else if (1 == sscanf(tag, txerr_fmt, &ui) &&
-                     1 == sscanf(val, "%u", &row.send_errors))
+            }
+            else if ((1 == sscanf(tag, txerr_fmt, &ui)) &&
+                     (1 == sscanf(val, "%u", &row.send_errors)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'u':
-            if (1 == sscanf(tag, up_fmt, &ui) &&
-                1 == sscanf(val, "%u", &row.uptime))
+            if ((1 == sscanf(tag, up_fmt, &ui)) &&
+                (1 == sscanf(val, "%u", &row.uptime)))
+            {
                 comprende = TRUE;
+            }
             break;
         }
 
@@ -3688,8 +4081,10 @@ ifstats(
         }
     }
     if (fields != IFSTATS_FIELDS)
+    {
         xprintf(fp, "Warning: incomplete row with %d (of %d) fields\n",
                 fields, IFSTATS_FIELDS);
+    }
 
     fflush(fp);
 }
@@ -3708,12 +4103,16 @@ validate_reslist_idx(
     reslist_row* prow)
 {
     if (prow->idx == idx)
+    {
         return;
+    }
     if (prow->idx + 1 == idx)
     {
         if (*pfields < RESLIST_FIELDS)
+        {
             xprintf(fp, "Warning: incomplete row with %d (of %d) fields",
                     *pfields, RESLIST_FIELDS);
+        }
         *pfields = 0;
         prow->idx = idx;
         return;
@@ -3736,22 +4135,28 @@ another_reslist_field(
     reslist_row* prow,
     FILE* fp)
 {
-    char addrmaskstr[128];
+    char addrmaskstr[128U];
     int prefix; /* subnet mask as prefix bits count */
     u_int idx;
 
     (*pfields)++;
     /* we understand 4 tags */
     if (RESLIST_FIELDS > *pfields)
+    {
         return;
+    }
 
     prefix = sockaddr_masktoprefixlen(&prow->mask);
     if (prefix >= 0)
+    {
         snprintf(addrmaskstr, sizeof(addrmaskstr), "%s/%d",
                  stoa(&prow->addr), prefix);
+    }
     else
+    {
         snprintf(addrmaskstr, sizeof(addrmaskstr), "%s %s",
                  stoa(&prow->addr), stoa(&prow->mask));
+    }
 
     /*
     "   hits    addr/prefix or addr mask\n"
@@ -3796,8 +4201,10 @@ reslist(
 
     qres = doquery(CTL_OP_READ_ORDLIST_A, 0, TRUE, qdata_chars,
                    qdata, &rstatus, &dsize, &datap);
-    if (qres) /* message already displayed */
+    if (qres)
+    { /* message already displayed */
         return;
+    }
 
     xprintf(fp,
             "   hits    addr/prefix or addr mask\n"
@@ -3812,15 +4219,19 @@ reslist(
     {
         INSIST(tag && val);
         if (debug > 1)
+        {
             xprintf(stderr, "nextvar gave: %s = %s\n", tag, val);
+        }
         comprende = FALSE;
         switch (tag[0U])
         {
 
         case 'a':
-            if (1 == sscanf(tag, addr_fmtu, &ui) &&
+            if ((1 == sscanf(tag, addr_fmtu, &ui)) &&
                 decodenetnum(val, &row.addr))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'f':
@@ -3846,15 +4257,19 @@ reslist(
             break;
 
         case 'h':
-            if (1 == sscanf(tag, hits_fmt, &ui) &&
-                1 == sscanf(val, "%lu", &row.hits))
+            if ((1 == sscanf(tag, hits_fmt, &ui)) &&
+                (1 == sscanf(val, "%lu", &row.hits)))
+            {
                 comprende = TRUE;
+            }
             break;
 
         case 'm':
-            if (1 == sscanf(tag, mask_fmtu, &ui) &&
+            if ((1 == sscanf(tag, mask_fmtu, &ui)) &&
                 decodenetnum(val, &row.mask))
+            {
                 comprende = TRUE;
+            }
             break;
         }
 
@@ -3867,8 +4282,10 @@ reslist(
         }
     }
     if (fields != RESLIST_FIELDS)
+    {
         xprintf(fp, "Warning: incomplete row with %d (of %d) fields",
                 fields, RESLIST_FIELDS);
+    }
 
     fflush(fp);
 }
@@ -3884,11 +4301,11 @@ collect_display_vdc(
     int decodestatus,
     FILE* fp)
 {
-    static const char* const suf[2] = { "adr", "port" };
-    static const char* const leapbits[4] = { "00", "01",
-                                             "10", "11" };
+    static const char* const suf[2U] = { "adr", "port" };
+    static const char* const leapbits[4U] = { "00", "01",
+                                              "10", "11" };
     struct varlist vl[MAXLIST];
-    char tagbuf[32];
+    char tagbuf[32U];
     vdc* pvdc;
     u_short rstatus;
     size_t rsize;
@@ -3904,7 +4321,7 @@ collect_display_vdc(
     sockaddr_u sau;
 
     ZERO(vl);
-    for (pvdc = table; pvdc->tag != NULL; pvdc++)
+    for (pvdc = table; pvdc->tag != NULL; ++pvdc)
     {
         ZERO(pvdc->v);
         if (NTP_ADD != pvdc->type)
@@ -3913,7 +4330,7 @@ collect_display_vdc(
         }
         else
         {
-            for (n = 0; n < COUNTOF(suf); n++)
+            for (n = 0; n < COUNTOF(suf); ++n)
             {
                 snprintf(tagbuf, sizeof(tagbuf), "%s%s",
                          pvdc->tag, suf[n]);
@@ -3925,7 +4342,9 @@ collect_display_vdc(
                        &rdata);
     doclearvlist(vl);
     if (qres)
-        return; /* error msg already displayed */
+    {
+        return;
+    } /* error msg already displayed */
 
     /*
      * iterate over the response variables filling vdc_table with
@@ -3935,30 +4354,40 @@ collect_display_vdc(
     {
         INSIST(tag && val);
         n = 0;
-        for (pvdc = table; pvdc->tag != NULL; pvdc++)
+        for (pvdc = table; pvdc->tag != NULL; ++pvdc)
         {
             len = strlen(pvdc->tag);
             if (strncmp(tag, pvdc->tag, len))
+            {
                 continue;
+            }
             if (NTP_ADD != pvdc->type)
             {
                 if ('\0' != tag[len])
+                {
                     continue;
+                }
                 break;
             }
             match = FALSE;
-            for (n = 0; n < COUNTOF(suf); n++)
+            for (n = 0; n < COUNTOF(suf); ++n)
             {
                 if (strcmp(tag + len, suf[n]))
+                {
                     continue;
+                }
                 match = TRUE;
                 break;
             }
             if (match)
+            {
                 break;
+            }
         }
         if (NULL == pvdc->tag)
+        {
             continue;
+        }
         switch (pvdc->type)
         {
 
@@ -3967,7 +4396,7 @@ collect_display_vdc(
             if ('"' == val[0U])
             {
                 len = strlen(val);
-                if (len > 0 && '"' == val[len - 1])
+                if ((len > 0) && ('"' == val[len - 1]))
                 {
                     val[len - 1] = '\0';
                     val++;
@@ -3986,23 +4415,29 @@ collect_display_vdc(
 
         case NTP_ADP:
             if (!decodenetnum(val, &pvdc->v.sau))
+            {
                 xprintf(stderr, "malformed %s=%s\n",
                         pvdc->tag, val);
+            }
             break;
 
         case NTP_ADD:
             if (0 == n)
             { /* adr */
                 if (!decodenetnum(val, &pvdc->v.sau))
+                {
                     xprintf(stderr,
                             "malformed %s=%s\n",
                             pvdc->tag, val);
+                }
             }
             else
             { /* port */
                 if (atouint(val, &ul))
+                {
                     SET_PORT(&pvdc->v.sau,
                              (u_short)ul);
+                }
             }
             break;
         }
@@ -4018,7 +4453,7 @@ collect_display_vdc(
                 statustoa(vtype, rstatus));
     }
 
-    for (pvdc = table; pvdc->tag != NULL; pvdc++)
+    for (pvdc = table; pvdc->tag != NULL; ++pvdc)
     {
         switch (pvdc->type)
         {
@@ -4307,7 +4742,9 @@ pstats(
 
     associd = checkassocid(pcmd->argval[0U].uval);
     if (0 == associd)
+    {
         return;
+    }
 
     collect_display_vdc(associd, pstats_vdc, TRUE, fp);
 }

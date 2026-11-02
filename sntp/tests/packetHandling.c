@@ -333,8 +333,8 @@ void dump_mac(
     u_char* pmac,
     size_t octets)
 {
-    char dump[2048];
-    size_t dc = 0;
+    char dump[2048U];
+    size_t dc = 0U;
     size_t idx;
 
     dc += snprintf(dump + dc, sizeof(dump) - dc,
@@ -342,7 +342,7 @@ void dump_mac(
                    "\tconst u_char\texpected_mac[] = {",
                    test_func);
 
-    for (idx = 0; idx < octets; idx++)
+    for (idx = 0; idx < octets; ++idx)
     {
         if (0 == idx % 4)
         {

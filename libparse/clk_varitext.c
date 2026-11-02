@@ -61,7 +61,7 @@ extern int printf(const char*, ...);
 /* static const u_char VT_INITIALISED      = 0x01; */
 /* static const u_char VT_SYNCHRONISED     = 0x02; */
 /* static const u_char VT_ALARM_STATE      = 0x04; */
-static const u_char VT_BST = 0x08;
+static const u_char VT_BST = 0x08U;
 /* static const u_char VT_SEASON_CHANGE    = 0x10; */
 /* static const u_char VT_LAST_TELEGRAM_OK = 0x20; */
 
@@ -204,10 +204,14 @@ inp_varitext(
     parseprintf(DD_PARSE, ("inp_varitext(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
     if (!t)
-        return PARSE_INP_SKIP; /* local data not allocated - sigh! */
+    {
+        return PARSE_INP_SKIP;
+    } /* local data not allocated - sigh! */
 
     if (ch == 'T')
+    {
         t->tstamp = *tstamp;
+    }
 
     if ((t->previous_ch == 'T') && (ch == ':'))
     {
@@ -239,9 +243,13 @@ inp_varitext(
 
                 memset(t, 0, sizeof(struct varitext));
                 if ((rtc = parse_addchar(parseio, 0)) == PARSE_INP_SKIP)
+                {
                     return parse_end(parseio);
+                }
                 else
+                {
                     return rtc;
+                }
             }
         }
 

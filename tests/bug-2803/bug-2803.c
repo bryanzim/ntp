@@ -54,12 +54,14 @@ static int do_test(struct timeval timetv, struct timeval tvlast)
     failed = cond_new != cond_old;
 
     if (failed || verbose)
+    {
         printf("timetv %lli|%07li, tvlast  %lli|%07li: tvdiff_old: %lli|%07li -> %i, tvdiff_new: %lli|%07li -> %i, same cond: %s\n",
                (long long)timetv.tv_sec, (u_long)timetv.tv_usec,
                (long long)tvlast.tv_sec, (u_long)tvlast.tv_usec,
                (long long)tvdiff_old.tv_sec, (u_long)tvdiff_old.tv_usec, cond_old,
                (long long)tvdiff_new.tv_sec, (u_long)tvdiff_new.tv_usec, cond_new,
                failed ? "NO <<" : "yes");
+    }
 
     return failed ? -1 : 0;
 }
@@ -83,8 +85,10 @@ static int test_loop(long long start_sec, long start_usec,
                 for (tvlast.tv_usec = start_usec; tvlast.tv_usec <= stop_usec; tvlast.tv_usec += step_usec)
                 {
                     int rc = do_test(timetv, tvlast);
-                    if (rc < 0 && exit_on_err)
+                    if ((rc < 0) && exit_on_err)
+                    {
                         return rc;
+                    }
                 }
 
     return 0;

@@ -66,12 +66,14 @@ ux_socket_connect(const char* name)
 static int
 write_all(int fd, const void* buf, size_t len)
 {
-    size_t total = 0;
+    size_t total = 0U;
     while (len)
     {
         int n = write(fd, buf, len);
         if (n <= 0)
+        {
             return total;
+        }
         buf = n + (const char*)buf;
         len -= n;
         total += n;
@@ -85,12 +87,14 @@ write_all(int fd, const void* buf, size_t len)
 static int
 read_all(int fd, void* buf, size_t len)
 {
-    size_t total = 0;
+    size_t total = 0U;
     while (len)
     {
         int n = read(fd, buf, len);
         if (n <= 0)
+        {
             return total;
+        }
         buf = n + (char*)buf;
         len -= n;
         total += n;
@@ -106,9 +110,13 @@ send_packet(int fd, const char* buf, uint32_t len)
 {
     uint32_t net_len = htonl(len);
     if (write_all(fd, &net_len, sizeof(net_len)) != sizeof(net_len))
+    {
         return -1;
+    }
     if (write_all(fd, buf, len) != len)
+    {
         return -1;
+    }
     return 0;
 }
 
@@ -119,7 +127,9 @@ static int
 recv_packet(int fd, char** buf, uint32_t* len)
 {
     if (read_all(fd, len, sizeof(*len)) != sizeof(*len))
+    {
         return -1;
+    }
     *len = ntohl(*len);
     *buf = emalloc(*len);
     if (read_all(fd, *buf, *len) != *len)
@@ -171,7 +181,7 @@ void send_via_ntp_signd(
         struct pkt pkt;
     } samba_reply;
 
-    char full_socket[256];
+    char full_socket[256U];
 
     char* reply = NULL;
     uint32_t reply_len;
@@ -233,17 +243,19 @@ void send_via_ntp_signd(
         if (reply_len <= sizeof(samba_reply))
         {
             memcpy(&samba_reply, reply, reply_len);
-            if (ntohl(samba_reply.op) == 3 && reply_len > offsetof(struct samba_key_out, pkt))
+            if ((ntohl(samba_reply.op) == 3) && (reply_len > offsetof(struct samba_key_out, pkt)))
             {
                 sendlen = reply_len - offsetof(struct samba_key_out, pkt);
                 xpkt = &samba_reply.pkt;
                 sendpkt(&rbufp->recv_srcadr, rbufp->dstadr, 0, xpkt, sendlen);
 #ifdef DEBUG
                 if (debug)
+                {
                     printf(
                         "transmit ntp_signd packet: at %ld %s->%s mode %d keyid %08x len %d\n",
                         current_time, ntoa(&rbufp->dstadr->sin),
                         ntoa(&rbufp->recv_srcadr), xmode, xkeyid, sendlen);
+                }
 #endif
             }
         }

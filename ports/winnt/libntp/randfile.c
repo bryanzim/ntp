@@ -48,8 +48,8 @@ BOOL init_randfile()
      * a .rnd file is in there.
      */
     homedir = getenv("HOME");
-    if (homedir != NULL &&
-        (strlen(homedir) + 5 /* \.rnd */) < sizeof(tmp))
+    if ((homedir != NULL) &&
+        ((strlen(homedir) + 5 /* \.rnd */) < sizeof(tmp)))
     {
         snprintf(tmp, sizeof(tmp), "%s\\.rnd", homedir);
         rf = fopen(tmp, "rb");
@@ -78,11 +78,15 @@ BOOL init_randfile()
     {
         n = GetEnvironmentVariableA("ProgramData", progdata,
                                     sizeof(progdata));
-        if (n == 0 || n >= sizeof(progdata))
+        if ((n == 0) || (n >= sizeof(progdata)))
+        {
             return (FALSE);
+        }
     }
     if ((strlen(progdata) + sizeof("\\NTP\\.rnd")) > sizeof(tmp))
+    {
         return (FALSE);
+    }
     snprintf(tmp, sizeof(tmp), "%s\\NTP\\.rnd", progdata);
     rf = fopen(tmp, "rb");
     if (rf != NULL)
@@ -99,15 +103,19 @@ BOOL create_random_file(char* filename)
 {
     FILE* rf;
     int nchars;
-    unsigned char buf[1025];
+    unsigned char buf[1025U];
 
     if (!ensure_parent_dir(filename))
+    {
         return (FALSE);
+    }
 
     nchars = getrandom_chars(1024, buf, sizeof(buf));
     rf = fopen(filename, "wb");
     if (rf == NULL)
+    {
         return (FALSE);
+    }
     fwrite(buf, sizeof(unsigned char), nchars, rf);
     fclose(rf);
     return (TRUE);
@@ -125,21 +133,33 @@ ensure_parent_dir(char* filepath)
     size_t len;
 
     if (filepath == NULL)
+    {
         return (FALSE);
+    }
     len = strlen(filepath);
-    if (len == 0 || len >= sizeof(dir))
+    if ((len == 0) || (len >= sizeof(dir)))
+    {
         return (FALSE);
+    }
     memcpy(dir, filepath, len + 1);
     slash = strrchr(dir, '\\');
     if (slash == NULL)
+    {
         slash = strrchr(dir, '/');
+    }
     if (slash == NULL)
+    {
         return (TRUE);
+    }
     *slash = '\0';
     if (dir[0U] == '\0')
+    {
         return (TRUE);
-    if (CreateDirectoryA(dir, NULL) || GetLastError() == ERROR_ALREADY_EXISTS)
+    }
+    if (CreateDirectoryA(dir, NULL) || (GetLastError() == ERROR_ALREADY_EXISTS))
+    {
         return (TRUE);
+    }
     return (FALSE);
 }
 
@@ -149,8 +169,10 @@ getrandom_chars(int desired, unsigned char* buf, int lenbuf)
     HCRYPTPROV hcryptprov;
     BOOL err;
 
-    if (buf == NULL || lenbuf <= 0 || desired > lenbuf)
+    if ((buf == NULL) || (lenbuf <= 0) || (desired > lenbuf))
+    {
         return (0);
+    }
     /*
      * The first time we just try to acquire the context
      */

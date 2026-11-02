@@ -207,21 +207,21 @@ static char hexchar[] = "0123456789abcdef";
  */
 struct irigunit
 {
-    u_char timecode[2 * SUBFLD + 1]; /* timecode string */
-    l_fp timestamp;                  /* audio sample timestamp */
-    l_fp tick;                       /* audio sample increment */
-    l_fp refstamp;                   /* reference timestamp */
-    l_fp chrstamp;                   /* baud timestamp */
-    l_fp prvstamp;                   /* previous baud timestamp */
-    double integ[BAUD];              /* baud integrator */
-    double phase, freq;              /* logical clock phase and frequency */
-    double zxing;                    /* phase detector integrator */
-    double yxing;                    /* cycle phase */
-    double exing;                    /* envelope phase */
-    double modndx;                   /* modulation index */
-    double irig_b;                   /* IRIG-B signal amplitude */
-    double irig_e;                   /* IRIG-E signal amplitude */
-    int errflg;                      /* error flags */
+    u_char timecode[2U * SUBFLD + 1]; /* timecode string */
+    l_fp timestamp;                   /* audio sample timestamp */
+    l_fp tick;                        /* audio sample increment */
+    l_fp refstamp;                    /* reference timestamp */
+    l_fp chrstamp;                    /* baud timestamp */
+    l_fp prvstamp;                    /* previous baud timestamp */
+    double integ[BAUD];               /* baud integrator */
+    double phase, freq;               /* logical clock phase and frequency */
+    double zxing;                     /* phase detector integrator */
+    double yxing;                     /* cycle phase */
+    double exing;                     /* envelope phase */
+    double modndx;                    /* modulation index */
+    double irig_b;                    /* IRIG-B signal amplitude */
+    double irig_e;                    /* IRIG-E signal amplitude */
+    int errflg;                       /* error flags */
     /*
      * Audio codec variables
      */
@@ -235,8 +235,8 @@ struct irigunit
     /*
      * RF variables
      */
-    double bpf[9];         /* IRIG-B filter shift register */
-    double lpf[5];         /* IRIG-E filter shift register */
+    double bpf[9U];        /* IRIG-B filter shift register */
+    double lpf[5U];        /* IRIG-E filter shift register */
     double envmin, envmax; /* envelope min and max */
     double slice;          /* envelope slice level */
     double intmin, intmax; /* integrated envelope min and max */
@@ -324,10 +324,14 @@ irig_start(
      */
     fd = audio_init(DEVICE_AUDIO, AUDIO_BUFSIZ, unit);
     if (fd < 0)
+    {
         return (0);
+    }
 #ifdef DEBUG
     if (debug)
+    {
         audio_show();
+    }
 #endif
 
     /*
@@ -368,12 +372,14 @@ irig_start(
     up->comp[2U] = 3;
     up->comp[OFFSET + 2] = -3.;
     step = 2.;
-    for (i = 3; i < OFFSET; i++)
+    for (i = 3; i < OFFSET; ++i)
     {
         up->comp[i] = up->comp[i - 1] + step;
         up->comp[OFFSET + i] = -up->comp[i];
         if (i % 16 == 0)
+        {
             step *= 2.;
+        }
     }
     DTOLFP(1. / SECOND, &up->tick);
     return (1);
@@ -395,9 +401,13 @@ irig_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -436,7 +446,7 @@ irig_receive(
     L_SUB(&rbufp->recv_time, &ltemp);
     up->timestamp = rbufp->recv_time;
     dpt = rbufp->recv_buffer;
-    for (bufcnt = 0; bufcnt < rbufp->recv_length; bufcnt++)
+    for (bufcnt = 0; bufcnt < rbufp->recv_length; ++bufcnt)
     {
         sample = up->comp[~*dpt++ & 0xff];
 
@@ -467,7 +477,9 @@ irig_receive(
         L_ADD(&up->timestamp, &up->tick);
         sample = fabs(sample);
         if (sample > up->signal)
+        {
             up->signal = sample;
+        }
         up->signal += (sample - up->signal) /
                       1000;
 
@@ -496,13 +508,21 @@ irig_receive(
      * Set the input port and monitor gain for the next buffer.
      */
     if (pp->sloppyclockflag & CLK_FLAG2)
+    {
         up->port = 2;
+    }
     else
+    {
         up->port = 1;
+    }
     if (pp->sloppyclockflag & CLK_FLAG3)
+    {
         up->mongain = MONGAIN;
+    }
     else
+    {
         up->mongain = 0;
+    }
 }
 
 
@@ -570,9 +590,13 @@ irig_rf(
     if (up->badcnt == 0)
     {
         if (up->decim == 1)
+        {
             irig_base(peer, irig_b);
+        }
         else
+        {
             irig_base(peer, irig_e);
+        }
     }
 }
 
@@ -623,8 +647,10 @@ irig_base(
      * relative to sample 4 in the 8-sample sycle. A phase change of
      * 360 degrees produces an output change of one unit.
      */
-    if (up->lastsig > 0 && lope <= 0)
+    if ((up->lastsig > 0) && (lope <= 0))
+    {
         up->zxing += (double)(carphase - 4) / CYCLE;
+    }
     up->lastsig = lope;
 
     /*
@@ -638,14 +664,22 @@ irig_base(
         up->intmin = 1e6;
         up->intmax = -1e6;
         if (up->maxsignal < DRPOUT)
+        {
             up->errflg |= IRIG_ERR_AMP;
+        }
         if (up->maxsignal > 0)
+        {
             up->modndx = (up->maxsignal - up->noise) /
                          up->maxsignal;
+        }
         else
+        {
             up->modndx = 0;
+        }
         if (up->modndx < MODMIN)
+        {
             up->errflg |= IRIG_ERR_MOD;
+        }
         if (up->errflg & (IRIG_ERR_AMP | IRIG_ERR_FREQ |
                           IRIG_ERR_MOD | IRIG_ERR_SYNCH))
         {
@@ -688,13 +722,19 @@ irig_base(
      * the slice level and left-shifted in the decoding register.
      */
     if (carphase != 7)
+    {
         return;
+    }
 
     lope = (up->lastint[2U] - up->lastint[6U]) / 2.;
     if (lope > up->intmax)
+    {
         up->intmax = lope;
+    }
     if (lope < up->intmin)
+    {
         up->intmin = lope;
+    }
 
     /*
      * Pulse code demodulator and reference timestamp. The decoder
@@ -705,11 +745,15 @@ irig_base(
     up->pulse = (up->pulse + 1) % 10;
     up->cycles <<= 1;
     if (lope >= (up->maxsignal + up->noise) / 2.)
+    {
         up->cycles |= 1;
+    }
     if ((up->cycles & 0x303c0f03) == 0x300c0300)
     {
         if (up->pulse != 0)
+        {
             up->errflg |= IRIG_ERR_SYNCH;
+        }
         up->pulse = 0;
     }
 
@@ -722,14 +766,18 @@ irig_base(
     env = (up->lastenv[2U] - up->lastenv[6U]) / 2.;
     up->dcycles <<= 1;
     if (env >= up->slice)
+    {
         up->dcycles |= 1;
+    }
     switch (up->pulse)
     {
 
     case 0:
         irig_baud(peer, up->dcycles);
         if (env < up->envmin)
+        {
             up->envmin = env;
+        }
         up->slice = (up->envmax + up->envmin) / 2;
         up->envmin = 1e6;
         up->envmax = -1e6;
@@ -741,7 +789,9 @@ irig_base(
 
     case 2:
         if (env > up->envmax)
+        {
             up->envmax = env;
+        }
         break;
 
     case 9:
@@ -782,7 +832,9 @@ irig_baud(
         {
             up->tc++;
             if (up->tc > MAXTC)
+            {
                 up->tc = MAXTC;
+            }
             up->tcount = 0;
             up->envxing = up->envphase;
         }
@@ -861,9 +913,9 @@ irig_decode(
     /*
      * Local variables
      */
-    int syncdig;       /* sync digit (Spectracom) */
-    char sbs[6 + 1];   /* binary seconds since 0h */
-    char spare[2 + 1]; /* mulligan digits */
+    int syncdig;        /* sync digit (Spectracom) */
+    char sbs[6U + 1];   /* binary seconds since 0h */
+    char spare[2U + 1]; /* mulligan digits */
     int temp;
 
     syncdig = 0;
@@ -878,7 +930,7 @@ irig_decode(
     {
         up->bits |= 0x200;
     }
-    else if (bit == BITP && up->lastbit == BITP)
+    else if ((bit == BITP) && (up->lastbit == BITP))
     {
 
         /*
@@ -889,7 +941,9 @@ irig_decode(
          * timestamp.
          */
         if (up->frmcnt != 1)
+        {
             up->errflg |= IRIG_ERR_SYNCH;
+        }
         up->frmcnt = 1;
         up->refstamp = up->prvstamp;
     }
@@ -904,7 +958,9 @@ irig_decode(
          */
         temp = up->bits;
         if (up->frmcnt == 10)
+        {
             temp >>= 1;
+        }
         if (up->xptr >= 2)
         {
             up->timecode[--up->xptr] = hexchar[temp & 0xf];
@@ -932,9 +988,13 @@ irig_decode(
                        "%6s%2d%1d%2s%3d%2d%2d%2d", sbs, &pp->year,
                        &syncdig, spare, &pp->day, &pp->hour,
                        &pp->minute, &pp->second) != 8)
+            {
                 pp->leap = LEAP_NOTINSYNC;
+            }
             else
+            {
                 pp->leap = LEAP_NOWARNING;
+            }
             up->second = (up->second + up->decim) % 60;
 
             /*
@@ -949,11 +1009,15 @@ irig_decode(
              * decoded second, which happens with a garbled
              * IRIG signal. We are very particular.
              */
-            if (pp->day == 0 || (pp->year != 0 && syncdig ==
-                                                      0))
+            if ((pp->day == 0) || ((pp->year != 0) && (syncdig ==
+                                                       0)))
+            {
                 up->errflg |= IRIG_ERR_SIGERR;
+            }
             if (pp->second != up->second)
+            {
                 up->errflg |= IRIG_ERR_CHECK;
+            }
             up->second = pp->second;
 
             /*
@@ -961,13 +1025,15 @@ irig_decode(
              * and the time constant has reached the
              * maximum.
              */
-            if (up->errflg == 0 && up->tc == MAXTC)
+            if ((up->errflg == 0) && (up->tc == MAXTC))
             {
                 pp->lastref = pp->lastrec;
                 pp->lastrec = up->refstamp;
                 if (!refclock_process(pp))
+                {
                     refclock_report(peer,
                                     CEVNT_BADTIME);
+                }
             }
             snprintf(pp->a_lastcode, sizeof(pp->a_lastcode),
                      "%02x %02d %03d %02d:%02d:%02d %4.0f %3d %6.3f %2d %6.2f %6.1f %s",
@@ -983,8 +1049,10 @@ irig_decode(
                                    pp->a_lastcode);
 #ifdef DEBUG
                 if (debug)
+                {
                     printf("irig %s\n",
                            pp->a_lastcode);
+                }
 #endif /* DEBUG */
             }
         }
@@ -1021,7 +1089,9 @@ irig_poll(
         record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
         if (debug)
+        {
             printf("irig %s\n", pp->a_lastcode);
+        }
 #endif /* DEBUG */
     }
     pp->polls++;
@@ -1056,13 +1126,17 @@ irig_gain(
     {
         up->gain += 4;
         if (up->gain > MAXGAIN)
+        {
             up->gain = MAXGAIN;
+        }
     }
     else if (up->maxsignal > MAXAMP)
     {
         up->gain -= 4;
         if (up->gain < 0)
+        {
             up->gain = 0;
+        }
     }
     audio_gain(up->gain, up->mongain, up->port);
 }

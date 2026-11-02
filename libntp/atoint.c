@@ -34,22 +34,32 @@ int atoint(
     }
 
     if (*cp == '\0')
+    {
         return 0;
+    }
 
     u = 0;
     while (*cp != '\0')
     {
         if (!isdigit((unsigned char)*cp))
+        {
             return 0;
-        if (u > 214748364 || (u == 214748364 && *cp > oflow_digit))
-            return 0; /* overflow */
+        }
+        if ((u > 214748364) || ((u == 214748364) && (*cp > oflow_digit)))
+        {
+            return 0;
+        } /* overflow */
         u = (u << 3) + (u << 1);
         u += *cp++ - '0'; /* ascii dependent */
     }
 
     if (isneg)
+    {
         *ival = -u;
+    }
     else
+    {
         *ival = u;
+    }
     return 1;
 }

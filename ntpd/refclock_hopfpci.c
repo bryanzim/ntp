@@ -177,7 +177,9 @@ hopfpci_shutdown(
     CloseHopfDevice();
 #endif
     if (NULL != peer->procptr->unitptr)
+    {
         free(peer->procptr->unitptr);
+    }
 }
 
 
@@ -196,8 +198,10 @@ hopfpci_poll(
 
 #ifndef SYS_WINNT
     if (ioctl(fd, HOPF_CLOCK_GET_UTC, &m_time) < 0)
+    {
         msyslog(LOG_ERR, "HOPF_P(%d): HOPF_CLOCK_GET_UTC: %m",
                 unit);
+    }
 #else
     GetHopfSystemTime(&m_time);
 #endif
@@ -209,9 +213,13 @@ hopfpci_poll(
     pp->second = m_time.wSecond;
     pp->nsec = m_time.wMilliseconds * 1000000;
     if (m_time.wStatus & LEWAPWAR)
+    {
         pp->leap = LEAP_ADDSECOND;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
 
     snprintf(pp->a_lastcode, sizeof(pp->a_lastcode),
              "ST: %02X T: %02d:%02d:%02d.%03ld D: %02d.%02d.%04d",

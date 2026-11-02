@@ -389,7 +389,7 @@ struct progx progx[] = {
 #define P9 (P15 / 4) /* mark (+1) */
 #define N9 (N15 / 4) /* space (-1) */
 
-double bcd9[][4] = {
+double bcd9[][4U] = {
     { N9, N9, N9, N9 }, /* 0 */
     { P9, N9, N9, N9 }, /* 1 */
     { N9, P9, N9, N9 }, /* 2 */
@@ -409,7 +409,7 @@ double bcd9[][4] = {
 #define P6 (P15 / 3) /* mark (+1) */
 #define N6 (N15 / 3) /* space (-1) */
 
-double bcd6[][4] = {
+double bcd6[][4U] = {
     { N6, N6, N6, 0 }, /* 0 */
     { P6, N6, N6, 0 }, /* 1 */
     { N6, P6, N6, 0 }, /* 2 */
@@ -426,7 +426,7 @@ double bcd6[][4] = {
 #define P3 (P15 / 2) /* mark (+1) */
 #define N3 (N15 / 2) /* space (-1) */
 
-double bcd3[][4] = {
+double bcd3[][4U] = {
     { N3, N3, 0, 0 }, /* 0 */
     { P3, N3, 0, 0 }, /* 1 */
     { N3, P3, 0, 0 }, /* 2 */
@@ -440,7 +440,7 @@ double bcd3[][4] = {
 #define P2 (P15 / 2) /* mark (+1) */
 #define N2 (N15 / 2) /* space (-1) */
 
-double bcd2[][4] = {
+double bcd2[][4U] = {
     { N2, N2, 0, 0 }, /* 0 */
     { P2, N2, 0, 0 }, /* 1 */
     { N2, P2, 0, 0 }, /* 2 */
@@ -466,12 +466,12 @@ char dstcod[] = {
  */
 struct decvec
 {
-    int radix;       /* radix (3, 4, 6, 10) */
-    int digit;       /* current clock digit */
-    int count;       /* match count */
-    double digprb;   /* max digit probability */
-    double digsnr;   /* likelihood function (dB) */
-    double like[10]; /* likelihood integrator 0-9 */
+    int radix;        /* radix (3, 4, 6, 10) */
+    int digit;        /* current clock digit */
+    int count;        /* match count */
+    double digprb;    /* max digit probability */
+    double digsnr;    /* likelihood function (dB) */
+    double like[10U]; /* likelihood integrator 0-9 */
 };
 
 /*
@@ -489,15 +489,15 @@ struct sync
     long lastpos;  /* last max position */
     long mepoch;   /* minute synch epoch */
 
-    double amp;    /* sync signal */
-    double syneng; /* sync signal max */
-    double synmax; /* sync signal max latched at 0 s */
-    double synsnr; /* sync signal SNR */
-    double metric; /* signal quality metric */
-    int reach;     /* reachability register */
-    int count;     /* bit counter */
-    int select;    /* select bits */
-    char refid[5]; /* reference identifier */
+    double amp;     /* sync signal */
+    double syneng;  /* sync signal max */
+    double synmax;  /* sync signal max latched at 0 s */
+    double synsnr;  /* sync signal SNR */
+    double metric;  /* signal quality metric */
+    int reach;      /* reachability register */
+    int count;      /* bit counter */
+    int select;     /* select bits */
+    char refid[5U]; /* reference identifier */
 };
 
 /*
@@ -562,9 +562,9 @@ struct wwvunit
     /*
      * Variables used by the clock state machine
      */
-    struct decvec decvec[9]; /* decoding matrix */
-    int rsec;                /* seconds counter */
-    int digcnt;              /* count of digits synchronized */
+    struct decvec decvec[9U]; /* decoding matrix */
+    int rsec;                 /* seconds counter */
+    int digcnt;               /* count of digits synchronized */
 
     /*
      * Variables used to estimate signal levels and bit/digit
@@ -599,7 +599,7 @@ static void wwv_endpoc(struct peer*, int);
 static void wwv_rsec(struct peer*, double);
 static void wwv_qrz(struct peer*, struct sync*, int);
 static void wwv_corr4(struct peer*, struct decvec*,
-                      double[], double[][4]);
+                      double[], double[][4U]);
 static void wwv_gain(struct peer*);
 static void wwv_tsec(struct peer*);
 static int timecode(struct wwvunit*, char*, size_t);
@@ -656,10 +656,14 @@ wwv_start(
      */
     fd = audio_init(DEVICE_AUDIO, AUDIO_BUFSIZ, unit);
     if (fd < 0)
+    {
         return (0);
+    }
 #ifdef DEBUG
     if (debug)
+    {
         audio_show();
+    }
 #endif /* DEBUG */
 
     /*
@@ -695,12 +699,14 @@ wwv_start(
     up->comp[2U] = 3.;
     up->comp[OFFSET + 2] = -3.;
     step = 2.;
-    for (i = 3; i < OFFSET; i++)
+    for (i = 3; i < OFFSET; ++i)
     {
         up->comp[i] = up->comp[i - 1] + step;
         up->comp[OFFSET + i] = -up->comp[i];
         if (i % 16 == 0)
+        {
             step *= 2.;
+        }
     }
     DTOLFP(1. / WWV_SEC, &up->tick);
 
@@ -729,16 +735,22 @@ wwv_start(
     temp = 0;
 #ifdef DEBUG
     if (debug > 1)
+    {
         temp = P_TRACE;
+    }
 #endif /* DEBUG */
     if (peer->ttl != 0)
     {
         if (peer->ttl & 0x80)
+        {
             up->fd_icom = icom_init("/dev/icom", B1200,
                                     temp);
+        }
         else
+        {
             up->fd_icom = icom_init("/dev/icom", B9600,
                                     temp);
+        }
     }
     if (up->fd_icom > 0)
     {
@@ -778,12 +790,16 @@ wwv_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (up == NULL)
+    {
         return;
+    }
 
     io_closeclock(&pp->io);
 #ifdef ICOM
     if (up->fd_icom > 0)
+    {
         close(up->fd_icom);
+    }
 #endif /* ICOM */
     free(up);
 }
@@ -826,7 +842,7 @@ wwv_receive(
     L_SUB(&rbufp->recv_time, &ltemp);
     up->timestamp = rbufp->recv_time;
     dpt = rbufp->recv_buffer;
-    for (bufcnt = 0; bufcnt < rbufp->recv_length; bufcnt++)
+    for (bufcnt = 0; bufcnt < rbufp->recv_length; ++bufcnt)
     {
         sample = up->comp[~*dpt++ & 0xff];
 
@@ -876,13 +892,21 @@ wwv_receive(
      * Set the input port and monitor gain for the next buffer.
      */
     if (pp->sloppyclockflag & CLK_FLAG2)
+    {
         up->port = 2;
+    }
     else
+    {
         up->port = 1;
+    }
     if (pp->sloppyclockflag & CLK_FLAG3)
+    {
         up->mongain = MONGAIN;
+    }
     else
+    {
         up->mongain = 0;
+    }
 }
 
 
@@ -906,7 +930,9 @@ wwv_poll(
     pp = peer->procptr;
     up = pp->unitptr;
     if (up->errflg)
+    {
         refclock_report(peer, up->errflg);
+    }
     up->errflg = 0;
     pp->polls++;
 }
@@ -952,12 +978,12 @@ wwv_rf(
     struct wwvunit* up;
     struct sync *sp, *rp;
 
-    static double lpf[5]; /* 150-Hz lpf delay line */
-    double data;          /* lpf output */
-    static double bpf[9]; /* 1000/1200-Hz bpf delay line */
-    double syncx;         /* bpf output */
-    static double mf[41]; /* 1000/1200-Hz mf delay line */
-    double mfsync;        /* mf output */
+    static double lpf[5U]; /* 150-Hz lpf delay line */
+    double data;           /* lpf output */
+    static double bpf[9U]; /* 1000/1200-Hz bpf delay line */
+    double syncx;          /* bpf output */
+    static double mf[41U]; /* 1000/1200-Hz mf delay line */
+    double mfsync;         /* mf output */
 
     static int iptr;            /* data channel pointer */
     static double ibuf[DATSIZ]; /* data I channel delay line */
@@ -1133,7 +1159,9 @@ wwv_rf(
     sp = &up->mitig[up->achan].wwv;
     sp->amp = sqrt(ciamp * ciamp + cqamp * cqamp) / SYNCYC;
     if (!(up->status & MSYNC))
+    {
         wwv_qrz(peer, sp, (int)(pp->fudgetime1 * WWV_SEC));
+    }
 
     /*
      * WWVH
@@ -1161,7 +1189,9 @@ wwv_rf(
     rp = &up->mitig[up->achan].wwvh;
     rp->amp = sqrt(hiamp * hiamp + hqamp * hqamp) / SYNCYC;
     if (!(up->status & MSYNC))
+    {
         wwv_qrz(peer, rp, (int)(pp->fudgetime2 * WWV_SEC));
+    }
     jptr = (jptr + 1) % SYNSIZ;
     kptr = (kptr + 1) % TCKSIZ;
 
@@ -1182,7 +1212,9 @@ wwv_rf(
              * frequency and tries again.
              */
             if (!wwv_newchan(peer))
+            {
                 up->watch = 0;
+            }
         }
         else
         {
@@ -1196,7 +1228,9 @@ wwv_rf(
             {
                 up->mphase -= WWV_SEC;
                 if (up->mphase < 0)
+                {
                     up->mphase += WWV_MIN;
+                }
             }
         }
     }
@@ -1223,16 +1257,20 @@ wwv_rf(
     else if (up->sptr != NULL)
     {
         sp = up->sptr;
-        if (sp->metric >= TTHR && epoch == sp->mepoch % WWV_SEC)
+        if ((sp->metric >= TTHR) && (epoch == sp->mepoch % WWV_SEC))
         {
             up->rsec = (60 - sp->mepoch / WWV_SEC) % 60;
             up->rphase = 0;
             up->status |= MSYNC;
             up->watch = 0;
             if (!(up->status & SSYNC))
+            {
                 up->repoch = up->yepoch = epoch;
+            }
             else
+            {
                 up->repoch = up->yepoch;
+            }
         }
     }
 
@@ -1244,13 +1282,19 @@ wwv_rf(
      * only if the station has been reliably determined.
      */
     if (up->status & SELV)
+    {
         mfsync = sqrt(csiamp * csiamp + csqamp * csqamp) /
                  TCKCYC;
+    }
     else if (up->status & SELH)
+    {
         mfsync = sqrt(hsiamp * hsiamp + hsqamp * hsqamp) /
                  TCKCYC;
+    }
     else
+    {
         mfsync = 0;
+    }
 
     /*
      * Enhance the seconds sync pulse using a 1-s (8000-sample) comb
@@ -1273,7 +1317,9 @@ wwv_rf(
         epopos = epoch;
         j = epoch - 6 * MS;
         if (j < 0)
+        {
             j += WWV_SEC;
+        }
         nxtmax = fabs(epobuf[j]);
     }
     if (epoch == 0)
@@ -1282,13 +1328,19 @@ wwv_rf(
         up->eposnr = wwv_snr(epomax, nxtmax);
         epopos -= TCKCYC * MS;
         if (epopos < 0)
+        {
             epopos += WWV_SEC;
+        }
         wwv_endpoc(peer, epopos);
         if (!(up->status & SSYNC))
+        {
             up->alarm |= SYNERR;
+        }
         epomax = 0;
         if (!(up->status & MSYNC))
+        {
             wwv_gain(peer);
+        }
     }
 }
 
@@ -1335,7 +1387,9 @@ wwv_qrz(
      */
     epoch = up->mphase - pdelay - SYNSIZ;
     if (epoch < 0)
+    {
         epoch += WWV_MIN;
+    }
     if (sp->amp > sp->maxeng)
     {
         sp->maxeng = sp->amp;
@@ -1357,12 +1411,16 @@ wwv_qrz(
                                           sp->synmax) /
                                              WWV_MIN);
         if (sp->count == 0)
+        {
             sp->lastpos = sp->pos;
+        }
         epoch = (sp->pos - sp->lastpos) % WWV_MIN;
         sp->reach <<= 1;
         if (sp->reach & (1 << AMAX))
+        {
             sp->count--;
-        if (sp->synmax > ATHR && sp->synsnr > ASNR)
+        }
+        if ((sp->synmax > ATHR) && (sp->synsnr > ASNR))
         {
             if (labs(epoch) < AWND * MS)
             {
@@ -1376,9 +1434,13 @@ wwv_qrz(
             }
         }
         if (up->watch > ACQSN)
+        {
             sp->metric = 0;
+        }
         else
+        {
             sp->metric = wwv_metric(sp);
+        }
         if (pp->sloppyclockflag & CLK_FLAG4)
         {
             snprintf(tbuf, sizeof(tbuf),
@@ -1389,7 +1451,9 @@ wwv_qrz(
             record_clock_stats(&peer->srcadr, tbuf);
 #ifdef DEBUG
             if (debug)
+            {
                 printf("%s\n", tbuf);
+            }
 #endif /* DEBUG */
         }
         sp->maxeng = sp->noieng = 0;
@@ -1417,20 +1481,20 @@ wwv_endpoc(
 {
     struct refclockproc* pp;
     struct wwvunit* up;
-    static int epoch_mf[3]; /* epoch median filter */
-    static int tepoch;      /* current second epoch */
-    static int xepoch;      /* last second epoch */
-    static int zepoch;      /* last run epoch */
-    static int zcount;      /* last run end time */
-    static int scount;      /* seconds counter */
-    static int syncnt;      /* run length counter */
-    static int maxrun;      /* longest run length */
-    static int mepoch;      /* longest run end epoch */
-    static int mcount;      /* longest run end time */
-    static int avgcnt;      /* averaging interval counter */
-    static int avginc;      /* averaging ratchet */
-    static int iniflg;      /* initialization flag */
-    char tbuf[TBUF];        /* monitor buffer */
+    static int epoch_mf[3U]; /* epoch median filter */
+    static int tepoch;       /* current second epoch */
+    static int xepoch;       /* last second epoch */
+    static int zepoch;       /* last run epoch */
+    static int zcount;       /* last run end time */
+    static int scount;       /* seconds counter */
+    static int syncnt;       /* run length counter */
+    static int maxrun;       /* longest run length */
+    static int mepoch;       /* longest run end epoch */
+    static int mcount;       /* longest run end time */
+    static int avgcnt;       /* averaging interval counter */
+    static int avginc;       /* averaging ratchet */
+    static int iniflg;       /* initialization flag */
+    char tbuf[TBUF];         /* monitor buffer */
     double dtemp;
     int tmp2;
 
@@ -1449,14 +1513,16 @@ wwv_endpoc(
      * cold.
      */
     scount++;
-    if (up->epomax < STHR || up->eposnr < SSNR)
+    if ((up->epomax < STHR) || (up->eposnr < SSNR))
     {
         up->status &= ~(SSYNC | FGATE);
         avgcnt = syncnt = maxrun = 0;
         return;
     }
     if (!(up->status & (SELV | SELH)))
+    {
         return;
+    }
 
     /*
      * A three-stage median filter is used to help denoise the
@@ -1469,20 +1535,32 @@ wwv_endpoc(
     if (epoch_mf[0U] > epoch_mf[1U])
     {
         if (epoch_mf[1U] > epoch_mf[2U])
-            tepoch = epoch_mf[1U]; /* 0 1 2 */
+        {
+            tepoch = epoch_mf[1U];
+        } /* 0 1 2 */
         else if (epoch_mf[2U] > epoch_mf[0U])
-            tepoch = epoch_mf[0U]; /* 2 0 1 */
+        {
+            tepoch = epoch_mf[0U];
+        } /* 2 0 1 */
         else
-            tepoch = epoch_mf[2U]; /* 0 2 1 */
+        {
+            tepoch = epoch_mf[2U];
+        } /* 0 2 1 */
     }
     else
     {
         if (epoch_mf[1U] < epoch_mf[2U])
-            tepoch = epoch_mf[1U]; /* 2 1 0 */
+        {
+            tepoch = epoch_mf[1U];
+        } /* 2 1 0 */
         else if (epoch_mf[2U] < epoch_mf[0U])
-            tepoch = epoch_mf[0U]; /* 1 0 2 */
+        {
+            tepoch = epoch_mf[0U];
+        } /* 1 0 2 */
         else
-            tepoch = epoch_mf[2U]; /* 1 2 0 */
+        {
+            tepoch = epoch_mf[2U];
+        } /* 1 2 0 */
     }
 
 
@@ -1501,7 +1579,7 @@ wwv_endpoc(
     if (tmp2 == 0)
     {
         syncnt++;
-        if (syncnt > SCMP && up->status & MSYNC && (up->status & FGATE || scount - zcount <= up->avgint))
+        if ((syncnt > SCMP) && (up->status & MSYNC) && ((up->status & FGATE) || (scount - zcount <= up->avgint)))
         {
             up->status |= SSYNC;
             up->yepoch = tepoch;
@@ -1525,7 +1603,9 @@ wwv_endpoc(
         record_clock_stats(&peer->srcadr, tbuf);
 #ifdef DEBUG
         if (debug)
+        {
             printf("%s\n", tbuf);
+        }
 #endif /* DEBUG */
     }
     avgcnt++;
@@ -1588,9 +1668,13 @@ wwv_endpoc(
             up->freq += (dtemp / 2.) / ((mcount - zcount) *
                                         FCONST);
             if (up->freq > MAXFREQ)
+            {
                 up->freq = MAXFREQ;
+            }
             else if (up->freq < -MAXFREQ)
+            {
                 up->freq = -MAXFREQ;
+            }
             if (fabs(dtemp) < MAXFREQ * MINAVG / 2.)
             {
                 if (avginc < 3)
@@ -1633,7 +1717,9 @@ wwv_endpoc(
         record_clock_stats(&peer->srcadr, tbuf);
 #ifdef DEBUG
         if (debug)
+        {
             printf("%s\n", tbuf);
+        }
 #endif /* DEBUG */
     }
 
@@ -1688,11 +1774,17 @@ wwv_epoch(
      */
     cp = &up->mitig[up->achan];
     if (cp->wwv.amp > cp->wwv.syneng)
+    {
         cp->wwv.syneng = cp->wwv.amp;
+    }
     if (cp->wwvh.amp > cp->wwvh.syneng)
+    {
         cp->wwvh.syneng = cp->wwvh.amp;
+    }
     if (up->rphase == 800 * MS)
+    {
         up->repoch = up->yepoch;
+    }
 
     /*
      * Use the signal amplitude at epoch 15 ms as the noise floor.
@@ -1704,7 +1796,9 @@ wwv_epoch(
      * epoch is not exact.
      */
     if (up->rphase == 15 * MS)
+    {
         sigmin = sigzer = sigone = up->irig;
+    }
 
     /*
      * Latch the data signal at 200 ms. Keep this around until the
@@ -1722,13 +1816,17 @@ wwv_epoch(
         {
             up->datapt++;
             if (up->datapt >= 80)
+            {
                 up->datapt -= 80;
+            }
         }
         else
         {
             up->datapt--;
             if (up->datapt < 0)
+            {
                 up->datapt += 80;
+            }
         }
     }
 
@@ -1738,7 +1836,9 @@ wwv_epoch(
      * end of the second.
      */
     else if (up->rphase == 500 * MS)
+    {
         sigone = up->irig;
+    }
 
     /*
      * At the end of the second crank the clock state machine and
@@ -1768,7 +1868,7 @@ wwv_epoch(
          * 0 in the the integrators; otherwise, average the
          * bipolar signal. This is done to avoid noise polution.
          */
-        if (engmax < DTHR || up->datsnr < DSNR)
+        if ((engmax < DTHR) || (up->datsnr < DSNR))
         {
             up->status |= DGATE;
             wwv_rsec(peer, 0);
@@ -1780,9 +1880,13 @@ wwv_epoch(
             wwv_rsec(peer, sigone - sigzer);
         }
         if (up->status & (DGATE | BGATE))
+        {
             up->errcnt++;
+        }
         if (up->errcnt > MAXERR)
+        {
             up->alarm |= LOWERR;
+        }
         wwv_gain(peer);
         cp = &up->mitig[up->achan];
         cp->wwv.syneng = 0;
@@ -1811,9 +1915,9 @@ wwv_rsec(
     struct peer* peer, /* peer structure pointer */
     double bit)
 {
-    static int iniflg;        /* initialization flag */
-    static double bcddld[4];  /* BCD data bits */
-    static double bitvec[61]; /* bit integrator for misc bits */
+    static int iniflg;         /* initialization flag */
+    static double bcddld[4U];  /* BCD data bits */
+    static double bitvec[61U]; /* bit integrator for misc bits */
     struct refclockproc* pp;
     struct wwvunit* up;
     struct chan* cp;
@@ -1898,8 +2002,10 @@ wwv_rsec(
         sp->synsnr = wwv_snr(sp->synmax, sp->amp);
         sp->reach <<= 1;
         if (sp->reach & (1 << AMAX))
+        {
             sp->count--;
-        if (sp->synmax >= QTHR && sp->synsnr >= QSNR &&
+        }
+        if ((sp->synmax >= QTHR) && (sp->synsnr >= QSNR) &&
             !(up->status & (DGATE | BGATE)))
         {
             sp->reach |= 1;
@@ -1914,8 +2020,10 @@ wwv_rsec(
         rp->synsnr = wwv_snr(rp->synmax, rp->amp);
         rp->reach <<= 1;
         if (rp->reach & (1 << AMAX))
+        {
             rp->count--;
-        if (rp->synmax >= QTHR && rp->synsnr >= QSNR &&
+        }
+        if ((rp->synmax >= QTHR) && (rp->synsnr >= QSNR) &&
             !(up->status & (DGATE | BGATE)))
         {
             rp->reach |= 1;
@@ -1936,7 +2044,9 @@ wwv_rsec(
             record_clock_stats(&peer->srcadr, tbuf);
 #ifdef DEBUG
             if (debug)
+            {
                 printf("%s\n", tbuf);
+            }
 #endif /* DEBUG */
         }
         up->errcnt = up->digcnt = up->alarm = 0;
@@ -1985,9 +2095,13 @@ wwv_rsec(
     case COEF: /* 10-13, 15-17, 20-23, 25-26,
               30-33, 35-38, 40-41, 51-54 */
         if (up->status & DSYNC)
+        {
             bcddld[arg] = bit;
+        }
         else
+        {
             bcddld[arg] = 0;
+        }
         break;
 
     case COEF2: /* 18, 27-28, 42-43 */
@@ -2030,13 +2144,17 @@ wwv_rsec(
         if (bitvec[nsec] > BTHR)
         {
             if (!(up->misc & arg))
+            {
                 up->alarm |= CMPERR;
+            }
             up->misc |= arg;
         }
         else if (bitvec[nsec] < -BTHR)
         {
             if (up->misc & arg)
+            {
                 up->alarm |= CMPERR;
+            }
             up->misc &= ~arg;
         }
         else
@@ -2054,13 +2172,17 @@ wwv_rsec(
         if (bitvec[nsec] > BTHR)
         {
             if (!(up->misc & arg))
+            {
                 up->alarm |= CMPERR;
+            }
             up->misc |= arg;
         }
         else if (bitvec[nsec] < -BTHR)
         {
             if (up->misc & arg)
+            {
                 up->alarm |= CMPERR;
+            }
             up->misc &= ~arg;
         }
         else
@@ -2096,7 +2218,9 @@ wwv_rsec(
      */
     case MIN1: /* 59 */
         if (up->status & LEPSEC)
+        {
             break;
+        }
 
         /* fall through */
 
@@ -2117,7 +2241,9 @@ wwv_rsec(
         record_clock_stats(&peer->srcadr, tbuf);
 #ifdef DEBUG
         if (debug)
+        {
             printf("%s\n", tbuf);
+        }
 #endif /* DEBUG */
     }
     pp->disp += AUDIO_PHI;
@@ -2146,17 +2272,27 @@ wwv_clock(
     pp = peer->procptr;
     up = pp->unitptr;
     if (!(up->status & SSYNC))
+    {
         up->alarm |= SYNERR;
+    }
     if (up->digcnt < 9)
+    {
         up->alarm |= NINERR;
+    }
     if (!(up->alarm))
+    {
         up->status |= INSYNC;
-    if (up->status & INSYNC && up->status & SSYNC)
+    }
+    if ((up->status & INSYNC) && (up->status & SSYNC))
     {
         if (up->misc & SECWAR)
+        {
             pp->leap = LEAP_ADDSECOND;
+        }
         else
+        {
             pp->leap = LEAP_NOWARNING;
+        }
         pp->second = up->rsec;
         pp->minute = up->decvec[MN].digit + up->decvec[MN +
                                                        1]
@@ -2194,8 +2330,10 @@ wwv_clock(
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("wwv: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif /* DEBUG */
 }
 
@@ -2215,7 +2353,7 @@ wwv_corr4(
     struct peer* peer, /* peer unit pointer */
     struct decvec* vp, /* decoding table pointer */
     double data[],     /* received data vector */
-    double tab[][4]    /* correlation vector array */
+    double tab[][4U]   /* correlation vector array */
 )
 {
     struct refclockproc* pp;
@@ -2238,11 +2376,13 @@ wwv_corr4(
      */
     mldigit = 0;
     topmax = nxtmax = -MAXAMP;
-    for (i = 0; tab[i][0U] != 0; i++)
+    for (i = 0; tab[i][0U] != 0; ++i)
     {
         acc = 0;
-        for (j = 0; j < 4; j++)
+        for (j = 0; j < 4; ++j)
+        {
             acc += data[j] * tab[i][j];
+        }
         acc = (vp->like[i] += (acc - vp->like[i]) / TCONST);
         if (acc > topmax)
         {
@@ -2272,7 +2412,7 @@ wwv_corr4(
      * reached threshold. This is intended as eye candy, but avoids
      * mistakes when the signal is low and the SNR is very marginal.
      */
-    if (vp->digprb < BTHR || vp->digsnr < BSNR)
+    if ((vp->digprb < BTHR) || (vp->digsnr < BSNR))
     {
         up->status |= BGATE;
     }
@@ -2282,14 +2422,20 @@ wwv_corr4(
         {
             up->alarm |= CMPERR;
             if (vp->count > 0)
+            {
                 vp->count--;
+            }
             if (vp->count == 0)
+            {
                 vp->digit = mldigit;
+            }
         }
         else
         {
             if (vp->count < BCMP)
+            {
                 vp->count++;
+            }
             if (vp->count == BCMP)
             {
                 up->status |= DSYNC;
@@ -2308,7 +2454,9 @@ wwv_corr4(
         record_clock_stats(&peer->srcadr, tbuf);
 #ifdef DEBUG
         if (debug)
+        {
             printf("%s\n", tbuf);
+        }
 #endif /* DEBUG */
     }
 }
@@ -2340,17 +2488,25 @@ wwv_tsec(
      */
     temp = carry(&up->decvec[MN]); /* minute units */
     if (!(up->status & DSYNC))
+    {
         return;
+    }
 
     /*
      * Propagate carries through the day.
      */
-    if (temp == 0) /* carry minutes */
-        temp = carry(&up->decvec[MN + 1]);
-    if (temp == 0) /* carry hours */
-        temp = carry(&up->decvec[HR]);
     if (temp == 0)
+    { /* carry minutes */
+        temp = carry(&up->decvec[MN + 1]);
+    }
+    if (temp == 0)
+    { /* carry hours */
+        temp = carry(&up->decvec[HR]);
+    }
+    if (temp == 0)
+    {
         temp = carry(&up->decvec[HR + 1]);
+    }
     // XXX: Does temp have an expected value here?
 
     /*
@@ -2367,10 +2523,12 @@ wwv_tsec(
      * Set the leap bit on the last minute of the leap day.
      */
     isleap = up->decvec[YR].digit & 0x3;
-    if (up->misc & SECWAR && up->status & INSYNC)
+    if ((up->misc & SECWAR) && (up->status & INSYNC))
     {
-        if ((day == (isleap ? 182 : 183) || day == (isleap ? 365 : 366)) && minute == 1439)
+        if (((day == (isleap ? 182 : 183)) || (day == (isleap ? 365 : 366))) && (minute == 1439))
+        {
             up->status |= LEPSEC;
+        }
     }
 
     /*
@@ -2378,7 +2536,9 @@ wwv_tsec(
      * through the year.
      */
     if (minute != 1440)
+    {
         return;
+    }
 
     // minute = 0;
     while (carry(&up->decvec[HR]) != 0)
@@ -2388,9 +2548,13 @@ wwv_tsec(
     day++;
     temp = carry(&up->decvec[DA]); /* carry days */
     if (temp == 0)
+    {
         temp = carry(&up->decvec[DA + 1]);
+    }
     if (temp == 0)
+    {
         temp = carry(&up->decvec[DA + 2]);
+    }
     // XXX: Is there an expected value of temp here?
 
     /*
@@ -2398,7 +2562,9 @@ wwv_tsec(
      * through the century.
      */
     if (day != (isleap ? 365 : 366))
+    {
         return;
+    }
 
     // day = 1;
     while (carry(&up->decvec[DA]) != 1)
@@ -2409,7 +2575,9 @@ wwv_tsec(
         ;
     temp = carry(&up->decvec[YR]); /* carry years */
     if (temp == 0)
+    {
         carry(&up->decvec[YR + 1]);
+    }
 }
 
 
@@ -2431,10 +2599,14 @@ carry(
 
     dp->digit++;
     if (dp->digit == dp->radix)
+    {
         dp->digit = 0;
+    }
     temp = dp->like[dp->radix - 1];
-    for (j = dp->radix - 1; j > 0; j--)
+    for (j = dp->radix - 1; j > 0; --j)
+    {
         dp->like[j] = dp->like[j - 1];
+    }
     dp->like[0U] = temp;
     return (dp->digit);
 }
@@ -2474,7 +2646,9 @@ wwv_snr(
     {
         rval = 20. * log10(signal / noise);
         if (rval > MAXSNR)
+        {
             rval = MAXSNR;
+        }
     }
     return (rval);
 }
@@ -2530,7 +2704,7 @@ wwv_newchan(
     sp = NULL;
     j = 0;
     rank = 0;
-    for (i = 0; i < NCHAN; i++)
+    for (i = 0; i < NCHAN; ++i)
     {
         rp = &up->mitig[i].wwvh;
         dtemp = rp->metric;
@@ -2594,7 +2768,9 @@ wwv_newchan(
     }
 #ifdef ICOM
     if (up->fd_icom > 0)
+    {
         wwv_qsy(peer, up->dchan);
+    }
 #endif /* ICOM */
     return (rval);
 }
@@ -2632,7 +2808,9 @@ wwv_newgame(
      * NOTINSYNC and the refid "NONE".
      */
     if (up->status)
+    {
         up->errflg = CEVNT_TIMEOUT;
+    }
     peer->leap = LEAP_NOTINSYNC;
     up->watch = up->status = up->alarm = 0;
     up->avgint = MINAVG;
@@ -2646,7 +2824,7 @@ wwv_newgame(
      * nothing heard.
      */
     memset(up->mitig, 0, sizeof(up->mitig));
-    for (i = 0; i < NCHAN; i++)
+    for (i = 0; i < NCHAN; ++i)
     {
         cp = &up->mitig[i];
         cp->gain = up->gain;
@@ -2678,9 +2856,13 @@ wwv_metric(
 
     dtemp = sp->count * MAXAMP;
     if (sp->synmax < MAXAMP)
+    {
         dtemp += sp->synmax;
+    }
     else
+    {
         dtemp += MAXAMP - 1;
+    }
     dtemp /= (AMAX + 1) * MAXAMP;
     return (dtemp * 100.);
 }
@@ -2754,7 +2936,7 @@ timecode(
     struct sync* sp;
     int year, day, hour, minute, second, dut;
     char synchar, leapchar, dst;
-    char cptr[50];
+    char cptr[50U];
 
 
     /*
@@ -2772,7 +2954,9 @@ timecode(
     dst = dstcod[(up->misc >> 4) & 0x3];
     dut = up->misc & 0x7;
     if (!(up->misc & DUTS))
+    {
         dut = -dut;
+    }
     snprintf(tc, tcsiz, "%c%1X", synchar, up->alarm);
     snprintf(cptr, sizeof(cptr),
              " %4d %03d %02d:%02d:%02d %c%c %+d",
@@ -2824,19 +3008,25 @@ wwv_gain(
     {
         up->gain += 4;
         if (up->gain > MAXGAIN)
+        {
             up->gain = MAXGAIN;
+        }
     }
     else if (up->clipcnt > MAXCLP)
     {
         up->gain -= 4;
         if (up->gain < 0)
+        {
             up->gain = 0;
+        }
     }
     audio_gain(up->gain, up->mongain, up->port);
     up->clipcnt = 0;
 #if DEBUG
     if (debug > 1)
+    {
         audio_show();
+    }
 #endif
 }
 

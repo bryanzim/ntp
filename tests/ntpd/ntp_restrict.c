@@ -109,7 +109,7 @@ void test_HackingDefaultRestriction(void)
      *	and check if restriction() returns that flag
      */
 
-    const u_short rflags = 42;
+    const u_short rflags = 42U;
     r4addr r4a;
 
     sockaddr_u resaddr = create_sockaddr_u(AF_INET,
@@ -148,7 +148,7 @@ void test_AddingNewRestriction(void)
     sockaddr_u resmask = create_sockaddr_u(AF_INET, 54321, "128.0.0.0");
     r4addr r4a;
 
-    const u_short rflags = 42;
+    const u_short rflags = 42U;
 
     hack_restrict(RESTRICT_FLAGS, &resaddr, &resmask, -1, 0, rflags, 0);
 

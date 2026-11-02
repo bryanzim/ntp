@@ -87,7 +87,9 @@ cvt_rcc8000(
     void* local)
 {
     if (!Strok(buffer, format->fixed_string))
+    {
         return CVT_NONE;
+    }
 #define OFFS(x) format->field_offsets[(x)].offset
 #define STOI(x, y) Stoi(&buffer[OFFS(x)], y, format->field_offsets[(x)].length)
     if (STOI(O_DAY, &clock_time->day) ||
@@ -97,7 +99,9 @@ cvt_rcc8000(
         STOI(O_MIN, &clock_time->minute) ||
         STOI(O_SEC, &clock_time->second) ||
         STOI(O_USEC, &clock_time->usecond))
+    {
         return CVT_FAIL | CVT_BADFMT;
+    }
     clock_time->usecond *= 1000;
 
     clock_time->utcoffset = 0;
@@ -118,14 +122,16 @@ cvt_rcc8000(
 
     clock_time->flags = 0;
 
-    if ((RCCP >= '0' && RCCP <= '9') || (RCCP >= 'A' && RCCP <= 'F'))
+    if (((RCCP >= '0') && (RCCP <= '9')) || ((RCCP >= 'A') && (RCCP <= 'F')))
     {
         register int flag;
 
-        flag = (RCCP >= '0' && RCCP <= '9') ? RCCP - '0' : RCCP - 'A' + 10;
+        flag = ((RCCP >= '0') && (RCCP <= '9')) ? RCCP - '0' : RCCP - 'A' + 10;
 
         if (!(flag & RCC8000_VALID))
+        {
             clock_time->flags |= PARSEB_POWERUP;
+        }
 
         clock_time->flags |= PARSEB_UTC; /* British special - guess why 8-) */
 
@@ -153,9 +159,13 @@ inp_rcc8000(
     case '\n':
         parseprintf(DD_PARSE, ("inp_rcc8000: EOL seen\n"));
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
 
     default:

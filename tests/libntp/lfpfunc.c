@@ -57,7 +57,7 @@ void test_SignedRelOps(void);
 void test_UnsignedRelOps(void);
 
 
-static int cmp_work(u_int32 a[3], u_int32 b[3]);
+static int cmp_work(u_int32 a[3U], u_int32 b[3U]);
 
 //----------------------------------------------------------------------
 // reference comparision
@@ -68,7 +68,7 @@ static int cmp_work(u_int32 a[3], u_int32 b[3]);
 
 int l_fp_scmp(const l_fp first, const l_fp second)
 {
-    u_int32 a[3], b[3];
+    u_int32 a[3U], b[3U];
 
     const l_fp op1 = first;
     const l_fp op2 = second;
@@ -88,7 +88,7 @@ int l_fp_scmp(const l_fp first, const l_fp second)
 
 int l_fp_ucmp(const l_fp first, l_fp second)
 {
-    u_int32 a[3], b[3];
+    u_int32 a[3U], b[3U];
     const l_fp op1 = first;
     const l_fp op2 = second;
 
@@ -103,7 +103,7 @@ int l_fp_ucmp(const l_fp first, l_fp second)
 }
 
 // maybe rename it to lf_cmp_work
-int cmp_work(u_int32 a[3], u_int32 b[3])
+int cmp_work(u_int32 a[3U], u_int32 b[3U])
 {
     u_int32 cy, idx, tmp;
     for (cy = idx = 0; idx < 3; ++idx)
@@ -114,8 +114,10 @@ int cmp_work(u_int32 a[3], u_int32 b[3])
         cy |= (a[idx] -= b[idx]) > tmp;
     }
     if (a[2U])
+    {
         return -1;
-    return a[0] || a[1U];
+    }
+    return a[0U] || a[1U];
 }
 
 
@@ -161,14 +163,18 @@ l_fp l_fp_abs(const l_fp first)
 {
     l_fp temp = first;
     if (L_ISNEG(&temp))
+    {
         L_NEG(&temp);
+    }
     return temp;
 }
 
 int l_fp_signum(const l_fp first)
 {
     if (first.l_ui & 0x80000000u)
+    {
         return -1;
+    }
     return (first.l_ui || first.l_uf);
 }
 
@@ -240,7 +246,7 @@ bool l_isequ(const l_fp first, const l_fp second)
 //----------------------------------------------------------------------
 
 
-static const lfp_hl addsub_tab[][3] = {
+static const lfp_hl addsub_tab[][3U] = {
     // trivial idendity:
     {                   { 0, 0 },                   { 0, 0 },                   { 0, 0 } },
     // with carry from fraction and sign change:
@@ -290,7 +296,7 @@ eps(double d)
 //----------------------------------------------------------------------
 void test_AdditionLR(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     for (idx = 0; idx < addsub_cnt; ++idx)
     {
@@ -306,7 +312,7 @@ void test_AdditionLR(void)
 
 void test_AdditionRL(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     for (idx = 0; idx < addsub_cnt; ++idx)
     {
@@ -326,7 +332,7 @@ void test_AdditionRL(void)
 //----------------------------------------------------------------------
 void test_SubtractionLR(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     for (idx = 0; idx < addsub_cnt; ++idx)
     {
@@ -342,7 +348,7 @@ void test_SubtractionLR(void)
 
 void test_SubtractionRL(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     for (idx = 0; idx < addsub_cnt; ++idx)
     {
@@ -362,7 +368,7 @@ void test_SubtractionRL(void)
 
 void test_Negation(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     for (idx = 0; idx < addsub_cnt; ++idx)
     {
@@ -384,7 +390,7 @@ void test_Negation(void)
 //----------------------------------------------------------------------
 void test_Absolute(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     for (idx = 0; idx < addsub_cnt; ++idx)
     {
@@ -394,9 +400,13 @@ void test_Absolute(void)
         TEST_ASSERT_TRUE(l_fp_signum(op2) >= 0);
 
         if (l_fp_signum(op1) >= 0)
+        {
             op1 = l_fp_subtract(op1, op2);
+        }
         else
+        {
             op1 = l_fp_add(op1, op2);
+        }
 
         l_fp zero = l_fp_init(0, 0);
 
@@ -421,7 +431,7 @@ void test_Absolute(void)
 //----------------------------------------------------------------------
 void test_FDF_RoundTrip(void)
 {
-    size_t idx = 0;
+    size_t idx = 0U;
 
     // since a l_fp has 64 bits in it's mantissa and a double has
     // only 54 bits available (including the hidden '1') we have to

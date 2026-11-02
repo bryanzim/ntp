@@ -181,12 +181,18 @@ copy_addrinfo_common(
     for (ai_src = src; NULL != ai_src; ai_src = ai_nxt)
     {
         if (just_one)
+        {
             ai_nxt = NULL;
+        }
         else
+        {
             ai_nxt = ai_src->ai_next;
+        }
         ++elements;
         if (NULL != ai_src->ai_canonname)
+        {
             canons_octets += 1 + strlen(ai_src->ai_canonname);
+        }
     }
 
     octets = elements * (sizeof(*ai_cpy) + sizeof(*psau));
@@ -201,9 +207,13 @@ copy_addrinfo_common(
     for (ai_src = src; NULL != ai_src; ai_src = ai_nxt)
     {
         if (just_one)
+        {
             ai_nxt = NULL;
+        }
         else
+        {
             ai_nxt = ai_src->ai_next;
+        }
         *ai_cpy = *ai_src;
         DEBUG_INSIST(ai_cpy->ai_canonname == ai_src->ai_canonname);
         INSIST(ai_src->ai_addrlen <= sizeof(sockaddr_u));
@@ -220,9 +230,13 @@ copy_addrinfo_common(
         if (NULL != ai_cpy->ai_next)
         {
             if (just_one)
+            {
                 ai_cpy->ai_next = NULL;
+            }
             else
+            {
                 ai_cpy->ai_next = ai_cpy + 1;
+            }
         }
         ++ai_cpy;
     }
@@ -291,12 +305,16 @@ int getaddrinfo(const char* nodename, const char* servname,
     /*
      * If no name is provide just return an error
      */
-    if (nodename == NULL && servname == NULL)
+    if ((nodename == NULL) && (servname == NULL))
+    {
         return (EAI_NONAME);
+    }
 
     ai = calloc(sizeof(struct addrinfo), 1);
     if (ai == NULL)
+    {
         return (EAI_MEMORY);
+    }
 
     /*
      * Copy default values from hints, if available
@@ -391,37 +409,53 @@ int getaddrinfo(const char* nodename, const char* servname,
         if (*e == '\0')
         {
             if (socktype == 0)
+            {
                 return (EAI_SOCKTYPE);
-            if (port < 0 || port > 65535)
+            }
+            if ((port < 0) || (port > 65535))
+            {
                 return (EAI_SERVICE);
+            }
             port = htons((unsigned short)port);
         }
         else
         {
             sp = getservbyname(servname, proto);
             if (sp == NULL)
+            {
                 return (EAI_SERVICE);
+            }
             port = sp->s_port;
             if (socktype == 0)
             {
                 if (strcmp(sp->s_proto, "tcp") == 0)
+                {
                     socktype = SOCK_STREAM;
+                }
                 else if (strcmp(sp->s_proto, "udp") == 0)
+                {
                     socktype = SOCK_DGRAM;
+                }
             }
         }
     }
     else
+    {
         port = 0;
+    }
 
     /*
      *
      * Set up the port number
      */
     if (ai->ai_family == AF_INET)
+    {
         ((struct sockaddr_in*)ai->ai_addr)->sin_port = (unsigned short)port;
+    }
     else if (ai->ai_family == AF_INET6)
+    {
         ((struct sockaddr_in6*)ai->ai_addr)->sin6_port = (unsigned short)port;
+    }
     *res = ai;
     return (0);
 }
@@ -448,26 +482,36 @@ int getnameinfo(const struct sockaddr* sa, u_int salen, char* host,
     struct hostent* hp;
 
     if (sa->sa_family != AF_INET)
+    {
         return (EAI_FAMILY);
+    }
     hp = gethostbyaddr(
         (const char*)&((const struct sockaddr_in*)sa)->sin_addr,
         4, AF_INET);
     if (hp == NULL)
     {
         if (h_errno == TRY_AGAIN)
+        {
             return (EAI_AGAIN);
+        }
         else
+        {
             return (EAI_FAIL);
+        }
     }
-    if (host != NULL && hostlen > 0)
+    if ((host != NULL) && (hostlen > 0))
+    {
         strlcpy(host, hp->h_name, hostlen);
+    }
     return (0);
 }
 
 char* gai_strerror(int ecode)
 {
-    if (ecode < 0 || ecode > EAI_MAX)
+    if ((ecode < 0) || (ecode > EAI_MAX))
+    {
         ecode = EAI_MAX;
+    }
     return ai_errlist[ecode];
 }
 
@@ -484,7 +528,9 @@ do_nodename(
 
     ai->ai_addr = calloc(sizeof(struct sockaddr_storage), 1);
     if (ai->ai_addr == NULL)
+    {
         return (EAI_MEMORY);
+    }
 
     /*
      * For an empty node name just use the wildcard.
@@ -550,8 +596,10 @@ do_nodename(
     /*
      * If the numeric host flag is set, don't attempt resolution
      */
-    if (hints != NULL && (hints->ai_flags & AI_NUMERICHOST))
+    if ((hints != NULL) && (hints->ai_flags & AI_NUMERICHOST))
+    {
         return (EAI_NONAME);
+    }
 
     /*
      * Look for a name
@@ -561,8 +609,10 @@ do_nodename(
 
     if (hp == NULL)
     {
-        if (errval == TRY_AGAIN || errval == EAI_AGAIN)
+        if ((errval == TRY_AGAIN) || (errval == EAI_AGAIN))
+        {
             return (EAI_AGAIN);
+        }
         else if (errval == EAI_NONAME)
         {
             if (inet_pton(AF_INET, nodename,
@@ -588,8 +638,10 @@ do_nodename(
 #ifdef ISC_PLATFORM_HAVESALEN
     ai->ai_addr->sa_len = sizeof(struct sockaddr);
 #endif
-    if (hints != NULL && (hints->ai_flags & AI_CANONNAME))
+    if ((hints != NULL) && (hints->ai_flags & AI_CANONNAME))
+    {
         ai->ai_canonname = estrdup(hp->h_name);
+    }
     return (0);
 }
 

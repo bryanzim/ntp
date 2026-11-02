@@ -45,7 +45,9 @@ int xvsbprintf(
         if (rc > 0)
         {
             if ((size_t)rc >= blen)
+            {
                 rc = 0;
+            }
             pbuf += rc;
         }
         *pbuf = '\0'; /* fear of bad vsnprintf */

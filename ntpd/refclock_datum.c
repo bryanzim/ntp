@@ -143,7 +143,7 @@ struct datum_pts_unit
     int msec;           /* miliseconds */
     int usec;           /* miliseconds */
     u_char leap;        /* funny leap character code */
-    char retbuf[8];     /* returned time from the datum pts */
+    char retbuf[8U];    /* returned time from the datum pts */
     char nbytes;        /* number of bytes received from datum pts */
     double sigma2;      /* average squared error (roughly) */
     int tzoff;          /* time zone offest from GMT */
@@ -153,8 +153,8 @@ struct datum_pts_unit
 ** PTS static constant variables for internal use
 */
 
-static char TIME_REQUEST[6]; /* request message sent to datum for time */
-static int nunits;           /* number of active units */
+static char TIME_REQUEST[6U]; /* request message sent to datum for time */
+static int nunits;            /* number of active units */
 
 /*
 ** Callback function prototypes that ntpd needs to know about.
@@ -228,7 +228,9 @@ datum_pts_start(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Starting Datum PTS unit %d\n", unit);
+    }
 #endif
 
     /*
@@ -252,14 +254,18 @@ datum_pts_start(
 
     datum_pts->PTS_fd = fd;
 
-    if (-1 == fcntl(datum_pts->PTS_fd, F_SETFL, 0)) /* clear the descriptor flags */
+    if (-1 == fcntl(datum_pts->PTS_fd, F_SETFL, 0))
+    { /* clear the descriptor flags */
         msyslog(LOG_ERR, "MSF_ARCRON(%d): fcntl(F_SETFL, 0): %m.",
                 unit);
+    }
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Opening RS232 port with file descriptor %d\n",
                datum_pts->PTS_fd);
+    }
 #endif
 
     /*
@@ -304,7 +310,9 @@ datum_pts_start(
         pp->io.fd = -1;
 #ifdef DEBUG_DATUM_PTC
         if (debug)
+        {
             printf("Problem adding clock\n");
+        }
 #endif
 
         msyslog(LOG_ERR, "Datum_PTS: Problem adding clock");
@@ -339,7 +347,9 @@ datum_pts_shutdown(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Shutdown Datum PTS\n");
+    }
 #endif
 
     msyslog(LOG_ERR, "Datum_PTS: Shutdown Datum PTS");
@@ -376,7 +386,9 @@ datum_pts_poll(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Poll Datum PTS\n");
+    }
 #endif
 
     /*
@@ -384,7 +396,9 @@ datum_pts_poll(
     */
     error_code = write(datum_pts->PTS_fd, TIME_REQUEST, 6);
     if (error_code != 6)
+    {
         perror("TIME_REQUEST");
+    }
     datum_pts->nbytes = 0;
 }
 
@@ -403,7 +417,9 @@ datum_pts_control(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Control Datum PTS\n");
+    }
 #endif
 }
 
@@ -430,7 +446,9 @@ datum_pts_init(void)
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Init Datum PTS\n");
+    }
 #endif
 
     /*
@@ -462,7 +480,9 @@ datum_pts_buginfo(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Buginfo Datum PTS\n");
+    }
 #endif
 }
 
@@ -507,7 +527,9 @@ datum_pts_receive(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Receive Datum PTS: %d bytes\n", dpend);
+    }
 #endif
 
     /*									*/
@@ -573,12 +595,14 @@ datum_pts_receive(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("day %d, hour %d, minute %d, second %d, msec %d\n",
                datum_pts->day,
                datum_pts->hour,
                datum_pts->minute,
                datum_pts->second,
                datum_pts->msec);
+    }
 #endif
 
     /*
@@ -615,7 +639,7 @@ datum_pts_receive(
     ** a half hour of the Datum time (even with time zone differences).
     */
 
-    for (tzoff = 0; tzoff < 24; tzoff++)
+    for (tzoff = 0; tzoff < 24; ++tzoff)
     {
         if (clocktime(datum_pts->day,
                       datum_pts->hour,
@@ -691,7 +715,9 @@ datum_pts_receive(
 
 #ifdef DEBUG_DATUM_PTC
             if (debug)
+            {
                 printf("Good clocktime\n");
+            }
 #endif
         }
     }
@@ -717,7 +743,9 @@ datum_pts_receive(
     ftimerr = dispersion;
     ftimerr /= (1024.0 * 64.0);
     if (debug)
+    {
         printf("dispersion = %d, %f\n", dispersion, ftimerr);
+    }
 #endif
 
     /*
@@ -748,7 +776,9 @@ datum_pts_receive(
     ftimerr /= 1024 * 1024;
     abserr = ftimerr;
     if (ftimerr < 0.0)
+    {
         abserr = -ftimerr;
+    }
 
     if (datum_pts->sigma2 == 0.0)
     {
@@ -775,11 +805,14 @@ datum_pts_receive(
 
 #ifdef DEBUG_DATUM_PTC
     if (debug)
+    {
         printf("Time error = %f seconds\n", ftimerr);
+    }
 #endif
 
 #if defined(DEBUG_DATUM_PTC) || defined(LOG_TIME_ERRORS)
     if (debug)
+    {
         printf("PTS: day %d, hour %d, minute %d, second %d, msec %d, Time Error %f\n",
                datum_pts->day,
                datum_pts->hour,
@@ -787,6 +820,7 @@ datum_pts_receive(
                datum_pts->second,
                datum_pts->msec,
                ftimerr);
+    }
 #endif
 }
 #else

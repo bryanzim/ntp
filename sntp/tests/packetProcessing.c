@@ -68,7 +68,7 @@ void PrepareAuthenticationTest(
     const char* type,
     const void* key_seq)
 {
-    char str[25];
+    char str[25U];
 
     snprintf(str, sizeof(str), "%d", key_id);
     ActivateOption("-a", str);
@@ -409,7 +409,7 @@ void test_CorrectAuthenticatedPacketMD5(void)
 {
 #ifdef OPENSSL
 
-    keyid_t k_id = 10;
+    keyid_t k_id = 10U;
     int pkt_len = LEN_PKT_NOMAC;
     int mac_len;
 
@@ -442,7 +442,7 @@ void test_CorrectAuthenticatedPacketSHA256(void)
 {
 #ifdef OPENSSL
 
-    keyid_t k_id = 10;
+    keyid_t k_id = 10U;
     int pkt_len = LEN_PKT_NOMAC;
     int mac_len;
 
@@ -472,7 +472,7 @@ void test_CorrectAuthenticatedPacketSHA1(void)
 {
 #ifdef OPENSSL
 
-    keyid_t k_id = 20;
+    keyid_t k_id = 20U;
     int pkt_len = LEN_PKT_NOMAC;
     int mac_len;
 

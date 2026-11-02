@@ -167,7 +167,7 @@ typedef union pps_timeu
 { /* timestamp format */
     struct timespec tspec;
     ntp_fp_t ntpfp;
-    unsigned long longpad[3];
+    unsigned long longpad[3U];
 } pps_timeu_t; /* generic data type to represent time stamps */
 
 /* addition of NTP fixed-point format */
@@ -343,7 +343,9 @@ time_pps_create(
      */
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     if (PPS_OFFSETOF(tspec.tv_nsec, pps_timeu_t) !=
         PPS_OFFSETOF(ntpfp.fractional, pps_timeu_t))
@@ -374,16 +376,16 @@ time_pps_create(
     ol.hEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     ol.hEvent = (HANDLE)((ULONG_PTR)ol.hEvent | 1);
 
-    if (FALSE == DeviceIoControl(
-                     (HANDLE)_get_osfhandle(filedes),
-                     IOCTL_SERIAL_GET_PPS_STAMPS,
-                     NULL,
-                     0,
-                     &old_pps_stamps,
-                     sizeof(old_pps_stamps),
-                     &bytes,
-                     &ol) ||
-        sizeof(old_pps_stamps) != bytes)
+    if ((FALSE == DeviceIoControl(
+                      (HANDLE)_get_osfhandle(filedes),
+                      IOCTL_SERIAL_GET_PPS_STAMPS,
+                      NULL,
+                      0,
+                      &old_pps_stamps,
+                      sizeof(old_pps_stamps),
+                      &bytes,
+                      &ol)) ||
+        (sizeof(old_pps_stamps) != bytes))
     {
 
         /*
@@ -406,7 +408,9 @@ time_pps_create(
 
     *handle = malloc(sizeof(pps_unit_t));
     if (!(*handle))
+    {
         RETURN_PPS_ERRNO(ENOMEM);
+    }
 
     memset(*handle, 0, sizeof(pps_unit_t));
     (*handle)->filedes = filedes;
@@ -429,7 +433,9 @@ time_pps_destroy(
      */
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     CloseHandle(handle->ol.hEvent);
     free(handle);
@@ -451,10 +457,14 @@ time_pps_setparams(
      */
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (!params)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     /*
      * There was no reasonable consensu in the API working group.
@@ -462,7 +472,9 @@ time_pps_setparams(
      */
 
     if (params->api_version != PPS_API_VERS_1)
+    {
         RETURN_PPS_ERRNO(EINVAL);
+    }
 
     /*
      * only settable modes are PPS_CAPTUREASSERT and PPS_OFFSETASSERT
@@ -480,8 +492,10 @@ time_pps_setparams(
 
         if (handle->params.assert_offset.tv_sec ||
             handle->params.assert_offset.tv_nsec)
+        {
 
             RETURN_PPS_ERRNO(EINVAL);
+        }
 
         /*
          * If no offset was specified but both time
@@ -503,7 +517,9 @@ time_pps_setparams(
 
     if (mode_in & ~(PPS_CAPTUREASSERT | PPS_OFFSETASSERT |
                     PPS_TSFMT_TSPEC | PPS_TSFMT_NTPFP))
+    {
         RETURN_PPS_ERRNO(EOPNOTSUPP);
+    }
 
     /*
      * ok, ready to go.
@@ -530,10 +546,14 @@ time_pps_getparams(
      */
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (!params)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     *params = handle->params;
     return (0);
@@ -553,10 +573,14 @@ time_pps_getcap(
      */
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (!mode)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     *mode = PPS_CAP;
     return (0);
@@ -584,10 +608,14 @@ time_pps_fetch(
      */
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (!ppsinfo)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     /*
      * nb. PPS_CANWAIT is NOT set by the implementation, we can totally
@@ -635,12 +663,14 @@ time_pps_fetch(
 
         lasterr = GetLastError();
         if (ERROR_INVALID_PARAMETER != lasterr)
+        {
             fprintf(stderr, "time_pps_fetch: ioctl err %d\n",
                     lasterr);
+        }
         RETURN_PPS_ERRNO(EOPNOTSUPP);
     }
     else if (bytes != sizeof(pps_stamps) &&
-             bytes != sizeof(OLD_SERIAL_PPS_STAMPS))
+             (bytes != sizeof(OLD_SERIAL_PPS_STAMPS)))
     {
 
         fprintf(stderr,
@@ -724,7 +754,9 @@ time_pps_kcbind(
      * Check for valid arguments before revealing the ugly truth
      */
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     RETURN_PPS_ERRNO(EOPNOTSUPP);
 }

@@ -151,7 +151,7 @@ arb_start(
     register struct arbunit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port. Use CLK line discipline, if available.
@@ -159,7 +159,9 @@ arb_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -218,9 +220,13 @@ arb_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -262,12 +268,16 @@ arb_receive(
      * and elevation and writes it to the clockstats file.
      */
     if (temp == 0)
+    {
         return;
+    }
 
     pp->lastrec = up->laststamp;
     up->laststamp = trtmp;
     if (temp < 3)
+    {
         return;
+    }
 
     if (up->tcswitch == 0)
     {
@@ -292,10 +302,14 @@ arb_receive(
             strlcpy(up->status, tbuf + 2,
                     sizeof(up->status));
             if (pp->sloppyclockflag & CLK_FLAG4)
+            {
                 refclock_write(peer, "LA", 2, "LA");
+            }
             else
+            {
                 refclock_write(peer, COMMAND_START_BCAST, 2,
                                COMMAND_START_BCAST);
+            }
             return;
         }
         else if (!strncmp(tbuf, "LA", 2))
@@ -325,7 +339,9 @@ arb_receive(
             record_clock_stats(&peer->srcadr, up->latlon);
 #ifdef DEBUG
             if (debug)
+            {
                 printf("arbiter: %s\n", up->latlon);
+            }
 #endif
             refclock_write(peer, COMMAND_START_BCAST, 2,
                            COMMAND_START_BCAST);
@@ -342,8 +358,10 @@ arb_receive(
      * tacked on the end for clockstats display.
      */
     up->tcswitch++;
-    if (up->tcswitch <= 1 || temp < LENARB)
+    if ((up->tcswitch <= 1) || (temp < LENARB))
+    {
         return;
+    }
 
     /*
      * Timecode format B5: "i yy ddd hh:mm:ss.000   "
@@ -421,18 +439,26 @@ arb_receive(
         return;
     }
     if (syncchar != ' ')
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
 
     /*
      * Process the new sample in the median filter and determine the
      * timecode timestamp.
      */
     if (!refclock_process(pp))
+    {
         refclock_report(peer, CEVNT_BADTIME);
+    }
     else if (peer->disp > MAXDISTANCE)
+    {
         refclock_receive(peer);
+    }
 
     /* if (up->tcswitch >= MAXSTAGE) { */
     refclock_write(peer, COMMAND_HALT_BCAST, 2, COMMAND_HALT_BCAST);
@@ -464,7 +490,9 @@ arb_poll(
     pp->polls++;
     up->tcswitch = 0;
     if (refclock_write(peer, "TQ", 2, "TQ") != 2)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
 
     /*
      * Process median filter samples. If none received, declare a
@@ -479,8 +507,10 @@ arb_poll(
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("arbiter: timecode %d %s\n",
                pp->lencode, pp->a_lastcode);
+    }
 #endif
 }
 

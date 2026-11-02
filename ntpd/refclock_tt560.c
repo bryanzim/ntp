@@ -42,7 +42,7 @@ struct tt560unit
 typedef union byteswap_u
 {
     unsigned int long_word;
-    unsigned char byte[4];
+    unsigned char byte[4U];
 } byteswap_t;
 
 /*
@@ -76,7 +76,7 @@ tt560_start(
 {
     register struct tt560unit* up;
     struct refclockproc* pp;
-    char device[20];
+    char device[20U];
     int fd;
     caddr_t membase;
 
@@ -180,7 +180,7 @@ tt560_poll(
 
     *tt_mem_t = 0; /* update the time freeze register */
                    /* and copy time stamp to memory */
-    for (i = 0; i < TIME_FREEZE_REG_LEN; i++)
+    for (i = 0; i < TIME_FREEZE_REG_LEN; ++i)
     {
         *p_time_t = byte_swap(*tt_mem_t);
         p_time_t++;
@@ -210,9 +210,11 @@ tt560_poll(
     pp->lencode = strlen(pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("tt560: time %s timecode %d %s\n",
                ulfptoa(&pp->lastrec, 6), pp->lencode,
                pp->a_lastcode);
+    }
 #endif
     if (sscanf(pp->a_lastcode, "%3d %2d:%2d:%2d.%6ld",
                &pp->day, &pp->hour, &pp->minute, &pp->second, &pp->usec) != 5)
@@ -221,9 +223,13 @@ tt560_poll(
         return;
     }
     if ((tp->status & 0x6) != 0x6)
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
     if (!refclock_process(pp))
     {
         refclock_report(peer, CEVNT_BADTIME);

@@ -237,8 +237,10 @@ void write_stats(void)
      * silently ignored.
      */
     if ((errno == 0) && (setpriority(PRIO_PROCESS, 0, -20) == 0))
-        prio_set = 1; /* overdrive */
-#endif                /* VMS */
+    {
+        prio_set = 1;
+    } /* overdrive */
+#endif /* VMS */
 #ifdef HAVE_GETCLOCK
     (void)getclock(TIMEOFDAY, &ts);
     tv.tv_sec = ts.tv_sec;
@@ -247,12 +249,16 @@ void write_stats(void)
     GETTIMEOFDAY(&tv, (struct timezone*)NULL);
 #endif /* not HAVE_GETCLOCK */
     if (ntp_set_tod(&tv, (struct timezone*)NULL) != 0)
+    {
         msyslog(LOG_ERR, "can't sync battery time: %m");
+    }
 #if !defined(VMS)
     if (prio_set)
-        setpriority(PRIO_PROCESS, 0, o_prio); /* downshift */
-#endif                                        /* VMS */
-#endif                                        /* DOSYNCTODR */
+    {
+        setpriority(PRIO_PROCESS, 0, o_prio);
+    } /* downshift */
+#endif /* VMS */
+#endif /* DOSYNCTODR */
     record_sys_stats();
     if (stats_drift_file != 0)
     {
@@ -286,17 +292,21 @@ void write_stats(void)
         (void)fclose(fp);
         /* atomic */
 #ifdef SYS_WINNT
-        if (_unlink(stats_drift_file)) /* rename semantics differ under NT */
+        if (_unlink(stats_drift_file))
+        { /* rename semantics differ under NT */
             msyslog(LOG_WARNING,
                     "Unable to remove prior drift file %s, %m",
                     stats_drift_file);
+        }
 #endif /* SYS_WINNT */
 
 #ifndef NO_RENAME
         if (rename(stats_temp_file, stats_drift_file))
+        {
             msyslog(LOG_WARNING,
                     "Unable to rename temp drift file %s to %s, %m",
                     stats_temp_file, stats_drift_file);
+        }
 #else
         /* we have no rename NFS of ftp in use */
         if ((fp = fopen(stats_drift_file, "w")) ==
@@ -340,7 +350,7 @@ allow_config(
     u_int option,
     int /*BOOL*/ cmdopt)
 {
-    static u_int seen = 0; /* stat options previously set */
+    static u_int seen = 0U; /* stat options previously set */
     u_int mask;
     int retv;
 
@@ -440,7 +450,7 @@ void stats_config(
         {
             break;
         }
-        if (!value || 0 == (len = strlen(value)))
+        if (!value || (0 == (len = strlen(value))))
         {
             free(stats_drift_file);
             free(stats_temp_file);
@@ -517,7 +527,7 @@ void stats_config(
             break;
         }
         /* Add a DIR_SEP unless we already have one. */
-        if (0 == len || DIR_SEP == value[len - 1])
+        if ((0 == len) || (DIR_SEP == value[len - 1]))
         {
             dirsep_or_nul = '\0';
         }
@@ -555,7 +565,7 @@ void stats_config(
      * valid or the leapfile line in ntp.conf must have ignorehash.
      */
     case STATS_LEAP_FILE:
-        if (NULL == value || 0 == (len = strlen(value)))
+        if ((NULL == value) || (0 == (len = strlen(value))))
         {
             break;
         }
@@ -664,7 +674,9 @@ void record_loop_stats(
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&loopstats, now.l_ui);
@@ -698,7 +710,9 @@ void record_clock_stats(
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&clockstats, now.l_ui);
@@ -724,13 +738,15 @@ int mprintf_clock_stats(
 {
     va_list ap;
     int rc;
-    char msg[512];
+    char msg[512U];
 
     va_start(ap, fmt);
     rc = mvsnprintf(msg, sizeof(msg), fmt, ap);
     va_end(ap);
     if (stats_control)
+    {
         record_clock_stats(addr, msg);
+    }
 
     return rc;
 }
@@ -770,14 +786,18 @@ void record_raw_stats(
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     /*
      * Mode 6 and mode 7 packets do not have the format of normal
      * NTP packets and will log garbage.  So don't.  [Bug 3774]
      */
-    if (MODE_CONTROL == mode || MODE_PRIVATE == mode)
+    if ((MODE_CONTROL == mode) || (MODE_PRIVATE == mode))
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&rawstats, now.l_ui);
@@ -833,7 +853,9 @@ void record_sys_stats(void)
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&sysstats, now.l_ui);
@@ -870,7 +892,9 @@ void record_proto_stats(
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&protostats, now.l_ui);
@@ -904,7 +928,9 @@ void record_crypto_stats(
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&cryptostats, now.l_ui);
@@ -913,11 +939,15 @@ void record_crypto_stats(
     if (cryptostats.fp != NULL)
     {
         if (addr == NULL)
+        {
             fprintf(cryptostats.fp, "%lu %s 0.0.0.0 %s\n",
                     day, ulfptoa(&now, 3), text);
+        }
         else
+        {
             fprintf(cryptostats.fp, "%lu %s %s %s\n",
                     day, ulfptoa(&now, 3), stoa(addr), text);
+        }
         fflush(cryptostats.fp);
     }
 }
@@ -942,7 +972,9 @@ void record_timing_stats(
     u_long day;
 
     if (!stats_control)
+    {
         return;
+    }
 
     get_systime(&now);
     filegen_setup(&timingstats, now.l_ui);
@@ -952,7 +984,9 @@ void record_timing_stats(
     {
         fprintf(timingstats.fp, "%lu %s %s\n", day, lfptoa(&now, 3), text);
         if (++flshcnt % 100 == 0)
+        {
             fflush(timingstats.fp);
+        }
     }
 }
 #endif
@@ -975,15 +1009,21 @@ void check_leap_file(
 {
     /* just do nothing if there is no leap file */
     if (!(leapfile_name && *leapfile_name))
+    {
         return;
+    }
 
     /* try to load leapfile, force it if no leapfile loaded yet */
     if (leapsec_load_file(
             leapfile_name, &leapfile_stat,
             !have_leapfile, is_daily_check, chck_leaphash))
+    {
         have_leapfile = TRUE;
+    }
     else if (!have_leapfile)
+    {
         return;
+    }
 
     check_leap_expiration(is_daily_check, ntptime, systime);
 }
@@ -1011,16 +1051,20 @@ check_leap_expiration(
                 "%s ('%s'): will expire in less than one day",
                 logPrefix, leapfile_name);
     }
-    else if (is_daily_check && rc < 28)
+    else if (is_daily_check && (rc < 28))
     {
         if (rc < 0)
+        {
             msyslog(LOG_ERR,
                     "%s ('%s'): expired %d day%s ago",
                     logPrefix, leapfile_name, -rc, (rc == -1 ? "" : "s"));
+        }
         else
+        {
             msyslog(LOG_WARNING,
                     "%s ('%s'): will expire in less than %d days",
                     logPrefix, leapfile_name, 1 + rc);
+        }
     }
 }
 
@@ -1035,7 +1079,9 @@ void getauthkeys(
 
     len = strlen(keyfile);
     if (!len)
+    {
         return;
+    }
 
 #ifndef SYS_WINNT
     key_file_name = erealloc(key_file_name, len + 1);
@@ -1043,7 +1089,9 @@ void getauthkeys(
 #else
     key_file_name = erealloc(key_file_name, _MAX_PATH);
     if (len + 1 > _MAX_PATH)
+    {
         return;
+    }
     if (!ExpandEnvironmentStrings(keyfile, key_file_name,
                                   _MAX_PATH))
     {
@@ -1065,7 +1113,9 @@ void getauthkeys(
 void rereadkeys(void)
 {
     if (NULL != key_file_name)
+    {
         authreadkeys(key_file_name);
+    }
 }
 
 
@@ -1091,12 +1141,16 @@ char* fstostr(
 
     LIB_GETBUF(buf);
     if (ntpcal_ntp_to_date(&tm, (u_int32)ntp_stamp, NULL) < 0)
+    {
         snprintf(buf, LIB_BUFLENGTH, "ntpcal_ntp_to_date: %ld: range error",
                  (long)ntp_stamp);
+    }
     else
+    {
         snprintf(buf, LIB_BUFLENGTH, "%04d%02d%02d%02d%02d",
                  tm.year, tm.month, tm.monthday,
                  tm.hour, tm.minute);
+    }
     return buf;
 }
 

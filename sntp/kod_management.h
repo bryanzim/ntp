@@ -5,9 +5,9 @@
 
 struct kod_entry
 {
-    char hostname[255];
+    char hostname[255U];
     time_t timestamp;
-    char type[5];
+    char type[5U];
 };
 
 int search_entry(const char* hostname, struct kod_entry** dst);

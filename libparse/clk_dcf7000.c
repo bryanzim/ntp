@@ -132,15 +132,23 @@ cvt_dcf7000(
             else
             {
                 if (flags & 0x1)
+                {
                     clock_time->utcoffset = -2 * 60 * 60;
+                }
                 else
+                {
                     clock_time->utcoffset = -1 * 60 * 60;
+                }
 
                 if (flags & 0x2)
+                {
                     clock_time->flags |= PARSEB_ANNOUNCE;
+                }
 
                 if (flags & 0x4)
+                {
                     clock_time->flags |= PARSEB_NOSYNC;
+                }
             }
             return CVT_OK;
         }
@@ -168,9 +176,13 @@ inp_dcf7000(
         parseprintf(DD_PARSE, ("inp_dcf7000: EOL seen\n"));
         parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
     default:
         return parse_addchar(parseio, ch);

@@ -29,7 +29,7 @@ extern int select(int width, fd_set* pReadFds, fd_set* pWriteFds,
 #if defined(VMS)
 typedef struct
 {
-    unsigned int fds_bits[1];
+    unsigned int fds_bits[1U];
 } fd_set;
 #endif
 

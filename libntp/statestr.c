@@ -302,7 +302,9 @@ getcode(
     while (codetab->code != -1)
     {
         if (codetab->code == code)
+        {
             return codetab->string1;
+        }
         codetab++;
     }
 
@@ -322,7 +324,9 @@ getevents(
     char* buf;
 
     if (cnt == 0)
+    {
         return "no events";
+    }
 
     LIB_GETBUF(buf);
     snprintf(buf, LIB_BUFLENGTH, "%d event%s", cnt,
@@ -361,7 +365,7 @@ decode_bitflags(
     lim = buf + LIB_BUFLENGTH;
     sep = "";
 
-    for (b = 0; b < tab_ct; b++)
+    for (b = 0; b < tab_ct; ++b)
     {
         const char* flagstr;
 
@@ -380,7 +384,9 @@ decode_bitflags(
             rc = snprintf(pch, avail, "%s%s", sep,
                           flagstr);
             if ((size_t)rc >= avail)
+            {
                 goto toosmall;
+            }
             pch += rc;
             sep = sep2;
         }
@@ -498,13 +504,19 @@ eventstr(
     int num)
 {
     if (num & PEER_EVENT)
+    {
         return (getcode(num & ~PEER_EVENT, peer_codes));
+    }
 #ifdef AUTOKEY
     else if (num & CRPT_EVENT)
+    {
         return (getcode(num & ~CRPT_EVENT, crypto_codes));
+    }
 #endif /* AUTOKEY */
     else
+    {
         return (getcode(num, sys_codes));
+    }
 }
 
 const char*

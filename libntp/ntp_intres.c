@@ -273,7 +273,9 @@ int getaddrinfo_sometime_ex(
     gai_req->earliest = max(now, child_ctx->next_dns_timeslot);
     child_ctx->next_dns_timeslot = gai_req->earliest;
     if (hints != NULL)
+    {
         gai_req->hints = *hints;
+    }
     gai_req->retry = retry;
     gai_req->callback = callback;
     gai_req->context = context;
@@ -346,7 +348,9 @@ int blocking_getaddrinfo(
               gai_req->hints.ai_flags));
 #ifdef DEBUG
     if (debug >= 2)
+    {
         fflush(stdout);
+    }
 #endif
     ai_res = NULL;
     gai_resp->retcode = getaddrinfo(node, service, &gai_req->hints,
@@ -354,7 +358,9 @@ int blocking_getaddrinfo(
     gai_resp->retry = gai_req->retry;
 #ifdef EAI_SYSTEM
     if (EAI_SYSTEM == gai_resp->retcode)
+    {
         gai_resp->gai_errno = errno;
+    }
 #endif
     canons_octets = 0;
 
@@ -365,7 +371,9 @@ int blocking_getaddrinfo(
         {
             gai_resp->ai_count++;
             if (ai->ai_canonname)
+            {
                 canons_octets += strlen(ai->ai_canonname) + 1;
+            }
             ai = ai->ai_next;
         }
         /*
@@ -523,7 +531,7 @@ getaddrinfo_sometime_complete(
     {
         again = !!(gai_req->qflags & GAIR_F_IGNDNSERR) || should_retry_dns(gai_resp->retcode,
                                                                            gai_resp->gai_errno);
-        if (gai_req->retry > 0 && again)
+        if ((gai_req->retry > 0) && again)
         {
             /* log the first retry only */
             if (INITIAL_DNS_RETRY == gai_req->retry)
@@ -581,7 +589,7 @@ getaddrinfo_sometime_complete(
      */
     ai = (void*)((char*)gai_resp + sizeof(*gai_resp));
     next_ai = NULL;
-    for (i = gai_resp->ai_count - 1; i >= 0; i--)
+    for (i = gai_resp->ai_count - 1; i >= 0; --i)
     {
         ai[i].ai_next = next_ai;
         next_ai = &ai[i];
@@ -590,19 +598,25 @@ getaddrinfo_sometime_complete(
     psau = (void*)((char*)ai + gai_resp->ai_count * sizeof(*ai));
     canon_start = (char*)psau + gai_resp->ai_count * sizeof(*psau);
 
-    for (i = 0; i < gai_resp->ai_count; i++)
+    for (i = 0; i < gai_resp->ai_count; ++i)
     {
         if (NULL != ai[i].ai_addr)
+        {
             ai[i].ai_addr = &psau->sa;
+        }
         psau++;
         if (NULL != ai[i].ai_canonname)
+        {
             ai[i].ai_canonname += (size_t)canon_start;
+        }
     }
 
     ENSURE((char*)psau == canon_start);
 
     if (!gai_resp->ai_count)
+    {
         ai = NULL;
+    }
 
     (*gai_req->callback)(gai_resp->retcode, gai_resp->gai_errno,
                          gai_req->context, node, service,
@@ -624,7 +638,7 @@ void gai_test_callback(int rescode, int gai_errno, void* context, const char* na
                   context, rescode, name, service));
         return;
     }
-    while (!rescode && NULL != ai_res)
+    while (!rescode && (NULL != ai_res))
     {
         ZERO_SOCK(&addr);
         memcpy(&addr, ai_res->ai_addr, ai_res->ai_addrlen);
@@ -718,7 +732,7 @@ int blocking_getnameinfo(
     char* cp;
     int rc;
     time_t time_now;
-    char host[1024];
+    char host[1024U];
 
     gni_req = (void*)((char*)req + sizeof(*req));
 
@@ -760,7 +774,9 @@ int blocking_getnameinfo(
     gni_resp->retry = gni_req->retry;
 #ifdef EAI_SYSTEM
     if (EAI_SYSTEM == gni_resp->retcode)
+    {
         gni_resp->gni_errno = errno;
+    }
 #endif
 
     if (0 != gni_resp->retcode)
@@ -815,7 +831,9 @@ int blocking_getnameinfo(
 
     rc = queue_blocking_response(c, resp, resp_octets, req);
     if (rc)
+    {
         msyslog(LOG_ERR, "blocking_getnameinfo unable to queue response");
+    }
     return rc;
 }
 
@@ -864,11 +882,13 @@ getnameinfo_sometime_complete(
          * exponential backoff of DNS retries to 64s
          */
         if (gni_req->retry > 0)
+        {
             manage_dns_retry_interval(&gni_req->scheduled,
                                       &gni_req->earliest, &gni_req->retry,
                                       &child_ctx->next_dns_timeslot);
+        }
 
-        if (gni_req->retry > 0 && again)
+        if ((gni_req->retry > 0) && again)
         {
             if (!queue_blocking_request(
                     BLOCKING_GETNAMEINFO,
@@ -876,7 +896,9 @@ getnameinfo_sometime_complete(
                     gni_req->octets,
                     &getnameinfo_sometime_complete,
                     gni_req))
+            {
                 return;
+            }
 
             msyslog(LOG_ERR, "unable to retry reverse lookup of %s", stoa(&gni_req->socku));
         }
@@ -908,11 +930,15 @@ getnameinfo_sometime_complete(
 void gni_test_callback(int rescode, int gni_errno, sockaddr_u* psau, int flags, const char* host, const char* service, void* context)
 {
     if (!rescode)
+    {
         TRACE(1, ("gni_test_callback got host '%s' serv '%s' for addr %s context %p\n",
                   host, service, stoa(psau), context));
+    }
     else
+    {
         TRACE(1, ("gni_test_callback context %p rescode %d gni_errno %d flags 0x%x addr %s\n",
                   context, rescode, gni_errno, flags, stoa(psau)));
+    }
 }
 #endif /* TEST_BLOCKING_WORKER */
 
@@ -937,7 +963,9 @@ reload_resolv_conf(
     if (worker_ctx->next_res_init <= time_now)
     {
         if (worker_ctx->next_res_init != 0)
+        {
             res_init();
+        }
         worker_ctx->next_res_init = time_now + 60;
 #ifdef WORK_THREAD
         next_res_init = worker_ctx->next_res_init;
@@ -960,7 +988,7 @@ reserve_dnschild_ctx(void)
     c = 0;
     while (TRUE)
     {
-        for (; c < dnschild_contexts_alloc; c++)
+        for (; c < dnschild_contexts_alloc; ++c)
         {
             if (NULL == dnschild_contexts[c])
             {
@@ -985,10 +1013,14 @@ get_dnschild_ctx(void)
     static u_int shared_ctx = UINT_MAX;
 
     if (worker_per_query)
+    {
         return reserve_dnschild_ctx();
+    }
 
     if (UINT_MAX == shared_ctx)
+    {
         shared_ctx = reserve_dnschild_ctx();
+    }
 
     return shared_ctx;
 }
@@ -1120,7 +1152,7 @@ should_retry_dns(
     static int eai_again_seen;
     int again;
 #if defined(EAI_SYSTEM) && defined(DEBUG)
-    char msg[256];
+    char msg[256U];
 #endif
 
     /*

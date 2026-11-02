@@ -52,7 +52,9 @@ int recvdata(
     recvc = recvfrom(rsock, rdata, rdata_length, 0,
                      &sender->sa, &slen);
     if (recvc < 0)
+    {
         return recvc;
+    }
 #ifdef DEBUG
     if (debug > 2)
     {
@@ -83,8 +85,10 @@ skip_efields(
         nlen = ntohl(*head) & 0xffff;
         ++head;
         nlen = (nlen + 3) >> 2;
-        if (nlen > (u_int)(tail - head) || nlen < 4)
-            return NULL; /* Blooper! Inconsistent! */
+        if ((nlen > (u_int)(tail - head)) || (nlen < 4))
+        {
+            return NULL;
+        } /* Blooper! Inconsistent! */
         head += nlen;
     }
     return head;
@@ -130,7 +134,7 @@ int process_pkt(
      * extension field is present, so we subtract the length of the
      * field and go around again.
      */
-    if (pkt_len < (int)LEN_PKT_NOMAC || (pkt_len & 3) != 0)
+    if ((pkt_len < (int)LEN_PKT_NOMAC) || ((pkt_len & 3) != 0))
     {
         msyslog(LOG_ERR,
                 "%s: Incredible packet length: %d.  Discarding.",
@@ -230,8 +234,8 @@ int process_pkt(
     }
 
     /* Check for server's ntp version */
-    if (PKT_VERSION(rpkt->li_vn_mode) < NTP_OLDVERSION ||
-        PKT_VERSION(rpkt->li_vn_mode) > NTP_VERSION)
+    if ((PKT_VERSION(rpkt->li_vn_mode) < NTP_OLDVERSION) ||
+        (PKT_VERSION(rpkt->li_vn_mode) > NTP_VERSION))
     {
         msyslog(LOG_ERR,
                 "%s: Packet shows wrong version (%d)",
@@ -239,8 +243,8 @@ int process_pkt(
         return SERVER_UNUSEABLE;
     }
     /* We want a server to sync with */
-    if (PKT_MODE(rpkt->li_vn_mode) != mode &&
-        PKT_MODE(rpkt->li_vn_mode) != MODE_PASSIVE)
+    if ((PKT_MODE(rpkt->li_vn_mode) != mode) &&
+        (PKT_MODE(rpkt->li_vn_mode) != MODE_PASSIVE))
     {
         msyslog(LOG_ERR,
                 "%s: mode %d stratum %d", func_name,
@@ -256,16 +260,22 @@ int process_pkt(
                   func_name, rpkt->stratum));
         ref_char = (char*)&rpkt->refid;
         TRACE(1, ("%s: Packet refid: %c%c%c%c\n", func_name,
-                  ref_char[0U], ref_char[1], ref_char[2], ref_char[3]));
+                  ref_char[0U], ref_char[1U], ref_char[2U], ref_char[3U]));
         /* If it's a KOD packet we'll just use the KOD information */
         if (ref_char[0U] != 'X')
         {
             if (strncmp(ref_char, "DENY", 4) == 0)
+            {
                 return KOD_DEMOBILIZE;
+            }
             if (strncmp(ref_char, "RSTR", 4) == 0)
+            {
                 return KOD_DEMOBILIZE;
+            }
             if (strncmp(ref_char, "RATE", 4) == 0)
+            {
                 return KOD_RATE;
+            }
             /*
             ** There are other interesting kiss codes which
             ** might be interesting for authentication.
@@ -286,7 +296,9 @@ int process_pkt(
      * to our last request, but only if we're not in broadcast mode.
      */
     if (MODE_BROADCAST == mode)
+    {
         return pkt_len;
+    }
 
     if (!L_ISEQU(&rpkt->org, &spkt->xmt))
     {

@@ -60,7 +60,7 @@ static u_long info_auth_keyid;
 static int keyid_entered = 0;
 
 static int info_auth_keytype = NID_md5; /* MD5 */
-static size_t info_auth_hashlen = 16;   /* MD5 */
+static size_t info_auth_hashlen = 16U;  /* MD5 */
 u_long current_time;                    /* needed by authkeys; not used */
 
 /*
@@ -276,7 +276,9 @@ int ntpdcmain(
 
     /* Check to see if we have IPv6. Otherwise default to IPv4 */
     if (!ipv6_works)
+    {
         ai_fam_default = AF_INET;
+    }
 
     progname = argv[0U];
 
@@ -287,9 +289,13 @@ int ntpdcmain(
     }
 
     if (HAVE_OPT(IPV4))
+    {
         ai_fam_default = AF_INET;
+    }
     else if (HAVE_OPT(IPV6))
+    {
         ai_fam_default = AF_INET6;
+    }
 
     ai_fam_templ = ai_fam_default;
 
@@ -337,18 +343,22 @@ int ntpdcmain(
     }
     else
     {
-        for (; ntp_optind < argc; ntp_optind++)
+        for (; ntp_optind < argc; ++ntp_optind)
+        {
             ADDHOST(argv[ntp_optind]);
+        }
     }
 
-    if (numcmds == 0 && interactive == 0 && isatty(fileno(stdin)) && isatty(fileno(stderr)))
+    if ((numcmds == 0) && (interactive == 0) && isatty(fileno(stdin)) && isatty(fileno(stderr)))
     {
         interactive = 1;
     }
 
 #ifndef SYS_WINNT /* Under NT cannot handle SIGINT, WIN32 spawns a handler */
     if (interactive)
+    {
         (void)signal_no_reset(SIGINT, abortcmd);
+    }
 #endif /* SYS_WINNT */
 
     /*
@@ -367,13 +377,15 @@ int ntpdcmain(
         int ihost;
         int icmd;
 
-        for (ihost = 0; ihost < numhosts; ihost++)
+        for (ihost = 0; ihost < numhosts; ++ihost)
         {
             if (openhost(chosts[ihost]))
-                for (icmd = 0; icmd < numcmds; icmd++)
+                for (icmd = 0; icmd < numcmds; ++icmd)
                 {
                     if (numhosts > 1)
+                    {
                         printf("--- %s ---\n", chosts[ihost]);
+                    }
                     docmd(ccmds[icmd]);
                 }
         }
@@ -399,7 +411,7 @@ openhost(
     size_t octets;
     const char* cp;
     char name[LENHOSTNAME];
-    char service[5];
+    char service[5U];
 
     /*
      * We need to get by the [] if they were entered
@@ -407,7 +419,7 @@ openhost(
     if (*hname == '[')
     {
         cp = strchr(hname + 1, ']');
-        if (!cp || (octets = (size_t)(cp - hname) - 1) >= sizeof(name))
+        if (!cp || ((octets = (size_t)(cp - hname) - 1) >= sizeof(name)))
         {
             errno = EINVAL;
             warning("%s", "bad hostname/address");
@@ -463,7 +475,7 @@ openhost(
      */
     if (
 #if defined(WIN32)
-        WSANO_DATA == a_info || EAI_NONAME == a_info ||
+        (WSANO_DATA == a_info) || (EAI_NONAME == a_info) ||
 #endif
         EAI_BADFLAGS == a_info)
     {
@@ -474,7 +486,9 @@ openhost(
     {
         fprintf(stderr, "%s\n", gai_strerror(a_info));
         if (ai != NULL)
+        {
             freeaddrinfo(ai);
+        }
         return 0;
     }
 
@@ -488,17 +502,25 @@ openhost(
     memcpy(&addr, ai->ai_addr, octets);
 
     if (ai->ai_canonname == NULL)
+    {
         strlcpy(temphost, stoa(&addr), sizeof(temphost));
+    }
     else
+    {
         strlcpy(temphost, ai->ai_canonname, sizeof(temphost));
+    }
 
     if (debug > 2)
+    {
         printf("Opening host %s\n", temphost);
+    }
 
     if (havehost == 1)
     {
         if (debug > 2)
+        {
             printf("Closing old host %s\n", currenthost);
+        }
         closesocket(sockfd);
         havehost = 0;
     }
@@ -510,11 +532,15 @@ openhost(
 #ifdef SYS_VXWORKS
     ((struct sockaddr_in6*)&hostaddr)->sin6_port = htons(SERVER_PORT_NUM);
     if (ai->ai_family == AF_INET)
+    {
         *(struct sockaddr_in*)&hostaddr =
             *((struct sockaddr_in*)ai->ai_addr);
+    }
     else
+    {
         *(struct sockaddr_in6*)&hostaddr =
             *((struct sockaddr_in6*)ai->ai_addr);
+    }
 #endif /* SYS_VXWORKS */
 
 #ifdef SYS_WINNT
@@ -545,7 +571,9 @@ openhost(
 
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
                        (void*)&rbufsize, sizeof(int)) == -1)
+        {
             error("setsockopt");
+        }
     }
 #endif
 #endif
@@ -654,9 +682,13 @@ getresponse(
 
 again:
     if (firstpkt)
+    {
         tvo = tvout;
+    }
     else
+    {
         tvo = tvsout;
+    }
     tospan = (uint32_t)tvo.tv_sec + (tvo.tv_usec != 0);
 
     FD_SET(sockfd, &fds);
@@ -698,13 +730,21 @@ again:
             if (debug)
             {
                 printf("Received sequence numbers");
-                for (n = 0; n <= MAXSEQ; n++)
+                for (n = 0; n <= MAXSEQ; ++n)
+                {
                     if (haveseq[n])
+                    {
                         printf(" %zd,", (size_t)n);
+                    }
+                }
                 if (lastseq != 999)
+                {
                     printf(" last frame received\n");
+                }
                 else
+                {
                     printf(" last frame not received\n");
+                }
             }
             return ERR_INCOMPLETE;
         }
@@ -724,53 +764,67 @@ again:
     if (n < (ssize_t)RESP_HEADER_SIZE)
     {
         if (debug)
+        {
             printf("Short (%zd byte) packet received\n", (size_t)n);
+        }
         goto again;
     }
-    if (INFO_VERSION(rpkt.rm_vn_mode) > NTP_VERSION ||
-        INFO_VERSION(rpkt.rm_vn_mode) < NTP_OLDVERSION)
+    if ((INFO_VERSION(rpkt.rm_vn_mode) > NTP_VERSION) ||
+        (INFO_VERSION(rpkt.rm_vn_mode) < NTP_OLDVERSION))
     {
         if (debug)
+        {
             printf("Packet received with version %d\n",
                    INFO_VERSION(rpkt.rm_vn_mode));
+        }
         goto again;
     }
     if (INFO_MODE(rpkt.rm_vn_mode) != MODE_PRIVATE)
     {
         if (debug)
+        {
             printf("Packet received with mode %d\n",
                    INFO_MODE(rpkt.rm_vn_mode));
+        }
         goto again;
     }
     if (INFO_IS_AUTH(rpkt.auth_seq))
     {
         if (debug)
+        {
             printf("Encrypted packet received\n");
+        }
         goto again;
     }
     if (!ISRESPONSE(rpkt.rm_vn_mode))
     {
         if (debug)
+        {
             printf("Received request packet, wanted response\n");
+        }
         goto again;
     }
     if (INFO_MBZ(rpkt.mbz_itemsize) != 0)
     {
         if (debug)
+        {
             printf("Received packet with nonzero MBZ field!\n");
+        }
         goto again;
     }
 
     /*
      * Check implementation/request.  Could be old data getting to us.
      */
-    if (rpkt.implementation != implcode || rpkt.request != reqcode)
+    if ((rpkt.implementation != implcode) || (rpkt.request != reqcode))
     {
         if (debug)
+        {
             printf(
                 "Received implementation/request of %d/%d, wanted %d/%d",
                 rpkt.implementation, rpkt.request,
                 implcode, reqcode);
+        }
         goto again;
     }
 
@@ -793,16 +847,22 @@ again:
     items = INFO_NITEMS(rpkt.err_nitems);
     size = INFO_ITEMSIZE(rpkt.mbz_itemsize);
     if (esize > size)
+    {
         pad = esize - size;
+    }
     else
+    {
         pad = 0;
+    }
     datasize = items * size;
     if ((size_t)datasize > (n - RESP_HEADER_SIZE))
     {
         if (debug)
+        {
             printf(
                 "Received items %zu, size %zu (total %zu), data in packet is %zu\n",
                 items, size, datasize, n - RESP_HEADER_SIZE);
+        }
         goto again;
     }
 
@@ -810,11 +870,13 @@ again:
      * If this isn't our first packet, make sure the size matches
      * the other ones.
      */
-    if (!firstpkt && size != *rsize)
+    if (!firstpkt && (size != *rsize))
     {
         if (debug)
+        {
             printf("Received itemsize %zu, previous %zu\n",
                    size, *rsize);
+        }
         goto again;
     }
     /*
@@ -824,7 +886,9 @@ again:
     if (haveseq[seq])
     {
         if (debug)
+        {
             printf("Received duplicate sequence number %d\n", seq);
+        }
         goto again;
     }
     haveseq[seq] = 1;
@@ -860,7 +924,7 @@ again:
      */
 
     tmp_data = rpkt.u.data;
-    for (i = 0; i < items; i++)
+    for (i = 0; i < items; ++i)
     {
         memcpy(datap, tmp_data, (unsigned)size);
         tmp_data += size;
@@ -881,7 +945,9 @@ again:
      */
     ++numrecv;
     if (numrecv <= lastseq)
+    {
         goto again;
+    }
     return INFO_OKAY;
 }
 
@@ -933,7 +999,7 @@ sendrequest(
     qpkt.request = (u_char)reqcode;
 
     datasize = qitems * qsize;
-    if (datasize && qdata != NULL)
+    if (datasize && (qdata != NULL))
     {
         memcpy(qpkt.u.data, qdata, datasize);
         qpkt.err_nitems = ERR_NITEMS(0, qitems);
@@ -945,7 +1011,7 @@ sendrequest(
         qpkt.mbz_itemsize = MBZ_ITEMSIZE(qsize); /* allow for optional first item */
     }
 
-    if (!auth || (keyid_entered && info_auth_keyid == 0))
+    if (!auth || (keyid_entered && (info_auth_keyid == 0)))
     {
         qpkt.auth_seq = AUTH_SEQ(0, 0);
         return sendpkt(&qpkt, req_pkt_size);
@@ -984,7 +1050,9 @@ sendrequest(
          * shorten the requests for downlevel compatibility.
          */
         if (REQ_LEN_NOMAC != req_pkt_size)
+        {
             return 1;
+        }
         reqsize = REQ_LEN_HDR + datasize + sizeof(*ptstamp);
         /* align to 32 bits */
         reqsize = (reqsize + 3) & ~3;
@@ -1032,7 +1100,7 @@ int doquery(
     int esize)
 {
     int res;
-    char junk[512];
+    char junk[512U];
     fd_set fds;
     struct sock_timeval tvzero;
 
@@ -1061,8 +1129,10 @@ again:
             return -1;
         }
         else if (res > 0)
+        {
 
             (void)recv(sockfd, junk, sizeof junk, 0);
+        }
     } while (res > 0);
 
 
@@ -1071,7 +1141,9 @@ again:
      */
     res = sendrequest(implcode, reqcode, auth, qitems, qsize, qdata);
     if (res != 0)
+    {
         return res;
+    }
 
     /*
      * Get the response.  If we got a standard error, print a message
@@ -1081,7 +1153,7 @@ again:
     /*
      * Try to be compatible with older implementations of ntpd.
      */
-    if (res == INFO_ERR_FMT && req_pkt_size != 48)
+    if ((res == INFO_ERR_FMT) && (req_pkt_size != 48))
     {
         int oldsize;
 
@@ -1117,7 +1189,9 @@ again:
         case INFO_ERR_IMPL:
             /* Give us a chance to try the older implementation. */
             if (implcode == IMPL_XNTPD)
+            {
                 break;
+            }
             (void)fprintf(stderr,
                           "***Server implementation incompatible with our own\n");
             break;
@@ -1168,7 +1242,9 @@ getcmds(void)
     {
         line = ntp_readline(&count);
         if (NULL == line)
+        {
             break;
+        }
         docmd(line);
         free(line);
     }
@@ -1186,7 +1262,9 @@ abortcmd(
     int sig)
 {
     if (current_output == stdout)
+    {
         (void)fflush(stdout);
+    }
     putc('\n', stderr);
     (void)fflush(stderr);
     if (jump)
@@ -1204,7 +1282,7 @@ static void
 docmd(
     const char* cmdline)
 {
-    char* tokens[1 + MAXARGS + MOREARGS + 2];
+    char* tokens[1U + MAXARGS + MOREARGS + 2];
     struct parse pcmd;
     int ntok;
     int i, ti;
@@ -1223,7 +1301,9 @@ docmd(
     }
     tokenize(cmdline, tokens, &ntok);
     if (ntok == 0)
+    {
         return;
+    }
 
     /*
      * Find the appropriate command description.
@@ -1249,7 +1329,7 @@ docmd(
     pcmd.keyword = tokens[0U];
     pcmd.nargs = 0;
     ti = 1;
-    for (i = 0; i < MAXARGS && xcmd->arg[i] != NO;)
+    for (i = 0; (i < MAXARGS) && (xcmd->arg[i] != NO);)
     {
         if ((i + ti) >= ntok)
         {
@@ -1261,7 +1341,9 @@ docmd(
             break;
         }
         if ((xcmd->arg[i] & OPT) && (*tokens[i + ti] == '>'))
+        {
             break;
+        }
         rval = getarg(tokens[i + ti], (int)xcmd->arg[i], &pcmd.argval[i]);
         if (rval == -1)
         {
@@ -1269,7 +1351,9 @@ docmd(
             continue;
         }
         if (rval == 0)
+        {
             return;
+        }
         pcmd.nargs++;
         i++;
     }
@@ -1278,7 +1362,9 @@ docmd(
     for (; i < MAXARGS + MOREARGS;)
     {
         if ((i + ti) >= ntok)
+        {
             break;
+        }
         rval = getarg(tokens[i + ti], (int)(OPT | NTP_STR), &pcmd.argval[i]);
         if (rval == -1)
         {
@@ -1286,20 +1372,26 @@ docmd(
             continue;
         }
         if (rval == 0)
+        {
             return;
+        }
         pcmd.nargs++;
         i++;
     }
 
     i += ti;
-    if (i < ntok && *tokens[i] == '>')
+    if ((i < ntok) && (*tokens[i] == '>'))
     {
         char* fname;
 
         if (*(tokens[i] + 1) != '\0')
+        {
             fname = tokens[i] + 1;
+        }
         else if ((i + 1) < ntok)
+        {
             fname = tokens[i + 1];
+        }
         else
         {
             (void)fprintf(stderr, "***No file for redirect\n");
@@ -1366,9 +1458,13 @@ tokenize(
     {
         tokens[*ntok] = sp;
         while (ISSPACE(*cp))
+        {
             cp++;
+        }
         if (ISEOL(*cp))
+        {
             break;
+        }
         do
         {
             *sp++ = *cp++;
@@ -1399,18 +1495,26 @@ findcmd(
     clen = strlen(str);
     nmatch = 0;
     if (clist1 != 0)
+    {
         clist = clist1;
+    }
     else if (clist2 != 0)
+    {
         clist = clist2;
+    }
     else
+    {
         return 0;
+    }
 
 again:
-    for (cl = clist; cl->keyword != 0; cl++)
+    for (cl = clist; cl->keyword != 0; ++cl)
     {
         /* do a first character check, for efficiency */
         if (*str != *(cl->keyword))
+        {
             continue;
+        }
         if (strncmp(str, cl->keyword, (unsigned)clen) == 0)
         {
             /*
@@ -1432,7 +1536,7 @@ again:
      * See if there is more to do.  If so, go again.  Sorry about the
      * goto, too much looking at BSD sources...
      */
-    if (clist == clist1 && clist2 != 0)
+    if ((clist == clist1) && (clist2 != 0))
     {
         clist = clist2;
         goto again;
@@ -1509,9 +1613,13 @@ getarg(
         break;
     case IP_VERSION:
         if (!strcmp("-6", str))
+        {
             argp->ival = 6;
+        }
         else if (!strcmp("-4", str))
+        {
             argp->ival = 4;
+        }
         else
         {
             (void)fprintf(stderr,
@@ -1552,8 +1660,10 @@ getnetnum(
     if (decodenetnum(hname, num))
     {
         if (fullhost != NULL)
+        {
             getnameinfo(&num->sa, SOCKLEN(num), fullhost,
                         LENHOSTNAME, NULL, 0, 0);
+        }
         return 1;
     }
     else if (getaddrinfo(hname, "ntp", &hints, &ai) == 0)
@@ -1563,12 +1673,16 @@ getnetnum(
         if (fullhost != NULL)
         {
             if (ai->ai_canonname != NULL)
+            {
                 strlcpy(fullhost, ai->ai_canonname,
                         LENHOSTNAME);
+            }
             else
+            {
                 getnameinfo(&num->sa, SOCKLEN(num),
                             fullhost, LENHOSTNAME, NULL,
                             0, 0);
+            }
         }
         return 1;
     }
@@ -1587,11 +1701,17 @@ nntohost(
     sockaddr_u* netnum)
 {
     if (!showhostnames || SOCK_UNSPEC(netnum))
+    {
         return stoa(netnum);
+    }
     else if (ISREFCLOCKADR(netnum))
+    {
         return refnumtoa(netnum);
+    }
     else
+    {
         return socktohost(netnum);
+    }
 }
 
 
@@ -1609,7 +1729,7 @@ help(
 {
     struct xcmd* xcp;
     char* cmd;
-    const char* list[100];
+    const char* list[100U];
     size_t word, words;
     size_t row, rows;
     size_t col, cols;
@@ -1618,17 +1738,21 @@ help(
     if (pcmd->nargs == 0)
     {
         words = 0;
-        for (xcp = builtins; xcp->keyword != 0; xcp++)
+        for (xcp = builtins; xcp->keyword != 0; ++xcp)
         {
             if (*(xcp->keyword) != '?')
+            {
                 list[words++] = xcp->keyword;
+            }
         }
-        for (xcp = opcmds; xcp->keyword != 0; xcp++)
+        for (xcp = opcmds; xcp->keyword != 0; ++xcp)
+        {
             list[words++] = xcp->keyword;
+        }
 
         qsort((void*)list, words, sizeof(list[0U]), helpsort);
         col = 0;
-        for (word = 0; word < words; word++)
+        for (word = 0; word < words; ++word)
         {
             length = strlen(list[word]);
             col = max(col, length);
@@ -1639,11 +1763,13 @@ help(
 
         fprintf(fp, "ntpdc commands:\n");
 
-        for (row = 0; row < rows; row++)
+        for (row = 0; row < rows; ++row)
         {
             for (word = row; word < words; word += rows)
+            {
                 fprintf(fp, "%-*.*s", (int)col,
                         (int)col - 1, list[word]);
+            }
             fprintf(fp, "\n");
         }
     }
@@ -1696,17 +1822,21 @@ printusage(
 
     opt46 = 0;
     (void)fprintf(fp, "usage: %s", xcp->keyword);
-    for (i = 0; i < MAXARGS && xcp->arg[i] != NO; i++)
+    for (i = 0; (i < MAXARGS) && (xcp->arg[i] != NO); ++i)
     {
-        if (opt46 == 0 && (xcp->arg[i] & ~OPT) == NTP_ADD)
+        if ((opt46 == 0) && ((xcp->arg[i] & ~OPT) == NTP_ADD))
         {
             (void)fprintf(fp, " [ -4|-6 ]");
             opt46 = 1;
         }
         if (xcp->arg[i] & OPT)
+        {
             (void)fprintf(fp, " [ %s ]", xcp->desc[i]);
+        }
         else
+        {
             (void)fprintf(fp, " %s", xcp->desc[i]);
+        }
     }
     (void)fprintf(fp, "\n");
 }
@@ -1769,7 +1899,9 @@ my_delay(
         delay_time.l_uf = val * 4294967; /* 2**32/1000 */
 
         if (isneg)
+        {
             L_NEG(&delay_time);
+        }
     }
 }
 
@@ -1787,9 +1919,13 @@ host(
     if (pcmd->nargs == 0)
     {
         if (havehost)
+        {
             (void)fprintf(fp, "current host is %s\n", currenthost);
+        }
         else
+        {
             (void)fprintf(fp, "no current host\n");
+        }
         return;
     }
 
@@ -1797,16 +1933,24 @@ host(
     if (pcmd->nargs == 2)
     {
         if (!strcmp("-4", pcmd->argval[i].string))
+        {
             ai_fam_templ = AF_INET;
+        }
         else if (!strcmp("-6", pcmd->argval[i].string))
+        {
             ai_fam_templ = AF_INET6;
+        }
         else
         {
             if (havehost)
+            {
                 (void)fprintf(fp,
                               "current host remains %s\n", currenthost);
+            }
             else
+            {
                 (void)fprintf(fp, "still no current host\n");
+            }
             return;
         }
         i = 1;
@@ -1818,10 +1962,14 @@ host(
     else
     {
         if (havehost)
+        {
             (void)fprintf(fp,
                           "current host remains %s\n", currenthost);
+        }
         else
+        {
             (void)fprintf(fp, "still no current host\n");
+        }
     }
 }
 
@@ -1836,12 +1984,18 @@ keyid(
 {
     if (pcmd->nargs == 0)
     {
-        if (info_auth_keyid == 0 && !keyid_entered)
+        if ((info_auth_keyid == 0) && !keyid_entered)
+        {
             (void)fprintf(fp, "no keyid defined\n");
-        else if (info_auth_keyid == 0 && keyid_entered)
+        }
+        else if ((info_auth_keyid == 0) && keyid_entered)
+        {
             (void)fprintf(fp, "no keyid will be sent\n");
+        }
         else
+        {
             (void)fprintf(fp, "keyid is %lu\n", (u_long)info_auth_keyid);
+        }
     }
     else
     {
@@ -1912,7 +2066,9 @@ passwd(
         }
     }
     if (pcmd->nargs >= 1)
+    {
         pass = pcmd->argval[0U].string;
+    }
     else
     {
         pass = getpass_keytype(info_auth_keytype);
@@ -1938,18 +2094,28 @@ hostnames(
     if (pcmd->nargs == 0)
     {
         if (showhostnames)
+        {
             (void)fprintf(fp, "hostnames being shown\n");
+        }
         else
+        {
             (void)fprintf(fp, "hostnames not being shown\n");
+        }
     }
     else
     {
         if (STREQ(pcmd->argval[0U].string, "yes"))
+        {
             showhostnames = 1;
+        }
         else if (STREQ(pcmd->argval[0U].string, "no"))
+        {
             showhostnames = 0;
+        }
         else
+        {
             (void)fprintf(stderr, "What?\n");
+        }
     }
 }
 
@@ -1998,7 +2164,9 @@ quit(
     FILE* fp)
 {
     if (havehost)
+    {
         closesocket(sockfd);
+    }
     exit(0);
 }
 
@@ -2066,7 +2234,7 @@ getkeyid(
 {
     int c;
     FILE* fi;
-    char pbuf[20];
+    char pbuf[20U];
     size_t i;
     size_t ilim;
 
@@ -2077,15 +2245,21 @@ getkeyid(
 #endif /* SYS_WINNT */
         fi = stdin;
     else
+    {
         setbuf(fi, (char*)NULL);
+    }
     fprintf(stderr, "%s", keyprompt);
     fflush(stderr);
     for (i = 0, ilim = COUNTOF(pbuf) - 1;
-         i < ilim && (c = getc(fi)) != '\n' && c != EOF;)
+         (i < ilim) && ((c = getc(fi)) != '\n') && (c != EOF);)
+    {
         pbuf[i++] = (char)c;
+    }
     pbuf[i] = '\0';
     if (fi != stdin)
+    {
         fclose(fi);
+    }
 
     return (u_long)atoi(pbuf);
 }

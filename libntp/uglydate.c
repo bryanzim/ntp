@@ -41,7 +41,9 @@ char* uglydate(
     {
         year = tm->tm_year;
         while (year >= 100)
+        {
             year -= 100;
+        }
     }
     snprintf(bp, LIB_BUFLENGTH,
              "%17s %02d:%03d:%02d:%02d:%02d.%03ld", timep, year,

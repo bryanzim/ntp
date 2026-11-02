@@ -49,7 +49,7 @@ int main(
     long timetrim;
     double value;
 
-    while (--argc && **++argv == '-' && isalpha((int)argv[0U][1U]))
+    while (--argc && (**++argv == '-') && isalpha((int)argv[0U][1U]))
     {
         switch (argv[0U][1U])
         {
@@ -83,9 +83,13 @@ int main(
     if (argc == 0)
     {
         if (ntpunits)
+        {
             fprintf(stdout, "%0.5f\n", SGITONTP(timetrim));
+        }
         else
+        {
             fprintf(stdout, "%ld\n", timetrim);
+        }
     }
     else if (argc != 1)
     {
@@ -101,11 +105,17 @@ int main(
             exit(1);
         }
         if (ntpunits)
+        {
             value = NTPTOSGI(value);
+        }
         if (incremental)
+        {
             timetrim += value;
+        }
         else
+        {
             timetrim = value;
+        }
 #ifdef HAVE_SYS_SYSSGI_H
         if (syssgi(SGI_SETTIMETRIM, timetrim) < 0)
         {

@@ -1526,7 +1526,7 @@ clear_err(
     {
         size_t i;
 
-        for (i = 0; i < ERR_CNT; i++)
+        for (i = 0; i < ERR_CNT; ++i)
         {
             parse->errors[i].err_stage = err_tbl[i];
             parse->errors[i].err_cnt = 0;
@@ -1561,7 +1561,9 @@ list_err(
     do_it = (current_time - err->err_last) >= err->err_stage->err_delay;
 
     if (do_it)
+    {
         err->err_cnt++;
+    }
 
     if (err->err_stage->err_count &&
         (err->err_cnt >= err->err_stage->err_count))
@@ -1571,13 +1573,19 @@ list_err(
     }
 
     if (!err->err_cnt && do_it)
+    {
         msyslog(LOG_INFO, "PARSE receiver #%d: interval for following error message class is at least %s",
                 CLK_UNIT(parse->peer), l_mktime(err->err_stage->err_delay));
+    }
 
     if (!do_it)
+    {
         err->err_suppressed++;
+    }
     else
+    {
         err->err_last = current_time;
+    }
 
     if (do_it && err->err_suppressed)
     {
@@ -1612,7 +1620,9 @@ mkreadable(
     char* endb = NULL;
 
     if (blen < 4)
-        return NULL; /* don't bother with mini buffers */
+    {
+        return NULL;
+    } /* don't bother with mini buffers */
 
     endb = buffer + blen - sizeof(ellipsis);
 
@@ -1656,8 +1666,10 @@ mkreadable(
                 }
             }
         }
-        if (srclen && !blen && endb) /* overflow - set last chars to ... */
+        if (srclen && !blen && endb)
+        { /* overflow - set last chars to ... */
             memcpy(endb, ellipsis, sizeof(ellipsis));
+        }
     }
 
     *buffer = '\0';
@@ -1783,8 +1795,8 @@ ppsclock_init(
      * now push the parse streams module
      * it will ensure exclusive access to the device
      */
-    if (ioctl(parse->ppsfd, I_PUSH, (caddr_t)m1) == -1 &&
-        ioctl(parse->ppsfd, I_PUSH, (caddr_t)m2) == -1)
+    if ((ioctl(parse->ppsfd, I_PUSH, (caddr_t)m1) == -1) &&
+        (ioctl(parse->ppsfd, I_PUSH, (caddr_t)m2) == -1))
     {
         if (errno != EINVAL)
         {
@@ -2007,7 +2019,9 @@ stream_receive(
 
     parse = (struct parseunit*)rbufp->recv_peer->procptr->unitptr;
     if (!parse->peer)
+    {
         return;
+    }
 
     if (rbufp->recv_length != sizeof(parsetime_t))
     {
@@ -2151,7 +2165,9 @@ local_input(
 
     parse = (struct parseunit*)rbufp->recv_peer->procptr->unitptr;
     if (!parse->peer)
+    {
         return 0;
+    }
 
     /*
      * eat all characters, parsing then and feeding complete samples
@@ -2193,9 +2209,13 @@ local_input(
                              * and not supplied already.
                              */
                             if (parse->flags & PARSE_CLEAR)
+                            {
                                 pts = pps_info.clear_timestamp;
+                            }
                             else
+                            {
                                 pts = pps_info.assert_timestamp;
+                            }
 
                             parse->parseio.parse_dtime.parse_ptime.fp.l_ui = (uint32_t)(pts.tv_sec + JAN_1970);
 
@@ -2369,7 +2389,9 @@ local_receive(
 
     parse = (struct parseunit*)rbufp->recv_peer->procptr->unitptr;
     if (!parse->peer)
+    {
         return;
+    }
 
     if (rbufp->recv_length != sizeof(parsetime_t))
     {
@@ -2435,7 +2457,9 @@ static NTP_PRINTF(4, 5) char* ap(char* buffer, size_t len, char* pos, const char
     size_t rem = len - (pos - buffer);
 
     if (rem == 0)
+    {
         return pos;
+    }
 
     va_start(va, fmt);
     l = vsnprintf(pos, rem, fmt, va);
@@ -2445,9 +2469,13 @@ static NTP_PRINTF(4, 5) char* ap(char* buffer, size_t len, char* pos, const char
     {
         rem--;
         if (rem >= (size_t)l)
+        {
             pos += l;
+        }
         else
+        {
             pos += rem;
+        }
     }
 
     return pos;
@@ -2505,7 +2533,9 @@ parsestate(
         if (flagstrings[i].bit & lstate)
         {
             if (s != t)
+            {
                 t = ap(buffer, size, t, "; ");
+            }
             t = ap(buffer, size, t, "%s", flagstrings[i].name);
         }
         i++;
@@ -2514,7 +2544,9 @@ parsestate(
     if (lstate & (PARSEB_S_LEAP | PARSEB_S_CALLBIT | PARSEB_S_PPS | PARSEB_S_POSITION))
     {
         if (s != t)
+        {
             t = ap(buffer, size, t, "; ");
+        }
 
         t = ap(buffer, size, t, "(");
 
@@ -2578,7 +2610,9 @@ parsestatus(
         if (flagstrings[i].bit & lstate)
         {
             if (t != buffer)
+            {
                 t = ap(buffer, size, t, "; ");
+            }
             t = ap(buffer, size, t, "%s", flagstrings[i].name);
         }
         i++;
@@ -2594,7 +2628,7 @@ static const char*
 clockstatus(
     u_long lstate)
 {
-    static char buffer[20];
+    static char buffer[20U];
     static struct status
     {
         u_long value;
@@ -2635,7 +2669,7 @@ l_mktime(
     u_long delta)
 {
     u_long tmp, m, s;
-    static char buffer[40];
+    static char buffer[40U];
     char* t;
 
     buffer[0U] = '\0';
@@ -2678,7 +2712,7 @@ parse_statistics(
                 CLK_UNIT(parse->peer),
                 clockstatus(parse->generic->currentstatus));
 
-        for (i = 0; i <= CEVNT_MAX; i++)
+        for (i = 0; i <= CEVNT_MAX; ++i)
         {
             u_long s_time;
             u_long percent, d = current_time - parse->generic->timestarted;
@@ -2692,16 +2726,22 @@ parse_statistics(
             }
 
             if (d)
+            {
                 percent = (percent * 10000) / d;
+            }
             else
+            {
                 percent = 10000;
+            }
 
             if (s_time)
+            {
                 msyslog(LOG_INFO, "PARSE receiver #%d: state %18s: %13s (%3ld.%02ld%%)",
                         CLK_UNIT(parse->peer),
                         clockstatus((unsigned int)i),
                         l_mktime(s_time),
                         percent / 100, percent % 100);
+            }
         }
     }
 }
@@ -2714,7 +2754,9 @@ cparse_statistics(
     struct parseunit* parse)
 {
     if (parse->laststatistic + PARSESTATISTICS < current_time)
+    {
         parse_statistics(parse);
+    }
     parse->laststatistic = current_time;
 }
 
@@ -2733,7 +2775,9 @@ parse_shutdown(
     struct parseunit* parse = NULL;
 
     if (peer && peer->procptr)
+    {
         parse = peer->procptr->unitptr;
+    }
 
     if (!parse)
     {
@@ -2753,8 +2797,10 @@ parse_shutdown(
         (void)time_pps_destroy(parse->atom.handle);
     }
 #endif
-    if (parse->generic->io.fd != parse->ppsfd && parse->ppsfd != -1)
-        (void)closeserial(parse->ppsfd); /* close separate PPS source */
+    if ((parse->generic->io.fd != parse->ppsfd) && (parse->ppsfd != -1))
+    {
+        (void)closeserial(parse->ppsfd);
+    } /* close separate PPS source */
 
     /*
      * print statistics a last time and
@@ -2771,7 +2817,9 @@ parse_shutdown(
      * cleanup before leaving this world
      */
     if (parse->binding)
+    {
         PARSE_END(parse);
+    }
 
     /*
      * Tell the I/O module to turn us off.  We're history.
@@ -2799,7 +2847,9 @@ parse_hardpps(
     int mode)
 {
     if (parse->hardppsstate == mode)
+    {
         return;
+    }
 
     if (CLK_PPS(parse->peer) && (parse->flags & PARSE_PPSKERNEL))
     {
@@ -2808,9 +2858,13 @@ parse_hardpps(
         if (mode == PARSE_HARDPPS_ENABLE)
         {
             if (parse->flags & PARSE_CLEAR)
+            {
                 i = PPS_CAPTURECLEAR;
+            }
             else
+            {
                 i = PPS_CAPTUREASSERT;
+            }
         }
 
         if (time_pps_kcbind(parse->atom.handle, PPS_KC_HARDPPS, i,
@@ -2828,7 +2882,9 @@ parse_hardpps(
              * tell the rest, that we have a kernel PPS source, iff we ever enable HARDPPS
              */
             if (mode == PARSE_HARDPPS_ENABLE)
+            {
                 hardpps_enable = 1;
+            }
         }
     }
 
@@ -2866,7 +2922,9 @@ parse_ppsapi(
      * be part of the generic PPSAPI interface
      */
     if (!refclock_params(parse->flags & (CLK_FLAG1 | CLK_FLAG2 | CLK_FLAG4), &parse->atom))
+    {
         return 0;
+    }
 
     /* nb. only turn things on, if someone else has turned something
      *	on before we get here, leave it alone!
@@ -2973,16 +3031,24 @@ parse_start(
     /* see if there's a configured alternative device name: */
     altdev = clockdev_lookup(&peer->srcadr, 0);
     if (altdev && (strlen(altdev) < sizeof(parsedev)))
+    {
         strcpy(parsedev, altdev);
+    }
     else
+    {
         (void)snprintf(parsedev, sizeof(parsedev), PARSEDEVICE, unit);
+    }
 
     /* likewise for a pps device: */
     altdev = clockdev_lookup(&peer->srcadr, 1);
     if (altdev && (strlen(altdev) < sizeof(parseppsdev)))
+    {
         strcpy(parseppsdev, altdev);
+    }
     else
+    {
         (void)snprintf(parseppsdev, sizeof(parseppsdev), PARSEPPSDEVICE, unit);
+    }
 
 #ifndef O_NOCTTY
 #define O_NOCTTY 0
@@ -3043,9 +3109,13 @@ parse_start(
     peer->stratum = STRATUM_REFCLOCK;
 
     if (peer->stratum <= 1)
+    {
         memmove((char*)&parse->generic->refid, parse->parse_type->cl_id, 4);
+    }
     else
+    {
         parse->generic->refid = htonl(PARSEHSREFID);
+    }
 
     parse->generic->io.fd = fd232;
 
@@ -3069,13 +3139,15 @@ parse_start(
         errno = 0; /* pathconf can deliver -1 without changing errno ! */
 
         disablec = fpathconf(parse->generic->io.fd, _PC_VDISABLE);
-        if (disablec == -1 && errno)
+        if ((disablec == -1) && errno)
         {
             msyslog(LOG_ERR, "PARSE receiver #%d: parse_start: fpathconf(fd, _PC_VDISABLE): %m", CLK_UNIT(parse->peer));
             memset((char*)tio.c_cc, 0, sizeof(tio.c_cc)); /* best guess */
         }
         else if (disablec != -1)
+        {
             memset((char*)tio.c_cc, disablec, sizeof(tio.c_cc));
+        }
 #endif
 
 #if defined(VMIN) || defined(VTIME)
@@ -3460,7 +3532,7 @@ parse_control(
     struct parseunit* parse = peer->procptr->unitptr;
     parsectl_t tmpctl;
 
-    static char outstatus[400]; /* status output buffer */
+    static char outstatus[400U]; /* status output buffer */
 
     if (out)
     {
@@ -3488,7 +3560,7 @@ parse_control(
      */
     if (out)
     {
-        u_long sum = 0;
+        u_long sum = 0U;
         char *tt, *start;
         int i;
 
@@ -3564,8 +3636,10 @@ parse_control(
             tt = ap(start, 512, tt, "\"");
 
             if (tmpctl.parsegettc.parse_count)
+            {
                 mkascii(outstatus + strlen(outstatus), (int)(sizeof(outstatus) - strlen(outstatus) - 1),
                         tmpctl.parsegettc.parse_buffer, (unsigned)(tmpctl.parsegettc.parse_count));
+            }
         }
 
         tmpctl.parseformat.parse_format = tmpctl.parsegettc.parse_format;
@@ -3579,7 +3653,9 @@ parse_control(
         {
             int count = tmpctl.parseformat.parse_count;
             if (count)
+            {
                 --count;
+            }
 
             start = tt = add_var(&out->kv_list, 80, RO | DEF);
             tt = ap(start, 80, tt, "refclock_format=\"");
@@ -3602,7 +3678,7 @@ parse_control(
         start = tt = add_var(&out->kv_list, LEN_STATES, RO | DEF);
         tt = ap(start, LEN_STATES, tt, "refclock_states=\"");
 
-        for (i = 0; i <= CEVNT_MAX; i++)
+        for (i = 0; i <= CEVNT_MAX; ++i)
         {
             u_long s_time;
             u_long d = current_time - parse->generic->timestarted;
@@ -3617,13 +3693,17 @@ parse_control(
             }
 
             if (d)
+            {
                 percent = (percent * 10000) / d;
+            }
             else
+            {
                 percent = 10000;
+            }
 
             if (s_time)
             {
-                char item[80];
+                char item[80U];
                 int count;
 
                 snprintf(item, 80, "%s%s%s: %s (%d.%02d%%)",
@@ -3687,7 +3767,9 @@ parse_event(
         parse->lastchange = current_time;
 
         if (parse->parse_type->cl_event)
+        {
             parse->parse_type->cl_event(parse, event);
+        }
 
         if (event == CEVNT_NOMINAL)
         {
@@ -3724,7 +3806,7 @@ parse_process(
         ((parsetime->parse_status & CVT_MASK) != CVT_NONE) &&
         (parse->timedata.parse_status != parsetime->parse_status))
     {
-        char buffer[400];
+        char buffer[400U];
 
         NLOG(NLOG_CLOCKINFO) /* conditional if clause for conditional syslog */
         msyslog(LOG_WARNING, "PARSE receiver #%d: conversion status \"%s\"",
@@ -3748,7 +3830,9 @@ parse_process(
             {
                 unsigned int count = tmpctl.parsegettc.parse_count;
                 if (count)
+                {
                     --count;
+                }
                 ERR(ERR_BADDATA)
                 msyslog(LOG_WARNING, "PARSE receiver #%d: FAILED TIMECODE: \"%s\" (check receiver configuration / wiring)",
                         CLK_UNIT(parse->peer),
@@ -3773,7 +3857,9 @@ parse_process(
         case CVT_NONE:
             if ((parsetime->parse_status & CVT_ADDITIONAL) &&
                 parse->parse_type->cl_message)
+            {
                 parse->parse_type->cl_message(parse, parsetime);
+            }
             /*
              * save PPS information that comes piggyback
              */
@@ -3835,8 +3921,8 @@ parse_process(
     if ((parse->timedata.parse_state ^ parsetime->parse_state) &
         ~(unsigned)(PARSEB_PPS | PARSEB_S_PPS))
     {
-        char tmp1[200];
-        char tmp2[200];
+        char tmp1[200U];
+        char tmp2[200U];
         /*
          * something happend - except for PPS events
          */
@@ -3956,11 +4042,13 @@ parse_process(
 
 #ifdef DEBUG
         if (debug > 3)
+        {
             printf("PARSE receiver #%d: Reftime %s, Recvtime %s - initial offset %s\n",
                    CLK_UNIT(parse->peer),
                    prettydate(&reftime),
                    prettydate(&rectime),
                    lfptoa(&off, 6));
+        }
 #endif
     }
 
@@ -3986,9 +4074,11 @@ parse_process(
 
 #ifdef DEBUG
         if (debug > 3)
+        {
             printf("PARSE receiver #%d: PPStime %s\n",
                    CLK_UNIT(parse->peer),
                    prettydate(&offset));
+        }
 #endif
         if (PARSE_TIMECODE(parsetime->parse_state))
         {
@@ -4005,7 +4095,9 @@ parse_process(
                 {
                     reftime = off = offset;
                     if (reftime.l_uf & 0x80000000)
+                    {
                         reftime.l_ui++;
+                    }
                     reftime.l_uf = 0;
 
 
@@ -4039,7 +4131,9 @@ parse_process(
             off = offset;
             reftime = offset;
             if (reftime.l_uf & 0x80000000)
+            {
                 reftime.l_ui++;
+            }
             reftime.l_uf = 0;
             /*
              * implied on second offset
@@ -4057,18 +4151,22 @@ parse_process(
              */
             if ((parsetime->parse_status & CVT_ADDITIONAL) &&
                 parse->parse_type->cl_message)
+            {
                 parse->parse_type->cl_message(parse, parsetime);
+            }
             return;
         }
     }
 
 #ifdef DEBUG
     if (debug > 3)
+    {
         printf("PARSE receiver #%d: Reftime %s, Recvtime %s - final offset %s\n",
                CLK_UNIT(parse->peer),
                prettydate(&reftime),
                prettydate(&rectime),
                lfptoa(&off, 6));
+    }
 #endif
 
 
@@ -4077,15 +4175,19 @@ parse_process(
 
 #ifdef DEBUG
     if (debug > 3)
+    {
         printf("PARSE receiver #%d: calculated Reftime %s, Recvtime %s\n",
                CLK_UNIT(parse->peer),
                prettydate(&reftime),
                prettydate(&rectime));
+    }
 #endif
 
     if ((parsetime->parse_status & CVT_ADDITIONAL) &&
         parse->parse_type->cl_message)
+    {
         parse->parse_type->cl_message(parse, parsetime);
+    }
 
     if (PARSE_SYNC(parsetime->parse_state))
     {
@@ -4179,8 +4281,10 @@ parse_process(
      * ready, unless the machine wants a sample or
      * we are in fast startup mode (peer->dist > MAXDISTANCE)
      */
-    if (!parse->pollneeddata && parse->peer->disp <= MAXDISTANCE)
+    if (!parse->pollneeddata && (parse->peer->disp <= MAXDISTANCE))
+    {
         return;
+    }
 
     parse->pollneeddata = 0;
 
@@ -4234,9 +4338,13 @@ mk_utcinfo(
         nc = snprintf(t, size, "UTC offset transition from %is to %is due to leap second %s",
                       dtls, dtlsf, (dtls < dtlsf) ? "insertion" : "deletion");
         if (nc < 0)
+        {
             nc = strlen(t);
+        }
         else if (nc > size)
+        {
             nc = size;
+        }
 
         snprintf(t + nc, size - nc, " at UTC midnight at the end of %s, %04i-%02i-%02i",
                  daynames[tm->tm_wday], tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday);
@@ -4260,7 +4368,7 @@ gps16x_message(
     struct parseunit* parse,
     parsetime_t* parsetime)
 {
-    if (parse->timedata.parse_msglen && parsetime->parse_msg[0U] == SOH)
+    if (parse->timedata.parse_msglen && (parsetime->parse_msg[0U] == SOH))
     {
         GPS_MSG_HDR header;
         unsigned char* bufp = (unsigned char*)parsetime->parse_msg + 1;
@@ -4268,7 +4376,7 @@ gps16x_message(
 #ifdef DEBUG
         if (debug > 2)
         {
-            char msgbuffer[600];
+            char msgbuffer[600U];
 
             mkreadable(msgbuffer, sizeof(msgbuffer), (char*)parsetime->parse_msg, parsetime->parse_msglen, 1);
             printf("PARSE receiver #%d: received message (%d bytes) >%s<\n",
@@ -4278,10 +4386,10 @@ gps16x_message(
         }
 #endif
         get_mbg_header(&bufp, &header);
-        if (header.hdr_csum == mbg_csum(parsetime->parse_msg + 1, 6) &&
-            (header.len == 0 ||
+        if ((header.hdr_csum == mbg_csum(parsetime->parse_msg + 1, 6)) &&
+            ((header.len == 0) ||
              (header.len < sizeof(parsetime->parse_msg) &&
-              header.data_csum == mbg_csum(bufp, header.len))))
+              (header.data_csum == mbg_csum(bufp, header.len)))))
         {
             /*
              * clean message
@@ -4289,7 +4397,7 @@ gps16x_message(
             switch (header.cmd)
             {
             case GPS_SW_REV: {
-                char buffer[64];
+                char buffer[64U];
                 SW_REV gps_sw_rev;
 
                 get_mbg_sw_rev(&bufp, &gps_sw_rev);
@@ -4317,7 +4425,7 @@ gps16x_message(
                 };
                 BVAR_STAT status;
                 struct state* s = states;
-                char buffer[512];
+                char buffer[512U];
                 char *p, *b;
 
                 status = (BVAR_STAT)get_lsb_short(&bufp);
@@ -4356,7 +4464,7 @@ gps16x_message(
 
             case GPS_POS_XYZ: {
                 XYZ xyz;
-                char buffer[256];
+                char buffer[256U];
 
                 get_mbg_xyz(&bufp, xyz);
                 snprintf(buffer, sizeof(buffer), "gps_position(XYZ)=\"%s m, %s m, %s m\"",
@@ -4370,7 +4478,7 @@ gps16x_message(
 
             case GPS_POS_LLA: {
                 LLA lla;
-                char buffer[256];
+                char buffer[256U];
 
                 get_mbg_lla(&bufp, lla);
 
@@ -4394,7 +4502,7 @@ gps16x_message(
 
             case GPS_ANT_INFO: {
                 ANT_INFO antinfo;
-                char buffer[512];
+                char buffer[512U];
                 char *p, *q;
 
                 get_mbg_antinfo(&bufp, &antinfo);
@@ -4451,7 +4559,7 @@ gps16x_message(
 
             case GPS_CFGH: {
                 CFGH cfgh;
-                char buffer[512];
+                char buffer[512U];
                 char* p;
 
                 get_mbg_cfgh(&bufp, &cfgh);
@@ -4485,7 +4593,7 @@ gps16x_message(
                            p, "\"");
                     set_var(&parse->kv, buffer, sizeof(buffer), RO | COND_DEF);
 
-                    for (i = 0; i < N_SVNO_GPS; i++)
+                    for (i = 0; i < N_SVNO_GPS; ++i)
                     {
                         p = buffer;
                         p = ap(buffer, sizeof(buffer), p, "sv_info[%d]=\"PRN%d", i, i + N_SVNO_GPS);
@@ -4493,8 +4601,10 @@ gps16x_message(
                         tmp_val = cfgh.health[i]; /* a 6 bit SV health code */
                         p = ap(buffer, sizeof(buffer), p, "; health=0x%02x (", tmp_val);
                         /* "All Ones" has a special meaning" */
-                        if (tmp_val == 0x3F) /* satellite is unusable or doesn't even exist */
+                        if (tmp_val == 0x3F)
+                        { /* satellite is unusable or doesn't even exist */
                             cp = "SV UNAVAILABLE";
+                        }
                         else
                         {
                             /* The MSB contains a summary of the 3 MSBs of the 8 bit health code,
@@ -4547,8 +4657,10 @@ gps16x_message(
                             break;
                         }
                         p = ap(buffer, sizeof(buffer), p, "%s", cp);
-                        if (tmp_val & 0x08) /* A-S is on, P-code is encrypted */
+                        if (tmp_val & 0x08)
+                        { /* A-S is on, P-code is encrypted */
                             p = ap(buffer, sizeof(buffer), p, ", A-S on");
+                        }
 
                         p = ap(buffer, sizeof(buffer), p, ")\"");
                         set_var(&parse->kv, buffer, sizeof(buffer), RO | COND_DEF);
@@ -4565,7 +4677,7 @@ gps16x_message(
 
             case GPS_UTC: {
                 UTC utc;
-                char buffer[512];
+                char buffer[512U];
                 char* p;
 
                 p = buffer;
@@ -4592,19 +4704,21 @@ gps16x_message(
 
             case GPS_ASCII_MSG: {
                 ASCII_MSG gps_ascii_msg;
-                char buffer[128];
+                char buffer[128U];
 
                 get_mbg_ascii_msg(&bufp, &gps_ascii_msg);
 
                 if (gps_ascii_msg.valid)
                 {
-                    char buffer1[128];
+                    char buffer1[128U];
                     mkreadable(buffer1, sizeof(buffer1), gps_ascii_msg.s, strlen(gps_ascii_msg.s), (int)0);
 
                     snprintf(buffer, sizeof(buffer), "gps_message=\"%s\"", buffer1);
                 }
                 else
+                {
                     snprintf(buffer, sizeof(buffer), "gps_message=<NONE>");
+                }
 
                 set_var(&parse->kv, buffer, sizeof(buffer), RO | DEF);
             }
@@ -4651,7 +4765,7 @@ gps16x_poll(
     };
 
     int rtc;
-    unsigned char cmd_buffer[64];
+    unsigned char cmd_buffer[64U];
     unsigned char* outp = cmd_buffer;
     GPS_MSG_HDR* header;
 
@@ -4661,7 +4775,9 @@ gps16x_poll(
     }
 
     if (sequence[parse->localstate].cmd == (unsigned short)~0)
+    {
         parse->localstate = 0;
+    }
 
     header = sequence + parse->localstate++;
 
@@ -4676,7 +4792,7 @@ gps16x_poll(
 #ifdef DEBUG
     if (debug > 2)
     {
-        char buffer[128];
+        char buffer[128U];
 
         mkreadable(buffer, sizeof(buffer), (char*)cmd_buffer, (unsigned)(outp - cmd_buffer), 1);
         printf("PARSE receiver #%d: transmitted message #%ld (%d bytes) >%s<\n",
@@ -4774,7 +4890,9 @@ poll_poll(
     struct parseunit* parse = peer->procptr->unitptr;
 
     if (parse->parse_type->cl_poll)
+    {
         parse->parse_type->cl_poll(parse);
+    }
 
     if (((poll_info_t*)parse->parse_type->cl_data)->rate)
     {
@@ -4985,7 +5103,7 @@ typedef struct trimble
 
 union uval
 {
-    u_char bd[8];
+    u_char bd[8U];
     int iv;
     float fv;
     double dv;
@@ -5023,7 +5141,9 @@ void sendbyte(
     int b)
 {
     if (b == DLE)
+    {
         buf->txt[buf->idx++] = DLE;
+    }
     buf->txt[buf->idx++] = (u_char)b;
 }
 
@@ -5044,7 +5164,7 @@ void sendetx(
 #ifdef DEBUG
         if (debug > 2)
         {
-            char buffer[256];
+            char buffer[256U];
 
             mkreadable(buffer, sizeof(buffer), (char*)buf->txt, (unsigned)buf->idx, 1);
             printf("PARSE receiver #%d: transmitted message (%d bytes) >%s<\n",
@@ -5074,9 +5194,9 @@ void sendflt(
 
     uval.fv = (float)a;
 #ifdef WORDS_BIGENDIAN
-    for (i = 0; i <= 3; i++)
+    for (i = 0; i <= 3; ++i)
 #else
-    for (i = 3; i >= 0; i--)
+    for (i = 3; i >= 0; --i)
 #endif
         sendbyte(buf, uval.bd[i]);
 }
@@ -5092,7 +5212,7 @@ trimbletsip_setup(
     struct parseunit* parse,
     const char* reason)
 {
-    u_char buffer[256];
+    u_char buffer[256U];
     struct txbuf buf;
     trimble_t* t = parse->localdata;
 
@@ -5103,7 +5223,9 @@ trimbletsip_setup(
     }
 
     if (t)
+    {
         t->last_reset = current_time;
+    }
 
     buf.txt = buffer;
 
@@ -5155,14 +5277,16 @@ trimble_check(
 {
     struct parseunit* parse = peer->procptr->unitptr;
     trimble_t* t = parse->localdata;
-    u_char buffer[256];
+    u_char buffer[256U];
     struct txbuf buf;
     buf.txt = buffer;
 
     if (t)
     {
         if (current_time > t->last_msg + TRIMBLETSIP_IDLE_TIME)
+        {
             (void)trimbletsip_setup(parse, "message timeout");
+        }
     }
 
     poll_poll(parse->peer); /* emit query string and re-arm timer */
@@ -5178,7 +5302,7 @@ trimble_check(
         {
             int i;
 
-            for (i = 0; oldsats; i++)
+            for (i = 0; oldsats; ++i)
             {
                 if (oldsats & (1 << i))
                 {
@@ -5389,11 +5513,13 @@ trimbletsip_message(
             size_t i;
 
             printf("TRIMBLE BAD packet, size %d:\n	", size);
-            for (i = 0; i < size; i++)
+            for (i = 0; i < size; ++i)
             {
                 printf("%2.2x, ", buffer[i] & 0xff);
                 if (i % 16 == 15)
+                {
                     printf("\n\t");
+                }
             }
             printf("\n");
         }
@@ -5405,7 +5531,7 @@ trimbletsip_message(
         u_short var_flag;
         trimble_t* tr = parse->localdata;
         unsigned int cmd = buffer[1U];
-        char pbuffer[200];
+        char pbuffer[200U];
         char* t = pbuffer;
         cmd_info_t* s;
 
@@ -5415,18 +5541,22 @@ trimbletsip_message(
             size_t i;
 
             printf("TRIMBLE packet 0x%02x, size %d:\n	", cmd, size);
-            for (i = 0; i < size; i++)
+            for (i = 0; i < size; ++i)
             {
                 printf("%2.2x, ", buffer[i] & 0xff);
                 if (i % 16 == 15)
+                {
                     printf("\n\t");
+                }
             }
             printf("\n");
         }
 #endif
 
         if (tr)
+        {
             tr->last_msg = current_time;
+        }
 
         s = trimble_convert(cmd, trimble_rcmds);
 
@@ -5472,9 +5602,13 @@ trimbletsip_message(
                 break;
             }
             if (mb(0) & 0x10)
+            {
                 t = ap(pbuffer, sizeof(pbuffer), t, "-MANUAL, ");
+            }
             else
+            {
                 t = ap(pbuffer, sizeof(pbuffer), t, "-AUTO, ");
+            }
 
             t = ap(pbuffer, sizeof(pbuffer), t, "satellites %02d %02d %02d %02d, PDOP %.2f, HDOP %.2f, VDOP %.2f, TDOP %.2f",
                    mb(1), mb(2), mb(3), mb(4),
@@ -5537,7 +5671,7 @@ trimbletsip_message(
 
             bits = mb(1) & 0xFF;
 
-            for (i = 0; i < 8; i++)
+            for (i = 0; i < 8; ++i)
                 if (bits & (0x1 << i))
                 {
                     t = ap(pbuffer, sizeof(pbuffer), t, ", %s", msgs[i]);
@@ -5566,7 +5700,7 @@ trimbletsip_message(
             t = ap(pbuffer, sizeof(pbuffer), t, "machine id 0x%02x", mb(0) & 0xFF);
             bits = mb(1) & 0xFF;
 
-            for (i = 0; i < 8; i++)
+            for (i = 0; i < 8; ++i)
                 if (bits & (0x1 << i))
                 {
                     t = ap(pbuffer, sizeof(pbuffer), t, ", %s", msgs[i]);
@@ -5609,8 +5743,8 @@ trimbletsip_message(
         case CMD_RIOOPTIONS: {
             t = ap(pbuffer, sizeof(pbuffer), t, "%02x %02x %02x %02x",
                    mb(0), mb(1), mb(2), mb(3));
-            if (mb(0) != TRIM_POS_OPT ||
-                mb(2) != TRIM_TIME_OPT)
+            if ((mb(0) != TRIM_POS_OPT) ||
+                (mb(2) != TRIM_TIME_OPT))
             {
                 (void)trimbletsip_setup(parse, "bad io options");
             }
@@ -5624,11 +5758,15 @@ trimbletsip_message(
             double f = getflt((unsigned char*)&mb(12));
 
             if (f > 0.0)
+            {
                 t = ap(pbuffer, sizeof(pbuffer), t, "x= %.1fm, y= %.1fm, z= %.1fm, time_of_fix= %f sec",
                        x, y, z,
                        f);
+            }
             else
+            {
                 return;
+            }
         }
         break;
 
@@ -5638,12 +5776,16 @@ trimbletsip_message(
             double f = getflt((unsigned char*)&mb(12));
 
             if (f > 0.0)
+            {
                 t = ap(pbuffer, sizeof(pbuffer), t, "lat %f %c, long %f %c, alt %.2fm",
                        ((lat < 0.0) ? (-lat) : (lat)) * RTOD, (lat < 0.0 ? 'S' : 'N'),
                        ((lng < 0.0) ? (-lng) : (lng)) * RTOD, (lng < 0.0 ? 'W' : 'E'),
                        getflt((unsigned char*)&mb(8)));
+            }
             else
+            {
                 return;
+            }
         }
         break;
 
@@ -5685,9 +5827,13 @@ trimbletsip_message(
                 break;
             }
             if (mb(0) & 0x8)
+            {
                 t = ap(pbuffer, sizeof(pbuffer), t, "-MANUAL, ");
+            }
             else
+            {
                 t = ap(pbuffer, sizeof(pbuffer), t, "-AUTO, ");
+            }
 
             sats = (mb(0) >> 4) & 0xF;
 
@@ -5698,11 +5844,13 @@ trimbletsip_message(
                    getflt((unsigned char*)&mb(13)),
                    sats, (sats == 1) ? "" : "s");
 
-            for (i = 0; i < sats; i++)
+            for (i = 0; i < sats; ++i)
             {
                 t = ap(pbuffer, sizeof(pbuffer), t, "%s%02d", i ? ", " : "", mb(17 + i));
                 if (tr)
+                {
                     tr->ctrack |= (1 << (mb(17 + i) - 1));
+                }
             }
 
             if (tr)
@@ -5736,12 +5884,18 @@ trimbletsip_message(
                 if (mb(22))
                 {
                     if (mb(22) == 1)
+                    {
                         t = ap(pbuffer, sizeof(pbuffer), t, ", BAD PARITY");
+                    }
                     else if (mb(22) == 2)
+                    {
                         t = ap(pbuffer, sizeof(pbuffer), t, ", BAD EPH HEALTH");
+                    }
                 }
                 if (mb(23))
+                {
                     t = ap(pbuffer, sizeof(pbuffer), t, ", collecting data");
+                }
             }
         }
         break;

@@ -25,16 +25,20 @@ remoteconfig_cmdlength(
     while (src_end != src_buf)
     {
         ch = src_end[-1];
-        if (ch > ' ' && ch < 128)
+        if ((ch > ' ') && (ch < 128))
+        {
             break;
+        }
         --src_end;
     }
     /* now do a forward scan */
     for (scan = src_buf; scan != src_end; ++scan)
     {
         ch = scan[0U];
-        if ((ch < ' ' || ch >= 128) && ch != '\t')
+        if (((ch < ' ') || (ch >= 128)) && (ch != '\t'))
+        {
             break;
+        }
     }
     return (size_t)(scan - src_buf);
 }

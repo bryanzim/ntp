@@ -32,11 +32,15 @@ _num_or_dflt(
     unsigned long num;
 
     if (!(sval && isdigit(*(unsigned char*)sval)))
+    {
         return defval;
+    }
 
     num = strtoul(sval, &ep, 10);
-    if (!*ep && num <= maxval)
+    if (!*ep && (num <= maxval))
+    {
         return num;
+    }
 
     return defval;
 }
@@ -50,7 +54,9 @@ _chop(
     char* sp)
 {
     if (sp && *sp)
+    {
         *sp++ = '\0';
+    }
     return sp;
 }
 
@@ -62,8 +68,10 @@ _skip(
     char* sp,
     int ch)
 {
-    if (sp && *(unsigned char*)sp == ch)
+    if (sp && (*(unsigned char*)sp == ch))
+    {
         return (sp + 1);
+    }
     return NULL;
 }
 
@@ -87,14 +95,16 @@ int decodenetnum(
      */
 
     sockaddr_u netnum;
-    char buf[64]; /* working copy of input */
+    char buf[64U]; /* working copy of input */
     char* haddr = buf;
     unsigned int port = NTP_PORT, scope = 0;
     unsigned short afam = AF_UNSPEC;
 
     /* copy input to working buffer with length check */
     if (strlcpy(buf, num, sizeof(buf)) >= sizeof(buf))
+    {
         return FALSE;
+    }
 
     /* Identify address family and possibly the port, if given.  If
      * this results in AF_UNSPEC, we will fail in the next step.
@@ -123,7 +133,7 @@ int decodenetnum(
             /* no colon, only dot: IPv4! */
             afam = AF_INET;
         }
-        else if (!dot || col < dot)
+        else if (!dot || (col < dot))
         {
             /* no dot or 1st colon before 1st dot: IPv6! */
             afam = AF_INET6;
@@ -149,14 +159,18 @@ int decodenetnum(
     {
     case AF_INET:
         if (inet_pton(afam, haddr, &netnum.sa4.sin_addr) <= 0)
+        {
             return FALSE;
+        }
         netnum.sa4.sin_port = htons((unsigned short)port);
         break;
 
     case AF_INET6:
         scope = _num_or_dflt(_chop(strchr(haddr, '%')), 0xFFFFFFFFu, scope);
         if (inet_pton(afam, haddr, &netnum.sa6.sin6_addr) <= 0)
+        {
             return FALSE;
+        }
         netnum.sa6.sin6_port = htons((unsigned short)port);
         netnum.sa6.sin6_scope_id = scope;
         break;

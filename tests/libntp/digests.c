@@ -604,9 +604,9 @@ void dump_mac(
     u_char* pmac,
     size_t octets)
 {
-    char dump[2048];
+    char dump[2048U];
     const char* AorB;
-    size_t dc = 0;
+    size_t dc = 0U;
     size_t idx;
 
     AorB = (keyid < 51) ? "A" : "B";
@@ -618,9 +618,9 @@ void dump_mac(
                    "\t\t\t",
                    keyid, AorB, AorB);
 
-    for (idx = 4; idx < octets; idx++)
+    for (idx = 4; idx < octets; ++idx)
     {
-        if (0 == idx % 4 && 4 < idx)
+        if ((0 == idx % 4) && (4 < idx))
         {
             dc += snprintf(dump + dc, sizeof(dump) - dc, "\n\t\t\t");
         }

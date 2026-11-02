@@ -199,8 +199,10 @@ void* os_zalloc(size_t size);
  */
 static inline void* os_calloc(size_t nmemb, size_t size)
 {
-    if (size && nmemb > (~(size_t)0) / size)
+    if (size && (nmemb > (~(size_t)0) / size))
+    {
         return NULL;
+    }
     return os_zalloc(nmemb * size);
 }
 
@@ -493,8 +495,10 @@ char* os_strdup(const char* s);
 
 static inline void* os_realloc_array(void* ptr, size_t nmemb, size_t size)
 {
-    if (size && nmemb > (~(size_t)0) / size)
+    if (size && (nmemb > (~(size_t)0) / size))
+    {
         return NULL;
+    }
     return os_realloc(ptr, nmemb * size);
 }
 

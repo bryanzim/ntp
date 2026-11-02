@@ -73,7 +73,7 @@ void ssl_check_version(void)
     u_long rv = OpenSSL_version_num();
     char* buf;
 
-    if (SSLV_MAJOR(bv) != SSLV_MAJOR(rv) || SSLV_MINOR(bv) != SSLV_MINOR(rv))
+    if ((SSLV_MAJOR(bv) != SSLV_MAJOR(rv)) || (SSLV_MINOR(bv) != SSLV_MINOR(rv)))
     {
 
         buf = lib_getbuf();
@@ -119,7 +119,7 @@ int keytype_from_text(
      */
     INIT_SSL();
 
-    if ('m' == tolower(text[0U]) && '\0' == text[1U])
+    if (('m' == tolower(text[0U])) && ('\0' == text[1U]))
     {
         upcased = strdup("MD5");
     }
@@ -159,7 +159,7 @@ int keytype_from_text(
         md = EVP_get_digestbynid(key_type);
         digest_len = (md) ? EVP_MD_size(md) : 0;
 
-        if (NULL == md || 0 == digest_len)
+        if ((NULL == md) || (0 == digest_len))
         {
 #ifdef ENABLE_CMAC
             if (NID_cmac == key_type)
@@ -214,9 +214,13 @@ keytype_name(
         }
 #else /* !OPENSSL follows */
     if (NID_md5 == type)
+    {
         name = "MD5";
+    }
     else
+    {
         name = unknown_type;
+    }
 #endif
     return name;
 }
@@ -237,7 +241,7 @@ keytype_name(
 char* getpass_keytype(
     int type)
 {
-    char pass_prompt[64 + 11 + 1]; /* 11 for " Password: " */
+    char pass_prompt[64U + 11 + 1]; /* 11 for " Password: " */
 
     snprintf(pass_prompt, sizeof(pass_prompt),
              "%.64s Password: ", keytype_name(type));

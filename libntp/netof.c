@@ -24,7 +24,7 @@ sockaddr_u*
 netof(
     sockaddr_u* hostaddr)
 {
-    static sockaddr_u netofbuf[2];
+    static sockaddr_u netofbuf[2U];
     static int next_netofbuf;
     u_int32 netnum;
     sockaddr_u* netaddr;
@@ -43,8 +43,10 @@ netof(
         SET_ADDR4(netaddr, netnum);
     }
     else if (IS_IPV6(netaddr))
+    {
         /* assume the typical /64 subnet size */
         zero_mem(&NSRCADR6(netaddr)[8U], 8);
+    }
 #ifdef DEBUG
     else
     {

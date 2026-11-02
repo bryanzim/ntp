@@ -65,9 +65,9 @@ void mfp_mul(
 {
     int32 i, j;
     u_int32 f;
-    u_long a[4]; /* operand a */
-    u_long b[4]; /* operand b */
-    u_long c[5]; /* result c - 5 items for performance - see below */
+    u_long a[4U]; /* operand a */
+    u_long b[4U]; /* operand b */
+    u_long c[5U]; /* result c - 5 items for performance - see below */
     u_long carry;
 
     int neg = 0;
@@ -96,8 +96,8 @@ void mfp_mul(
 
     c[0U] = c[1U] = c[2U] = c[3U] = c[4U] = 0;
 
-    for (i = 0; i < 4; i++) /* we do assume 32 * 32 = 64 bit multiplication */
-        for (j = 0; j < 4; j++)
+    for (i = 0; i < 4; ++i) /* we do assume 32 * 32 = 64 bit multiplication */
+        for (j = 0; j < 4; ++j)
         {
             u_long result_low, result_high;
             int low_index = (i + j) / 2;    /* formal [0..3]  - index for low long word */
@@ -140,8 +140,10 @@ void mfp_mul(
 
 #ifdef DEBUG
     if (debug > 6)
+    {
         printf("mfp_mul: 0x%04lx%04lx%04lx%04lx * 0x%04lx%04lx%04lx%04lx = 0x%08lx%08lx%08lx%08lx\n",
-               a[3U], a[2], a[1], a[0], b[3], b[2], b[1], b[0], c[3], c[2], c[1], c[0]);
+               a[3U], a[2U], a[1U], a[0U], b[3U], b[2U], b[1U], b[0U], c[3U], c[2U], c[1U], c[0U]);
+    }
 #endif
 
     if (c[3U]) /* overflow */
@@ -165,10 +167,12 @@ void mfp_mul(
 
 #ifdef DEBUG
     if (debug > 6)
+    {
         printf("mfp_mul: %s * %s => %s\n",
                mfptoa((u_long)a_i, a_f, 6),
                mfptoa((u_long)b_i, b_f, 6),
                mfptoa((u_long)i, f, 6));
+    }
 #endif
 }
 

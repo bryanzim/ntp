@@ -19,10 +19,12 @@ void pkt_output(
 
     fprintf(output, HLINE);
 
-    for (a = 0; a < pkt_length; a++)
+    for (a = 0; a < pkt_length; ++a)
     {
-        if (a > 0 && a % 8 == 0)
+        if ((a > 0) && (a % 8 == 0))
+        {
             fprintf(output, "\n");
+        }
 
         fprintf(output, "%3d: %02x  ", a, pkt[a]);
     }
@@ -50,14 +52,14 @@ void l_fp_output_bin(
 
     fprintf(output, HLINE);
 
-    for (a = 0; a < 8; a++)
+    for (a = 0; a < 8; ++a)
     {
         short tmp = ((unsigned char*)ts)[a];
         tmp++;
 
         fprintf(output, "%i: ", a);
 
-        for (b = 7; b >= 0; b--)
+        for (b = 7; b >= 0; --b)
         {
             int texp = (int)pow(2, b);
 
@@ -89,8 +91,10 @@ void l_fp_output_dec(
 
     fprintf(output, HLINE);
 
-    for (a = 0; a < 8; a++)
+    for (a = 0; a < 8; ++a)
+    {
         fprintf(output, "%i: %i \t", a, ((unsigned char*)ts)[a]);
+    }
 
     fprintf(output, "\n");
     fprintf(output, HLINE);
@@ -129,7 +133,7 @@ char* ss_to_str(
 char* tv_to_str(
     const struct timeval* tv)
 {
-    const size_t bufsize = 48;
+    const size_t bufsize = 48U;
     char* buf;
     time_t gmt_time, local_time;
     struct tm *ptm, tm_local;
@@ -192,14 +196,20 @@ hostnameaddr(
     addrtxt = stoa(addr);
     LIB_GETBUF(result);
     if (strcmp(hostname, addrtxt))
+    {
         cnt = snprintf(result, LIB_BUFLENGTH, "%s %s",
                        hostname, addrtxt);
+    }
     else
+    {
         cnt = snprintf(result, LIB_BUFLENGTH, "%s", addrtxt);
+    }
     if (cnt >= LIB_BUFLENGTH)
+    {
         snprintf(result, LIB_BUFLENGTH,
                  "hostnameaddr ERROR have %d (%d needed)",
                  LIB_BUFLENGTH, cnt + 1);
+    }
 
     return result;
 }

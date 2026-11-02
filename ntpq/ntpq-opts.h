@@ -293,7 +293,9 @@ static inline char* aoGetsText(char const* pz) ATTRIBUTE_FORMAT_ARG(1);
 static inline char* aoGetsText(char const* pz)
 {
     if (pz == NULL)
+    {
         return NULL;
+    }
     return (char*)gettext(pz);
 }
 #define _(s) aoGetsText(s)

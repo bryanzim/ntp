@@ -93,10 +93,10 @@ s_char sys_precision; /* local clock precision (log2 s) */
 /*
  * Keyid used for authenticated requests.  Obtained on the fly.
  */
-u_long info_auth_keyid = 0;
+u_long info_auth_keyid = 0U;
 
 static int info_auth_keytype = NID_md5; /* MD5 */
-static size_t info_auth_hashlen = 16;   /* MD5 */
+static size_t info_auth_hashlen = 16U;  /* MD5 */
 u_long current_time;                    /* needed by authkeys; not used */
 
 /*
@@ -360,8 +360,8 @@ u_int numassoc;          /* number of cached associations */
 /*
  * For commands typed on the command line (with the -c option)
  */
-size_t numcmds = 0;
-size_t defcmds = 0; /* Options on the command line are 'defined'! */
+size_t numcmds = 0U;
+size_t defcmds = 0U; /* Options on the command line are 'defined'! */
 char* ccmds[MAXCMDS];
 #define ADDCMD(cp)         \
     if (numcmds < MAXCMDS) \
@@ -486,7 +486,9 @@ int ntpqmain(
 
     /* Check to see if we have IPv6. Otherwise default to IPv4 */
     if (!ipv6_works)
+    {
         ai_fam_default = AF_INET;
+    }
 
     progname = argv[0U];
 
@@ -498,7 +500,7 @@ int ntpqmain(
 
         list = list_digest_names();
 
-        for (icmd = 0; icmd < COUNTOF(builtins); icmd++)
+        for (icmd = 0; icmd < COUNTOF(builtins); ++icmd)
         {
             if (strcmp("keytype", builtins[icmd].keyword) == 0)
             {
@@ -539,20 +541,32 @@ int ntpqmain(
     debug = OPT_VALUE_SET_DEBUG_LEVEL;
 
     if (HAVE_OPT(IPV4))
+    {
         ai_fam_templ = AF_INET;
+    }
     else if (HAVE_OPT(IPV6))
+    {
         ai_fam_templ = AF_INET6;
+    }
     else
+    {
         ai_fam_templ = ai_fam_default;
+    }
 
     if (HAVE_OPT(INTERACTIVE))
+    {
         interactive = 1;
+    }
 
     if (HAVE_OPT(NUMERIC))
+    {
         showhostnames = 0;
+    }
 
     if (HAVE_OPT(WIDE))
+    {
         wideremote = 1;
+    }
 
     old_rv = HAVE_OPT(OLD_RV);
 
@@ -564,7 +578,7 @@ int ntpqmain(
     }
     else
     {
-        for (ihost = 0; ihost < (u_int)argc; ihost++)
+        for (ihost = 0; ihost < (u_int)argc; ++ihost)
         {
             if ('-' == *argv[ihost])
             {
@@ -593,7 +607,7 @@ int ntpqmain(
         }
     }
 
-    if (defcmds == 0 && interactive == 0 && isatty(fileno(stdin)) && isatty(fileno(stderr)))
+    if ((defcmds == 0) && (interactive == 0) && isatty(fileno(stdin)) && isatty(fileno(stderr)))
     {
         interactive = 1;
     }
@@ -601,28 +615,36 @@ int ntpqmain(
     set_ctrl_c_hook(on_ctrlc);
 #ifndef SYS_WINNT /* Under NT cannot handle SIGINT, WIN32 spawns a handler */
     if (interactive)
+    {
         push_ctrl_c_handler(abortcmd);
+    }
 #endif /* SYS_WINNT */
 
     if (numcmds > 0)
     {
-        for (ihost = 0; ihost < numhosts; ihost++)
+        for (ihost = 0; ihost < numhosts; ++ihost)
         {
             if (openhost(chosts[ihost].name, chosts[ihost].fam))
             {
                 if (ihost && current_output)
+                {
                     fputc('\n', current_output);
-                for (icmd = 0; icmd < numcmds; icmd++)
+                }
+                for (icmd = 0; icmd < numcmds; ++icmd)
                 {
                     if (icmd && current_output)
+                    {
                         fputc('\n', current_output);
+                    }
                     docmd(ccmds[icmd]);
                 }
             }
         }
         /* Release memory allocated in ADDCMD */
-        for (icmd = 0; icmd < numcmds; icmd++)
+        for (icmd = 0; icmd < numcmds; ++icmd)
+        {
             free(ccmds[icmd]);
+        }
     }
 
     if (defcmds == 0)
@@ -660,7 +682,7 @@ openhost(
     if (*hname == '[')
     {
         cp = strchr(hname + 1, ']');
-        if (!cp || (octets = (size_t)(cp - hname) - 1) >= sizeof(name))
+        if (!cp || ((octets = (size_t)(cp - hname) - 1) >= sizeof(name)))
         {
             errno = EINVAL;
             warning("%s", "bad hostname/address");
@@ -717,7 +739,7 @@ openhost(
      */
     if (
 #if defined(WIN32)
-        WSANO_DATA == a_info || EAI_NONAME == a_info ||
+        (WSANO_DATA == a_info) || (EAI_NONAME == a_info) ||
 #endif
         EAI_BADFLAGS == a_info)
     {
@@ -748,6 +770,7 @@ openhost(
     }
 
     if (debug > 2)
+    {
         printf("Opening host %s (%s)\n",
                temphost,
                (ai->ai_family == AF_INET)
@@ -755,11 +778,14 @@ openhost(
                : (ai->ai_family == AF_INET6)
                    ? "AF_INET6"
                    : "AF-???");
+    }
 
     if (havehost == 1)
     {
         if (debug > 2)
+        {
             printf("Closing old host %s\n", currenthost);
+        }
         closesocket(sockfd);
         havehost = 0;
     }
@@ -770,11 +796,15 @@ openhost(
 #ifdef SYS_VXWORKS
     ((struct sockaddr_in6*)&hostaddr)->sin6_port = htons(SERVER_PORT_NUM);
     if (ai->ai_family == AF_INET)
+    {
         *(struct sockaddr_in*)&hostaddr =
             *((struct sockaddr_in*)ai->ai_addr);
+    }
     else
+    {
         *(struct sockaddr_in6*)&hostaddr =
             *((struct sockaddr_in6*)ai->ai_addr);
+    }
 #endif /* SYS_VXWORKS */
 
 #ifdef SYS_WINNT
@@ -811,7 +841,9 @@ openhost(
         int rbufsize = DATASIZE + 2048; /* 2K for slop */
         if (setsockopt(sockfd, SOL_SOCKET, SO_RCVBUF,
                        (void*)&rbufsize, sizeof(int)) == -1)
+        {
             error("setsockopt");
+        }
     }
 #endif
 #endif
@@ -849,9 +881,9 @@ dump_hex_printable(
      *---------------
      *  68 bytes
      */
-    static const char s_xdig[16] = "0123456789ABCDEF";
+    static const char s_xdig[16U] = "0123456789ABCDEF";
 
-    char lbuf[68];
+    char lbuf[68U];
     int ch, rowlen;
     const u_char* cdata = data;
     char *xptr, *pptr;
@@ -872,7 +904,9 @@ dump_hex_printable(
             *xptr++ = s_xdig[ch >> 4];
             *xptr++ = s_xdig[ch & 0x0F];
             if (++xptr == lbuf + 3 * 8)
+            {
                 ++xptr;
+            }
 
             *pptr++ = isprint(ch) ? (char)ch : '.';
         } while (--rowlen);
@@ -894,7 +928,9 @@ sendpkt(
     size_t xdatalen)
 {
     if (debug >= 3)
+    {
         printf("Sending %u octets\n", (u_int)xdatalen);
+    }
 
     if (send(sockfd, xdata, xdatalen, 0) == -1)
     {
@@ -953,7 +989,9 @@ getresponse(
      */
     *rsize = 0;
     if (rstatus)
+    {
         *rstatus = 0;
+    }
     *rdata = (char*)pktdata;
 
     numfrags = 0;
@@ -971,9 +1009,13 @@ getresponse(
     {
 
         if (numfrags == 0)
+        {
             tvo = tvout;
+        }
         else
+        {
             tvo = tvsout;
+        }
         tospan = (uint32_t)tvo.tv_sec + (tvo.tv_usec != 0);
 
         FD_SET(sockfd, &fds);
@@ -1021,26 +1063,32 @@ getresponse(
             if (numfrags == 0)
             {
                 if (timeo)
+                {
                     fprintf(stderr,
                             "%s: timed out, nothing received\n",
                             currenthost);
+                }
                 return ERR_TIMEOUT;
             }
             if (timeo)
+            {
                 fprintf(stderr,
                         "%s: timed out with incomplete data\n",
                         currenthost);
+            }
             if (debug)
             {
                 fprintf(stderr,
                         "ERR_INCOMPLETE: Received fragments:\n");
-                for (f = 0; f < numfrags; f++)
+                for (f = 0; f < numfrags; ++f)
+                {
                     fprintf(stderr,
                             "%2u: %5d %5d\t%3d octets\n",
                             (u_int)f, offsets[f],
                             offsets[f] +
                                 counts[f],
                             counts[f]);
+                }
                 fprintf(stderr,
                         "last fragment %sreceived\n",
                         (seenlastfrag)
@@ -1069,27 +1117,35 @@ getresponse(
         if (n < (int)CTL_HEADER_LEN)
         {
             if (debug)
+            {
                 printf("Short (%d byte) packet received\n", n);
+            }
             continue;
         }
-        if (PKT_VERSION(rpkt.li_vn_mode) > NTP_VERSION || PKT_VERSION(rpkt.li_vn_mode) < NTP_OLDVERSION)
+        if ((PKT_VERSION(rpkt.li_vn_mode) > NTP_VERSION) || (PKT_VERSION(rpkt.li_vn_mode) < NTP_OLDVERSION))
         {
             if (debug)
+            {
                 printf("Packet received with version %d\n",
                        PKT_VERSION(rpkt.li_vn_mode));
+            }
             continue;
         }
         if (PKT_MODE(rpkt.li_vn_mode) != MODE_CONTROL)
         {
             if (debug)
+            {
                 printf("Packet received with mode %d\n",
                        PKT_MODE(rpkt.li_vn_mode));
+            }
             continue;
         }
         if (!CTL_ISRESPONSE(rpkt.r_m_e_op))
         {
             if (debug)
+            {
                 printf("Received request packet, wanted response\n");
+            }
             continue;
         }
 
@@ -1100,16 +1156,20 @@ getresponse(
         if (ntohs(rpkt.sequence) != sequence)
         {
             if (debug)
+            {
                 printf("Received sequnce number %d, wanted %d\n",
                        ntohs(rpkt.sequence), sequence);
+            }
             continue;
         }
         if (CTL_OP(rpkt.r_m_e_op) != opcode)
         {
             if (debug)
+            {
                 printf(
                     "Received opcode %d, wanted %d (sequence number okay)\n",
                     CTL_OP(rpkt.r_m_e_op), opcode);
+            }
             continue;
         }
 
@@ -1120,10 +1180,14 @@ getresponse(
         {
             errcode = (ntohs(rpkt.status) >> 8) & 0xff;
             if (CTL_ISMORE(rpkt.r_m_e_op))
+            {
                 TRACE(1, ("Error code %d received on not-final packet\n",
                           errcode));
+            }
             if (errcode == CERR_UNSPEC)
+            {
                 return ERR_UNSPEC;
+            }
             return errcode;
         }
 
@@ -1170,7 +1234,7 @@ getresponse(
             return ERR_INCOMPLETE;
         }
 
-        if (debug >= 3 && shouldbesize > n)
+        if ((debug >= 3) && (shouldbesize > n))
         {
             u_int32 key;
             u_int32* lpkt;
@@ -1199,7 +1263,7 @@ getresponse(
                        (u_long)ntohl(lpkt[(n - maclen) / sizeof(u_int32) + 2]));
                 key = ntohl(lpkt[(n - maclen) / sizeof(u_int32)]);
                 printf("Authenticated with keyid %lu\n", (u_long)key);
-                if (key != 0 && key != info_auth_keyid)
+                if ((key != 0) && (key != info_auth_keyid))
                 {
                     printf("We don't know that key\n");
                 }
@@ -1225,7 +1289,7 @@ getresponse(
                       count, (long)n - CTL_HEADER_LEN));
             continue;
         }
-        if (count == 0 && CTL_ISMORE(rpkt.r_m_e_op))
+        if ((count == 0) && CTL_ISMORE(rpkt.r_m_e_op))
         {
             TRACE(1, ("Received count of 0 in non-final fragment\n"));
             continue;
@@ -1260,34 +1324,34 @@ getresponse(
          * previously received.
          */
         for (f = 0;
-             f < numfrags && offsets[f] < offset;
-             f++)
+             (f < numfrags) && (offsets[f] < offset);
+             ++f)
         {
             /* empty body */;
         }
 
-        if (f < numfrags && offset == offsets[f])
+        if ((f < numfrags) && (offset == offsets[f]))
         {
             TRACE(1, ("duplicate %u octets at %u ignored, prior %u at %u\n",
                       count, offset, counts[f], offsets[f]));
             continue;
         }
 
-        if (f > 0 && (offsets[f - 1] + counts[f - 1]) > offset)
+        if ((f > 0) && ((offsets[f - 1] + counts[f - 1]) > offset))
         {
             TRACE(1, ("received frag at %u overlaps with %u octet frag at %u\n",
                       offset, counts[f - 1], offsets[f - 1]));
             continue;
         }
 
-        if (f < numfrags && (offset + count) > offsets[f])
+        if ((f < numfrags) && ((offset + count) > offsets[f]))
         {
             TRACE(1, ("received %u octet frag at %u overlaps with frag at %u\n",
                       count, offset, offsets[f]));
             continue;
         }
 
-        for (ff = numfrags; ff > f; ff--)
+        for (ff = numfrags; ff > f; --ff)
         {
             offsets[ff] = offsets[ff - 1];
             counts[ff] = counts[ff - 1];
@@ -1304,7 +1368,9 @@ getresponse(
         {
             seenlastfrag = 1;
             if (rstatus != 0)
+            {
                 *rstatus = ntohs(rpkt.status);
+            }
         }
 
         /*
@@ -1322,12 +1388,16 @@ getresponse(
     maybe_final:
 #endif
 
-        if (seenlastfrag && offsets[0U] == 0)
+        if (seenlastfrag && (offsets[0U] == 0))
         {
-            for (f = 1; f < numfrags; f++)
+            for (f = 1; f < numfrags; ++f)
+            {
                 if (offsets[f - 1] + counts[f - 1] !=
                     offsets[f])
+                {
                     break;
+                }
+            }
             if (f == numfrags)
             {
                 *rsize = offsets[f - 1] + counts[f - 1];
@@ -1420,7 +1490,7 @@ sendrequest(
     if (info_auth_keyid == 0)
     {
         key_id = getkeyid("Keyid: ");
-        if (key_id == 0 || key_id > NTP_MAXKEY)
+        if ((key_id == 0) || (key_id > NTP_MAXKEY))
         {
             fprintf(stderr,
                     "Invalid key identifier\n");
@@ -1482,7 +1552,9 @@ void show_error_msg(
     associd_t associd)
 {
     if (numhosts > 1)
+    {
         fprintf(stderr, "server=%s ", currenthost);
+    }
 
     switch (m6resp)
     {
@@ -1599,7 +1671,9 @@ again:
      */
     res = sendrequest(opcode, associd, auth, qsize, qdata);
     if (res != 0)
+    {
         return res;
+    }
 
     /*
      * Get the response.  If we got a standard error, print a message
@@ -1608,7 +1682,7 @@ again:
 
     if (res > 0)
     {
-        if (!done && (res == ERR_TIMEOUT || res == ERR_INCOMPLETE))
+        if (!done && ((res == ERR_TIMEOUT) || (res == ERR_INCOMPLETE)))
         {
             if (res == ERR_INCOMPLETE)
             {
@@ -1622,7 +1696,9 @@ again:
             goto again;
         }
         if (!quiet)
+        {
             show_error_msg(res, associd);
+        }
     }
     return res;
 }
@@ -1644,7 +1720,9 @@ getcmds(void)
     {
         line = ntp_readline(&count);
         if (NULL == line)
+        {
             break;
+        }
         docmd(line);
         free(line);
     }
@@ -1662,7 +1740,9 @@ static int
 abortcmd(void)
 {
     if (current_output == stdout)
+    {
         (void)fflush(stdout);
+    }
     putc('\n', stderr);
     (void)fflush(stderr);
     if (jump)
@@ -1683,7 +1763,7 @@ static void
 docmd(
     const char* cmdline)
 {
-    char* tokens[1 + MAXARGS + 2];
+    char* tokens[1U + MAXARGS + 2];
     struct parse pcmd;
     int ntok;
     static int i;
@@ -1695,7 +1775,9 @@ docmd(
      */
     tokenize(cmdline, tokens, &ntok);
     if (ntok == 0)
+    {
         return;
+    }
 
     /*
      * If command prefixed by '~', then quiet output
@@ -1735,7 +1817,7 @@ docmd(
      */
     pcmd.keyword = tokens[0U];
     pcmd.nargs = 0;
-    for (i = 0; i < MAXARGS && xcmd->arg[i] != NO; i++)
+    for (i = 0; (i < MAXARGS) && (xcmd->arg[i] != NO); ++i)
     {
         if ((i + 1) >= ntok)
         {
@@ -1747,21 +1829,29 @@ docmd(
             break;
         }
         if ((xcmd->arg[i] & OPT) && (*tokens[i + 1] == '>'))
+        {
             break;
+        }
         if (!getarg(tokens[i + 1], (int)xcmd->arg[i], &pcmd.argval[i]))
+        {
             return;
+        }
         pcmd.nargs++;
     }
 
     i++;
-    if (i < ntok && *tokens[i] == '>')
+    if ((i < ntok) && (*tokens[i] == '>'))
     {
         char* fname;
 
         if (*(tokens[i] + 1) != '\0')
+        {
             fname = tokens[i] + 1;
+        }
         else if ((i + 1) < ntok)
+        {
             fname = tokens[i + 1];
+        }
         else
         {
             (void)fprintf(stderr, "***No file for redirect\n");
@@ -1846,22 +1936,28 @@ tokenize(
 
         /* Skip inter-token whitespace */
         while (ISSPACE(*cp))
+        {
             cp++;
+        }
 
         /* If we're at EOL we're done */
         if (ISEOL(*cp))
+        {
             break;
+        }
 
         /* If this is the 2nd token and the first token begins
          * with a ':', then just grab to EOL.
          */
 
-        if (*ntok == 1 && tokens[0U][0U] == ':')
+        if ((*ntok == 1) && (tokens[0U][0U] == ':'))
         {
             do
             {
                 if (sp - tspace >= MAXLINE)
+                {
                     goto toobig;
+                }
                 *sp++ = *cp++;
             } while (!ISEOL(*cp));
         }
@@ -1875,7 +1971,9 @@ tokenize(
             do
             {
                 if (sp - tspace >= MAXLINE)
+                {
                     goto toobig;
+                }
                 *sp++ = *cp++;
             } while ((*cp != '\"') && !ISEOL(*cp));
             /* HMS: a missing closing " should be an error */
@@ -1885,14 +1983,18 @@ tokenize(
             do
             {
                 if (sp - tspace >= MAXLINE)
+                {
                     goto toobig;
+                }
                 *sp++ = *cp++;
             } while ((*cp != '\"') && !ISSPACE(*cp) && !ISEOL(*cp));
             /* HMS: Why check for a " in the previous line? */
         }
 
         if (sp - tspace >= MAXLINE)
+        {
             goto toobig;
+        }
         *sp++ = '\0';
     }
     return;
@@ -1925,7 +2027,9 @@ getarg(
 
     case NTP_ADD:
         if (!getnetnum(str, &argp->netnum, NULL, 0))
+        {
             return 0;
+        }
         break;
 
     case NTP_UINT:
@@ -2011,18 +2115,26 @@ findcmd(
     clen = strlen(str);
     nmatch = 0;
     if (clist1 != 0)
+    {
         clist = clist1;
+    }
     else if (clist2 != 0)
+    {
         clist = clist2;
+    }
     else
+    {
         return 0;
+    }
 
 again:
-    for (cl = clist; cl->keyword != 0; cl++)
+    for (cl = clist; cl->keyword != 0; ++cl)
     {
         /* do a first character check, for efficiency */
         if (*str != *(cl->keyword))
+        {
             continue;
+        }
         if (strncmp(str, cl->keyword, (unsigned)clen) == 0)
         {
             /*
@@ -2044,7 +2156,7 @@ again:
      * See if there is more to do.  If so, go again.  Sorry about the
      * goto, too much looking at BSD sources...
      */
-    if (clist == clist1 && clist2 != 0)
+    if ((clist == clist1) && (clist2 != 0))
     {
         clist = clist2;
         goto again;
@@ -2088,8 +2200,10 @@ int getnetnum(
     if (decodenetnum(hname, num))
     {
         if (fullhost != NULL)
+        {
             getnameinfo(&num->sa, SOCKLEN(num), fullhost,
                         LENHOSTNAME, NULL, 0, 0);
+        }
         return 1;
     }
     else if (getaddrinfo(hname, "ntp", &hints, &ai) == 0)
@@ -2099,12 +2213,16 @@ int getnetnum(
         if (fullhost != NULL)
         {
             if (ai->ai_canonname != NULL)
+            {
                 strlcpy(fullhost, ai->ai_canonname,
                         LENHOSTNAME);
+            }
             else
+            {
                 getnameinfo(&num->sa, SOCKLEN(num),
                             fullhost, LENHOSTNAME, NULL,
                             0, 0);
+            }
         }
         freeaddrinfo(ai);
         return 1;
@@ -2147,9 +2265,13 @@ nntohost_col(
     if (!showhostnames || SOCK_UNSPEC(addr))
     {
         if (preserve_lowaddrbits)
+        {
             out = trunc_left(stoa(addr), width);
+        }
         else
+        {
             out = trunc_right(stoa(addr), width);
+        }
     }
     else if (ISREFCLOCKADR(addr))
     {
@@ -2174,9 +2296,13 @@ nntohostp(
     char* buf;
 
     if (!showhostnames || SOCK_UNSPEC(netnum))
+    {
         return sptoa(netnum);
+    }
     else if (ISREFCLOCKADR(netnum))
+    {
         return refnumtoa(netnum);
+    }
 
     hostn = socktohost(netnum);
     LIB_GETBUF(buf);
@@ -2196,7 +2322,7 @@ rtdatetolfp(
     register char* cp;
     register int i;
     struct calendar cal;
-    char buf[4];
+    char buf[4U];
 
     cal.yearday = 0;
 
@@ -2231,24 +2357,38 @@ rtdatetolfp(
     }
 
     if (*cp++ != '-')
+    {
         return 0;
+    }
 
-    for (i = 0; i < 3; i++)
+    for (i = 0; i < 3; ++i)
+    {
         buf[i] = *cp++;
+    }
     buf[3U] = '\0';
 
-    for (i = 0; i < 12; i++)
+    for (i = 0; i < 12; ++i)
+    {
         if (STREQ(buf, months[i]))
+        {
             break;
+        }
+    }
     if (i == 12)
+    {
         return 0;
+    }
     cal.month = (u_char)(i + 1);
 
     if (*cp++ != '-')
+    {
         return 0;
+    }
 
     if (!isdigit(pgetc(cp)))
+    {
         return 0;
+    }
     cal.year = (u_short)(*cp++ - '0');
     if (isdigit(pgetc(cp)))
     {
@@ -2275,8 +2415,10 @@ rtdatetolfp(
         return 1;
     }
 
-    if (*cp++ != ' ' || !isdigit(pgetc(cp)))
+    if ((*cp++ != ' ') || !isdigit(pgetc(cp)))
+    {
         return 0;
+    }
     cal.hour = (u_char)(*cp++ - '0');
     if (isdigit(pgetc(cp)))
     {
@@ -2284,8 +2426,10 @@ rtdatetolfp(
         cal.hour = (u_char)(cal.hour + *cp++ - '0');
     }
 
-    if (*cp++ != ':' || !isdigit(pgetc(cp)))
+    if ((*cp++ != ':') || !isdigit(pgetc(cp)))
+    {
         return 0;
+    }
     cal.minute = (u_char)(*cp++ - '0');
     if (isdigit(pgetc(cp)))
     {
@@ -2293,8 +2437,10 @@ rtdatetolfp(
         cal.minute = (u_char)(cal.minute + *cp++ - '0');
     }
 
-    if (*cp++ != ':' || !isdigit(pgetc(cp)))
+    if ((*cp++ != ':') || !isdigit(pgetc(cp)))
+    {
         return 0;
+    }
     cal.second = (u_char)(*cp++ - '0');
     if (isdigit(pgetc(cp)))
     {
@@ -2306,9 +2452,13 @@ rtdatetolfp(
      * For RT-11, 1972 seems to be the pivot year
      */
     if (cal.year < 72)
+    {
         cal.year += 2000;
+    }
     if (cal.year < 100)
+    {
         cal.year += 1900;
+    }
 
     /* check for complaints from 'caltontp()'! */
     lfp->l_uf = 0;
@@ -2327,14 +2477,16 @@ int decodets(
     l_fp* lfp)
 {
     char* cp;
-    char buf[30];
+    char buf[30U];
     size_t b;
 
     /*
      * If it starts with a 0x, decode as hex.
      */
-    if (*str == '0' && (*(str + 1) == 'x' || *(str + 1) == 'X'))
+    if ((*str == '0') && ((*(str + 1) == 'x') || (*(str + 1) == 'X')))
+    {
         return hextolfp(str + 2, lfp);
+    }
 
     /*
      * If it starts with a '"', try it as an RT-11 date.
@@ -2343,9 +2495,11 @@ int decodets(
     {
         cp = str + 1;
         b = 0;
-        while ('"' != *cp && '\0' != *cp &&
-               b < COUNTOF(buf) - 1)
+        while (('"' != *cp) && ('\0' != *cp) &&
+               (b < COUNTOF(buf) - 1))
+        {
             buf[b++] = *cp++;
+        }
         buf[b] = '\0';
         return rtdatetolfp(buf, lfp);
     }
@@ -2354,15 +2508,19 @@ int decodets(
      * Might still be hex.  Check out the first character.  Talk
      * about heuristics!
      */
-    if ((*str >= 'A' && *str <= 'F') || (*str >= 'a' && *str <= 'f'))
+    if (((*str >= 'A') && (*str <= 'F')) || ((*str >= 'a') && (*str <= 'f')))
+    {
         return hextolfp(str, lfp);
+    }
 
     /*
      * Try it as a decimal.  If this fails, try as an unquoted
      * RT-11 date.  This code should go away eventually.
      */
     if (atolfp(str, lfp))
+    {
         return 1;
+    }
 
     return rtdatetolfp(str, lfp);
 }
@@ -2388,8 +2546,10 @@ int decodeint(
 {
     if (*str == '0')
     {
-        if (*(str + 1) == 'x' || *(str + 1) == 'X')
+        if ((*(str + 1) == 'x') || (*(str + 1) == 'X'))
+        {
             return hextoint(str + 2, (u_long*)val);
+        }
         return octtoint(str, (u_long*)val);
     }
     return atoint(str, val);
@@ -2405,8 +2565,10 @@ int decodeuint(
 {
     if (*str == '0')
     {
-        if (*(str + 1) == 'x' || *(str + 1) == 'X')
+        if ((*(str + 1) == 'x') || (*(str + 1) == 'X'))
+        {
             return (hextoint(str + 2, val));
+        }
         return (octtoint(str, val));
     }
     return (atouint(str, val));
@@ -2424,17 +2586,18 @@ decodearr(
     int amax)
 {
     char* bp;
-    char buf[60];
+    char buf[60U];
 
     *narr = 0;
 
-    while (*narr < amax && *cp)
+    while ((*narr < amax) && *cp)
     {
         if (isspace(pgetc(cp)))
         {
             do
+            {
                 ++cp;
-            while (*cp && isspace(pgetc(cp)));
+            } while (*cp && isspace(pgetc(cp)));
         }
         else
         {
@@ -2442,13 +2605,17 @@ decodearr(
             do
             {
                 if (bp != (buf + sizeof(buf) - 1))
+                {
                     *bp++ = *cp;
+                }
                 ++cp;
             } while (*cp && !isspace(pgetc(cp)));
             *bp = '\0';
 
             if (!decodetime(buf, lfpa))
+            {
                 return 0;
+            }
             ++(*narr);
             ++lfpa;
         }
@@ -2471,7 +2638,7 @@ help(
 {
     struct xcmd* xcp = NULL; /* quiet warning */
     const char* cmd;
-    const char* list[100];
+    const char* list[100U];
     size_t word, words;
     size_t row, rows;
     size_t col, cols;
@@ -2480,19 +2647,25 @@ help(
     if (pcmd->nargs == 0)
     {
         words = 0;
-        for (xcp = builtins; xcp->keyword != NULL; xcp++)
+        for (xcp = builtins; xcp->keyword != NULL; ++xcp)
         {
-            if (*(xcp->keyword) != '?' &&
-                words < COUNTOF(list))
+            if ((*(xcp->keyword) != '?') &&
+                (words < COUNTOF(list)))
+            {
                 list[words++] = xcp->keyword;
+            }
         }
-        for (xcp = opcmds; xcp->keyword != NULL; xcp++)
+        for (xcp = opcmds; xcp->keyword != NULL; ++xcp)
+        {
             if (words < COUNTOF(list))
+            {
                 list[words++] = xcp->keyword;
+            }
+        }
 
         qsort((void*)list, words, sizeof(list[0U]), helpsort);
         col = 0;
-        for (word = 0; word < words; word++)
+        for (word = 0; word < words; ++word)
         {
             length = strlen(list[word]);
             col = max(col, length);
@@ -2503,11 +2676,13 @@ help(
 
         fprintf(fp, "ntpq commands:\n");
 
-        for (row = 0; row < rows; row++)
+        for (row = 0; row < rows; ++row)
         {
             for (word = row; word < words; word += rows)
+            {
                 fprintf(fp, "%-*.*s", (int)col,
                         (int)col - 1, list[word]);
+            }
             fprintf(fp, "\n");
         }
     }
@@ -2561,12 +2736,16 @@ printusage(
     /* XXX: Do we need to warn about extra args here too? */
 
     (void)fprintf(fp, "usage: %s", xcp->keyword);
-    for (i = 0; i < MAXARGS && xcp->arg[i] != NO; i++)
+    for (i = 0; (i < MAXARGS) && (xcp->arg[i] != NO); ++i)
     {
         if (xcp->arg[i] & OPT)
+        {
             (void)fprintf(fp, " [ %s ]", xcp->desc[i]);
+        }
         else
+        {
             (void)fprintf(fp, " %s", xcp->desc[i]);
+        }
     }
     (void)fprintf(fp, "\n");
 }
@@ -2629,7 +2808,9 @@ auth_delay(
         delay_time.l_uf = val * 4294967; /* 2**32/1000 */
 
         if (isneg)
+        {
             L_NEG(&delay_time);
+        }
     }
 }
 
@@ -2647,10 +2828,14 @@ host(
     if (pcmd->nargs == 0)
     {
         if (havehost)
+        {
             (void)fprintf(fp, "current host is %s\n",
                           currenthost);
+        }
         else
+        {
             (void)fprintf(fp, "no current host\n");
+        }
         return;
     }
 
@@ -2659,11 +2844,17 @@ host(
     if (pcmd->nargs == 2)
     {
         if (!strcmp("-4", pcmd->argval[i].string))
+        {
             ai_fam_templ = AF_INET;
+        }
         else if (!strcmp("-6", pcmd->argval[i].string))
+        {
             ai_fam_templ = AF_INET6;
+        }
         else
+        {
             goto no_change;
+        }
         i = 1;
     }
     if (openhost(pcmd->argval[i].string, ai_fam_templ))
@@ -2674,10 +2865,14 @@ host(
     {
     no_change:
         if (havehost)
+        {
             fprintf(fp, "current host remains %s\n",
                     currenthost);
+        }
         else
+        {
             fprintf(fp, "still no current host\n");
+        }
     }
 }
 
@@ -2754,15 +2949,21 @@ keyid(
     if (pcmd->nargs == 0)
     {
         if (info_auth_keyid == 0)
+        {
             (void)fprintf(fp, "no keyid defined\n");
+        }
         else
+        {
             (void)fprintf(fp, "keyid is %lu\n", (u_long)info_auth_keyid);
+        }
     }
     else
     {
         /* allow zero so that keyid can be cleared. */
         if (pcmd->argval[0U].uval > NTP_MAXKEY)
+        {
             (void)fprintf(fp, "Invalid key identifier\n");
+        }
         info_auth_keyid = pcmd->argval[0U].uval;
     }
 }
@@ -2829,7 +3030,9 @@ passwd(
         }
     }
     if (pcmd->nargs >= 1)
+    {
         pass = pcmd->argval[0U].string;
+    }
     else
     {
         pass = getpass_keytype(info_auth_keytype);
@@ -2856,18 +3059,28 @@ hostnames(
     if (pcmd->nargs == 0)
     {
         if (showhostnames)
+        {
             (void)fprintf(fp, "hostnames being shown\n");
+        }
         else
+        {
             (void)fprintf(fp, "hostnames not being shown\n");
+        }
     }
     else
     {
         if (STREQ(pcmd->argval[0U].string, "yes"))
+        {
             showhostnames = 1;
+        }
         else if (STREQ(pcmd->argval[0U].string, "no"))
+        {
             showhostnames = 0;
+        }
         else
+        {
             (void)fprintf(stderr, "What?\n");
+        }
     }
 }
 
@@ -2917,7 +3130,9 @@ quit(
     FILE* fp)
 {
     if (havehost)
-        closesocket(sockfd); /* cleanliness next to godliness */
+    {
+        closesocket(sockfd);
+    } /* cleanliness next to godliness */
     exit(0);
 }
 
@@ -2982,8 +3197,10 @@ authenticate(
                           "authenticated requests being sent\n");
         }
         else
+        {
             (void)fprintf(fp,
                           "unauthenticated requests being sent\n");
+        }
     }
     else
     {
@@ -2996,7 +3213,9 @@ authenticate(
             always_auth = 0;
         }
         else
+        {
             (void)fprintf(stderr, "What?\n");
+        }
     }
 }
 
@@ -3016,7 +3235,7 @@ ntpversion(
     }
     else
     {
-        if (pcmd->argval[0U].uval < NTP_OLDVERSION || pcmd->argval[0U].uval > NTP_VERSION)
+        if ((pcmd->argval[0U].uval < NTP_OLDVERSION) || (pcmd->argval[0U].uval > NTP_VERSION))
         {
             (void)fprintf(stderr, "versions %d to %d, please\n",
                           NTP_OLDVERSION, NTP_VERSION);
@@ -3076,7 +3295,7 @@ getkeyid(
 {
     int c;
     FILE* fi;
-    char pbuf[20];
+    char pbuf[20U];
     size_t i;
     size_t ilim;
 
@@ -3087,15 +3306,21 @@ getkeyid(
 #endif /* SYS_WINNT */
         fi = stdin;
     else
+    {
         setbuf(fi, (char*)NULL);
+    }
     fprintf(stderr, "%s", keyprompt);
     fflush(stderr);
     for (i = 0, ilim = COUNTOF(pbuf) - 1;
-         i < ilim && (c = getc(fi)) != '\n' && c != EOF;)
+         (i < ilim) && ((c = getc(fi)) != '\n') && (c != EOF);)
+    {
         pbuf[i++] = (char)c;
+    }
     pbuf[i] = '\0';
     if (fi != stdin)
+    {
         fclose(fi);
+    }
 
     return (u_long)atoi(pbuf);
 }
@@ -3124,7 +3349,9 @@ atoascii(
     if (NULL == pchIn)
     {
         if (0 < out_octets)
+        {
             *pchOut = '\0';
+        }
         return;
     }
 
@@ -3139,11 +3366,13 @@ atoascii(
         *pchOut++ = (c);       \
     } while (0)
 
-    for (; pchIn < pchInLimit; pchIn++)
+    for (; pchIn < pchInLimit; ++pchIn)
     {
         c = *pchIn;
         if ('\0' == c)
+        {
             break;
+        }
         if (c & 0x80)
         {
             ONEOUT('M');
@@ -3161,7 +3390,9 @@ atoascii(
             ONEOUT('?');
         }
         else
+        {
             ONEOUT(c);
+        }
     }
     ONEOUT('\0');
 
@@ -3184,7 +3415,7 @@ void makeascii(
 
     data_u_char = (const u_char*)data;
 
-    for (cp = data_u_char; cp < data_u_char + length; cp++)
+    for (cp = data_u_char; cp < data_u_char + length; ++cp)
     {
         c = (int)*cp;
         if (c & 0x80)
@@ -3205,7 +3436,9 @@ void makeascii(
             putc('?', fp);
         }
         else
+        {
             putc(c, fp);
+        }
     }
 }
 
@@ -3238,7 +3471,7 @@ trunc_right(
 
 
     sl = strlen(src);
-    if (sl > width && LIB_BUFLENGTH - 1 > width && width > 0)
+    if ((sl > width) && (LIB_BUFLENGTH - 1 > width) && (width > 0))
     {
         LIB_GETBUF(out);
         memcpy(out, src, width);
@@ -3266,7 +3499,7 @@ trunc_left(
 
 
     sl = strlen(src);
-    if (sl > width && LIB_BUFLENGTH - 1 > width && width > 1)
+    if ((sl > width) && (LIB_BUFLENGTH - 1 > width) && (width > 1))
     {
         LIB_GETBUF(out);
         out[0U] = '_';
@@ -3328,25 +3561,25 @@ int nextcb = 0;
 /* predicate: allowed chars inside a quoted string */
 static int /*BOOL*/ cp_qschar(int ch)
 {
-    return ch && (ch != '"' && ch != '\r' && ch != '\n');
+    return ch && ((ch != '"') && (ch != '\r') && (ch != '\n'));
 }
 
 /* predicate: allowed chars inside an unquoted string */
 static int /*BOOL*/ cp_uqchar(int ch)
 {
-    return ch && (ch != ',' && ch != '"' && ch != '\r' && ch != '\n');
+    return ch && ((ch != ',') && (ch != '"') && (ch != '\r') && (ch != '\n'));
 }
 
 /* predicate: allowed chars inside a value name */
 static int /*BOOL*/ cp_namechar(int ch)
 {
-    return ch && (ch != ',' && ch != '=' && ch != '\r' && ch != '\n');
+    return ch && ((ch != ',') && (ch != '=') && (ch != '\r') && (ch != '\n'));
 }
 
 /* predicate: characters *between* list items. We're relaxed here. */
 static int /*BOOL*/ cp_ivspace(int ch)
 {
-    return (ch == ',' || (ch > 0 && ch <= ' '));
+    return ((ch == ',') || ((ch > 0) && (ch <= ' ')));
 }
 
 /* get current character (or NUL when on end) */
@@ -3366,7 +3599,7 @@ pf_nextch(
     const char** datap,
     const char* endp)
 {
-    return (*datap != endp && ++(*datap) != endp)
+    return ((*datap != endp) && (++(*datap) != endp))
                ? *(const unsigned char*)*datap
                : '\0';
 }
@@ -3383,10 +3616,14 @@ str_strip(
         const char* cpl = *datap;
         const char* cpr = cpl + len;
 
-        while (cpl != cpr && *(const unsigned char*)cpl <= ' ')
+        while ((cpl != cpr) && (*(const unsigned char*)cpl <= ' '))
+        {
             ++cpl;
-        while (cpl != cpr && *(const unsigned char*)(cpr - 1) <= ' ')
+        }
+        while ((cpl != cpr) && (*(const unsigned char*)(cpr - 1) <= ' '))
+        {
             --cpr;
+        }
         *datap = cpl;
         len = (size_t)(cpr - cpl);
     }
@@ -3409,8 +3646,10 @@ pf_error(
     FILE* ofp = (debug > 0) ? stdout : stderr;
     size_t len = (size_t)(whend - where);
 
-    if (len > 50) /* *must* fit into an 'int'! */
+    if (len > 50)
+    { /* *must* fit into an 'int'! */
         len = 50;
+    }
     fprintf(ofp, "nextvar: %s: '%.*s'\n",
             what, (int)len, where);
 
@@ -3465,7 +3704,9 @@ again:
         {
         case sInit: /* handle inter-item chars */
             while (cp_ivspace(ch))
+            {
                 ch = pf_nextch(datap, cpend);
+            }
             if (cp_namechar(ch))
             {
                 np = *datap;
@@ -3480,7 +3721,9 @@ again:
 
         case sName: /* collect name */
             while (cp_namechar(ch))
+            {
                 ch = pf_nextch(datap, cpend);
+            }
             nlen = (size_t)(*datap - np);
             if (ch == '=')
             {
@@ -3491,14 +3734,18 @@ again:
             else
             {
                 if (ch != ',')
+                {
                     *datap = cpend;
+                }
                 st = sDone;
             }
             break;
 
         case sValU: /* collect unquoted part(s) of value */
             while (cp_uqchar(ch))
+            {
                 ch = pf_nextch(datap, cpend);
+            }
             if (ch == '"')
             {
                 ch = pf_nextch(datap, cpend);
@@ -3508,14 +3755,18 @@ again:
             {
                 vlen = (size_t)(*datap - vp);
                 if (ch != ',')
+                {
                     *datap = cpend;
+                }
                 st = sDone;
             }
             break;
 
         case sValQ: /* collect quoted part(s) of value */
             while (cp_qschar(ch))
+            {
                 ch = pf_nextch(datap, cpend);
+            }
             if (ch == '"')
             {
                 ch = pf_nextch(datap, cpend);
@@ -3581,9 +3832,13 @@ varfmt(const char* varname)
 {
     u_int n;
 
-    for (n = 0; n < COUNTOF(cookedvars); n++)
+    for (n = 0; n < COUNTOF(cookedvars); ++n)
+    {
         if (!strcmp(varname, cookedvars[n].varname))
+        {
             return cookedvars[n].fmt;
+        }
+    }
 
     return PADDING;
 }
@@ -3601,9 +3856,13 @@ void printvars(
     FILE* fp)
 {
     if (rawmode)
+    {
         rawprint(sttype, length, data, status, quiet, fp);
+    }
     else
+    {
         cookedprint(sttype, length, data, status, quiet, fp);
+    }
 }
 
 
@@ -3629,7 +3888,9 @@ rawprint(
     cpend = data + length;
 
     if (!quiet)
+    {
         (void)fprintf(fp, "status=0x%04x,\n", status);
+    }
 
     while (cp < cpend)
     {
@@ -3640,13 +3901,19 @@ rawprint(
              * \n, supress this, else pretty print it.  Otherwise
              * just output the character.
              */
-            if (cp == (cpend - 1) || *(cp + 1) != '\n')
+            if ((cp == (cpend - 1)) || (*(cp + 1) != '\n'))
+            {
                 makeascii(1, cp, fp);
+            }
         }
         else if (isspace(pgetc(cp)) || isprint(pgetc(cp)))
+        {
             putc(*cp, fp);
+        }
         else
+        {
             makeascii(1, cp, fp);
+        }
         cp++;
     }
 }
@@ -3715,7 +3982,9 @@ endoutput(
     FILE* fp)
 {
     if (out_chars != 0)
+    {
         putc('\n', fp);
+    }
 }
 
 
@@ -3734,19 +4003,23 @@ outputarr(
     char* cp;
     size_t i;
     size_t len;
-    char buf[256];
+    char buf[256U];
 
     bp = buf;
     /*
      * Hack to align delay and offset values
      */
-    for (i = (int)strlen(name); i < 11; i++)
+    for (i = (int)strlen(name); i < 11; ++i)
+    {
         *bp++ = ' ';
+    }
 
-    for (i = narr; i > 0; i--)
+    for (i = narr; i > 0; --i)
     {
         if (i != (size_t)narr)
+        {
             *bp++ = ' ';
+        }
         cp = (issigned ? lfptoms(lfp, 2) : ulfptoms(lfp, 2));
         len = strlen(cp);
         if (len > 7)
@@ -3760,7 +4033,9 @@ outputarr(
             len++;
         }
         while (*cp != '\0')
+        {
             *bp++ = *cp++;
+        }
         lfp++;
     }
     *bp = '\0';
@@ -3781,19 +4056,25 @@ tstflags(
 
     s = cp = circ_buf[nextcb];
     if (++nextcb >= NUMCB)
+    {
         nextcb = 0;
+    }
     cb = sizeof(circ_buf[0U]);
 
     l = snprintf(cp, cb, "%02lx", val);
-    if (l < 0 || (size_t)l >= cb)
+    if ((l < 0) || ((size_t)l >= cb))
+    {
         goto fail;
+    }
     cp += l;
     cb -= l;
     if (!val)
     {
         l = strlcat(cp, " ok", cb);
         if ((size_t)l >= cb)
+        {
             goto fail;
+        }
         cp += l;
         cb -= l;
     }
@@ -3802,14 +4083,16 @@ tstflags(
         const char* sep;
 
         sep = " ";
-        for (i = 0; i < COUNTOF(tstflagnames); i++)
+        for (i = 0; i < COUNTOF(tstflagnames); ++i)
         {
             if (val & 0x1)
             {
                 l = snprintf(cp, cb, "%s%s", sep,
                              tstflagnames[i]);
                 if (l < 0)
+                {
                     goto fail;
+                }
                 if ((size_t)l >= cb)
                 {
                     cp += cb - 4;
@@ -3855,16 +4138,18 @@ cookedprint(
     u_long uval;
     int narr;
     size_t len;
-    l_fp lfparr[8];
-    char b[12];
-    char bn[2 * MAXVARLEN];
-    char bv[2 * MAXVALLEN];
+    l_fp lfparr[8U];
+    char b[12U];
+    char bn[2U * MAXVARLEN];
+    char bv[2U * MAXVALLEN];
 
     UNUSED_ARG(datatype);
 
     if (!quiet)
+    {
         fprintf(fp, "status=%04x %s,\n", status,
                 statustoa(datatype, status));
+    }
 
     startoutput();
     while (nextvar(&length, &data, &name, &value))
@@ -3880,9 +4165,13 @@ cookedprint(
 
         case TS:
             if (!value || !decodets(value, &lfp))
+            {
                 output_raw = '?';
+            }
             else
+            {
                 output(fp, name, prettydate(&lfp));
+            }
             break;
 
         case HA: /* fallthru */
@@ -3908,7 +4197,7 @@ cookedprint(
             }
             else if (decodenetnum(value, &hval))
             {
-                if (datatype == TYPE_CLOCK && IS_IPV4(&hval))
+                if ((datatype == TYPE_CLOCK) && IS_IPV4(&hval))
                 {
                     /*
                      * Workaround to override numeric refid formats
@@ -3917,9 +4206,11 @@ cookedprint(
                      */
                     int i;
                     unsigned char* str = (unsigned char*)&(hval.sa4).sin_addr;
-                    char refid_buf[5];
-                    for (i = 0; i < 4 && str[i]; i++)
+                    char refid_buf[5U];
+                    for (i = 0; (i < 4) && str[i]; ++i)
+                    {
                         refid_buf[i] = (isprint(str[i]) ? str[i] : '?');
+                    }
                     refid_buf[i] = 0; /* Null terminator */
                     output(fp, name, refid_buf);
                 }
@@ -3935,7 +4226,7 @@ cookedprint(
                     }
                     else
                     {
-                        char refid_buf[12];
+                        char refid_buf[12U];
                         snprintf(refid_buf, sizeof(refid_buf),
                                  "0x%08x", ntohl(addr2refid(&hval)));
                         output(fp, name, refid_buf);
@@ -3953,7 +4244,7 @@ cookedprint(
             break;
 
         case LP:
-            if (!value || !decodeuint(value, &uval) || uval > 3)
+            if (!value || !decodeuint(value, &uval) || (uval > 3))
             {
                 output_raw = '?';
             }
@@ -3985,21 +4276,31 @@ cookedprint(
         case AU:
         case AS:
             if (!value || !decodearr(value, &narr, lfparr, 8))
+            {
                 output_raw = '?';
+            }
             else
+            {
                 outputarr(fp, name, narr, lfparr, (fmt == AS));
+            }
             break;
 
         case FX:
             if (!value || !decodeuint(value, &uval))
+            {
                 output_raw = '?';
+            }
             else
+            {
                 output(fp, name, tstflags(uval));
+            }
             break;
 
         case SN:
             if (!value)
+            {
                 output_raw = '?';
+            }
             else if (isdigit(*value))
             { /* number without sign */
                 bv[0U] = '+';
@@ -4007,7 +4308,9 @@ cookedprint(
                 output(fp, name, bv);
             }
             else
-                output_raw = '*'; /* output as-is */
+            {
+                output_raw = '*';
+            } /* output as-is */
             break;
 
         default:
@@ -4047,8 +4350,10 @@ cookedprint(
 void sortassoc(void)
 {
     if (numassoc > 1)
+    {
         qsort(assoc_cache, (size_t)numassoc,
               sizeof(assoc_cache[0U]), &assoccmp);
+    }
 }
 
 
@@ -4064,9 +4369,13 @@ assoccmp(
     const struct association* ass2 = t2;
 
     if (ass1->assid < ass2->assid)
+    {
         return -1;
+    }
     if (ass1->assid > ass2->assid)
+    {
         return 1;
+    }
     return 0;
 }
 
@@ -4116,13 +4425,17 @@ void ntpq_custom_opt_handler(
 
     case 'c':
         if ((pOptDesc->fOptState & OPTST_SET_MASK) == OPTST_DEFINED)
+        {
             defcmds++;
+        }
         ADDCMD(pOptDesc->pzLastArg);
         break;
 
     case 'p':
         if ((pOptDesc->fOptState & OPTST_SET_MASK) == OPTST_DEFINED)
+        {
             defcmds++;
+        }
         ADDCMD("peers");
         break;
     }
@@ -4163,7 +4476,7 @@ list_md_fn(const EVP_MD* m, const char* from, const char* to, void* arg)
     len = strlen(name) + 1;
 
     /* There are duplicates.  Discard if name has been seen. */
-    for (seen = hstate->seen; *seen; seen++)
+    for (seen = hstate->seen; *seen; ++seen)
     {
         if (!strcasecmp(*seen, name))
         {
@@ -4239,7 +4552,7 @@ digest_alg_works(
     pp_pkt = vp_pkt;
 
     /* fill test payload with noise */
-    for (i = 0; i < pay_len / sizeof(pp_pkt->ui[0U]); i++)
+    for (i = 0; i < pay_len / sizeof(pp_pkt->ui[0U]); ++i)
     {
         pp_pkt->ui[i] = (u_int32)ntp_random();
     }
@@ -4290,14 +4603,14 @@ insert_cmac(char* list)
 
         cmac_sn = OBJ_nid2sn(NID_cmac);
         cmac_p = list;
-        insert = cmac_sn != NULL && *cmac_sn != '\0';
+        insert = (cmac_sn != NULL) && (*cmac_sn != '\0');
 
         /* CMAC in list if found, followed by nul char or ',' */
-        while (insert && NULL != (cmac_p = strstr(cmac_p, cmac_sn)))
+        while (insert && (NULL != (cmac_p = strstr(cmac_p, cmac_sn))))
         {
             cmac_p += strlen(cmac_sn);
             /* Still need to insert if not nul and not ',' */
-            insert = *cmac_p && ',' != *cmac_p;
+            insert = *cmac_p && (',' != *cmac_p);
         }
 
         /* Find proper insertion point */
@@ -4314,13 +4627,13 @@ insert_cmac(char* list)
             len = strlen(list);
 
             /* While new lines */
-            while (delim < list + len && *delim &&
+            while ((delim < list + len) && *delim &&
                    !strncmp(K_NL_PFX_STR, delim, strlen(K_NL_PFX_STR)))
             {
                 point = delim + strlen(K_NL_PFX_STR);
 
                 /* While digest names on line */
-                while (point < list + len && *point)
+                while ((point < list + len) && *point)
                 {
                     /* Another digest after on same or next line? */
                     delim = strstr(point, K_DELIM_STR);
@@ -4334,7 +4647,7 @@ insert_cmac(char* list)
                     else
                     {
                         /* New line and no delim or before delim? */
-                        if (last_nl && (!delim || last_nl < delim))
+                        if (last_nl && (!delim || (last_nl < delim)))
                         {
                             delim = last_nl;
                         }
@@ -4347,7 +4660,7 @@ insert_cmac(char* list)
                         break;
                     }
 
-                    if (delim < list + len && *delim &&
+                    if ((delim < list + len) && *delim &&
                         !strncmp(K_DELIM_STR, delim, strlen(K_DELIM_STR)))
                     {
                         point += strlen(K_DELIM_STR);
@@ -4423,7 +4736,7 @@ list_digest_names(void)
 #endif /* !defined(BUILD_AS_LIB) */
 
 #define CTRLC_STACK_MAX 4
-static volatile size_t ctrlc_stack_len = 0;
+static volatile size_t ctrlc_stack_len = 0U;
 static volatile Ctrl_C_Handler ctrlc_stack[CTRLC_STACK_MAX];
 
 int /*BOOL*/
@@ -4432,7 +4745,7 @@ push_ctrl_c_handler(
 {
     size_t size = ctrlc_stack_len;
 
-    if (NULL != func && size < COUNTOF(ctrlc_stack))
+    if ((NULL != func) && (size < COUNTOF(ctrlc_stack)))
     {
         ctrlc_stack[size] = func;
         ctrlc_stack_len = size + 1;
@@ -4447,10 +4760,10 @@ pop_ctrl_c_handler(
 {
     size_t size = ctrlc_stack_len;
 
-    if (size > 0)
+    if (size > 0U)
     {
         --size;
-        if (NULL == func || func == ctrlc_stack[size])
+        if ((NULL == func) || (func == ctrlc_stack[size]))
         {
             ctrlc_stack_len = size;
             return TRUE;
@@ -4465,8 +4778,12 @@ on_ctrlc(void)
 {
     size_t size = ctrlc_stack_len;
     while (size)
+    {
         if ((*ctrlc_stack[--size])())
+        {
             break;
+        }
+    }
 }
 #endif /* !defined(BUILD_AS_LIB) */
 
@@ -4479,7 +4796,7 @@ my_easprintf(
 {
     va_list va;
     int prc;
-    size_t len = 128;
+    size_t len = 128U;
     char* buf = NULL;
 
 again:
@@ -4505,7 +4822,9 @@ again:
         goto again;
     }
     if ((size_t)prc < (len - 32))
+    {
         buf = erealloc(buf, (size_t)prc + 1);
+    }
     *ppinto = buf;
     return prc;
 }

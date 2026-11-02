@@ -36,7 +36,9 @@ strtouv64(
     num = sig = 0;
     src = (u_char*)begp;
     while (isspace(*src))
+    {
         src++;
+    }
 
     if (*src == '-')
     {
@@ -63,10 +65,12 @@ strtouv64(
     }
     else if (base == 16)
     { /* remove optional leading '0x' or '0X' */
-        if (src[0U] == '0' && toupper(src[1U]) == 'X')
+        if ((src[0U] == '0') && (toupper(src[1U]) == 'X'))
+        {
             src += 2;
+        }
     }
-    else if (base <= 2 || base > 36)
+    else if ((base <= 2) || (base > 36))
     {
         memset(&res, 0xFF, sizeof(res));
         errno = ERANGE;
@@ -77,15 +81,25 @@ strtouv64(
     while (*src)
     {
         if (isdigit(*src))
+        {
             digit = *src - '0';
+        }
         else if (isupper(*src))
+        {
             digit = *src - 'A' + 10;
+        }
         else if (islower(*src))
+        {
             digit = *src - 'a' + 10;
+        }
         else
+        {
             break;
+        }
         if (digit >= base)
+        {
             break;
+        }
         num = 1;
 #if defined(HAVE_INT64)
         res.Q_s = res.Q_s * base + digit;
@@ -107,11 +121,17 @@ strtouv64(
         src++;
     }
     if (!num)
+    {
         errno = EINVAL;
+    }
     if (endp)
+    {
         *endp = (char*)src;
+    }
     if (sig)
+    {
         M_NEG(res.D_s.hi, res.D_s.lo);
+    }
     return res;
 }
 
@@ -128,7 +148,9 @@ int icmpv64(
 #else
     res = (lhs->d_s.hi > rhs->d_s.hi) - (lhs->d_s.hi < rhs->d_s.hi);
     if (!res)
+    {
         res = (lhs->D_s.lo > rhs->D_s.lo) - (lhs->D_s.lo < rhs->D_s.lo);
+    }
 #endif
 
     return res;
@@ -147,7 +169,9 @@ int ucmpv64(
 #else
     res = (lhs->D_s.hi > rhs->D_s.hi) - (lhs->D_s.hi < rhs->D_s.hi);
     if (!res)
+    {
         res = (lhs->D_s.lo > rhs->D_s.lo) - (lhs->D_s.lo < rhs->D_s.lo);
+    }
 #endif
     return res;
 }

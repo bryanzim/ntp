@@ -85,7 +85,7 @@ enum io_packet_handling
 
 
 #ifdef DEBUG
-static const char* const st_packet_handling[3] = {
+static const char* const st_packet_handling[3U] = {
     "accepted",
     "dropped",
     "error"
@@ -130,7 +130,7 @@ static HANDLE hMainThread;
 static HANDLE hMainRpcDone;
 
 DWORD ActiveWaitHandles;
-HANDLE WaitHandles[4];
+HANDLE WaitHandles[4U];
 
 NotifyIpInterfaceChange_ptr pNotifyIpInterfaceChange;
 
@@ -148,7 +148,7 @@ NotifyIpInterfaceChange_ptr pNotifyIpInterfaceChange;
  * an issue. Testing this might be tricky -- who runs a Win2k system
  * in the year 2016?
  */
-static size_t s_SockRecvSched = 1; /* possibly adjusted later */
+static size_t s_SockRecvSched = 1U; /* possibly adjusted later */
 
 
 /*
@@ -201,7 +201,9 @@ iocompletionthread(
      */
     if (!SetThreadPriority(GetCurrentThread(),
                            THREAD_PRIORITY_ABOVE_NORMAL))
+    {
         msyslog(LOG_ERR, "Can't set thread priority: %m");
+    }
 
     for (;;)
     {
@@ -270,7 +272,7 @@ void init_io_completion_port(void)
     hndIOCPLPort = CreateIoCompletionPort(
         INVALID_HANDLE_VALUE, NULL, 0, 0);
 
-    INSIST(NULL != WaitableIoEventHandle && NULL != WaitableExitEventHandle && NULL != hMainRpcDone && NULL != hndIOCPLPort);
+    INSIST((NULL != WaitableIoEventHandle) && (NULL != WaitableExitEventHandle) && (NULL != hMainRpcDone) && (NULL != hndIOCPLPort));
 
     /* Initialize the Wait Handles table */
     WaitHandles[0U] = WaitableTimerHandle;
@@ -338,7 +340,9 @@ void uninit_io_completion_port(
 
     /* do noting if completion port already gone. */
     if (hndIOCPLPort == NULL)
+    {
         return;
+    }
 
     /* Service thread seems running. Terminate him with grace
      * first and force later...
@@ -446,9 +450,13 @@ ntpd_addremove_semaphore(
     hnd = sem->shnd;
 
     /* search for a matching entry first. */
-    for (hi = 3; hi < ActiveWaitHandles; hi++)
+    for (hi = 3; hi < ActiveWaitHandles; ++hi)
+    {
         if (hnd == WaitHandles[hi])
+        {
             break;
+        }
+    }
 
     if (remove)
     {
@@ -459,8 +467,10 @@ ntpd_addremove_semaphore(
         {
             ActiveWaitHandles--;
             if (hi < ActiveWaitHandles)
+            {
                 WaitHandles[hi] =
                     WaitHandles[ActiveWaitHandles];
+            }
             WaitHandles[ActiveWaitHandles] = NULL;
         }
     }
@@ -563,7 +573,9 @@ LogIoError(
     msyslog(LOG_ERR, "%s: hnd=%p, err=%u, '%s'",
             (msg ? msg : rmsg), hnd, err, msgbuf);
     if (dynbuf)
+    {
         LocalFree(msgbuf);
+    }
 }
 
 /* -------------------------------------------------------------------
@@ -630,9 +642,13 @@ getRioFromIoCtx(
     {
         rio = iopad->rsrc.rio;
         if (key != iopad->rsrc.key)
+        {
             rio = NULL;
+        }
         else if (ctx->io.hnd != iopad->handles[0U])
+        {
             rio = NULL;
+        }
     }
     if (rio != NULL)
         switch (ctx->errCode)
@@ -651,7 +667,9 @@ getRioFromIoCtx(
             break;
         }
     if (rio == NULL)
+    {
         IoCtxRelease(ctx);
+    }
     return rio;
 }
 
@@ -681,12 +699,18 @@ getEndptFromIoCtx(
     {
         ep = iopad->rsrc.ept;
         if ((key >> 1) != (iopad->rsrc.key >> 1))
+        {
             ep = NULL;
+        }
         else if (ctx->io.hnd != iopad->handles[key & 1])
+        {
             ep = NULL;
+        }
     }
     if (ep == NULL)
+    {
         IoCtxRelease(ctx);
+    }
     return ep;
 }
 
@@ -706,8 +730,10 @@ socketErrorCheck(
         break;
     case ERROR_UNEXP_NET_ERR:
         if (hMainThread)
+        {
             QueueUserAPC(apcOnUnexpectedNetworkError,
                          hMainThread, ctx->io.sfd);
+        }
     case ERROR_INVALID_PARAMETER: /* handle already closed (clock?)*/
     case ERROR_OPERATION_ABORTED: /* handle closed while wait      */
     case WSAENOTSOCK:             /* handle already closed (sock)  */
@@ -824,7 +850,9 @@ OnSerialWaitComplete(
 
     /* Make sure this RIO is not closed. */
     if (NULL == getRioFromIoCtx(lpo, key, msgh))
+    {
         return;
+    }
 
     /* start next IO and leave if we hit an error */
     if (lpo->errCode != ERROR_SUCCESS)
@@ -1002,18 +1030,26 @@ OnSerialReadComplete(
 
     /* Make sure this RIO is not closed. */
     if (NULL == getRioFromIoCtx(lpo, key, msgh))
+    {
         return;
+    }
 
     /* start next IO and leave if we hit an error */
     if (lpo->errCode != ERROR_SUCCESS)
+    {
         goto wait_again;
+    }
 
     /* Offload to worker pool, if there is data */
     if (lpo->byteCount == 0)
+    {
         goto wait_again;
+    }
 
     if (QueueUserWorkItem(&OnSerialReadWorker, lpo, WT_EXECUTEDEFAULT))
-        return; /* successful regular exit! */
+    {
+        return;
+    } /* successful regular exit! */
 
     /* croak as we're throwing away data */
     msyslog(LOG_ERR,
@@ -1084,7 +1120,9 @@ OnEnqueAPC(
         /* OK, refclock still attached */
         buff->recv_peer = rio->srcclock;
         if (iohpQueueLocked(iopad, &iohpRefClockOK, buff))
+        {
             ++rio->srcclock->received;
+        }
     }
     else
     {
@@ -1124,7 +1162,9 @@ OnSerialReadWorker(
     sptr = (char*)buff->recv_buffer;
     send = sptr + buff->recv_length;
     if (sptr == send)
+    {
         goto st_read_fresh;
+    }
 
 st_new_obuf:
     /* Get new receive buffer to store the line. */
@@ -1150,10 +1190,12 @@ st_copy_start:
     {
         ch = *sptr++;
         if ('\r' == ch)
+        {
             ch = '\n';
+        }
         *dptr++ = ch;
         eol = ('\n' == ch);
-    } while (!(eol || sptr == send));
+    } while (!(eol || (sptr == send)));
     obuf->recv_length = (int)(dptr - (char*)obuf->recv_buffer);
 
     /* If we're not at EOL, we need more data to continue the line.
@@ -1164,19 +1206,27 @@ st_copy_start:
     if (!eol)
     {
         if (obuf->recv_length < sizeof(obuf->recv_buffer))
+        {
             goto st_read_more;
+        }
         else
+        {
             goto st_pass_buffer;
+        }
     }
 
     /* if we should drop empty lines, do it here. */
-    if (obuf->recv_length < 2 && iop->flDropEmpty)
+    if ((obuf->recv_length < 2) && iop->flDropEmpty)
     {
         obuf->recv_length = 0;
         if (sptr != send)
+        {
             goto st_copy_start;
+        }
         else
+        {
             goto st_read_more;
+        }
     }
 
     if (!iop->flFirstSeen)
@@ -1184,9 +1234,13 @@ st_copy_start:
         iop->flFirstSeen = 1;
         obuf->recv_length = 0;
         if (sptr != send)
+        {
             goto st_copy_start;
+        }
         else
+        {
             goto st_read_more;
+        }
     }
 
 st_pass_buffer:
@@ -1201,7 +1255,9 @@ st_pass_buffer:
     obuf->recv_peer = (struct peer*)iohpAttach(lpo->iopad);
     QueueUserAPC(&OnEnqueAPC, hMainThread, (ULONG_PTR)obuf);
     if (sptr != send)
+    {
         goto st_new_obuf;
+    }
     buff->recv_length = 0;
     goto st_read_fresh;
 
@@ -1219,7 +1275,7 @@ st_read_fresh:
      * just mop up the pieces.
      */
     lpo->onIoDone = OnDeferredStartWait;
-    if (NULL == hndIOCPLPort || !PostQueuedCompletionStatus(hndIOCPLPort, 1, 0, &lpo->ol))
+    if ((NULL == hndIOCPLPort) || !PostQueuedCompletionStatus(hndIOCPLPort, 1, 0, &lpo->ol))
     {
         IoCtxRelease(lpo);
     }
@@ -1264,10 +1320,12 @@ OnRawSerialReadComplete(
     RIO_t* rio = getRioFromIoCtx(lpo, key, msgh);
     /* Make sure this RIO is not closed. */
     if (rio == NULL)
+    {
         return;
+    }
 
     /* start next IO and leave if we hit an error */
-    if (lpo->errCode == ERROR_SUCCESS && lpo->byteCount > 0)
+    if ((lpo->errCode == ERROR_SUCCESS) && (lpo->byteCount > 0))
     {
         buff->recv_length = (int)lpo->byteCount;
         set_serial_recv_time(buff, lpo);
@@ -1299,11 +1357,17 @@ set_serial_recv_time(
      * time.
      */
     if (lpo->aux.flTsDCDS)
+    {
         obuf->recv_time = lpo->aux.DCDSTime;
+    }
     else if (lpo->aux.flTsFlag)
+    {
         obuf->recv_time = lpo->aux.FlagTime;
+    }
     else
+    {
         obuf->recv_time = lpo->aux.RecvTime;
+    }
 
     lpo->aux.flTsDCDS = lpo->aux.flTsFlag = 0; /* use only once! */
 }
@@ -1339,11 +1403,17 @@ int async_write(
 
     hnd = (HANDLE)_get_osfhandle(fd);
     if (hnd == INVALID_HANDLE_VALUE)
+    {
         goto fail;
+    }
     if (NULL == (buff = IOCPLPoolMemDup(data, count, dmsg)))
+    {
         goto fail;
+    }
     if (NULL == (lpo = IoCtxAlloc(NULL, NULL)))
+    {
         goto fail;
+    }
 
     lpo->io.hnd = hnd;
     lpo->onIoDone = OnSerialWriteComplete;
@@ -1353,7 +1423,9 @@ int async_write(
     rc = WriteFile(lpo->io.hnd, lpo->trans_buf, count,
                    NULL, &lpo->ol);
     if (rc || IoResultCheck(GetLastError(), lpo, msgh))
-        return count; /* normal/success return */
+    {
+        return count;
+    } /* normal/success return */
 
     errno = EBADF;
     return -1;
@@ -1377,7 +1449,9 @@ OnSerialWriteComplete(
         "OnSerialWriteComplete: serial output failed";
 
     if (NULL != getRioFromIoCtx(lpo, key, msgh))
+    {
         IoCtxRelease(lpo);
+    }
 }
 
 
@@ -1398,7 +1472,9 @@ ntp_pps_attach_device(
 
     dev = DevCtxAttach(serial_devctx(hndIo));
     if (NULL == dev)
+    {
         SetLastError(ERROR_INVALID_HANDLE);
+    }
     return dev;
 }
 
@@ -1425,7 +1501,7 @@ ntp_pps_read(
         SetLastError(ERROR_INVALID_HANDLE);
         return FALSE;
     }
-    if (data == NULL || dlen != sizeof(PPSData_t))
+    if ((data == NULL) || (dlen != sizeof(PPSData_t)))
     {
         SetLastError(ERROR_INVALID_PARAMETER);
         return FALSE;
@@ -1564,7 +1640,9 @@ void io_completion_port_remove_clock_io(
 
     INSIST(hndIOCPLPort && hMainRpcDone);
     if (iopad)
+    {
         iocpl_notify(iopad, OnSerialDetach, _get_osfhandle(rio->fd));
+    }
 }
 
 /*
@@ -1640,7 +1718,9 @@ OnSocketRecv(
 
     /* Make sure this endpoint is not closed. */
     if (ep == NULL)
+    {
         return;
+    }
 
     /* We want to start a new read before we process the buffer.
      * Since we must not use the context object once it is in
@@ -1649,7 +1729,7 @@ OnSocketRecv(
      * We also need an extra hold to the IOPAD structure.
      */
     iopad = iohpAttach(lpo->iopad);
-    if (rc == PKT_OK && lpo->byteCount > 0)
+    if ((rc == PKT_OK) && (lpo->byteCount > 0))
     {
         /* keep input buffer, create new one for IO */
         buff = lpo->recv_buf;
@@ -1727,7 +1807,9 @@ OnSocketSend(
 
     /* Make sure this endpoint is not closed. */
     if (ep == NULL)
+    {
         return;
+    }
 
     if (rc != PKT_OK)
     {
@@ -1781,7 +1863,9 @@ void io_completion_port_remove_interface(
 
     INSIST(hndIOCPLPort && hMainRpcDone);
     if (iopad)
+    {
         iocpl_notify(iopad, OnInterfaceDetach, (UINT_PTR)-1);
+    }
 }
 
 /* --------------------------------------------------------------------
@@ -1798,9 +1882,13 @@ OnSocketDetach(
 
     INSIST(NULL != iopad);
     if (iopad->handles[0U] == lpo->io.hnd)
+    {
         iopad->handles[0U] = INVALID_HANDLE_VALUE;
+    }
     if (iopad->handles[1U] == lpo->io.hnd)
+    {
         iopad->handles[1U] = INVALID_HANDLE_VALUE;
+    }
 
     SetEvent(lpo->ppswake);
 }
@@ -1860,7 +1948,9 @@ BOOL io_completion_port_add_socket(
             goto fail;
         }
         if (!QueueSocketRecv(lpo, rbuf))
+        {
             goto fail;
+        }
     }
     return TRUE;
 
@@ -1880,7 +1970,9 @@ void io_completion_port_remove_socket(
 
     INSIST(hndIOCPLPort && hMainRpcDone);
     if (iopad)
+    {
         iocpl_notify(iopad, OnSocketDetach, fd);
+    }
 }
 
 
@@ -1913,16 +2005,22 @@ int io_completion_port_sendto(
     int rc;
 
     if (len > INT_MAX)
+    {
         len = INT_MAX;
+    }
 
     if (NULL == (dbuf = IOCPLPoolMemDup(pkt, len, dmsg)))
+    {
         goto fail;
+    }
     /* We register the IO operation against the shared lock here.
      * This is not strictly necessary, since the callback does not
      * access the endpoint structure in any way...
      */
     if (NULL == (lpo = IoCtxAlloc(ep->ioreg_ctx, NULL)))
+    {
         goto fail;
+    }
 
     lpo->onIoDone = OnSocketSend;
     lpo->trans_buf = dbuf;
@@ -1936,7 +2034,9 @@ int io_completion_port_sendto(
                    &dest->sa, SOCKLEN(dest),
                    &lpo->ol, NULL);
     if (!rc || IoResultCheck((DWORD)WSAGetLastError(), lpo, msgh))
-        return (int)len; /* normal/success return */
+    {
+        return (int)len;
+    } /* normal/success return */
 
     errno = EBADF;
     return -1;

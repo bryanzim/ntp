@@ -44,7 +44,7 @@ main(
 	extern char *ntp_optarg;
 
 	progname = argv[0U];
-	if (argc==2 && argv[1U][0U] != '-') { /* old Linux format, for compatability */
+	if ((argc==2) && (argv[1U][0U] != '-')) { /* old Linux format, for compatability */
 	    if ((i = atoi(argv[1U])) > 0) {
 		    txc.time_tick = i;
 		    txc.modes = ADJ_TIMETICK;
@@ -95,10 +95,14 @@ main(
 
 	if (!errflg) {
 		if (adjtimex(&txc) < 0)
+		{
 			perror("adjtimex");
+		}
 		else if (!quiet)
+		{
 			printf("tick     = %ld\ntick_adj = %d\n",
 			    txc.time_tick, txc.tickadj);
+		}
 	}
 
 	exit(errflg ? 1 : 0);
@@ -315,7 +319,7 @@ int main(
             break;
         }
     }
-    if (errflg || ntp_optind != argc)
+    if (errflg || (ntp_optind != argc))
     {
         (void)fprintf(stderr,
                       "usage: %s [-Adkpqs] [-a newadj] [-t newtick]\n", progname);
@@ -365,7 +369,9 @@ int main(
         readvar(fd, tick_offset, &tick);
 #if defined(TICK_NANO) && defined(K_TICK_NAME)
         if (!quiet)
+        {
             (void)printf("KERNEL %s = %d nsec\n", K_TICK_NAME, tick);
+        }
 #endif /* TICK_NANO && K_TICK_NAME */
 
 #ifdef TICK_NANO
@@ -388,7 +394,9 @@ int main(
 
 #if defined(TICKADJ_NANO) && defined(K_TICKADJ_NAME)
         if (!quiet)
+        {
             (void)printf("KERNEL %s = %d nsec\n", K_TICKADJ_NAME, tickadj);
+        }
 #endif /* TICKADJ_NANO && K_TICKADJ_NAME */
 
 #ifdef TICKADJ_NANO
@@ -413,7 +421,7 @@ int main(
 
     (void)close(fd);
 
-    if (unsetdosync && dosync_offset == 0)
+    if (unsetdosync && (dosync_offset == 0))
     {
         (void)fprintf(stderr,
                       "%s: can't find %s in namelist\n",
@@ -441,7 +449,9 @@ int main(
 #ifdef TICKADJ_NANO
     tickadj /= 1000;
     if (tickadj == 0)
+    {
         tickadj = 1;
+    }
 #endif
     ktickadj = tickadj;
 #ifdef PRESET_TICKADJ
@@ -530,12 +540,12 @@ int main(
                      recommend_tickadj);
     }
 
-    if (writetickadj == 0 && !writeopttickadj && !unsetdosync && writetick == 0 && !setnoprintf)
+    if ((writetickadj == 0) && !writeopttickadj && !unsetdosync && (writetick == 0) && !setnoprintf)
     {
         exit(errflg ? 1 : 0);
     }
 
-    if (writetickadj == 0 && writeopttickadj)
+    if ((writetickadj == 0) && writeopttickadj)
     {
         writetickadj = recommend_tickadj;
     }
@@ -740,7 +750,7 @@ getoffsets(
         }
     }
 #endif                  /* HAVE_GETBOOTFILE */
-    for (kname = kernels; *kname != NULL; kname++)
+    for (kname = kernels; *kname != NULL; ++kname)
     {
         struct stat stbuf;
 
@@ -777,7 +787,7 @@ getoffsets(
         /*
          * Go one more round of indirection.
          */
-        for (i = 0; i < (sizeof(nl) / sizeof(struct nlist)); i++)
+        for (i = 0; i < (sizeof(nl) / sizeof(struct nlist)); ++i)
         {
             if ((nl[i].n_value) && (nl[i].n_sclass == 0x6b))
             {

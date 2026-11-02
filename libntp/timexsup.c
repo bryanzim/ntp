@@ -41,9 +41,13 @@ clamp_rounded(
 
     /* clamp / saturate */
     if (dval >= (double)LONG_MAX)
+    {
         return LONG_MAX;
+    }
     if (dval <= (double)LONG_MIN)
+    {
         return LONG_MIN;
+    }
     return (long)dval;
 }
 

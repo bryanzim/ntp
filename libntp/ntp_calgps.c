@@ -64,14 +64,16 @@ _norm_ntp_datum(
     if (datum->secs >= limit)
     {
         do
+        {
             ++datum->days;
-        while ((datum->secs -= limit) >= limit);
+        } while ((datum->secs -= limit) >= limit);
     }
     else if (datum->secs < 0)
     {
         do
+        {
             --datum->days;
-        while ((datum->secs += limit) < 0);
+        } while ((datum->secs += limit) < 0);
     }
 }
 
@@ -84,14 +86,16 @@ _norm_gps_datum(
     if (datum->wsecs >= limit)
     {
         do
+        {
             ++datum->weeks;
-        while ((datum->wsecs -= limit) >= limit);
+        } while ((datum->wsecs -= limit) >= limit);
     }
     else if (datum->wsecs < 0)
     {
         do
+        {
             --datum->weeks;
-        while ((datum->wsecs += limit) < 0);
+        } while ((datum->wsecs += limit) < 0);
     }
 }
 
@@ -112,9 +116,13 @@ void gpsntp_add_offset(
 
     /* avoid integer overflow on the seconds */
     if (offset.l_ui >= INT32_MAX)
+    {
         datum->secs -= (int32_t)~offset.l_ui + 1;
+    }
     else
+    {
         datum->secs += (int32_t)offset.l_ui;
+    }
     _norm_ntp_datum(datum);
 }
 
@@ -129,9 +137,13 @@ void gpscal_add_offset(
 
     /* avoid integer overflow on the seconds */
     if (offset.l_ui >= INT32_MAX)
+    {
         datum->wsecs -= (int32_t)~offset.l_ui + 1;
+    }
     else
+    {
         datum->wsecs += (int32_t)offset.l_ui;
+    }
     _norm_gps_datum(datum);
 }
 
@@ -152,7 +164,7 @@ _gpsntp_fix_gps_era(
      * needs some care and is done under explicit usage of one's
      * complement and masking to get mostly branchless code.
      */
-    static uint32_t const clen = 7 * 1024;
+    static uint32_t const clen = 7U * 1024;
 
     uint32_t base, days, sign;
     TNtpDatum out = *in;
@@ -201,14 +213,14 @@ _gpsntp_from_daytime(
     if (pivot->secs < shift)
     {
         int32_t lim = pivot->secs + shift;
-        retv.days -= (retv.secs > lim ||
-                      (retv.secs == lim && retv.frac >= pivot->frac));
+        retv.days -= ((retv.secs > lim) ||
+                      ((retv.secs == lim) && (retv.frac >= pivot->frac)));
     }
     else
     {
         int32_t lim = pivot->secs - shift;
-        retv.days += (retv.secs < lim ||
-                      (retv.secs == lim && retv.frac < pivot->frac));
+        retv.days += ((retv.secs < lim) ||
+                      ((retv.secs == lim) && (retv.frac < pivot->frac)));
     }
     return warp ? _gpsntp_fix_gps_era(&retv) : retv;
 }
@@ -400,9 +412,13 @@ gpscal_from_calendar_ex(
      */
     cal = *jd;
     if (cal.year < 80)
+    {
         cal.year += 2000;
+    }
     else if (cal.year < 100)
+    {
         cal.year += 1900;
+    }
 
     /* get RDN from date, possibly adjusting the century */
 again:
@@ -528,14 +544,14 @@ _gpscal_from_weektime(
     if (pivot->wsecs < shift)
     {
         int32_t lim = pivot->wsecs + shift;
-        retv.weeks -= (retv.wsecs > lim ||
-                       (retv.wsecs == lim && retv.frac >= pivot->frac));
+        retv.weeks -= ((retv.wsecs > lim) ||
+                       ((retv.wsecs == lim) && (retv.frac >= pivot->frac)));
     }
     else
     {
         int32_t lim = pivot->wsecs - shift;
-        retv.weeks += (retv.wsecs < lim ||
-                       (retv.wsecs == lim && retv.frac < pivot->frac));
+        retv.weeks += ((retv.wsecs < lim) ||
+                       ((retv.wsecs == lim) && (retv.frac < pivot->frac)));
     }
     return _gpscal_fix_gps_era(&retv);
 }

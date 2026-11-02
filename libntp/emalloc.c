@@ -36,9 +36,13 @@ void* ereallocz(
     size_t allocsz;
 
     if (0 == newsz)
+    {
         allocsz = 1;
+    }
     else
+    {
         allocsz = newsz;
+    }
 
     mem = EREALLOC_IMPL(ptr, allocsz, file, line);
     if (NULL == mem)
@@ -55,8 +59,10 @@ void* ereallocz(
         exit(1);
     }
 
-    if (zero_init && newsz > priorsz)
+    if (zero_init && (newsz > priorsz))
+    {
         zero_mem(mem + priorsz, newsz - priorsz);
+    }
 
     return mem;
 }
@@ -95,8 +101,8 @@ void* oreallocarrayxz(
 #endif
 )
 {
-    if ((nmemb >= MUL_NO_OVERFLOW || size >= MUL_NO_OVERFLOW) &&
-        nmemb > 0 && SIZE_MAX / nmemb < size)
+    if (((nmemb >= MUL_NO_OVERFLOW) || (size >= MUL_NO_OVERFLOW)) &&
+        (nmemb > 0) && (SIZE_MAX / nmemb < size))
     {
 #ifndef EREALLOC_CALLSITE
         msyslog(LOG_ERR, "fatal allocation size overflow");

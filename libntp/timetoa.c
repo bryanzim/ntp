@@ -68,7 +68,7 @@ format_time_fraction(
     notneg = (prec < 0);
     prec_u = abs(prec);
     /* fraclimit = (long)pow(10, prec_u); */
-    for (fraclimit = 10, u = 1; u < prec_u; u++)
+    for (fraclimit = 10, u = 1; u < prec_u; ++u)
     {
         DEBUG_INSIST(fraclimit < fraclimit * 10);
         fraclimit *= 10;
@@ -79,7 +79,7 @@ format_time_fraction(
      * there's no big extra penalty for normalisation. We do it for
      * consistency.
      */
-    if (frac < 0 || frac >= fraclimit)
+    if ((frac < 0) || (frac >= fraclimit))
     {
         qr = ldiv(frac, fraclimit);
         if (qr.rem < 0)
@@ -97,9 +97,13 @@ format_time_fraction(
     {
         secs_u = ~secs_u;
         if (0 == frac)
+        {
             secs_u++;
+        }
         else
+        {
             frac = fraclimit - frac;
+        }
     }
 
     /* finally format the data and return the result */
