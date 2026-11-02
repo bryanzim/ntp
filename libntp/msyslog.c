@@ -53,7 +53,7 @@ void format_errmsg(
     const char* fmt,
     int errval)
 {
-    char errmsg[256];
+    char errmsg[256U];
     char c;
     char* n;
     const char* f;
@@ -61,7 +61,7 @@ void format_errmsg(
 
     n = nfmt;
     f = fmt;
-    while ((c = *f++) != '\0' && n < (nfmt + lennfmt - 1))
+    while (((c = *f++) != '\0') && (n < (nfmt + lennfmt - 1)))
     {
         if (c != '%')
         {
@@ -72,7 +72,9 @@ void format_errmsg(
         {
             *n++ = '%';
             if ('\0' == c)
+            {
                 break;
+            }
             *n++ = c;
             continue;
         }
@@ -112,7 +114,7 @@ void errno_to_str(
 #else
     pstatic = strerror(err);
 #endif
-    if (NULL == pstatic && '\0' == buf[0U])
+    if ((NULL == pstatic) && ('\0' == buf[0U]))
         snprintf(buf, bufsiz, "%s(%d): errno %d",
 #ifdef STRERROR_R_CHAR_P
                  "strerror_r",
@@ -121,15 +123,19 @@ void errno_to_str(
 #endif
                  err, errno);
     /* protect against believing an int return is a pointer */
-    else if (pstatic != buf && pstatic > (char*)bufsiz)
+    else if ((pstatic != buf) && (pstatic > (char*)bufsiz))
+    {
         strlcpy(buf, pstatic, bufsiz);
+    }
 #else
     int rc;
 
     rc = strerror_r(err, buf, bufsiz);
     if (rc < 0)
+    {
         snprintf(buf, bufsiz, "strerror_r(%d): errno %d",
                  err, errno);
+    }
 #endif
 }
 #endif /* errno_to_str */
@@ -161,44 +167,70 @@ void addto_syslog(
         prevcall_progname = progname;
         prog = strrchr(progname, DIR_SEP);
         if (prog != NULL)
+        {
             prog++;
+        }
         else
+        {
             prog = progname;
+        }
     }
 
     log_to_term = msyslog_term;
     log_to_file = FALSE;
 #if !defined(VMS) && !defined(SYS_VXWORKS)
     if (syslogit)
+    {
         syslog(level, "%s", msg);
+    }
     else
 #endif
         if (syslog_file != NULL)
+    {
         log_to_file = TRUE;
+    }
     else
+    {
         log_to_term = TRUE;
+    }
 #if DEBUG
     if (debug > 0)
+    {
         log_to_term = TRUE;
+    }
 #endif
     if (!(log_to_file || log_to_term))
+    {
         return;
+    }
 
     /* syslog() adds the timestamp, name, and pid */
     if (msyslog_include_timestamp)
+    {
         human_time = humanlogtime();
-    else /* suppress gcc pot. uninit. warning */
+    }
+    else
+    { /* suppress gcc pot. uninit. warning */
         human_time = NULL;
+    }
     if (msyslog_term_pid || log_to_file)
+    {
         pid = getpid();
-    else /* suppress gcc pot. uninit. warning */
+    }
+    else
+    { /* suppress gcc pot. uninit. warning */
         pid = -1;
+    }
 
     /* syslog() adds trailing \n if not present */
     if ('\n' != msg[strlen(msg) - 1])
+    {
         nl_or_empty = nl;
+    }
     else
+    {
         nl_or_empty = empty;
+    }
 
     if (log_to_term)
     {
@@ -206,9 +238,13 @@ void addto_syslog(
                         ? stderr
                         : stdout;
         if (msyslog_include_timestamp)
+        {
             fprintf(term_file, "%s ", human_time);
+        }
         if (msyslog_term_pid)
+        {
             fprintf(term_file, "%s[%d]: ", prog, pid);
+        }
         fprintf(term_file, "%s%s", msg, nl_or_empty);
         fflush(term_file);
     }
@@ -216,7 +252,9 @@ void addto_syslog(
     if (log_to_file)
     {
         if (msyslog_include_timestamp)
+        {
             fprintf(syslog_file, "%s ", human_time);
+        }
         fprintf(syslog_file, "%s[%d]: %s%s", prog, pid, msg,
                 nl_or_empty);
         fflush(syslog_file);
@@ -231,7 +269,7 @@ int mvsnprintf(
     va_list ap)
 {
 #ifndef VSNPRINTF_PERCENT_M
-    char nfmt[256];
+    char nfmt[256U];
 #else
     const char* nfmt = fmt;
 #endif
@@ -261,7 +299,7 @@ int mvfprintf(
     va_list ap)
 {
 #ifndef VSNPRINTF_PERCENT_M
-    char nfmt[256];
+    char nfmt[256U];
 #else
     const char* nfmt = fmt;
 #endif
@@ -351,7 +389,7 @@ void mvsyslog(
     const char* fmt,
     va_list ap)
 {
-    char buf[1024];
+    char buf[1024U];
 
     mvsnprintf(buf, sizeof(buf), fmt, ap);
     addto_syslog(level, buf);
@@ -383,9 +421,11 @@ void init_logging(
      * where it has already been called in the parent earlier.
      * Forked children pass 0 for def_syslogmask.
      */
-    if (INIT_NTP_SYSLOGMASK == ntp_syslogmask &&
-        0 != def_syslogmask)
-        ntp_syslogmask = def_syslogmask; /* set more via logconfig */
+    if ((INIT_NTP_SYSLOGMASK == ntp_syslogmask) &&
+        (0 != def_syslogmask))
+    {
+        ntp_syslogmask = def_syslogmask;
+    } /* set more via logconfig */
 
     /*
      * Logging.  This may actually work on the gizmo board.  Find a name
@@ -393,20 +433,28 @@ void init_logging(
      */
     cp = strrchr(name, DIR_SEP);
     if (NULL == cp)
+    {
         pname = name;
+    }
     else
-        pname = 1 + cp; /* skip DIR_SEP */
+    {
+        pname = 1 + cp;
+    } /* skip DIR_SEP */
     progname = estrdup(pname);
 #ifdef SYS_WINNT /* strip ".exe" */
     cp = strrchr(progname, '.');
-    if (NULL != cp && !strcasecmp(cp, ".exe"))
+    if ((NULL != cp) && !strcasecmp(cp, ".exe"))
+    {
         *cp = '\0';
+    }
 #endif
 
 #if !defined(VMS)
 
     if (is_daemon)
+    {
         was_daemon = TRUE;
+    }
 #ifndef LOG_DAEMON
     openlog(progname, LOG_PID);
 #else /* LOG_DAEMON */
@@ -417,7 +465,9 @@ void init_logging(
     openlog(progname, LOG_PID | LOG_NDELAY, (was_daemon) ? LOG_NTP : 0);
 #ifdef DEBUG
     if (debug)
+    {
         setlogmask(LOG_UPTO(LOG_DEBUG));
+    }
     else
 #endif /* DEBUG */
         setlogmask(LOG_UPTO(LOG_DEBUG)); /* @@@ was INFO */
@@ -443,7 +493,7 @@ int change_logfile(
     const char* log_fname;
     char* abs_fname;
 #if !defined(SYS_WINNT) && !defined(SYS_VXWORKS) && !defined(VMS)
-    char curdir[512];
+    char curdir[512U];
     size_t cd_octets;
     size_t octets;
 #endif /* POSIX */
@@ -458,9 +508,11 @@ int change_logfile(
      * If we are given the same filename previously opened
      * and it's still open, there's nothing to do here.
      */
-    if (syslog_file != NULL && syslog_fname != NULL &&
-        0 == strcmp(syslog_fname, log_fname))
+    if ((syslog_file != NULL) && (syslog_fname != NULL) &&
+        (0 == strcmp(syslog_fname, log_fname)))
+    {
         return 0;
+    }
 
     if (0 == strcmp(log_fname, "stderr"))
     {
@@ -474,21 +526,25 @@ int change_logfile(
     }
     else
     {
-        if (syslog_fname != NULL &&
-            0 == strcmp(log_fname, syslog_fname))
+        if ((syslog_fname != NULL) &&
+            (0 == strcmp(log_fname, syslog_fname)))
+        {
             log_fname = syslog_abs_fname;
+        }
 #if !defined(SYS_WINNT) && !defined(SYS_VXWORKS) && !defined(VMS)
-        if (log_fname != syslog_abs_fname &&
-            DIR_SEP != log_fname[0U] &&
-            0 != strcmp(log_fname, "stderr") &&
-            0 != strcmp(log_fname, "stdout") &&
-            NULL != getcwd(curdir, sizeof(curdir)))
+        if ((log_fname != syslog_abs_fname) &&
+            (DIR_SEP != log_fname[0U]) &&
+            (0 != strcmp(log_fname, "stderr")) &&
+            (0 != strcmp(log_fname, "stdout")) &&
+            (NULL != getcwd(curdir, sizeof(curdir))))
         {
             cd_octets = strlen(curdir);
             /* trim any trailing '/' */
-            if (cd_octets > 1 &&
-                DIR_SEP == curdir[cd_octets - 1])
+            if ((cd_octets > 1) &&
+                (DIR_SEP == curdir[cd_octets - 1]))
+            {
                 cd_octets--;
+            }
             octets = cd_octets;
             octets += 1; /* separator '/' */
             octets += strlen(log_fname);
@@ -512,14 +568,18 @@ int change_logfile(
     }
 
     /* leave a pointer in the old log */
-    if (leave_crumbs && (syslogit || log_fname != syslog_abs_fname))
+    if (leave_crumbs && (syslogit || (log_fname != syslog_abs_fname)))
+    {
         msyslog(LOG_NOTICE, "switching logging to file %s",
                 abs_fname);
+    }
 
-    if (syslog_file != NULL &&
-        syslog_file != stderr && syslog_file != stdout &&
-        fileno(syslog_file) != fileno(new_file))
+    if ((syslog_file != NULL) &&
+        (syslog_file != stderr) && (syslog_file != stdout) &&
+        (fileno(syslog_file) != fileno(new_file)))
+    {
         fclose(syslog_file);
+    }
     syslog_file = new_file;
     if (log_fname == syslog_abs_fname)
     {
@@ -527,11 +587,15 @@ int change_logfile(
     }
     else
     {
-        if (syslog_abs_fname != NULL &&
-            syslog_abs_fname != syslog_fname)
+        if ((syslog_abs_fname != NULL) &&
+            (syslog_abs_fname != syslog_fname))
+        {
             free(syslog_abs_fname);
+        }
         if (syslog_fname != NULL)
+        {
             free(syslog_fname);
+        }
         syslog_fname = estrdup(log_fname);
         syslog_abs_fname = abs_fname;
     }
@@ -560,19 +624,25 @@ int change_logfile(
 void setup_logfile(
     const char* name)
 {
-    if (NULL == syslog_fname && NULL != name)
+    if ((NULL == syslog_fname) && (NULL != name))
     {
         if (-1 == change_logfile(name, TRUE))
+        {
             msyslog(LOG_ERR, "Cannot open log file %s, %m",
                     name);
+        }
         return;
     }
     if (NULL == syslog_fname)
+    {
         return;
+    }
 
     if (-1 == change_logfile(syslog_fname, FALSE))
+    {
         msyslog(LOG_ERR, "Cannot reopen log file %s, %m",
                 syslog_fname);
+    }
 }
 
 /*
@@ -608,9 +678,13 @@ int change_iobufs(
 
     retv = 1;
     if (setvbuf(stdout, NULL, mode, BUFSIZ) != 0)
+    {
         retv = -1;
+    }
     if (setvbuf(stderr, NULL, mode, BUFSIZ) != 0)
+    {
         retv = -1;
+    }
 
 #else
 

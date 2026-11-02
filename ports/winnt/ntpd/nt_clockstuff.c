@@ -271,7 +271,7 @@ perf_ctr(void)
  */
 static void init_small_adjustment(void)
 {
-    if (isc_win32os_versioncheck(6, 0, 0, 0) >= 0 && isc_win32os_versioncheck(6, 2, 0, 0) < 0)
+    if ((isc_win32os_versioncheck(6, 0, 0, 0) >= 0) && (isc_win32os_versioncheck(6, 2, 0, 0) < 0))
     {
         // 6.0 Windows Vista and Windows Server 2008
         // 6.1 Windows 7 and Windows Server 2008 R2
@@ -343,17 +343,21 @@ choose_interp_counter(void)
      * Itanium.
      */
     if (HAVE_OPT(PCCFREQ))
+    {
         ntpd_pcc_freq_text = OPT_ARG(PCCFREQ);
+    }
     else
+    {
         ntpd_pcc_freq_text = getenv("NTPD_PCC_FREQ");
+    }
 
-    if (!HAVE_OPT(USEPCC) && NULL == ntpd_pcc_freq_text && NULL == getenv("NTPD_PCC"))
+    if (!HAVE_OPT(USEPCC) && (NULL == ntpd_pcc_freq_text) && (NULL == getenv("NTPD_PCC")))
     {
         use_pcc = 0;
         return;
     }
 
-    if (!qpc_built_on_pcc && NULL == ntpd_pcc_freq_text)
+    if (!qpc_built_on_pcc && (NULL == ntpd_pcc_freq_text))
     {
         use_pcc = 0;
         return;
@@ -361,9 +365,11 @@ choose_interp_counter(void)
 
     use_pcc = 1;
     if (ntpd_pcc_freq_text != NULL)
+    {
         sscanf(ntpd_pcc_freq_text,
                "%llu",
                &NomPerfCtrFreq);
+    }
 
     NLOG(NLOG_CLOCKINFO)
     msyslog(LOG_INFO,
@@ -403,9 +409,9 @@ is_qpc_built_on_pcc(void)
     ft3.ull += offset;
     ft5.ull += offset;
 
-    if (ft2.ull <= ft3.ull &&
-        ft3.ull <= ft4.ull &&
-        ft4.ull <= ft5.ull)
+    if ((ft2.ull <= ft3.ull) &&
+        (ft3.ull <= ft4.ull) &&
+        (ft4.ull <= ft5.ull))
     {
 
         QPC_offset = offset;
@@ -505,7 +511,7 @@ int adj_systime(
          * leave these small adjustments in sys_residual, causing
          * the small values to be averaged over time.
          */
-        if (TimeAdjustment > -16 && TimeAdjustment < 16)
+        if ((TimeAdjustment > -16) && (TimeAdjustment < 16))
         {
             TimeAdjustment = 0;
         }
@@ -520,7 +526,7 @@ int adj_systime(
      */
     if (leapsec >= LSPROX_ALERT)
     {
-        if (0 == ls_ft.ull && leapsec_frame(&lsi))
+        if ((0 == ls_ft.ull) && leapsec_frame(&lsi))
         {
             if (lsi.tai_diff > 0)
             {
@@ -559,7 +565,7 @@ int adj_systime(
          * Disarm the leap second, but only if there is one scheduled
          * and not currently in progress!
          */
-        if (ls_ft.ull != 0 && ls_time_adjustment == 0)
+        if ((ls_ft.ull != 0) && (ls_time_adjustment == 0))
         {
             ls_ft.ull = 0;
             msyslog(LOG_NOTICE, "Leap second announcement disarmed");
@@ -615,9 +621,13 @@ int adj_systime(
                 now, 1e-6 * (TimeAdjustment * ppm_per_adjust_unit),
                 sys_residual));
     if (0. == adjtime_carry)
+    {
         DPRINTF(3, ("\n"));
+    }
     else
+    {
         DPRINTF(3, (" adjtime %.9f\n", adjtime_carry));
+    }
 
     /* only adjust the clock if adjustment changes */
     TimeAdjustment += wintickadj;
@@ -627,7 +637,9 @@ int adj_systime(
         DPRINTF(2, ("SetSystemTimeAdjustment(%+ld)\n", TimeAdjustment));
         rc = SetSystemTimeAdjustment(clockperiod + TimeAdjustment, FALSE);
         if (!rc)
+        {
             msyslog(LOG_ERR, "Can't adjust time: %m");
+        }
     }
     else
     {
@@ -655,7 +667,9 @@ void init_winnt_time(void)
     char* pch;
 
     if (winnt_time_initialized)
+    {
         return;
+    }
 
     /* Set up the Console Handler */
     if (!SetConsoleCtrlHandler(OnConsoleEvent, TRUE))
@@ -672,13 +686,15 @@ void init_winnt_time(void)
 
     /* Initialize random file before OpenSSL checks */
     if (!init_randfile())
+    {
         msyslog(LOG_ERR, "Unable to initialize .rnd file");
+    }
 
 #pragma warning(push)
 #pragma warning(disable : 4127) /* conditional expression is constant */
 
 #ifdef DEBUG
-    if (SIZEOF_TIME_T != sizeof(time_t) || SIZEOF_INT != sizeof(int) || SIZEOF_SIGNED_CHAR != sizeof(char))
+    if (SIZEOF_TIME_T != sizeof(time_t) || (SIZEOF_INT != sizeof(int)) || (SIZEOF_SIGNED_CHAR != sizeof(char)))
     {
         msyslog(LOG_ERR, "config.h SIZEOF_* macros wrong, fatal");
         exit(1);
@@ -740,7 +756,9 @@ void init_winnt_time(void)
      * upgrading were we to correct this platform difference.
      */
     if (-1 == setpriority(PRIO_PROCESS, 0, NTP_PRIO))
+    {
         exit(-1);
+    }
 
     /* Determine the existing system time slewing */
     if (!GetSystemTimeAdjustment(&adjclockperiod, &clockperiod, &noslew))
@@ -757,15 +775,19 @@ void init_winnt_time(void)
     last_Adj = adjclockperiod - clockperiod;
 
     if (last_Adj)
+    {
         msyslog(LOG_INFO,
                 "Clock interrupt period %.3f msec "
                 "(startup slew %.1f usec/period)",
                 clockperiod / 1e4,
                 last_Adj / 10.);
+    }
     else
+    {
         msyslog(LOG_INFO,
                 "Clock interrupt period %.3f msec",
                 clockperiod / 1e4);
+    }
 
     /*
      * Calculate the time adjustment resulting from incrementing
@@ -774,7 +796,7 @@ void init_winnt_time(void)
     ppm_per_adjust_unit = 1e6 / clockperiod;
 
     pch = getenv("NTPD_TICKADJ_PPM");
-    if (pch != NULL && 1 == sscanf(pch, "%lf", &adjppm))
+    if ((pch != NULL) && (1 == sscanf(pch, "%lf", &adjppm)))
     {
         rawadj = adjppm / ppm_per_adjust_unit;
         rawadj += (rawadj < 0)
@@ -858,7 +880,7 @@ void init_winnt_time(void)
     choose_interp_counter();
 
     if (getenv("NTPD_USE_SYSTEM_CLOCK") ||
-        (os_clock_precision < 4 * 10000 &&
+        ((os_clock_precision < 4 * 10000) &&
          !getenv("NTPD_USE_INTERP_DANGEROUS")))
     {
         msyslog(LOG_INFO, "using Windows clock directly");
@@ -895,8 +917,10 @@ void reset_winnt_time(void)
      * Verify this will not call SetSystemTimeAdjustment if
      * ntpd is running in ntpdate mode.
      */
-    if (sys_leap == LEAP_NOTINSYNC || ls_time_adjustment != 0)
+    if ((sys_leap == LEAP_NOTINSYNC) || (ls_time_adjustment != 0))
+    {
         SetSystemTimeAdjustment(0, TRUE);
+    }
 
     /*
      * Read the current system time, and write it back to
@@ -904,7 +928,7 @@ void reset_winnt_time(void)
      * the computer is shutting down and we are already
      * synchronized.
      */
-    if (ntservice_systemisshuttingdown() && sys_leap != LEAP_NOTINSYNC)
+    if (ntservice_systemisshuttingdown() && (sys_leap != LEAP_NOTINSYNC))
     {
         GetSystemTime(&st);
         SetSystemTime(&st);
@@ -985,9 +1009,11 @@ TimerApcFunction(
      * Once we're synchronized start the counter frequency
      * tuning timer.
      */
-    if (INVALID_HANDLE_VALUE == ctr_freq_timer &&
-        LEAP_NOTINSYNC != sys_leap)
+    if ((INVALID_HANDLE_VALUE == ctr_freq_timer) &&
+        (LEAP_NOTINSYNC != sys_leap))
+    {
         start_ctr_freq_timer(now_time);
+    }
 }
 
 
@@ -1011,30 +1037,34 @@ ClockThread(
 
     HZ = (double)HECTONANOSECONDS / clockperiod;
 
-    if (HZ > 63 && HZ < 65)
+    if ((HZ > 63) && (HZ < 65))
     {
         timer_period_msec = 43;
     }
-    else if (HZ > 98 && HZ < 102)
+    else if ((HZ > 98) && (HZ < 102))
     {
         timer_period_msec = 27;
         if (NULL == ntpd_int_int_text)
+        {
             msyslog(LOG_WARNING,
                     "%.3f Hz system clock may benefit from "
                     "custom NTPD_INT_INT env var timer interval "
                     "override between approx. 20 and 50 msecs.",
                     HZ);
+        }
     }
     else
     {
         timer_period_msec = (DWORD)(0.5 + (2.752 * clockperiod / 10000));
         if (NULL == ntpd_int_int_text)
+        {
             msyslog(LOG_WARNING,
                     "unfamiliar %.3f Hz system clock may benefit "
                     "from custom NTPD_INT_INT env var timer "
                     "interval override between approx. 20 and 50 "
                     "msecs.",
                     HZ);
+        }
     }
 
     if (ntpd_int_int_text != NULL)
@@ -1073,11 +1103,12 @@ ClockThread(
      * break out of the loop when StopClockThread signals our exit event.
      */
     do
+    {
         res = WaitForSingleObjectEx(
             TimerThreadExitRequest,
             INFINITE,
             TRUE);
-    while (WAIT_OBJECT_0 != res);
+    } while (WAIT_OBJECT_0 != res);
 
     CloseHandle(timer);
 
@@ -1158,8 +1189,8 @@ void StopClockThread(void)
     {
 
         if (!SetEvent(TimerThreadExitRequest) ||
-            WaitForSingleObject(clock_thread, 2 * 1000) !=
-                WAIT_OBJECT_0)
+            (WaitForSingleObject(clock_thread, 2 * 1000) !=
+             WAIT_OBJECT_0))
         {
             msyslog(LOG_ERR, "Failed to stop clock thread.");
         }
@@ -1187,7 +1218,9 @@ void lock_thread_to_processor(HANDLE thread)
     }
 
     if (!winnt_use_interpolation)
+    {
         return;
+    }
 
     if (-1 == lock_interp_threads)
     {
@@ -1196,7 +1229,9 @@ void lock_thread_to_processor(HANDLE thread)
         exit(-1);
     }
     else if (!lock_interp_threads)
+    {
         return;
+    }
 
     /*
      * Calculate the ThreadAffinityMask we'll use once on the
@@ -1247,24 +1282,30 @@ void lock_thread_to_processor(HANDLE thread)
 
         if (ThreadAffinityMask &&
             !(ThreadAffinityMask & ProcessAffinityMask))
+        {
 
             DPRINTF(1, ("Selected CPU %u (mask %x) is outside "
                         "process mask %x, using all CPUs.\n",
                         cpu, ThreadAffinityMask,
                         ProcessAffinityMask));
+        }
         else
+        {
             DPRINTF(1, ("Wiring to processor %u (0 means all) "
                         "affinity mask %x\n",
                         cpu, ThreadAffinityMask));
+        }
 
         ThreadAffinityMask &= ProcessAffinityMask;
     }
 
     if (ThreadAffinityMask &&
         !SetThreadAffinityMask(thread, ThreadAffinityMask))
+    {
         msyslog(LOG_ERR,
                 "Unable to wire thread to mask %x: %m",
                 ThreadAffinityMask);
+    }
 }
 
 
@@ -1316,8 +1357,8 @@ ntp_timestamp_from_counter(
     }
     else
     { /* ! winnt_use_interpolation */
-        if (NULL != pGetSystemTimePreciseAsFileTime &&
-            0 != Counterstamp)
+        if ((NULL != pGetSystemTimePreciseAsFileTime) &&
+            (0 != Counterstamp))
         {
             QueryPerformanceCounter(&Ctr.li);
             (*pGetSystemTimePreciseAsFileTime)(&Now.ft);
@@ -1354,7 +1395,9 @@ void win_time_stepped(void)
      * but need to allow it in this case.
      */
     if (FALSE == winnt_use_interpolation)
+    {
         return;
+    }
 
 
     /*
@@ -1538,7 +1581,9 @@ void reset_ctr_freq_timer(
 {
     if (when - now >
         (tune_ctr_freq_max_interval * HECTONANOSECONDS + HECTONANOSECONDS))
+    {
         when = now + tune_ctr_freq_max_interval * HECTONANOSECONDS;
+    }
 
     reset_ctr_freq_timer_abs(when);
 }
@@ -1565,15 +1610,15 @@ void tune_ctr_freq(
     LONGLONG ctr_delta,
     LONGLONG time_delta)
 {
-    static unsigned count = 0;
-    static unsigned dispcount = 0;
-    static unsigned report_at_count = 0;
+    static unsigned count = 0U;
+    static unsigned dispcount = 0U;
+    static unsigned report_at_count = 0U;
     static int disbelieved = 0;
     static int i = 0;
     static double nom_freq = 0;
     static LONGLONG diffs[TUNE_CTR_DEPTH] = { 0 };
     static LONGLONG sum = 0;
-    char ctr_freq_eq[64];
+    char ctr_freq_eq[64U];
     LONGLONG delta;
     LONGLONG deltadiff;
     ULONGLONG ObsPerfCtrFreq;
@@ -1624,7 +1669,9 @@ void tune_ctr_freq(
          */
 
         if (isneg)
+        {
             deltadiff = -deltadiff;
+        }
         sum -= diffs[i];
         diffs[i] = deltadiff;
         sum += deltadiff;
@@ -1658,14 +1705,17 @@ void tune_ctr_freq(
      * startup moves toward the observed freq from the nominal.
      */
 
-    if (count > COUNTOF(diffs) &&
+    if ((count > COUNTOF(diffs)) &&
         /* (count % COUNTOF(diffs)) && */ /* enables reporting each */
-            dispcount < report_at_count)  /* TUNE_CTR_DEPTH samples */
+        (dispcount < report_at_count))
+    { /* TUNE_CTR_DEPTH samples */
         return;
+    }
 
     NLOG(NLOG_CLOCKINFO)
     {
         if (count <= COUNTOF(diffs))
+        {
             /* moving to observed freq. from nominal (startup) */
             msyslog(LOG_INFO,
                     (freq > 100)
@@ -1675,7 +1725,9 @@ void tune_ctr_freq(
                     1e6 * (this_freq - nom_freq) / nom_freq,
                     freq,
                     1e6 * (freq - nom_freq) / nom_freq);
+        }
         else
+        {
             /* steady state */
             msyslog(LOG_INFO,
                     (freq > 100)
@@ -1683,6 +1735,7 @@ void tune_ctr_freq(
                         : "ctr %.6f MHz %+.2f PPM",
                     freq,
                     1e6 * (freq - nom_freq) / nom_freq);
+        }
     }
 
     if (disbelieved)
@@ -1751,7 +1804,7 @@ interp_time(
     i = newest_baseline;
     i_gen = newest_baseline_gen;
 
-    if (last_newest == i && last_newest_gen == i_gen)
+    if ((last_newest == i) && (last_newest_gen == i_gen))
     {
         this_time = baseline_times[best_index];
         ctr_diff = ctr - baseline_counts[best_index];
@@ -1773,7 +1826,7 @@ interp_time(
      * counter/time correlations with stale time are all
      * negative.
      */
-    for (c = 0; c < BASELINES_USED; c++)
+    for (c = 0; c < BASELINES_USED; ++c)
     {
         if (baseline_times[i])
         {
@@ -1782,7 +1835,7 @@ interp_time(
 
             ctr_diff = ctr - this_ctr;
 
-            if (current && ctr_diff < 0)
+            if (current && (ctr_diff < 0))
             {
                 /*
                  * The performance counter apparently went

@@ -466,7 +466,7 @@ static const u_int32 charoffsets[LENARC + 1] = {
 #define INITIAL_RESYNC_DELAY 50 /* Delay before first resync. */
 #endif
 
-static const int moff[12] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+static const int moff[12U] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
 /* Flags for a raw open() of the clock serial device. */
 #ifdef O_NOCTTY /* Good, we can avoid tty becoming controlling tty. */
 #define OPEN_FLAGS (O_RDWR | O_NOCTTY)
@@ -641,7 +641,7 @@ arc_start(
     struct refclockproc* pp;
     int temp_fd;
     int fd;
-    char device[20];
+    char device[20U];
 #ifdef HAVE_TERMIOS
     struct termios arg;
 #endif
@@ -657,7 +657,9 @@ arc_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     temp_fd = refclock_open(&peer->srcadr, device, SPEED, LDISC_CLK);
     if (temp_fd <= 0)
+    {
         return 0;
+    }
     DPRINTF(1, ("arc: unit %d using tty_open().\n", unit));
     fd = tty_open(device, OPEN_FLAGS, 0777);
     if (fd < 0)
@@ -671,9 +673,11 @@ arc_start(
     temp_fd = -1; /* not used after this, at *this* time. */
 
 #ifndef SYS_WINNT
-    if (-1 == fcntl(fd, F_SETFL, 0)) /* clear the descriptor flags */
+    if (-1 == fcntl(fd, F_SETFL, 0))
+    { /* clear the descriptor flags */
         msyslog(LOG_ERR, "MSF_ARCRON(%d): fcntl(F_SETFL, 0): %m.",
                 unit);
+    }
 
 #endif
     DPRINTF(1, ("arc: opened RS232 port with file descriptor %d.\n", fd));
@@ -803,9 +807,13 @@ arc_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 /*
@@ -859,7 +867,7 @@ send_slow(
     }
 
     /* Copy in the command to be sent. */
-    while (*s && spaceleft > 0)
+    while (*s && (spaceleft > 0))
     {
         up->cmdqueue[CMDQUEUELEN - spaceleft--] = *s++;
     }
@@ -872,7 +880,9 @@ static int
 get2(char* p, int* val)
 {
     if (!isdigit((unsigned char)p[0U]) || !isdigit((unsigned char)p[1U]))
+    {
         return 0;
+    }
     *val = (p[0U] - '0') * 10 + p[1U] - '0';
     return 1;
 }
@@ -881,7 +891,9 @@ static int
 get1(char* p, int* val)
 {
     if (!isdigit((unsigned char)p[0U]))
+    {
         return 0;
+    }
     *val = p[0U] - '0';
     return 1;
 }
@@ -1075,7 +1087,7 @@ arc_receive(
     }
 
     /* Append input to code buffer, avoiding overflow. */
-    for (i = 0; i < rbufp->recv_length; i++)
+    for (i = 0; i < rbufp->recv_length; ++i)
     {
         if (pp->lencode >= LENARC)
         {
@@ -1084,7 +1096,7 @@ arc_receive(
         c = rbufp->recv_buffer[i];
 
         /* Drop trailing '\r's and drop `h' command echo totally. */
-        if (c != '\r' && c != 'h')
+        if ((c != '\r') && (c != 'h'))
         {
             pp->a_lastcode[pp->lencode++] = c;
         }
@@ -1108,7 +1120,9 @@ arc_receive(
         }
     }
     if (pp->lencode == 0)
+    {
         return;
+    }
 
     /* Handle a quality message. */
     if (pp->a_lastcode[0U] == 'g')
@@ -1118,7 +1132,7 @@ arc_receive(
         if (pp->lencode < 3)
         {
             return;
-        }                                /* Need more data... */
+        } /* Need more data... */
         r = (pp->a_lastcode[1U] & 0x7f); /* Strip parity. */
         q = (pp->a_lastcode[2U] & 0x7f); /* Strip parity. */
         if (((q & 0x70) != 0x30) || ((q & 0xf) > MAX_CLOCK_QUALITY) ||
@@ -1244,7 +1258,7 @@ arc_receive(
     pp->nsec = 0;
 #endif
     /* Validate format and numbers. */
-    if (pp->a_lastcode[0U] != 'o' || !get2(pp->a_lastcode + 1, &pp->hour) || !get2(pp->a_lastcode + 3, &pp->minute) || !get2(pp->a_lastcode + 5, &pp->second) || !get1(pp->a_lastcode + 7, &wday) || !get2(pp->a_lastcode + 8, &pp->day) || !get2(pp->a_lastcode + 10, &month) || !get2(pp->a_lastcode + 12, &pp->year))
+    if ((pp->a_lastcode[0U] != 'o') || !get2(pp->a_lastcode + 1, &pp->hour) || !get2(pp->a_lastcode + 3, &pp->minute) || !get2(pp->a_lastcode + 5, &pp->second) || !get1(pp->a_lastcode + 7, &wday) || !get2(pp->a_lastcode + 8, &pp->day) || !get2(pp->a_lastcode + 10, &month) || !get2(pp->a_lastcode + 12, &pp->year))
     {
 #ifdef DEBUG
         /* Would expect to have caught major problems already... */
@@ -1307,7 +1321,7 @@ arc_receive(
     if (pp->year < YEAR_PIVOT)
     {
         pp->year += 100;
-    }                                                /* Y2KFixes */
+    } /* Y2KFixes */
     pp->year += 1900; /* use full four-digit year */ /* Y2KFixes */
     /*
       Attempt to do the right thing by screaming that the code will
@@ -1365,7 +1379,7 @@ arc_receive(
 
         pp->day += moff[month - 1];
 
-        if (isleap_4(pp->year) && month > 2)
+        if (isleap_4(pp->year) && (month > 2))
         {
             pp->day++;
         } /* Y2KFixes */
@@ -1431,28 +1445,36 @@ arc_receive(
                     local.tm_isdst = 0;
 #ifdef DEBUG
                     if (debug)
+                    {
                         printf("arc: DST = 00 (0)\n");
+                    }
 #endif
                     break;
                 case 1: /* dst->st time */
                     local.tm_isdst = -1;
 #ifdef DEBUG
                     if (debug)
+                    {
                         printf("arc: DST = 01 (1)\n");
+                    }
 #endif
                     break;
                 case 2: /* st->dst time */
                     local.tm_isdst = -1;
 #ifdef DEBUG
                     if (debug)
+                    {
                         printf("arc: DST = 10 (2)\n");
+                    }
 #endif
                     break;
                 case 3: /* dst time */
                     local.tm_isdst = 1;
 #ifdef DEBUG
                     if (debug)
+                    {
                         printf("arc: DST = 11 (3)\n");
+                    }
 #endif
                     break;
                 }
@@ -1496,7 +1518,7 @@ arc_receive(
     }
 
     if (peer->MODE == 0)
-    {   /* compatiblity to original version */
+    { /* compatiblity to original version */
         /* If clock signal quality is
          * unknown, revert to default PRECISION...*/
         if (up->quality == QUALITY_UNKNOWN)

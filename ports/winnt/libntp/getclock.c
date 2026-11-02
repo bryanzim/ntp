@@ -35,7 +35,9 @@ int getclock(
     }
 
     if (NULL == get_sys_time_as_filetime)
+    {
         init_win_precise_time();
+    }
     (*get_sys_time_as_filetime)(&uNow.ft);
 
     /*

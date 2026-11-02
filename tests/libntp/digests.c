@@ -493,13 +493,13 @@ void dump_mac(
     u_char* pmac,
     size_t octets)
 {
-    char dump[128];
-    size_t dc = 0;
+    char dump[128U];
+    size_t dc = 0U;
     size_t idx;
 
     dc += snprintf(dump + dc, sizeof(dump) - dc, "digest with key %u { ", keyid);
 
-    for (idx = 4; idx < octets; idx++)
+    for (idx = 4; idx < octets; ++idx)
     {
         if (14 == idx)
         {

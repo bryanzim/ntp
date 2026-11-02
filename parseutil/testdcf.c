@@ -186,7 +186,7 @@ ext_bf(
 
     first = rawdcfcode[idx].offset;
 
-    for (i = rawdcfcode[idx + 1].offset - 1; i >= first; i--)
+    for (i = rawdcfcode[idx + 1].offset - 1; i >= first; --i)
     {
         sum <<= 1;
         sum |= (buf[i] != '-');
@@ -200,12 +200,14 @@ pcheck(
     register int idx)
 {
     register int i, last;
-    register unsigned psum = 1;
+    register unsigned psum = 1U;
 
     last = partab[idx + 1].offset;
 
-    for (i = partab[idx].offset; i < last; i++)
+    for (i = partab[idx].offset; i < last; ++i)
+    {
         psum ^= (buf[i] != '-');
+    }
 
     return psum;
 }
@@ -266,13 +268,19 @@ convert_rawdcf(
         }
 
         if (ext_bf(buffer, DCF_A1))
+        {
             clock_time->flags |= DCFB_ANNOUNCE;
+        }
 
         if (ext_bf(buffer, DCF_A2))
+        {
             clock_time->flags |= DCFB_LEAP;
+        }
 
         if (ext_bf(buffer, DCF_R))
+        {
             clock_time->flags |= DCFB_CALLBIT;
+        }
 
         return CVT_OK;
     }
@@ -294,7 +302,7 @@ type(
     return (c >= 0xF);
 }
 
-static const char* wday[8] = {
+static const char* wday[8U] = {
     "??",
     "Mo",
     "Tu",
@@ -333,9 +341,13 @@ int main(
         if (argc == 3)
         {
             if (strcmp(argv[1U], "-f") == 0)
+            {
                 offset = 0;
+            }
             if (strcmp(argv[1U], "-t") == 0)
+            {
                 trace = 1;
+            }
             if ((strcmp(argv[1U], "-ft") == 0) ||
                 (strcmp(argv[1U], "-tf") == 0))
             {
@@ -362,7 +374,7 @@ int main(
             int on = TIOCM_RTS;
 #endif
             struct timeval t, tt, tlast;
-            char buf[61];
+            char buf[61U];
             clocktime_t clock_time;
             struct termios term;
             int rtc = CVT_NONE;
@@ -415,8 +427,10 @@ int main(
             clock_time.year = 0;
             clock_time.flags = 0;
             buf[60U] = '\0';
-            for (i = 0; i < 60; i++)
+            for (i = 0; i < 60; ++i)
+            {
                 buf[i] = '.';
+            }
 
             gettimeofday(&tlast, 0L);
             i = 0;
@@ -439,9 +453,9 @@ int main(
                     errs = 0;
                 }
 
-                if (t.tv_sec > 1 ||
-                    (t.tv_sec == 1 &&
-                     t.tv_usec > 500000))
+                if ((t.tv_sec > 1) ||
+                    ((t.tv_sec == 1) &&
+                     (t.tv_usec > 500000)))
                 {
                     printf("%c %.*s ", pat[i % (sizeof(pat) - 1)], 59 - offset, &buf[offset]);
 
@@ -459,21 +473,31 @@ int main(
                     }
 
                     if (((c ^ 0xFF) + 1) & (c ^ 0xFF))
+                    {
                         buf[0U] = '?';
+                    }
                     else
+                    {
                         buf[0U] = type(c) ? '#' : '-';
+                    }
 
-                    for (i = 1; i < 60; i++)
+                    for (i = 1; i < 60; ++i)
+                    {
                         buf[i] = '.';
+                    }
 
                     i = 0;
                 }
                 else
                 {
                     if (((c ^ 0xFF) + 1) & (c ^ 0xFF))
+                    {
                         buf[i] = '?';
+                    }
                     else
+                    {
                         buf[i] = type(c) ? '#' : '-';
+                    }
 
                     printf("%c %.*s ", pat[i % (sizeof(pat) - 1)], 59 - offset, &buf[offset]);
                 }

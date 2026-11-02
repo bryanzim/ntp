@@ -111,17 +111,17 @@ cvt_schmid(
     clocktime_t* clock_time,
     void* local)
 {
-    if ((size != 11) || (buffer[10U] != (unsigned char)'\375'))
+    if ((size != 11U) || (buffer[10U] != (unsigned char)'\375'))
     {
         return CVT_NONE;
     }
     else
     {
-        if (buffer[0U] > 23 || buffer[1U] > 59 || buffer[2U] > 59 || buffer[3U] > 9) /* Time */
+        if ((buffer[0U] > 23) || (buffer[1U] > 59) || (buffer[2U] > 59) || (buffer[3U] > 9)) /* Time */
         {
             return CVT_FAIL | CVT_BADTIME;
         }
-        else if (buffer[4U] < 1 || buffer[4U] > 31 || buffer[5U] < 1 || buffer[5U] > 12 || buffer[6U] > 99)
+        else if ((buffer[4U] < 1) || (buffer[4U] > 31) || (buffer[5U] < 1) || (buffer[5U] > 12) || (buffer[6U] > 99))
         {
             return CVT_FAIL | CVT_BADDATE;
         }
@@ -207,9 +207,13 @@ inp_schmid(
     case 0xFD: /*  */
         parseprintf(DD_PARSE, ("inp_schmid: 0xFD seen\n"));
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
     default:
         return parse_addchar(parseio, ch);

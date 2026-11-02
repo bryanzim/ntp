@@ -31,26 +31,26 @@ int IsEqual(const sockaddr_u expected, const sockaddr_u actual)
 
     if (actual.sa.sa_family == AF_INET)
     { // IPv4
-        if (expected.sa4.sin_port == actual.sa4.sin_port && memcmp(&expected.sa4.sin_addr, &actual.sa4.sin_addr,
-                                                                   sizeof(in)) == 0)
+        if ((expected.sa4.sin_port == actual.sa4.sin_port) && (memcmp(&expected.sa4.sin_addr, &actual.sa4.sin_addr,
+                                                                      sizeof(in)) == 0))
         {
             return TRUE;
         }
         else
         {
-            char buf[4][32];
+            char buf[4U][32U];
             strlcpy(buf[0U], inet_ntoa(expected.sa4.sin_addr), sizeof(buf[0U]));
             strlcpy(buf[1U], socktoa(&expected), sizeof(buf[1U]));
             strlcpy(buf[2U], inet_ntoa(actual.sa4.sin_addr), sizeof(buf[2U]));
             strlcpy(buf[3U], socktoa(&actual), sizeof(buf[3U]));
             printf("IPv4 comparision failed, expected: %s(%s) but was: %s(%s)",
-                   buf[0U], buf[1], buf[2], buf[3]);
+                   buf[0U], buf[1U], buf[2U], buf[3U]);
             return FALSE;
         }
     }
     else if (actual.sa.sa_family == AF_INET6)
     { // IPv6
-        if (expected.sa6.sin6_port == actual.sa6.sin6_port && expected.sa6.sin6_scope_id == actual.sa6.sin6_scope_id && memcmp(&expected.sa6.sin6_addr, &actual.sa6.sin6_addr, sizeof(in6)) == 0)
+        if ((expected.sa6.sin6_port == actual.sa6.sin6_port) && (expected.sa6.sin6_scope_id == actual.sa6.sin6_scope_id) && (memcmp(&expected.sa6.sin6_addr, &actual.sa6.sin6_addr, sizeof(in6)) == 0))
         {
             return TRUE;
         }

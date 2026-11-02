@@ -87,7 +87,7 @@ struct timeval start_tv;
 /* check the timeout at least once per second */
 struct timeval wakeup_tv = { 0, 888888 };
 
-sent_pkt* fam_listheads[2];
+sent_pkt* fam_listheads[2U];
 #define v4_pkts_list (fam_listheads[0U])
 #define v6_pkts_list (fam_listheads[1U])
 
@@ -147,7 +147,9 @@ int sntp_main(
     sntp_init_logging(argv[0U]);
 
     if (!libevent_version_ok())
+    {
         exit(EX_SOFTWARE);
+    }
 
     init_lib();
     init_auth();
@@ -172,11 +174,13 @@ int sntp_main(
     gap.tv_usec = min(gap.tv_usec, 999999);
 
     if (HAVE_OPT(LOGFILE))
+    {
         open_logfile(OPT_ARG(LOGFILE));
+    }
 
     msyslog(LOG_INFO, "%s", sntpVersion);
 
-    if (0 == argc && !HAVE_OPT(BROADCAST) && !HAVE_OPT(CONCURRENT))
+    if ((0 == argc) && !HAVE_OPT(BROADCAST) && !HAVE_OPT(CONCURRENT))
     {
         printf("%s: Must supply at least one of -b hostname, -c hostname, or hostname.\n",
                progname);
@@ -204,9 +208,13 @@ int sntp_main(
     {
         /* Check for options -4 and -6 */
         if (HAVE_OPT(IPV4))
+        {
             ai_fam_pref = AF_INET;
+        }
         else if (HAVE_OPT(IPV6))
+        {
             ai_fam_pref = AF_INET6;
+        }
     }
 
     /* TODO: Parse config file if declared */
@@ -229,12 +237,16 @@ int sntp_main(
     */
     event_set_log_callback(&sntp_libevent_log_cb);
     if (debug > 0)
+    {
         event_enable_debug_mode();
+    }
 #ifdef WORK_THREAD
     evthread_use_pthreads();
     /* we use libevent from main thread only, locks should be academic */
     if (debug > 0)
+    {
         evthread_enable_lock_debuging();
+    }
 #endif
     evcfg = event_config_new();
     if (NULL == evcfg)
@@ -286,7 +298,9 @@ int sntp_main(
     }
 
     for (i = 0; i < argc; ++i)
+    {
         handle_lookup(argv[i], CTX_UCST);
+    }
 
     gettimeofday_cached(base, &start_tv);
     event_base_dispatch(base);
@@ -294,9 +308,13 @@ int sntp_main(
 
     if (!time_adjusted &&
         (ENABLED_OPT(STEP) || ENABLED_OPT(SLEW)))
+    {
         exitcode = 1;
+    }
     else
+    {
         exitcode = 0;
+    }
 
     return exitcode;
 }
@@ -351,10 +369,10 @@ void open_sockets(
     }
 
     /* We may not always have IPv6... */
-    if (-1 == sock6 && ipv6_works)
+    if ((-1 == sock6) && ipv6_works)
     {
         sock6 = socket(PF_INET6, SOCK_DGRAM, 0);
-        if (-1 == sock6 && ipv6_works)
+        if ((-1 == sock6) && ipv6_works)
         {
             /* error getting a socket */
             msyslog(LOG_ERR, "open_sockets: socket(PF_INET6) failed: %m");
@@ -508,7 +526,9 @@ void sntp_name_resolved(
         {
 
             if (check_kod(ai))
+            {
                 continue;
+            }
 
             switch (ai->ai_family)
             {
@@ -521,7 +541,9 @@ void sntp_name_resolved(
 
             case AF_INET6:
                 if (!ipv6_works)
+                {
                     continue;
+                }
 
                 sock = sock6;
                 xmt_delay = xmt_delay_v6;
@@ -576,9 +598,13 @@ void queue_xmt(
 
     dest = &spkt->addr;
     if (IS_IPV6(dest))
+    {
         pkt_listp = &v6_pkts_list;
+    }
     else
+    {
         pkt_listp = &v4_pkts_list;
+    }
 
     /* reject attempts to add address already listed */
     for (match = *pkt_listp; match != NULL; match = match->link)
@@ -587,14 +613,18 @@ void queue_xmt(
         {
             if (strcasecmp(spkt->dctx->name,
                            match->dctx->name))
+            {
                 printf("%s %s duplicate address from %s ignored.\n",
                        sptoa(&match->addr),
                        match->dctx->name,
                        spkt->dctx->name);
+            }
             else
+            {
                 printf("%s %s, duplicate address ignored.\n",
                        sptoa(&match->addr),
                        match->dctx->name);
+            }
             dec_pending_ntp(spkt->dctx->name, &spkt->addr);
             free(spkt);
             return;
@@ -619,9 +649,11 @@ void queue_xmt(
          * context in xmt_q.
          */
         if (NULL == ev_xmt_timer)
+        {
             ev_xmt_timer = event_new(base, INVALID_SOCKET,
                                      EV_TIMEOUT,
                                      &xmt_timer_cb, NULL);
+        }
         if (NULL == ev_xmt_timer)
         {
             msyslog(LOG_ERR,
@@ -630,7 +662,9 @@ void queue_xmt(
         }
         ZERO(delay);
         if (xctx->sched > start_cb.tv_sec)
+        {
             delay.tv_sec = xctx->sched - start_cb.tv_sec;
+        }
         event_add(ev_xmt_timer, &delay);
         TRACE(2, ("queue_xmt: xmt timer for %u usec\n",
                   (u_int)delay.tv_usec));
@@ -654,8 +688,10 @@ void xmt_timer_cb(
     UNUSED_ARG(ctx);
     DEBUG_INSIST(EV_TIMEOUT == what);
 
-    if (NULL == xmt_q || shutting_down)
+    if ((NULL == xmt_q) || shutting_down)
+    {
         return;
+    }
     gettimeofday_cached(base, &start_cb);
     if (xmt_q->sched <= start_cb.tv_sec)
     {
@@ -665,7 +701,9 @@ void xmt_timer_cb(
         xmt(x);
         free(x);
         if (NULL == xmt_q)
+        {
             return;
+        }
     }
     if (xmt_q->sched <= start_cb.tv_sec)
     {
@@ -748,7 +786,7 @@ void timeout_queries(void)
               (unsigned)COUNTOF(fam_listheads)));
 
     gettimeofday_cached(base, &start_cb);
-    for (idx = 0; idx < COUNTOF(fam_listheads); idx++)
+    for (idx = 0; idx < COUNTOF(fam_listheads); ++idx)
     {
         head = fam_listheads[idx];
         for (spkt = head; spkt != NULL; spkt = spkt_next)
@@ -772,14 +810,18 @@ void timeout_queries(void)
             }
 
             spkt_next = spkt->link;
-            if (0 == spkt->stime || spkt->done)
+            if ((0 == spkt->stime) || spkt->done)
+            {
                 continue;
+            }
             age = start_cb.tv_sec - spkt->stime;
             TRACE(3, ("%s %s %cCST age %ld\n",
                       stoa(&spkt->addr),
                       spkt->dctx->name, xcst, age));
             if (age > response_timeout)
+            {
                 timeout_query(spkt);
+            }
         }
     }
     // Do we care about didsomething?
@@ -892,7 +934,7 @@ void sock_cb(
     int rpktl;
     int rc;
 
-    INSIST(sock4 == fd || sock6 == fd);
+    INSIST((sock4 == fd) || (sock6 == fd));
 
     TRACE(3, ("sock_cb: event on sock%s:%s%s%s%s\n",
               (fd == sock6)
@@ -906,7 +948,9 @@ void sock_cb(
     if (!(EV_READ & what))
     {
         if (EV_TIMEOUT & what)
+        {
             timeout_queries();
+        }
 
         return;
     }
@@ -920,15 +964,21 @@ void sock_cb(
     }
 
     if (sock6 == fd)
+    {
         p_pktlist = &v6_pkts_list;
+    }
     else
+    {
         p_pktlist = &v4_pkts_list;
+    }
 
     for (spkt = *p_pktlist; spkt != NULL; spkt = spkt->link)
     {
         psau = &spkt->addr;
         if (SOCK_EQ(&sender, psau))
+        {
             break;
+        }
     }
     if (NULL == spkt)
     {
@@ -957,7 +1007,9 @@ void sock_cb(
     /* If the packet is good, set the time and we're all done */
     rc = handle_pkt(rpktl, &r_pkt, &spkt->addr, spkt->dctx->name);
     if (0 != rc)
+    {
         TRACE(1, ("sock_cb: handle_pkt() returned %d\n", rc));
+    }
     check_exit_conditions();
 }
 
@@ -970,7 +1022,7 @@ void sock_cb(
  */
 void check_exit_conditions(void)
 {
-    if ((0 == n_pending_ntp && 0 == n_pending_dns) ||
+    if (((0 == n_pending_ntp) && (0 == n_pending_dns)) ||
         (time_derived && !HAVE_OPT(WAIT)))
     {
         event_base_loopexit(base, NULL);
@@ -1007,16 +1059,22 @@ void sntp_addremove_fd(
 #endif
 
     c = NULL;
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
         if (NULL == c)
+        {
             continue;
+        }
         if (fd == c->resp_read_pipe)
+        {
             break;
+        }
     }
     if (idx == blocking_children_alloc)
+    {
         return;
+    }
 
     if (remove_it)
     {
@@ -1115,7 +1173,9 @@ void intres_timeout_req(
         event_del(ev_worker_timeout);
     }
     if (0 == seconds)
+    {
         return;
+    }
     tv_to.tv_sec = seconds;
     tv_to.tv_usec = 0;
     event_add(ev_worker_timeout, &tv_to);
@@ -1194,7 +1254,9 @@ int generate_pkt(
         mac_size = make_mac(x_pkt, pkt_len, pkt_key,
                             (char*)&x_pkt->exten[1U], MAX_MDG_LEN);
         if (mac_size > 0)
+        {
             pkt_len += mac_size + KEY_MAC_LEN;
+        }
 #ifdef DEBUG
         if (debug > 0)
         {
@@ -1212,7 +1274,7 @@ int handle_pkt(
     sockaddr_u* host,
     const char* hostname)
 {
-    char disptxt[32];
+    char disptxt[32U];
     const char* addrtxt;
     struct timeval tv_dst;
     int cnt;
@@ -1236,9 +1298,13 @@ int handle_pkt(
     ts_str = NULL;
 
     if (rpktl > 0)
+    {
         sw_case = 1;
+    }
     else
+    {
         sw_case = rpktl;
+    }
 
     switch (sw_case)
     {
@@ -1259,7 +1325,7 @@ int handle_pkt(
         ref = (char*)&rpkt->refid;
         add_entry(addrtxt, ref);
         msyslog(LOG_WARNING, "KOD code %c%c%c%c from %s %s",
-                ref[0U], ref[1], ref[2], ref[3], addrtxt, hostname);
+                ref[0U], ref[1U], ref[2U], ref[3U], addrtxt, hostname);
         break;
 
     case KOD_RATE:
@@ -1283,15 +1349,21 @@ int handle_pkt(
             pretend_time = 0;
 #if SIZEOF_TIME_T == 4
             if (1 == sscanf(p_SNTP_PRETEND_TIME, "%ld", &l))
+            {
                 pretend_time = (time_t)l;
+            }
 #elif SIZEOF_TIME_T == 8
             if (1 == sscanf(p_SNTP_PRETEND_TIME, "%lld", &ll))
+            {
                 pretend_time = (time_t)ll;
+            }
 #else
 #include "GRONK: unexpected value for SIZEOF_TIME_T"
 #endif
             if (0 != pretend_time)
+            {
                 tv_dst.tv_sec = pretend_time;
+            }
         }
 
         offset_calculation(rpkt, rpktl, &tv_dst, &offset,
@@ -1299,23 +1371,31 @@ int handle_pkt(
         time_derived = TRUE;
 
         for (digits = 0; (precision *= 10.) < 1.; ++digits)
+        {
             /* empty */;
+        }
         if (digits > 6)
+        {
             digits = 6;
+        }
 
         ts_str = tv_to_str(&tv_dst);
         stratum = rpkt->stratum;
         if (0 == stratum)
+        {
             stratum = 16;
+        }
 
         if (synch_distance > 0.)
         {
             cnt = snprintf(disptxt, sizeof(disptxt),
                            " +/- %f", synch_distance);
             if ((size_t)cnt >= sizeof(disptxt))
+            {
                 snprintf(disptxt, sizeof(disptxt),
                          "ERROR %d >= %d", cnt,
                          (int)sizeof(disptxt));
+            }
         }
         else
         {
@@ -1351,11 +1431,15 @@ int handle_pkt(
         free(ts_str);
 
         if (p_SNTP_PRETEND_TIME)
+        {
             return 0;
+        }
 
         if (!time_adjusted &&
             (ENABLED_OPT(STEP) || ENABLED_OPT(SLEW)))
+        {
             return set_time(offset);
+        }
 
         return EX_OK;
     }
@@ -1499,7 +1583,9 @@ int set_time(
     int rc;
 
     if (time_adjusted)
+    {
         return EX_OK;
+    }
 
     /*
     ** If we can step but we cannot slew, then step.
@@ -1512,7 +1598,9 @@ int set_time(
 
         /* If there was a problem, can we rely on errno? */
         if (1 == rc)
+        {
             time_adjusted = TRUE;
+        }
         return (time_adjusted)
                    ? EX_OK
                    : 1;
@@ -1530,7 +1618,9 @@ int set_time(
 
         /* If there was a problem, can we rely on errno? */
         if (1 == rc)
+        {
             time_adjusted = TRUE;
+        }
         return (time_adjusted)
                    ? EX_OK
                    : 1;
@@ -1604,7 +1694,7 @@ int gettimeofday_cached(
     int gtod_rc;
 
     event_base_gettimeofday_cached(b, &latest);
-    if (b == cached_b &&
+    if ((b == cached_b) &&
         !memcmp(&latest, &cached, sizeof(latest)))
     {
         *caller_tv = adj_cached;
@@ -1625,9 +1715,11 @@ int gettimeofday_cached(
         }
         diff = sub_tval(systemt, latest);
         if (debug > 1)
+        {
             printf("system minus cached %+ld.%06ld\n",
                    (long)diff.tv_sec, (long)diff.tv_usec);
-        if (0 != cgt_rc || labs((long)diff.tv_sec) < 3600)
+        }
+        if ((0 != cgt_rc) || (labs((long)diff.tv_sec) < 3600))
         {
             /*
              * Either use_monotonic == 0, or this libevent
@@ -1640,8 +1732,10 @@ int gettimeofday_cached(
             mono.tv_usec = ts.tv_nsec / 1000;
             diff = sub_tval(latest, mono);
             if (debug > 1)
+            {
                 printf("cached minus monotonic %+ld.%06ld\n",
                        (long)diff.tv_sec, (long)diff.tv_usec);
+            }
             if (labs((long)diff.tv_sec) < 3600)
             {
                 /* older libevent2 using monotonic */

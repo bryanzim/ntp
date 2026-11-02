@@ -72,7 +72,9 @@ int ntp_readline_init(
     if (prompt)
     {
         if (lineedit_prompt)
+        {
             free(lineedit_prompt);
+        }
         lineedit_prompt = estrdup(prompt);
     }
 
@@ -117,7 +119,9 @@ int ntp_readline_init(
             }
         }
         else
+        {
             success = 0;
+        }
     }
 #endif /* LE_EDITLINE */
 
@@ -172,7 +176,9 @@ char* ntp_readline(
 #endif
 
     if (!ntp_readline_initted)
+    {
         return NULL;
+    }
 
     *pcount = 0;
 
@@ -223,19 +229,23 @@ char* ntp_readline(
     }
 
     line = fgets(line_buf, sizeof(line_buf), stdin);
-    if (NULL != line && *line)
+    if ((NULL != line) && *line)
     {
         *pcount = (int)strlen(line); /* cannot overflow here */
         line = estrdup(line);
     }
     else
+    {
         line = NULL;
+    }
 
 #endif /* LE_NONE */
 
 
-    if (!line) /* EOF */
+    if (!line)
+    { /* EOF */
         fputs("\n", stderr);
+    }
 
     return line;
 }

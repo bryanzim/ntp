@@ -173,7 +173,7 @@ u_int fstamp;                 /* NTP filestamp */
 char hostbuf[MAXHOSTNAME + 1];
 char* hostname = NULL;  /* host, used in cert filenames */
 char* groupname = NULL; /* group name */
-char certnamebuf[2 * sizeof(hostbuf)];
+char certnamebuf[2U * sizeof(hostbuf)];
 char* certname = NULL;          /* certificate subject/issuer name */
 char* passwd1 = NULL;           /* input private key password */
 char* passwd2 = NULL;           /* output private key password */
@@ -239,7 +239,9 @@ int symlink(
     link_created = (*pCreateHardLinkA)(linkname, filename, NULL);
 
     if (link_created)
+    {
         return 0;
+    }
 
     saved_errno = GetLastError(); /* yes we play loose */
     mfprintf(stderr, "Create hard link %s to %s failed: %m\n",
@@ -274,7 +276,7 @@ void followlink(
     ssize_t len;
     char* target;
 
-    REQUIRE(bufsiz > 0 && bufsiz <= SSIZE_MAX);
+    REQUIRE((bufsiz > 0) && (bufsiz <= SSIZE_MAX));
 
     target = emalloc(bufsiz);
     len = readlink(fname, target, bufsiz);
@@ -284,7 +286,9 @@ void followlink(
         return;
     }
     if ((size_t)len > bufsiz - 1)
+    {
         len = bufsiz - 1;
+    }
     memcpy(fname, target, len);
     fname[len] = '\0';
     free(target);
@@ -340,7 +344,9 @@ int main(
     /* Initialize before OpenSSL checks */
     InitWin32Sockets();
     if (!init_randfile())
+    {
         fprintf(stderr, "Unable to initialize .rnd file\n");
+    }
     ssl_applink();
 #endif
 
@@ -373,35 +379,53 @@ int main(
     sslvtext = OpenSSL_version(OPENSSL_VERSION);
     sslvmatch = OpenSSL_version_num() == OPENSSL_VERSION_NUMBER;
     if (sslvmatch)
+    {
         fprintf(stderr, "Using OpenSSL version %s\n",
                 sslvtext);
+    }
     else
+    {
         fprintf(stderr, "Built against OpenSSL %s, using version %s\n",
                 OPENSSL_VERSION_TEXT, sslvtext);
+    }
 #endif /* OPENSSL */
 
     debug = OPT_VALUE_SET_DEBUG_LEVEL;
 
     if (HAVE_OPT(MD5KEY))
+    {
         md5key++;
+    }
 #ifdef AUTOKEY
     if (HAVE_OPT(PASSWORD))
+    {
         passwd1 = estrdup(OPT_ARG(PASSWORD));
+    }
 
     if (HAVE_OPT(EXPORT_PASSWD))
+    {
         passwd2 = estrdup(OPT_ARG(EXPORT_PASSWD));
+    }
 
     if (HAVE_OPT(HOST_KEY))
+    {
         hostkey++;
+    }
 
     if (HAVE_OPT(SIGN_KEY))
+    {
         sign = estrdup(OPT_ARG(SIGN_KEY));
+    }
 
     if (HAVE_OPT(GQ_PARAMS))
+    {
         gqkey++;
+    }
 
     if (HAVE_OPT(IFFKEY))
+    {
         iffkey++;
+    }
 
     if (HAVE_OPT(MV_PARAMS))
     {
@@ -415,47 +439,71 @@ int main(
     }
 
     if (HAVE_OPT(IMBITS))
+    {
         modulus2 = OPT_VALUE_IMBITS;
+    }
 
     if (HAVE_OPT(MODULUS))
+    {
         modulus = OPT_VALUE_MODULUS;
+    }
 
     if (HAVE_OPT(CERTIFICATE))
+    {
         scheme = OPT_ARG(CERTIFICATE);
+    }
 
     if (HAVE_OPT(CIPHER))
+    {
         ciphername = OPT_ARG(CIPHER);
+    }
 
     if (HAVE_OPT(SUBJECT_NAME))
+    {
         hostname = estrdup(OPT_ARG(SUBJECT_NAME));
+    }
 
     if (HAVE_OPT(IDENT))
+    {
         groupname = estrdup(OPT_ARG(IDENT));
+    }
 
     if (HAVE_OPT(LIFETIME))
+    {
         lifetime = OPT_VALUE_LIFETIME;
+    }
 
     if (HAVE_OPT(PVT_CERT))
+    {
         exten = EXT_KEY_PRIVATE;
+    }
 
     if (HAVE_OPT(TRUSTED_CERT))
+    {
         exten = EXT_KEY_TRUST;
+    }
 
     /*
      * Remove the group name from the hostname variable used
      * in host and sign certificate file names.
      */
     if (hostname != hostbuf)
+    {
         ptr = strchr(hostname, '@');
+    }
     else
+    {
         ptr = NULL;
+    }
     if (ptr != NULL)
     {
         *ptr = '\0';
         groupname = estrdup(ptr + 1);
         /* -s @group is equivalent to -i group, host unch. */
         if (ptr == hostname)
+        {
             hostname = hostbuf;
+        }
     }
 
     /*
@@ -551,7 +599,7 @@ int main(
         {
             ptr = strstr(groupbuf, "CN=");
             cnt = X509_get_ext_count(cert);
-            for (i = 0; i < cnt; i++)
+            for (i = 0; i < cnt; ++i)
             {
                 const X509_EXTENSION* ext;
                 const ASN1_OBJECT* obj;
@@ -570,19 +618,27 @@ int main(
                     BIO_free(bp);
                     if (strcmp(pathbuf,
                                "Trust Root") == 0)
+                    {
                         exten = EXT_KEY_TRUST;
+                    }
                     else if (strcmp(pathbuf,
                                     "Private") == 0)
+                    {
                         exten = EXT_KEY_PRIVATE;
+                    }
                     certname = estrdup(ptr + 3);
                 }
             }
         }
     }
     if (scheme == NULL)
+    {
         scheme = "RSA-MD5";
+    }
     if (ciphername == NULL)
+    {
         ciphername = "des-ede3-cbc";
+    }
     cipher = EVP_get_cipherbyname(ciphername);
     if (cipher == NULL)
     {
@@ -599,7 +655,9 @@ int main(
      * no further.
      */
     if (hostkey)
+    {
         pkey_host = genkey("RSA", "host");
+    }
     if (pkey_host == NULL)
     {
         snprintf(filename, sizeof(filename), "ntpkey_host_%s", hostname);
@@ -627,7 +685,9 @@ int main(
      * use the host key instead.
      */
     if (sign != NULL)
+    {
         pkey_sign = genkey(sign, "sign");
+    }
     if (pkey_sign == NULL)
     {
         snprintf(filename, sizeof(filename), "ntpkey_sign_%s",
@@ -652,7 +712,9 @@ int main(
      * public key for the certificate.
      */
     if (gqkey)
+    {
         pkey_gqkey = gen_gqkey("gqkey");
+    }
     if (pkey_gqkey == NULL)
     {
         snprintf(filename, sizeof(filename), "ntpkey_gqkey_%s",
@@ -681,7 +743,7 @@ int main(
      * stream. The parameter file is the server key file with the
      * private key obscured.
      */
-    if (pkey_gqkey != NULL && HAVE_OPT(ID_KEY))
+    if ((pkey_gqkey != NULL) && HAVE_OPT(ID_KEY))
     {
         RSA* rsa;
 
@@ -710,7 +772,7 @@ int main(
     /*
      * Write the encrypted GQ server keys to the stdout stream.
      */
-    if (pkey_gqkey != NULL && passwd2 != NULL)
+    if ((pkey_gqkey != NULL) && (passwd2 != NULL))
     {
         RSA* rsa;
 
@@ -740,7 +802,9 @@ int main(
      * otherwise, look for existing file.
      */
     if (iffkey)
+    {
         pkey_iffkey = gen_iffkey("iffkey");
+    }
     if (pkey_iffkey == NULL)
     {
         snprintf(filename, sizeof(filename), "ntpkey_iffkey_%s",
@@ -759,7 +823,7 @@ int main(
      * stream. The parameter file is the server key file with the
      * private key obscured.
      */
-    if (pkey_iffkey != NULL && HAVE_OPT(ID_KEY))
+    if ((pkey_iffkey != NULL) && HAVE_OPT(ID_KEY))
     {
         DSA* dsa;
 
@@ -788,7 +852,7 @@ int main(
     /*
      * Write the encrypted IFF server keys to the stdout stream.
      */
-    if (pkey_iffkey != NULL && passwd2 != NULL)
+    if ((pkey_iffkey != NULL) && (passwd2 != NULL))
     {
         DSA* dsa;
 
@@ -818,7 +882,9 @@ int main(
      * requested; otherwise, look for existing keys file.
      */
     if (mvkey)
+    {
         pkey_mvkey = gen_mvkey("mv", pkey_mvpar);
+    }
     if (pkey_mvkey == NULL)
     {
         snprintf(filename, sizeof(filename), "ntpkey_mvta_%s",
@@ -838,7 +904,7 @@ int main(
      * stream. For the moment, we always use the client parameters
      * associated with client key 1.
      */
-    if (pkey_mvkey != NULL && HAVE_OPT(ID_KEY))
+    if ((pkey_mvkey != NULL) && HAVE_OPT(ID_KEY))
     {
         snprintf(filename, sizeof(filename),
                  "ntpkey_mvpar_%s.%u", groupname, fstamp);
@@ -859,7 +925,7 @@ int main(
     /*
      * Write the encrypted MV server keys to the stdout stream.
      */
-    if (pkey_mvkey != NULL && passwd2 != NULL)
+    if ((pkey_mvkey != NULL) && (passwd2 != NULL))
     {
         snprintf(filename, sizeof(filename),
                  "ntpkey_mvkey_%s.%u", groupname, fstamp);
@@ -909,14 +975,14 @@ int gen_md5(
     int i, j;
 #ifdef OPENSSL
     u_char keystr[MD5SIZE];
-    u_char hexstr[2 * MD5SIZE + 1];
+    u_char hexstr[2U * MD5SIZE + 1];
     u_char hex[] = "0123456789abcdef";
 #endif /* OPENSSL */
 
     str = fheader("MD5key", id, groupname);
-    for (i = 1; i <= MD5KEYS; i++)
+    for (i = 1; i <= MD5KEYS; ++i)
     {
-        for (j = 0; j < MD5SIZE; j++)
+        for (j = 0; j < MD5SIZE; ++j)
         {
             u_char temp;
 
@@ -932,10 +998,14 @@ int gen_md5(
                     exit(-1);
                 }
                 if (temp == '#')
+                {
                     continue;
+                }
 
-                if (temp > 0x20 && temp < 0x7f)
+                if ((temp > 0x20) && (temp < 0x7f))
+                {
                     break;
+                }
             }
             md5key[j] = temp;
         }
@@ -944,15 +1014,15 @@ int gen_md5(
                 md5key);
     }
 #ifdef OPENSSL
-    for (i = 1; i <= MD5KEYS; i++)
+    for (i = 1; i <= MD5KEYS; ++i)
     {
         RAND_bytes(keystr, 20);
-        for (j = 0; j < MD5SIZE; j++)
+        for (j = 0; j < MD5SIZE; ++j)
         {
-            hexstr[2 * j] = hex[keystr[j] >> 4];
-            hexstr[2 * j + 1] = hex[keystr[j] & 0xf];
+            hexstr[2U * j] = hex[keystr[j] >> 4];
+            hexstr[2U * j + 1] = hex[keystr[j] & 0xf];
         }
-        hexstr[2 * MD5SIZE] = '\0';
+        hexstr[2U * MD5SIZE] = '\0';
         fprintf(str, "%2d SHA1 %s  # SHA1 key\n", i + MD5KEYS,
                 hexstr);
     }
@@ -991,7 +1061,9 @@ readkey(
      */
     str = fopen(cp, "r");
     if (str == NULL)
+    {
         return (NULL);
+    }
 
     /*
      * Read the filestamp, which is contained in the first line.
@@ -1029,18 +1101,26 @@ readkey(
             evpars[i] = NULL;
         }
         if (parkey == NULL)
+        {
             break;
+        }
 
         if (pkey == NULL)
+        {
             pkey = parkey;
+        }
         if (debug)
         {
             if (EVP_PKEY_base_id(parkey) == EVP_PKEY_DSA)
+            {
                 DSA_print_fp(stderr, EVP_PKEY_get0_DSA(parkey),
                              0);
+            }
             else if (EVP_PKEY_base_id(parkey) == EVP_PKEY_RSA)
+            {
                 RSA_print_fp(stderr, EVP_PKEY_get0_RSA(parkey),
                              0);
+            }
         }
     }
     fclose(str);
@@ -1096,16 +1176,22 @@ gen_rsa(
      * encoded in PEM.
      */
     if (strcmp(id, "sign") == 0)
+    {
         str = fheader("RSAsign", id, hostname);
+    }
     else
+    {
         str = fheader("RSAhost", id, hostname);
+    }
     pkey = EVP_PKEY_new();
     EVP_PKEY_assign_RSA(pkey, rsa);
     PEM_write_PKCS8PrivateKey(str, pkey, cipher, NULL, 0, NULL,
                               passwd1);
     fclose(str);
     if (debug)
+    {
         RSA_print_fp(stderr, rsa, 0);
+    }
     return (pkey);
 }
 
@@ -1159,7 +1245,9 @@ gen_dsa(
                               passwd1);
     fclose(str);
     if (debug)
+    {
         DSA_print_fp(stderr, dsa, 0);
+    }
     return (pkey);
 }
 
@@ -1343,7 +1431,9 @@ gen_iffkey(
                               passwd1);
     fclose(str);
     if (debug)
+    {
         DSA_print_fp(stderr, dsa, 0);
+    }
     return (pkey);
 }
 
@@ -1560,7 +1650,9 @@ gen_gqkey(
                               passwd1);
     fclose(str);
     if (debug)
+    {
         RSA_print_fp(stderr, rsa, 0);
+    }
     return (pkey);
 }
 
@@ -1694,20 +1786,24 @@ gen_mvkey(
     priv_key = BN_new();
     pub_key = BN_new();
     temp = 0;
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         s1[j] = BN_new();
         while (1)
         {
             BN_generate_prime_ex(s1[j], modulus2 / n, 0,
                                  NULL, NULL, NULL);
-            for (i = 1; i < j; i++)
+            for (i = 1; i < j; ++i)
             {
                 if (BN_cmp(s1[i], s1[j]) == 0)
+                {
                     break;
+                }
             }
             if (i == j)
+            {
                 break;
+            }
             temp++;
         }
     }
@@ -1729,13 +1825,17 @@ gen_mvkey(
     while (1)
     {
         BN_one(q);
-        for (j = 1; j <= n; j++)
+        for (j = 1; j <= n; ++j)
+        {
             BN_mul(q, q, s1[j], ctx);
+        }
         BN_copy(p, q);
         BN_add(p, p, p);
         BN_add_word(p, 1);
         if (BN_is_prime_ex(p, BN_prime_checks, ctx, NULL))
+        {
             break;
+        }
 
         temp++;
         j = temp % n + 1;
@@ -1743,13 +1843,17 @@ gen_mvkey(
         {
             BN_generate_prime_ex(u, modulus2 / n, 0,
                                  NULL, NULL, NULL);
-            for (i = 1; i <= n; i++)
+            for (i = 1; i <= n; ++i)
             {
                 if (BN_cmp(u, s1[i]) == 0)
+                {
                     break;
+                }
             }
             if (i > n)
+            {
                 break;
+            }
         }
         BN_copy(s1[j], u);
     }
@@ -1768,11 +1872,15 @@ gen_mvkey(
         BN_mod(g, g, p, ctx);
         BN_gcd(u, g, v, ctx);
         if (!BN_is_one(u))
+        {
             continue;
+        }
 
         BN_mod_exp(u, g, q, p, ctx);
         if (BN_is_one(u))
+        {
             break;
+        }
     }
 
     DSA_set0_pqg(dsa, p, q, g);
@@ -1786,7 +1894,7 @@ gen_mvkey(
     fprintf(stderr,
             "Generating polynomial coefficients for %d roots (%d bits)\n",
             n, BN_num_bits(q));
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         x[j] = BN_new();
 
@@ -1796,7 +1904,9 @@ gen_mvkey(
             BN_mod(x[j], x[j], q, ctx);
             BN_gcd(u, x[j], q, ctx);
             if (BN_is_one(u))
+            {
                 break;
+            }
         }
     }
 
@@ -1805,15 +1915,15 @@ gen_mvkey(
      * expansion of root products (x - x[j]) mod q for all j. The
      * method is a present from Charlie Boncelet.
      */
-    for (i = 0; i <= n; i++)
+    for (i = 0; i <= n; ++i)
     {
         a[i] = BN_new();
         BN_one(a[i]);
     }
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         BN_zero(w);
-        for (i = 0; i < j; i++)
+        for (i = 0; i < j; ++i)
         {
             BN_copy(u, q);
             BN_mod_mul(v, a[i], x[j], q, ctx);
@@ -1827,7 +1937,7 @@ gen_mvkey(
     /*
      * Generate gs[i] = g^a[i] mod p for all i and the generator g.
      */
-    for (i = 0; i <= n; i++)
+    for (i = 0; i <= n; ++i)
     {
         gs[i] = BN_new();
         BN_mod_exp(gs[i], g, a[i], p, ctx);
@@ -1840,10 +1950,10 @@ gen_mvkey(
      * is incorrect.
      */
     temp = 1;
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         BN_one(u);
-        for (i = 0; i <= n; i++)
+        for (i = 0; i <= n; ++i)
         {
             BN_set_word(v, i);
             BN_mod_exp(v, x[j], v, q, ctx);
@@ -1852,7 +1962,9 @@ gen_mvkey(
             BN_mod_mul(u, u, v, p, ctx);
         }
         if (!BN_is_one(u))
+        {
             temp = 0;
+        }
     }
     fprintf(stderr,
             "Confirm prod(gs[i]^(x[j]^i)) = 1 for all i, j: %s\n", temp ? "yes" : "no");
@@ -1868,9 +1980,9 @@ gen_mvkey(
     biga = BN_new();
 
     BN_one(biga);
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
-        for (i = 0; i < n; i++)
+        for (i = 0; i < n; ++i)
         {
             BN_set_word(v, i);
             BN_mod_exp(v, x[j], v, q, ctx);
@@ -1890,7 +2002,9 @@ gen_mvkey(
         BN_mod(b, b, q, ctx);
         BN_gcd(u, b, q, ctx);
         if (BN_is_one(u))
+        {
             break;
+        }
     }
     BN_mod_inverse(b1, b, q, ctx);
 
@@ -1903,7 +2017,7 @@ gen_mvkey(
      * easy way to do this is to compute (q + s1[j]) / s1[j].
      * Exercise for the student: prove the remainder is always zero.
      */
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         xbar[j] = BN_new();
         xhat[j] = BN_new();
@@ -1912,10 +2026,12 @@ gen_mvkey(
         BN_div(w, u, w, s1[j], ctx);
         BN_zero(xbar[j]);
         BN_set_word(v, n);
-        for (i = 1; i <= n; i++)
+        for (i = 1; i <= n; ++i)
         {
             if (i == j)
+            {
                 continue;
+            }
 
             BN_mod_exp(u, x[i], v, q, ctx);
             BN_add(xbar[j], xbar[j], u);
@@ -1995,7 +2111,9 @@ gen_mvkey(
                               passwd1);
     evpars[i++] = pkey;
     if (debug)
+    {
         DSA_print_fp(stderr, dsa, 0);
+    }
 
     /*
      * Append the MV server parameters and keys as a DSA key encoded
@@ -2018,7 +2136,9 @@ gen_mvkey(
                               passwd1);
     evpars[i++] = pkey1;
     if (debug)
+    {
         DSA_print_fp(stderr, dsa2, 0);
+    }
 
     /*
      * Append the MV client parameters for each client j as DSA keys
@@ -2030,7 +2150,7 @@ gen_mvkey(
      * (remaining values are not used)
      */
     fprintf(stderr, "Generating %d MV client keys\n", n);
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         sdsa = DSA_new();
         DSA_set0_pqg(sdsa, BN_dup(p), BN_dup(BN_value_one()),
@@ -2042,7 +2162,9 @@ gen_mvkey(
                                   NULL, passwd1);
         evpars[i++] = pkey1;
         if (debug)
+        {
             DSA_print_fp(stderr, sdsa, 0);
+        }
 
         /*
          * The product (gbar^k)^xbar[j] (ghat^k)^xhat[j] and E
@@ -2066,12 +2188,12 @@ gen_mvkey(
     /*
      * Free the countries.
      */
-    for (i = 0; i <= n; i++)
+    for (i = 0; i <= n; ++i)
     {
         BN_free(a[i]);
         BN_free(gs[i]);
     }
-    for (j = 1; j <= n; j++)
+    for (j = 1; j <= n; ++j)
     {
         BN_free(x[j]);
         BN_free(xbar[j]);
@@ -2236,7 +2358,9 @@ int x509(
     PEM_write_X509(str, cert);
     fclose(str);
     if (debug)
+    {
         X509_print_fp(stderr, cert);
+    }
     X509_free(cert);
     return (1);
 }
@@ -2260,12 +2384,16 @@ asn2ntp	(
 	 * for UTC. Also note that years less than 50 map to years
 	 * greater than 100. Dontcha love ASN.1?
 	 */
-	if (asn1time->length > 13)
+	if (asn1time->length > 13U)
+	{
 		return (-1);
+	}
 	v = (char *)asn1time->data;
 	tm.tm_year = (v[0U] - '0') * 10 + v[1U] - '0';
 	if (tm.tm_year < 50)
+	{
 		tm.tm_year += 100;
+	}
 	tm.tm_mon = (v[2U] - '0') * 10 + v[3U] - '0' - 1;
 	tm.tm_mday = (v[4U] - '0') * 10 + v[5U] - '0';
 	tm.tm_hour = (v[6U] - '0') * 10 + v[7U] - '0';
@@ -2323,12 +2451,18 @@ genkey(
 )
 {
     if (type == NULL)
+    {
         return (NULL);
+    }
     if (strcmp(type, "RSA") == 0)
+    {
         return (gen_rsa(id));
+    }
 
     else if (strcmp(type, "DSA") == 0)
+    {
         return (gen_dsa(id));
+    }
 
     fprintf(stderr, "Invalid %s key type %s\n", id, type);
     return (NULL);
@@ -2344,9 +2478,13 @@ genRsaKeyPair(
     BIGNUM* bne = BN_new();
 
     if (gcb)
+    {
         BN_GENCB_set_old(gcb, cb, what);
+    }
     if (bne)
+    {
         BN_set_word(bne, 65537);
+    }
     if (!(rsa && gcb && bne && RSA_generate_key_ex(rsa, bits, bne, gcb)))
     {
         RSA_free(rsa);
@@ -2365,10 +2503,12 @@ genDsaParams(
 
     DSA* dsa = DSA_new();
     BN_GENCB* gcb = BN_GENCB_new();
-    u_char seed[20];
+    u_char seed[20U];
 
     if (gcb)
+    {
         BN_GENCB_set_old(gcb, cb, what);
+    }
     RAND_bytes(seed, sizeof(seed));
     if (!(dsa && gcb && DSA_generate_parameters_ex(dsa, bits, seed, sizeof(seed), NULL, NULL, gcb)))
     {
@@ -2424,7 +2564,9 @@ FILE* fheader(
     (void)remove(linkname); /* The symlink() line below matters */
     temp = symlink(filename, linkname);
     if (temp < 0)
+    {
         perror(file);
+    }
     fprintf(stderr, "Generating new %s file and link\n", ulink);
     fprintf(stderr, "%s->%s\n", linkname, filename);
     fprintf(str, "# %s\n# %s\n", filename, ctime(&epoch));

@@ -32,7 +32,7 @@ int main(
     adjustment.tv_usec = -2000;
     signal(SIGALRM, timeout);
     setitimer(ITIMER_REAL, &value, &oldvalue);
-    for (i = 0; i < 10; i++)
+    for (i = 0; i < 10; ++i)
     {
         pause();
     }
@@ -45,8 +45,10 @@ int timeout(
 {
     signal(SIGALRM, timeout);
     if (adjtime(&adjustment, &result))
+    {
         printf("adjtime call failed\n");
-    if (result.tv_sec != 0 || result.tv_usec != 0)
+    }
+    if ((result.tv_sec != 0) || (result.tv_usec != 0))
     {
         printf("result.u = %d.%06.6d  ", (int)result.tv_sec,
                (int)result.tv_usec);

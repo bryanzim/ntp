@@ -66,7 +66,7 @@ pcf_start(
 {
     struct refclockproc* pp;
     int fd;
-    char device[128];
+    char device[128U];
 
     /*
      * Open device file for reading.
@@ -80,7 +80,9 @@ pcf_start(
     }
 #ifdef DEBUG
     if (debug)
+    {
         printf("starting PCF with device %s\n", device);
+    }
 #endif
     if (fd == -1)
     {
@@ -119,7 +121,9 @@ pcf_shutdown(
 
     pp = peer->procptr;
     if (NULL != pp)
+    {
         close(pp->io.fd);
+    }
 }
 
 
@@ -139,7 +143,7 @@ pcf_poll(
     pp = peer->procptr;
 
     buf[0U] = 0;
-    if (read(pp->io.fd, buf, sizeof(buf)) < (ssize_t)sizeof(buf) || buf[0U] != 9)
+    if (read(pp->io.fd, buf, sizeof(buf)) < (ssize_t)sizeof(buf) || (buf[0U] != 9))
     {
         refclock_report(peer, CEVNT_FAULT);
         return;
@@ -160,7 +164,9 @@ pcf_poll(
      * Y2K convert the 2-digit year
      */
     if (tm.tm_year < 99)
+    {
         tm.tm_year += 100;
+    }
 
     t = mktime(&tm);
     if (t == (time_t)-1)
@@ -170,11 +176,13 @@ pcf_poll(
     }
 
 #if defined(__GLIBC__) && defined(_BSD_SOURCE)
-    if ((tm.tm_isdst > 0 && tm.tm_gmtoff != 7200) || (tm.tm_isdst == 0 && tm.tm_gmtoff != 3600) || tm.tm_isdst < 0)
+    if (((tm.tm_isdst > 0) && (tm.tm_gmtoff != 7200)) || ((tm.tm_isdst == 0) && (tm.tm_gmtoff != 3600)) || (tm.tm_isdst < 0))
     {
 #ifdef DEBUG
         if (debug)
+        {
             printf("local time zone not set to CET/CEST\n");
+        }
 #endif
         refclock_report(peer, CEVNT_BADTIME);
         return;
@@ -203,13 +211,17 @@ pcf_poll(
     pp->second = tp->tm_sec;
     pp->nsec = buf[16U] * 31250000;
     if (buf[17U] & 1)
+    {
         pp->nsec += 500000000;
+    }
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("pcf%d: time is %04d/%02d/%02d %02d:%02d:%02d UTC\n",
                unit, pp->year, tp->tm_mon + 1, tp->tm_mday, pp->hour,
                pp->minute, pp->second);
+    }
 #endif
 
     if (!refclock_process(pp))
@@ -219,9 +231,13 @@ pcf_poll(
     }
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
     if ((buf[1U] & 1) && !(pp->sloppyclockflag & CLK_FLAG2))
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
     pp->lastref = pp->lastrec;
     refclock_receive(peer);
 }

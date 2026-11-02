@@ -68,7 +68,9 @@ lookup_com_handle(
             if (slot->htab[hidx] == h)
             {
                 if (phidx != NULL)
+                {
                     *phidx = hidx;
+                }
                 return slot;
             }
         }
@@ -90,8 +92,12 @@ insert_com_unit(
 
     /* search for matching entry and return if found */
     for (tidx = 0; tidx < num_comh; ++tidx)
+    {
         if (tab_comh[tidx]->unit == unit)
+        {
             return tab_comh[tidx];
+        }
+    }
 
     /* search failed. make sure we can add a new slot */
     if (num_comh >= max_comh)
@@ -141,8 +147,10 @@ serial_devctx(
     HANDLE h)
 {
     comhandles* slot = NULL;
-    if (INVALID_HANDLE_VALUE != h && NULL != h)
+    if ((INVALID_HANDLE_VALUE != h) && (NULL != h))
+    {
         slot = lookup_com_handle(h, NULL);
+    }
     return (NULL != slot) ? slot->devCtx : NULL;
 }
 
@@ -189,7 +197,9 @@ common_serial_open(
     {
         pch = dev + strlen(dev);
         while (isdigit((u_char)pch[-1]))
+        {
             --pch;
+        }
         TRACE(1, ("common_serial_open skipped to ending digits leaving %s\n", pch));
     }
     else if (0 == _strnicmp("COM", dev, 3))
@@ -205,7 +215,7 @@ common_serial_open(
     }
 
     unit = strtoul(pch, (char**)&pch, 10);
-    if (*pch || unit > MAX_SERIAL)
+    if (*pch || (unit > MAX_SERIAL))
     {
         TRACE(1, ("conversion failure: unit=%u at '%s'\n", pch));
         return INVALID_HANDLE_VALUE;
@@ -262,15 +272,21 @@ int closeserial(
 
     h = (HANDLE)_get_osfhandle(fd);
     if (INVALID_HANDLE_VALUE == h)
+    {
         goto onerror;
+    }
 
     slot = lookup_com_handle(h, &hidx);
     if (NULL == slot)
+    {
         goto onerror;
+    }
 
     slot->htab[hidx] = slot->htab[--slot->nhnd];
     if (slot->nhnd == 0)
+    {
         remove_com_slot(slot);
+    }
 
     return close(fd); /* closes system handle, too! */
 
@@ -286,8 +302,10 @@ int /*BOOL*/
 isserialhandle(
     HANDLE h)
 {
-    if (INVALID_HANDLE_VALUE != h && NULL != h)
+    if ((INVALID_HANDLE_VALUE != h) && (NULL != h))
+    {
         return lookup_com_handle(h, NULL) != NULL;
+    }
     return FALSE;
 }
 
@@ -351,7 +369,9 @@ int refclock_open(
     {
         const char* altdev = (*termios_device_lookup_func)(srcadr, 0);
         if (NULL != altdev)
+        {
             dev = altdev;
+        }
     }
     /*
      * open communication port handle
@@ -452,9 +472,13 @@ int refclock_open(
     dcb.ErrorChar = 0;
     dcb.EofChar = 0;
     if (LDISC_RAW & flags)
+    {
         dcb.EvtChar = 0;
+    }
     else
+    {
         dcb.EvtChar = '\r';
+    }
 
     if (!SetCommState(h, &dcb))
     {
@@ -467,9 +491,13 @@ int refclock_open(
     /* watch out for CR (dcb.EvtChar) as well as the CD line */
     dwEvtMask = EV_RLSD;
     if (LDISC_RAW & flags)
+    {
         dwEvtMask |= EV_RXCHAR;
+    }
     else
+    {
         dwEvtMask |= EV_RXFLAG;
+    }
     if (!SetCommMask(h, dwEvtMask))
     {
         SAVE_ERRNO(
@@ -541,11 +569,13 @@ int ioctl_tiocmset(
             : CLRRTS);
 
     if (!failed)
+    {
         failed = !EscapeCommFunction(
             h,
             (*pi & TIOCM_DTR)
                 ? SETDTR
                 : CLRDTR);
+    }
 
     if (failed)
     {
@@ -553,7 +583,9 @@ int ioctl_tiocmset(
         result = -1;
     }
     else
+    {
         result = 0;
+    }
 
     return result;
 }
@@ -591,7 +623,9 @@ int ioctl(
     case TIOCMBIC:
         result = ioctl_tiocmget(h, &modctl);
         if (result < 0)
+        {
             return result;
+        }
         modctl &= ~(*pi);
         result = ioctl_tiocmset(h, &modctl);
         break;
@@ -599,7 +633,9 @@ int ioctl(
     case TIOCMBIS:
         result = ioctl_tiocmget(h, &modctl);
         if (result < 0)
+        {
             return result;
+        }
         modctl |= *pi;
         result = ioctl_tiocmset(h, &modctl);
         break;
@@ -828,11 +864,15 @@ int tcgetattr(
         tios->c_cflag |= PARENB;
 
         if (ODDPARITY == dcb.Parity)
+        {
             tios->c_cflag |= PARODD;
+        }
     }
 
     if (TWOSTOPBITS == dcb.StopBits)
+    {
         tios->c_cflag |= CSTOPB;
+    }
 
     tios->c_iflag = 0;
     tios->c_lflag = 0;
@@ -883,7 +923,9 @@ int tcflush(
     success = PurgeComm(h, flags);
 
     if (success)
+    {
         result = 0;
+    }
     else
     {
         errno = ENOTTY;

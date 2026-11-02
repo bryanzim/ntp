@@ -72,7 +72,9 @@ getClockIdent(
      * Check for valid address and running peer
      */
     if (!ISREFCLOCKADR(srcadr))
+    {
         return -1;
+    }
 
     clkType = REFCLOCKTYPE(srcadr);
     clkUnit = REFCLOCKUNIT(srcadr);
@@ -101,7 +103,9 @@ int clockdev_remove(
     const int ident = getClockIdent(addr_sock);
 
     if (ident < 0)
+    {
         return -1;
+    }
 
     ppl = &InfoList;
     while (NULL != (item = *ppl))
@@ -130,7 +134,9 @@ clockdev_update(
     DeviceInfoT* item;
     const int ident = getClockIdent(addr_sock);
     if (ident < 0)
+    {
         return EINVAL;
+    }
 
     /* make sure Windows can use device redirections, too: */
 #ifdef SYS_WINNT
@@ -179,11 +185,17 @@ clockdev_lookup(
     const int ident = getClockIdent(addr_sock);
 
     if (ident < 0)
+    {
         return NULL;
+    }
 
     for (item = InfoList; NULL != item; item = item->next)
+    {
         if (ident == item->ident)
+        {
             return getPPS ? item->ppsName : item->ttyName;
+        }
+    }
 
     return NULL;
 }

@@ -23,7 +23,9 @@ humanlogtime(void)
     cursec = time(NULL);
     tm = localtime(&cursec);
     if (!tm)
+    {
         return "-- --- --:--:--";
+    }
 
     LIB_GETBUF(bp);
 
@@ -48,7 +50,9 @@ humantime(
 
     tm = localtime(&cursec);
     if (!tm)
+    {
         return "--:--:--";
+    }
 
     LIB_GETBUF(bp);
 

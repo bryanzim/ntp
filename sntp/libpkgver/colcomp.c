@@ -50,17 +50,25 @@ register char* s2;
             while (MyIsDigit(*s1) && MyIsDigit(*s2))
             {
                 if (!hilo)
+                {
                     hilo = (*s1 < *s2) ? -1 : (*s1 > *s2) ? 1
                                                           : 0;
+                }
                 ++s1;
                 ++s2;
             }
             if (MyIsDigit(*s1))
-                hilo = 1; /* s2 is first */
+            {
+                hilo = 1;
+            } /* s2 is first */
             if (MyIsDigit(*s2))
-                hilo = -1; /* s1 is first */
+            {
+                hilo = -1;
+            } /* s1 is first */
             if (hilo)
+            {
                 break;
+            }
             continue;
         }
         if (MyIsDigit(*s1))
@@ -76,14 +84,20 @@ register char* s2;
         hilo = (*s1 < *s2) ? -1 : (*s1 > *s2) ? 1
                                               : 0;
         if (hilo)
+        {
             break;
+        }
         ++s1;
         ++s2;
     }
     if (*s1 && *s2)
+    {
         return (hilo);
+    }
     if (hilo)
+    {
         return (hilo);
+    }
     return ((*s1 < *s2) ? -1 : (*s1 > *s2) ? 1
                                            : 0);
 }
@@ -101,7 +115,7 @@ static int qcmp(const void* fi1,
 int main(int argc, char* argv[], char* environ[])
 {
     void* base;
-    size_t nmemb = 0;
+    size_t nmemb = 0U;
     size_t size = sizeof(char*);
     char* ca[] = {
         "999", "0", "10", "1", "01", "100", "010", "99", "00", "001", "099", "9"

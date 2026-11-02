@@ -138,7 +138,7 @@ create_buffers(
         return;
     }
 
-    if (abuf < nbufs || abuf > RECV_BATCH)
+    if ((abuf < nbufs) || (abuf > RECV_BATCH))
     {
         abuf = RECV_BATCH; /* clamp on overflow */
     }
@@ -209,7 +209,9 @@ uninit_recvbuff(void)
     {
         UNLINK_FIFO(rbunlinked, full_recv_fifo, link);
         if (rbunlinked == NULL)
+        {
             break;
+        }
         free(rbunlinked);
     }
 
@@ -217,7 +219,9 @@ uninit_recvbuff(void)
     {
         UNLINK_HEAD_SLIST(rbunlinked, free_recv_list, link);
         if (rbunlinked == NULL)
+        {
             break;
+        }
         free(rbunlinked);
     }
 #if defined(SYS_WINNT)
@@ -277,7 +281,9 @@ get_free_recv_buffer(
     if (buffer != NULL)
     {
         if (free_recvbufs)
+        {
             --free_recvbufs;
+        }
         initialise_buffer(buffer);
         ++buffer->used;
     }
@@ -297,8 +303,10 @@ get_free_recv_buffer_alloc(
     int /*BOOL*/ urgent)
 {
     LOCK_F();
-    if (free_recvbufs <= emerg_recvbufs || buffer_shortfall > 0)
+    if ((free_recvbufs <= emerg_recvbufs) || (buffer_shortfall > 0))
+    {
         create_buffers(RECV_INC);
+    }
     UNLOCK_F();
     return get_free_recv_buffer(urgent);
 }
@@ -318,8 +326,10 @@ get_full_recv_buffer(void)
      * fixes malloc() interrupted by SIGIO risk (Bug 889)
      */
     LOCK_F();
-    if (free_recvbufs <= emerg_recvbufs || buffer_shortfall > 0)
+    if ((free_recvbufs <= emerg_recvbufs) || (buffer_shortfall > 0))
+    {
         create_buffers(RECV_INC);
+    }
     UNLOCK_F();
 
     /*
@@ -327,8 +337,10 @@ get_full_recv_buffer(void)
      */
     LOCK_R();
     UNLINK_FIFO(rbuf, full_recv_fifo, link);
-    if (rbuf != NULL && full_recvbufs)
+    if ((rbuf != NULL) && full_recvbufs)
+    {
         --full_recvbufs;
+    }
     UNLOCK_R();
 
     return rbuf;
@@ -359,7 +371,7 @@ void purge_recv_buffers_for_fd(
     {
         next = rbufp->link;
 #ifdef HAVE_IO_COMPLETION_PORT
-        if (rbufp->dstadr == NULL && rbufp->fd == fd)
+        if ((rbufp->dstadr == NULL) && (rbufp->fd == fd))
 #else
         if (rbufp->fd == fd)
 #endif
@@ -368,7 +380,9 @@ void purge_recv_buffers_for_fd(
                             rbufp, link, recvbuf_t);
             INSIST(punlinked == rbufp);
             if (full_recvbufs)
+            {
                 --full_recvbufs;
+            }
             rbufp->link = freelist;
             freelist = rbufp;
         }
@@ -391,9 +405,13 @@ void purge_recv_buffers_for_fd(
 isc_boolean_t has_full_recv_buffer(void)
 {
     if (HEAD_FIFO(full_recv_fifo) != NULL)
+    {
         return (ISC_TRUE);
+    }
     else
+    {
         return (ISC_FALSE);
+    }
 }
 
 
@@ -405,16 +423,20 @@ void check_gen_fifo_consistency(void* fifo)
     gen_node** pptail;
 
     pf = fifo;
-    REQUIRE((NULL == pf->phead && NULL == pf->pptail) ||
-            (NULL != pf->phead && NULL != pf->pptail));
+    REQUIRE(((NULL == pf->phead) && (NULL == pf->pptail)) ||
+            ((NULL != pf->phead) && (NULL != pf->pptail)));
 
     pptail = &pf->phead;
     for (pthis = pf->phead;
          pthis != NULL;
          pthis = pthis->link)
+    {
         if (NULL != pthis->link)
+        {
             pptail = &pthis->link;
+        }
+    }
 
-    REQUIRE(NULL == pf->pptail || pptail == pf->pptail);
+    REQUIRE((NULL == pf->pptail) || (pptail == pf->pptail));
 }
 #endif /* NTP_DEBUG_LISTS_H */

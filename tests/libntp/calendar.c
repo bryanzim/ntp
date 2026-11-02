@@ -9,7 +9,7 @@
 
 #include <string.h>
 
-static char mbuf[128];
+static char mbuf[128U];
 
 static int leapdays(int year);
 
@@ -87,11 +87,17 @@ int isGT(int first, int second)
 int leapdays(int year)
 {
     if (year % 400 == 0)
+    {
         return 1;
+    }
     if (year % 100 == 0)
+    {
         return 0;
+    }
     if (year % 4 == 0)
+    {
         return 1;
+    }
     return 0;
 }
 
@@ -122,13 +128,13 @@ int IsEqualCal(
     const struct calendar* expected,
     const struct calendar* actual)
 {
-    if (expected->year == actual->year &&
-        (!expected->yearday || expected->yearday == actual->yearday) &&
-        expected->month == actual->month &&
-        expected->monthday == actual->monthday &&
-        expected->hour == actual->hour &&
-        expected->minute == actual->minute &&
-        expected->second == actual->second)
+    if ((expected->year == actual->year) &&
+        (!expected->yearday || (expected->yearday == actual->yearday)) &&
+        (expected->month == actual->month) &&
+        (expected->monthday == actual->monthday) &&
+        (expected->hour == actual->hour) &&
+        (expected->minute == actual->minute) &&
+        (expected->second == actual->second))
     {
         return TRUE;
     }
@@ -150,12 +156,12 @@ int IsEqualIso(
     const struct isodate* expected,
     const struct isodate* actual)
 {
-    if (expected->year == actual->year &&
-        expected->week == actual->week &&
-        expected->weekday == actual->weekday &&
-        expected->hour == actual->hour &&
-        expected->minute == actual->minute &&
-        expected->second == actual->second)
+    if ((expected->year == actual->year) &&
+        (expected->week == actual->week) &&
+        (expected->weekday == actual->weekday) &&
+        (expected->hour == actual->hour) &&
+        (expected->minute == actual->minute) &&
+        (expected->second == actual->second))
     {
         return TRUE;
     }
@@ -196,10 +202,10 @@ IsEqualDateCal(
     const struct calendar* expected,
     const struct calendar* actual)
 {
-    if (expected->year == actual->year &&
-        (!expected->yearday || expected->yearday == actual->yearday) &&
-        expected->month == actual->month &&
-        expected->monthday == actual->monthday)
+    if ((expected->year == actual->year) &&
+        (!expected->yearday || (expected->yearday == actual->yearday)) &&
+        (expected->month == actual->month) &&
+        (expected->monthday == actual->monthday))
     {
         return TRUE;
     }
@@ -217,9 +223,9 @@ IsEqualDateIso(
     const struct isodate* expected,
     const struct isodate* actual)
 {
-    if (expected->year == actual->year &&
-        expected->week == actual->week &&
-        expected->weekday == actual->weekday)
+    if ((expected->year == actual->year) &&
+        (expected->week == actual->week) &&
+        (expected->weekday == actual->weekday))
     {
         return TRUE;
     }
@@ -262,7 +268,7 @@ strToCal(
  */
 
 /* days before month, with a full-year pad at the upper end */
-static const u_short real_month_table[2][13] = {
+static const u_short real_month_table[2U][13U] = {
     /* -*- table for regular years -*- */
     { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 },
     /* -*- table for leap years -*- */
@@ -270,7 +276,7 @@ static const u_short real_month_table[2][13] = {
 };
 
 /* days in month, with one month wrap-around at both ends */
-static const u_short real_month_days[2][14] = {
+static const u_short real_month_days[2U][14U] = {
     /* -*- table for regular years -*- */
     { 31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31, 31 },
     /* -*- table for leap years -*- */
@@ -377,10 +383,10 @@ void test_SplitYearDays1(void)
 {
     int32 eyd;
 
-    for (eyd = -1; eyd <= 365; eyd++)
+    for (eyd = -1; eyd <= 365; ++eyd)
     {
         ntpcal_split split = ntpcal_split_yeardays(eyd, 0);
-        if (split.lo >= 0 && split.hi >= 0)
+        if ((split.lo >= 0) && (split.hi >= 0))
         {
             TEST_ASSERT_TRUE(isGT(12, split.hi));
             TEST_ASSERT_TRUE(isGT(real_month_days[0U][split.hi + 1], split.lo));
@@ -388,7 +394,9 @@ void test_SplitYearDays1(void)
             TEST_ASSERT_EQUAL(eyd, tyd);
         }
         else
-            TEST_ASSERT_TRUE(eyd < 0 || eyd > 364);
+        {
+            TEST_ASSERT_TRUE((eyd < 0) || (eyd > 364));
+        }
     }
 
     return;
@@ -398,10 +406,10 @@ void test_SplitYearDays2(void)
 {
     int32 eyd;
 
-    for (eyd = -1; eyd <= 366; eyd++)
+    for (eyd = -1; eyd <= 366; ++eyd)
     {
         ntpcal_split split = ntpcal_split_yeardays(eyd, 1);
-        if (split.lo >= 0 && split.hi >= 0)
+        if ((split.lo >= 0) && (split.hi >= 0))
         {
             /* basic checks do not work on compunds :( */
             /* would like: TEST_ASSERT_TRUE(12 > split.hi); */
@@ -411,7 +419,9 @@ void test_SplitYearDays2(void)
             TEST_ASSERT_EQUAL(eyd, tyd);
         }
         else
-            TEST_ASSERT_TRUE(eyd < 0 || eyd > 365);
+        {
+            TEST_ASSERT_TRUE((eyd < 0) || (eyd > 365));
+        }
     }
 
     return;
@@ -426,7 +436,7 @@ void test_SplitEraDays(void)
         sd = ntpcal_split_eradays(ed, NULL);
         rd = ntpcal_days_in_years(sd.hi) + sd.lo;
         TEST_ASSERT_EQUAL(ed, rd);
-        TEST_ASSERT_TRUE(0 <= sd.lo && sd.lo <= 365);
+        TEST_ASSERT_TRUE((0 <= sd.lo) && (sd.lo <= 365));
     }
 }
 
@@ -439,7 +449,7 @@ void test_SplitEraWeeks(void)
         sw = isocal_split_eraweeks(ew);
         rw = isocal_weeks_in_years(sw.hi) + sw.lo;
         TEST_ASSERT_EQUAL(ew, rw);
-        TEST_ASSERT_TRUE(0 <= sw.lo && sw.lo <= 52);
+        TEST_ASSERT_TRUE((0 <= sw.lo) && (sw.lo <= 52));
     }
 }
 
@@ -723,7 +733,7 @@ void test_IsoCalWeeksToYearEnd(void)
         ysplit = isocal_split_eraweeks(wref);
         /* check invariants: previous year, week 51 or 52 */
         TEST_ASSERT_EQUAL(years - 1, ysplit.hi);
-        TEST_ASSERT(ysplit.lo == 51 || ysplit.lo == 52);
+        TEST_ASSERT((ysplit.lo == 51) || (ysplit.lo == 52));
     }
 
     return;
@@ -735,31 +745,31 @@ void test_DaySecToDate(void)
     int32_t days;
 
     days = ntpcal_daysec_to_date(&cal, -86400);
-    TEST_ASSERT_MESSAGE((days == -1 && cal.hour == 0 && cal.minute == 0 && cal.second == 0),
+    TEST_ASSERT_MESSAGE(((days == -1) && (cal.hour == 0) && (cal.minute == 0) && (cal.second == 0)),
                         "failed for -86400");
 
     days = ntpcal_daysec_to_date(&cal, -86399);
-    TEST_ASSERT_MESSAGE((days == -1 && cal.hour == 0 && cal.minute == 0 && cal.second == 1),
+    TEST_ASSERT_MESSAGE(((days == -1) && (cal.hour == 0) && (cal.minute == 0) && (cal.second == 1)),
                         "failed for -86399");
 
     days = ntpcal_daysec_to_date(&cal, -1);
-    TEST_ASSERT_MESSAGE((days == -1 && cal.hour == 23 && cal.minute == 59 && cal.second == 59),
+    TEST_ASSERT_MESSAGE(((days == -1) && (cal.hour == 23) && (cal.minute == 59) && (cal.second == 59)),
                         "failed for -1");
 
     days = ntpcal_daysec_to_date(&cal, 0);
-    TEST_ASSERT_MESSAGE((days == 0 && cal.hour == 0 && cal.minute == 0 && cal.second == 0),
+    TEST_ASSERT_MESSAGE(((days == 0) && (cal.hour == 0) && (cal.minute == 0) && (cal.second == 0)),
                         "failed for 0");
 
     days = ntpcal_daysec_to_date(&cal, 1);
-    TEST_ASSERT_MESSAGE((days == 0 && cal.hour == 0 && cal.minute == 0 && cal.second == 1),
+    TEST_ASSERT_MESSAGE(((days == 0) && (cal.hour == 0) && (cal.minute == 0) && (cal.second == 1)),
                         "failed for 1");
 
     days = ntpcal_daysec_to_date(&cal, 86399);
-    TEST_ASSERT_MESSAGE((days == 0 && cal.hour == 23 && cal.minute == 59 && cal.second == 59),
+    TEST_ASSERT_MESSAGE(((days == 0) && (cal.hour == 23) && (cal.minute == 59) && (cal.second == 59)),
                         "failed for 86399");
 
     days = ntpcal_daysec_to_date(&cal, 86400);
-    TEST_ASSERT_MESSAGE((days == 1 && cal.hour == 0 && cal.minute == 0 && cal.second == 0),
+    TEST_ASSERT_MESSAGE(((days == 1) && (cal.hour == 0) && (cal.minute == 0) && (cal.second == 0)),
                         "failed for 86400");
 
     return;
@@ -779,7 +789,7 @@ void test_NtpToNtp(void)
 
 #else
 
-    static const uint32_t ntp_vals[6] = {
+    static const uint32_t ntp_vals[6U] = {
         UINT32_C(0x00000000),
         UINT32_C(0x00000001),
         UINT32_C(0x7FFFFFFF),
@@ -788,7 +798,7 @@ void test_NtpToNtp(void)
         UINT32_C(0xFFFFFFFF)
     };
 
-    static char lbuf[128];
+    static char lbuf[128U];
     vint64 hold;
     time_t pivot, texp, diff;
     int loops, iloop;
@@ -838,7 +848,7 @@ void test_NtpToTime(void)
 
 #else
 
-    static const uint32_t ntp_vals[6] = {
+    static const uint32_t ntp_vals[6U] = {
         UINT32_C(0x00000000),
         UINT32_C(0x00000001),
         UINT32_C(0x7FFFFFFF),
@@ -847,7 +857,7 @@ void test_NtpToTime(void)
         UINT32_C(0xFFFFFFFF)
     };
 
-    static char lbuf[128];
+    static char lbuf[128U];
     vint64 hold;
     time_t pivot, texp, diff;
     uint32_t back;
@@ -1070,7 +1080,7 @@ void test_RellezYearZero(void)
 void test_RellezEra(void);
 void test_RellezEra(void)
 {
-    static const unsigned int mt[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    static const unsigned int mt[13U] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     unsigned int yi, yo, m, d, wd;
 
     /* last day before our era -- fold forward */
@@ -1107,7 +1117,7 @@ void test_RellezEra(void)
             TEST_ASSERT_EQUAL_MESSAGE(yi, yo, mbuf);
 
             /* test last day of month */
-            d = mt[m] + (m == 2 && is_leapyear(yi));
+            d = mt[m] + ((m == 2) && is_leapyear(yi));
             wd = ntpcal_edate_to_eradays(yi - 1, m - 1, d - 1) % 7 + 1;
             yo = ntpcal_expand_century((yi % 100), m, d, wd);
             snprintf(mbuf, sizeof(mbuf), "failed, di=%04u-%02u-%02u, wd=%u",
@@ -1131,18 +1141,26 @@ zeller_expand(
     unsigned int c;
 
     if ((y >= 100u) || (--m >= 12u) || (--d >= 31u) || (--wd >= 7u))
+    {
         return 0;
+    }
 
     if ((m += 10u) >= 12u)
+    {
         m -= 12u;
+    }
     else if (--y >= 100u)
+    {
         y += 100u;
+    }
     d += y + (y >> 2) + 2u;
     d += (m * 83u + 16u) >> 5;
 
     c = (((252u + wd - d) * 0x6db6db6eU) >> 29) & 7u;
     if (c > 3u)
+    {
         return 0;
+    }
 
     if ((m > 9u) && (++y >= 100u))
     {
@@ -1157,7 +1175,7 @@ zeller_expand(
 void test_zellerDirect(void);
 void test_zellerDirect(void)
 {
-    static const unsigned int mt[13] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    static const unsigned int mt[13U] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
     unsigned int yi, yo, m, d, wd;
 
     /* last day before our era -- fold forward */
@@ -1194,7 +1212,7 @@ void test_zellerDirect(void)
             TEST_ASSERT_EQUAL_MESSAGE(yi, yo, mbuf);
 
             /* test last day of month */
-            d = mt[m] + (m == 2 && is_leapyear(yi));
+            d = mt[m] + ((m == 2) && is_leapyear(yi));
             wd = ntpcal_edate_to_eradays(yi - 1, m - 1, d - 1) % 7 + 1;
             yo = zeller_expand((yi % 100), m, d, wd);
             snprintf(mbuf, sizeof(mbuf), "failed, di=%04u-%02u-%02u, wd=%u",

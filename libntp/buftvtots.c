@@ -27,7 +27,9 @@ int buftvtots(
      * and use it
      */
     if (tv.tv_usec > MICROSECONDS - 1)
+    {
         return FALSE;
+    }
 
     *ts = tval_stamp_to_lfp(tv);
 

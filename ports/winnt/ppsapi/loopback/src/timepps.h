@@ -165,7 +165,7 @@ typedef union pps_timeu
 { /* timestamp format */
     struct timespec tspec;
     ntp_fp_t ntpfp;
-    unsigned long longpad[3];
+    unsigned long longpad[3U];
 } pps_timeu_t; /* generic data type to represent time stamps */
 
 /* addition of NTP fixed-point format */
@@ -341,7 +341,9 @@ internal_create_pps_handle(
         punit = NULL;
     }
     else
+    {
         punit = malloc(sizeof(*punit));
+    }
     if (punit != NULL)
     {
         punit->provider = g_curr_provider;
@@ -360,7 +362,9 @@ unit_from_ppsapi_handle(
 
     punit = (pps_unit_t*)handle;
     if (PPSAPI_MAGIC_UNIT != punit->magic)
+    {
         punit = NULL;
+    }
     return punit;
 }
 
@@ -431,15 +435,17 @@ static inline int
 load_pps_provider(
     char* dllpath)
 {
-    char short_name[16];
-    char full_name[64];
+    char short_name[16U];
+    char full_name[64U];
     ppsapi_provider* prov;
     HMODULE hmod;
     pppsapi_prov_init pprov_init;
 
     prov = malloc(sizeof(*prov));
     if (NULL == prov)
+    {
         return ENOMEM;
+    }
 
     hmod = LoadLibrary(dllpath);
     if (NULL == hmod)
@@ -474,13 +480,17 @@ load_pps_provider(
     prov->short_name = _strdup(short_name);
     prov->full_name = _strdup(full_name);
 
-    if (NULL == prov->short_name || !prov->short_name[0U] || NULL == prov->full_name || !prov->full_name[0U])
+    if ((NULL == prov->short_name) || !prov->short_name[0U] || (NULL == prov->full_name) || !prov->full_name[0U])
     {
 
         if (prov->short_name)
+        {
             free(prov->short_name);
+        }
         if (prov->full_name)
+        {
             free(prov->full_name);
+        }
         free(prov);
         FreeLibrary(hmod);
         return EINVAL;
@@ -497,7 +507,7 @@ load_pps_provider(
     prov->ptime_pps_kcbind = (provtime_pps_kcbind)
         GetProcAddress(hmod, "prov_time_pps_kcbind");
 
-    if (NULL == prov->ptime_pps_create || NULL == prov->ptime_pps_destroy || NULL == prov->ptime_pps_setparams || NULL == prov->ptime_pps_fetch || NULL == prov->ptime_pps_kcbind)
+    if ((NULL == prov->ptime_pps_create) || (NULL == prov->ptime_pps_destroy) || (NULL == prov->ptime_pps_setparams) || (NULL == prov->ptime_pps_fetch) || (NULL == prov->ptime_pps_kcbind))
     {
 
         fprintf(stderr, "PPSAPI provider %s missing entrypoint\n",
@@ -543,12 +553,16 @@ time_pps_create(
     int err;
 
     if (NULL == phandle)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     winhandle = (HANDLE)_get_osfhandle(filedes);
     fprintf(stderr, "time_pps_create(%d) got winhandle %p\n", filedes, winhandle);
     if (INVALID_HANDLE_VALUE == winhandle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     /*
      * For initial testing the list of PPSAPI backend
@@ -561,19 +575,23 @@ time_pps_create(
      * ntp.conf directive or command-line switch.
      */
     dlls = getenv("PPSAPI_DLLS");
-    if (dlls != NULL && NULL == g_provider_list)
+    if ((dlls != NULL) && (NULL == g_provider_list))
     {
         dlls = dll = _strdup(dlls);
         fprintf(stderr, "getenv(PPSAPI_DLLS) gives %s\n", dlls);
     }
     else
+    {
         dlls = dll = NULL;
+    }
 
-    while (dll != NULL && dll[0U])
+    while ((dll != NULL) && dll[0U])
     {
         pch = strchr(dll, ';');
         if (pch != NULL)
+        {
             *pch = 0;
+        }
         err = load_pps_provider(dll);
         if (err)
         {
@@ -586,7 +604,9 @@ time_pps_create(
     }
 
     if (NULL != dlls)
+    {
         free(dlls);
+    }
     dlls = dll = NULL;
 
     /*
@@ -626,21 +646,29 @@ time_pps_destroy(
     int err;
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     punit = unit_from_ppsapi_handle(handle);
 
     if (NULL == punit)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     err = (*punit->provider->ptime_pps_destroy)(punit, punit->context);
 
     free(punit);
 
     if (err)
+    {
         RETURN_PPS_ERRNO(err);
+    }
     else
+    {
         return 0;
+    }
 }
 
 /*
@@ -659,22 +687,32 @@ time_pps_setparams(
      * Check for valid arguments and set parameters.
      */
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     punit = unit_from_ppsapi_handle(handle);
 
     if (NULL == punit)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (NULL == params)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     err = (*punit->provider->ptime_pps_setparams)(punit, punit->context, params);
 
     if (err)
+    {
         RETURN_PPS_ERRNO(err);
+    }
     else
+    {
         return 0;
+    }
 }
 
 /*
@@ -692,15 +730,21 @@ time_pps_getparams(
      * Check for valid arguments and get parameters.
      */
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     punit = unit_from_ppsapi_handle(handle);
 
     if (NULL == punit)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (NULL == params_buf)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     *params_buf = punit->params;
     return 0;
@@ -721,15 +765,21 @@ time_pps_getcap(
      * Check for valid arguments and get capabilities.
      */
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     punit = unit_from_ppsapi_handle(handle);
 
     if (NULL == punit)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (NULL == pmode)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     *pmode = punit->provider->caps;
     return 0;
@@ -753,15 +803,21 @@ time_pps_fetch(
      * Check for valid arguments and fetch timestamps
      */
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     if (NULL == pinfo)
+    {
         RETURN_PPS_ERRNO(EFAULT);
+    }
 
     punit = unit_from_ppsapi_handle(handle);
 
     if (NULL == punit)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     err = (*punit->provider->ptime_pps_fetch)(punit,
                                               punit->context,
@@ -770,9 +826,13 @@ time_pps_fetch(
                                               ptimeout);
 
     if (err)
+    {
         RETURN_PPS_ERRNO(err);
+    }
     else
+    {
         return 0;
+    }
 }
 
 /*
@@ -791,12 +851,16 @@ time_pps_kcbind(
     int err;
 
     if (!handle)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     punit = unit_from_ppsapi_handle(handle);
 
     if (NULL == punit)
+    {
         RETURN_PPS_ERRNO(EBADF);
+    }
 
     err = (*punit->provider->ptime_pps_kcbind)(
         punit,
@@ -806,9 +870,13 @@ time_pps_kcbind(
         tsformat);
 
     if (err)
+    {
         RETURN_PPS_ERRNO(err);
+    }
     else
+    {
         return 0;
+    }
 }
 
 

@@ -174,8 +174,8 @@ int main(
             errflg++;
             break;
         }
-    if (errflg || (!(Cflag || Wflag || Gflag) && ntp_optind + 4 != argc) ||
-        ((Cflag || Wflag || Gflag) && ntp_optind + 2 != argc))
+    if (errflg || (!(Cflag || Wflag || Gflag) && (ntp_optind + 4 != argc)) ||
+        ((Cflag || Wflag || Gflag) && (ntp_optind + 2 != argc)))
     {
         (void)fprintf(stderr,
                       "usage: %s [-d] [-h height] lat1 long1 lat2 long2\n",
@@ -321,7 +321,7 @@ latlong(
     double arg;
     double divby;
     int isneg;
-    char buf[32];
+    char buf[32U];
     char* colon;
 
     if (islat)
@@ -329,28 +329,42 @@ latlong(
         /*
          * Must be north or south
          */
-        if (*str == 'N' || *str == 'n')
+        if ((*str == 'N') || (*str == 'n'))
+        {
             isneg = 0;
-        else if (*str == 'S' || *str == 's')
+        }
+        else if ((*str == 'S') || (*str == 's'))
+        {
             isneg = 1;
+        }
         else
+        {
             isneg = -1;
+        }
     }
     else
     {
         /*
          * East is positive, west is negative
          */
-        if (*str == 'E' || *str == 'e')
+        if ((*str == 'E') || (*str == 'e'))
+        {
             isneg = 0;
-        else if (*str == 'W' || *str == 'w')
+        }
+        else if ((*str == 'W') || (*str == 'w'))
+        {
             isneg = 1;
+        }
         else
+        {
             isneg = -1;
+        }
     }
 
     if (isneg >= 0)
+    {
         str++;
+    }
 
     colon = strchr(str, ':');
     if (colon != NULL)
@@ -361,7 +375,9 @@ latlong(
         cp = str;
         bp = buf;
         while (cp < colon)
+        {
             *bp++ = *cp++;
+        }
         *bp = '\0';
         cp++;
         arg = atof(buf);
@@ -371,14 +387,18 @@ latlong(
         {
             bp = buf;
             while (cp < colon)
+            {
                 *bp++ = *cp++;
+            }
             *bp = '\0';
             cp++;
             arg += atof(buf) / divby;
             divby = 3600.0;
         }
         if (*cp != '\0')
+        {
             arg += atof(cp) / divby;
+        }
     }
     else
     {
@@ -386,10 +406,14 @@ latlong(
     }
 
     if (isneg == 1)
+    {
         arg = -arg;
+    }
 
     if (debug > 2)
+    {
         (void)printf("latitude/longitude %s = %g\n", str, arg);
+    }
 
     return arg;
 }
@@ -413,9 +437,11 @@ greatcircle(
     dg = EARTHRADIUS * acos(
                            (cos(l1r) * cos(l2r) * cos((long2 - long1) * RADPERDEG)) + (sin(l1r) * sin(l2r)));
     if (debug >= 2)
+    {
         printf(
             "greatcircle lat1 %g long1 %g lat2 %g long2 %g dist %g\n",
             lat1, long1, lat2, long2, dg);
+    }
     return dg;
 }
 
@@ -436,8 +462,10 @@ waveangle(
     theta = dg / (EARTHRADIUS * (double)(2 * n));
     delta = atan((h / (EARTHRADIUS * sin(theta))) + tan(theta / 2)) - theta;
     if (debug >= 2)
+    {
         printf("waveangle dist %g height %g hops %d angle %g\n",
                dg, h, n, delta / RADPERDEG);
+    }
     return delta;
 }
 
@@ -459,8 +487,10 @@ propdelay(
     phi = (PI / 2.0) - atan((h / (EARTHRADIUS * sin(theta))) + tan(theta / 2));
     td = dg / (LIGHTSPEED * sin(phi));
     if (debug >= 2)
+    {
         printf("propdelay dist %g height %g hops %d time %g\n",
                dg, h, n, td);
+    }
     return td;
 }
 
@@ -483,18 +513,24 @@ finddelay(
 
     dg = greatcircle(lat1, long1, lat2, long2);
     if (debug)
+    {
         printf("great circle distance %g km %g miles\n", dg, dg / MILE);
+    }
 
     n = 1;
     while ((delta = waveangle(dg, h, n)) < 0.0)
     {
         if (debug)
+        {
             printf("tried %d hop%s, no good\n", n, n > 1 ? "s" : "");
+        }
         n++;
     }
     if (debug)
+    {
         printf("%d hop%s okay, wave angle is %g\n", n, n > 1 ? "s" : "",
                delta / RADPERDEG);
+    }
 
     *delay = propdelay(dg, h, n);
     return n;
@@ -556,10 +592,14 @@ satpropdelay(
     k1 = EARTHRADIUS * sin(theta);
     k2 = SATHEIGHT - (EARTHRADIUS * cos(theta));
     if (debug >= 2)
+    {
         printf("Theta %g k1 %g k2 %g\n", theta, k1, k2);
+    }
     dist = sqrt(k1 * k1 + k2 * k2);
     td = dist / LIGHTSPEED;
     if (debug >= 2)
+    {
         printf("propdelay dist %g height %g time %g\n", dg, dist, td);
+    }
     return td;
 }

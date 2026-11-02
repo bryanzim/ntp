@@ -114,7 +114,7 @@ int keytype_from_text(
     LIB_GETBUF(upcased);
     strlcpy(upcased, text, LIB_BUFLENGTH);
 
-    for (pch = upcased; '\0' != *pch; pch++)
+    for (pch = upcased; '\0' != *pch; ++pch)
     {
         *pch = (char)toupper((unsigned char)*pch);
     }
@@ -138,7 +138,7 @@ int keytype_from_text(
     key_type = 0;
 #endif
 
-    if (!key_type && 'm' == tolower((unsigned char)text[0U]))
+    if (!key_type && ('m' == tolower((unsigned char)text[0U])))
     {
         key_type = NID_md5;
     }
@@ -154,7 +154,7 @@ int keytype_from_text(
         md = EVP_get_digestbynid(key_type);
         digest_len = (md) ? EVP_MD_size(md) : 0;
 
-        if (!md || digest_len <= 0)
+        if (!md || (digest_len <= 0))
         {
 #ifdef ENABLE_CMAC
             if (key_type == NID_cmac)
@@ -231,9 +231,13 @@ keytype_name(
         }
 #else /* !OPENSSL follows */
     if (NID_md5 == type)
+    {
         name = "MD5";
+    }
     else
+    {
         name = unknown_type;
+    }
 #endif
     return name;
 }
@@ -254,7 +258,7 @@ keytype_name(
 char* getpass_keytype(
     int type)
 {
-    char pass_prompt[64 + 11 + 1]; /* 11 for " Password: " */
+    char pass_prompt[64U + 11 + 1]; /* 11 for " Password: " */
 
     snprintf(pass_prompt, sizeof(pass_prompt),
              "%.64s Password: ", keytype_name(type));

@@ -74,7 +74,7 @@ extern int atoi(const char*);
 /**
  *  static const strings for ntpq options
  */
-static char const ntpq_opt_strs[2068] =
+static char const ntpq_opt_strs[2068U] =
     /*     0 */ "ntpq 4.2.8p18\n"
                 "Copyright (C) 1992-2025 The University of Delaware and Network Time Foundation, all rights reserved.\n"
                 "This is free software. It is licensed for use, modification and\n"
@@ -583,7 +583,7 @@ static tOptDesc optDesc[OPTION_CT] = {
 /** ntpq configuration file name. */
 #define zRcName (ntpq_opt_strs + 2007)
 /** Directories to search for ntpq config files. */
-static char const* const apzHomeList[3] = {
+static char const* const apzHomeList[3U] = {
     ntpq_opt_strs + 1999,
     ntpq_opt_strs + 2005,
     NULL
@@ -667,7 +667,7 @@ doOptRefid(tOptions* pOptions, tOptDesc* pOptDesc)
 {
 
     /* extracted from optmain.tlib near line 945 */
-    static char const* const names[2] = {
+    static char const* const names[2U] = {
         ntpq_opt_strs + 2063, ntpq_opt_strs + 1041
     };
 
@@ -793,7 +793,9 @@ AO_gettext(char const* pz)
 {
     char* res;
     if (pz == NULL)
+    {
         return NULL;
+    }
 #ifdef HAVE_DCGETTEXT
     /*
      * While processing the option_xlateable_txt data, try to use the
@@ -804,15 +806,21 @@ AO_gettext(char const* pz)
     {
         res = dgettext("libopts", pz);
         if (res == pz)
+        {
             res = (char*)VOIDP(_(pz));
+        }
     }
     else
+    {
         res = (char*)VOIDP(_(pz));
+    }
 #else
     res = (char*)VOIDP(_(pz));
 #endif
     if (res == pz)
+    {
         return res;
+    }
     res = strdup(res);
     if (res == NULL)
     {
@@ -870,7 +878,9 @@ translate_option_strings(void)
         {
             tOptDesc* od = opts->pOptDesc;
             for (ix = opts->optCt; ix > 0; ix--, od++)
+            {
                 coerce_it(VOIDP(&(od->pzText)));
+            }
         }
     }
 }

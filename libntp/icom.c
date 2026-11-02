@@ -83,9 +83,13 @@ int icom_freq(
 
     cmd[3U] = (char)ident;
     if (ident == IC735)
+    {
         temp = 4;
+    }
     else
+    {
         temp = 5;
+    }
     doublefreq(freq * 1e6, &cmd[6U], temp);
     rc = write(fd, cmd, temp + 7);
     if (rc == -1)
@@ -115,7 +119,7 @@ doublefreq(             /* returns void */
 )
 {
     int i;
-    char s1[16];
+    char s1[16U];
     char* y;
 
     snprintf(s1, sizeof(s1), " %10.0f", freq);
@@ -127,8 +131,10 @@ doublefreq(             /* returns void */
         x[i] = x[i] | ((*y-- & 0x0f) << 4);
         i++;
     }
-    for (; i < len; i++)
+    for (; i < len; ++i)
+    {
         x[i] = 0;
+    }
     x[i] = FI;
 }
 
@@ -152,7 +158,9 @@ int icom_init(
 
     fd = tty_open(device, O_RDWR, 0777);
     if (fd < 0)
+    {
         return -1;
+    }
 
     rc = tcgetattr(fd, &ttyb);
     if (rc < 0)

@@ -74,9 +74,9 @@ struct psc_regs
 /* clock unit control structure */
 struct psc_unit
 {
-    short unit;      /* NTP refclock unit number	*/
-    short last_hour; /* last hour (monitor leap sec)	*/
-    int msg_flag[2]; /* count error messages		*/
+    short unit;       /* NTP refclock unit number	*/
+    short last_hour;  /* last hour (monitor leap sec)	*/
+    int msg_flag[2U]; /* count error messages		*/
 };
 int fd[NUNIT]; /* file descriptor	*/
 
@@ -101,7 +101,7 @@ psc_start(
     struct refclockproc* pp;
     struct psc_unit* up = emalloc(sizeof *up);
 
-    if (unit < 0 || unit > 1)
+    if ((unit < 0) || (unit > 1))
     { /* support units 0 and 1	*/
         msyslog(LOG_ERR, "psc_start: bad unit: %d", unit);
         return 0;
@@ -150,9 +150,13 @@ psc_shutdown(
     struct peer* peer)
 {
     if (NULL != peer->procptr->unitptr)
+    {
         free(peer->procptr->unitptr);
+    }
     if (fd[unit] > 0)
+    {
         close(fd[unit]);
+    }
 }
 
 /* psc_poll:  read, decode, and record device time */
@@ -248,7 +252,7 @@ check_leap_sec(struct refclockproc* pp, int unit)
     leap_day = BCD2INT2(dlo) + 100 * (dhi & 0x0F);
 
     pp->leap = LEAP_NOWARNING; /* default	*/
-    if (leap_day && leap_day == pp->day)
+    if (leap_day && (leap_day == pp->day))
     {
         pp->leap = LEAP_ADDSECOND; /* leap second today	*/
         msyslog(LOG_ERR, "LEAP_ADDSECOND flag set, day %d (%x %x).",

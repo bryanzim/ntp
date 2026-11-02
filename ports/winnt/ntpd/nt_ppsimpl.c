@@ -90,14 +90,20 @@ myRegOpenKey(
 
     rc = RegOpenKeyExA(HKEY_LOCAL_MACHINE, s_RegKey, 0, KEY_READ, &hkey1);
     if (ERROR_SUCCESS != rc)
+    {
         return NULL;
+    }
     if (!(szSubKey && *szSubKey))
+    {
         return hkey1;
+    }
 
     rc = RegOpenKeyExA(hkey1, szSubKey, 0, KEY_READ, &hkey2);
     RegCloseKey(hkey1);
     if (ERROR_SUCCESS != rc)
+    {
         return NULL;
+    }
     return hkey2;
 }
 
@@ -109,7 +115,7 @@ myRegReadMultiString(
 {
     char* endp;
     char* retv = NULL;
-    DWORD rSize = 0, rType = REG_NONE, rc;
+    DWORD rSize = 0U, rType = REG_NONE, rc;
 
     /* take two turns: one to get the size, another one to malloc & read */
     do
@@ -120,25 +126,33 @@ myRegReadMultiString(
         }
         rc = RegQueryValueExA(hKey, szValue, NULL, &rType,
                               (LPBYTE)retv, &rSize);
-        if (ERROR_SUCCESS != rc || (REG_SZ != rType && REG_MULTI_SZ != rType))
+        if ((ERROR_SUCCESS != rc) || ((REG_SZ != rType) && (REG_MULTI_SZ != rType)))
+        {
             goto fail;
+        }
     } while (NULL == retv);
 
     /* trim trailing NULs and ensure two of them */
     endp = retv + rSize;
-    while (endp != retv && endp[-1])
+    while ((endp != retv) && endp[-1])
+    {
         --endp;
+    }
     if (endp != retv)
     {
         endp[0U] = endp[1U] = '\0';
         if (NULL != pSize)
+        {
             *pSize = (DWORD)(endp - retv);
+        }
         return retv;
     }
 fail:
     free(retv);
     if (NULL != pSize)
+    {
         *pSize = 0;
+    }
     return NULL;
 }
 
@@ -152,8 +166,10 @@ myRegReadDWord(
 
     rSize = sizeof(rValue);
     rc = RegQueryValueExA(hKey, szValue, NULL, &rType, (PBYTE)&rValue, &rSize);
-    if (rc != ERROR_SUCCESS || rSize != sizeof(rValue) || rType != REG_DWORD)
+    if ((rc != ERROR_SUCCESS) || (rSize != sizeof(rValue)) || (rType != REG_DWORD))
+    {
         rValue = Default;
+    }
     return rValue;
 }
 
@@ -183,8 +199,10 @@ unit_from_ppsapi_handle(
     pps_handle_t handle)
 {
     pps_unit_t* punit = (pps_unit_t*)handle;
-    if (!(punit && PPSAPI_MAGIC_UNIT == punit->magic))
+    if (!(punit && (PPSAPI_MAGIC_UNIT == punit->magic)))
+    {
         punit = NULL;
+    }
     return punit;
 }
 
@@ -225,10 +243,14 @@ fmt_err(
     buff[LIB_BUFLENGTH - 1] = '\0';
     /* strip trailing whitespace & CR/LF stuff & the trailing dot */
     endp = buff + strlen(buff);
-    while (endp != buff && endp[-1] <= ' ')
+    while ((endp != buff) && (endp[-1] <= ' '))
+    {
         --endp;
-    if (endp != buff && endp[-1] == '.')
+    }
+    if ((endp != buff) && (endp[-1] == '.'))
+    {
         --endp;
+    }
     *endp = '\0';
     /* If windows fails to format this, resort to numeric output... */
     if (!*buff)
@@ -250,7 +272,9 @@ cleanup_load(
 {
     /* if possible, decref the library handle */
     if (NULL != hmod)
+    {
         FreeLibrary(hmod);
+    }
     /* if possible, drop our provider structure */
     if (prov)
     {
@@ -271,7 +295,7 @@ cleanup_load(
 static char*
 get_module_path(void)
 {
-    static const size_t s_smax = 4096;
+    static const size_t s_smax = 4096U;
 
     char* buff = NULL;
     char* lsep;
@@ -281,18 +305,28 @@ get_module_path(void)
     {
         buff = realloc(buff, slen);
         if (NULL == buff)
+        {
             goto fail;
+        }
         nlen = GetModuleFileNameA(NULL, buff, slen);
         if (0 == nlen)
+        {
             goto fail;
+        }
         if (nlen < slen)
+        {
             break;
+        }
     }
     if (slen > s_smax)
+    {
         goto fail;
+    }
     lsep = strrchr(buff, '\\');
     if (NULL == lsep)
+    {
         goto fail;
+    }
     *++lsep = '\0';
     return realloc(buff, (size_t)(lsep - buff) + 1);
 
@@ -311,29 +345,43 @@ get_provider_list(void)
     char *cp, *op;
 
     if (s_Value != NULL)
+    {
         return (*s_Value) ? s_Value : NULL;
+    }
 
     /*
     ** try registry first
     */
     hKey = myRegOpenKey(NULL);
     if (NULL == hKey)
+    {
         goto regfail;
+    }
 
     s_Value = myRegReadMultiString(hKey, "PPSProviders", &rSize);
     if (NULL == s_Value)
+    {
         goto regfail;
+    }
 
     /* make sure we have backslashes in the path */
     for (cp = s_Value; rSize; --rSize, ++cp)
+    {
         if (*cp == '/')
+        {
             *cp = '\\';
+        }
+    }
 regfail:
     if (NULL != hKey)
+    {
         RegCloseKey(hKey);
+    }
 
     if (s_Value && *s_Value)
+    {
         return s_Value;
+    }
 
     /*
     ** try environment next.
@@ -344,7 +392,9 @@ regfail:
     /* try to get env var */
     cp = getenv("PPSAPI_DLLS");
     if (!(cp && *cp))
+    {
         goto envfail;
+    }
 
     /* get size & allocate buffer */
     rSize = strlen(cp);
@@ -363,7 +413,9 @@ regfail:
         else if (*cp == ';')
         {
             if (op != s_Value)
+            {
                 *op++ = '\0';
+            }
         }
         else
         {
@@ -393,7 +445,7 @@ provlist_next_item(
     const char** iter)
 {
     static char* s_modpath /* = NULL */;
-    static char s_nullstr[1] /* = { '\0' } */;
+    static char s_nullstr[1U] /* = { '\0' } */;
 
     const char *phead, *phold;
     char *retv, *endp;
@@ -403,9 +455,13 @@ provlist_next_item(
     /* get next item -- might be start of a new round or the end */
 again:
     if (*iter == NULL)
+    {
         *iter = phead = get_provider_list();
+    }
     else
+    {
         *iter = phead = *iter + strlen(*iter) + 1;
+    }
     if (!(phead && *phead))
     {
         *iter = NULL;
@@ -415,7 +471,7 @@ again:
     /* Inspect the next section of input string. It must be
      * either an absolute path or just a name.
      */
-    if (isalpha(phead[0U]) && phead[1U] == ':' && phead[2U] == '\\')
+    if (isalpha(phead[0U]) && (phead[1U] == ':') && (phead[2U] == '\\'))
     {
         nodir = FALSE;
     }
@@ -424,7 +480,9 @@ again:
         nodir = TRUE;
         phold = phead;
         while (NULL != (endp = strpbrk(phold, "\\:")))
+        {
             phold = endp + 1;
+        }
         if (phead != phold)
         {
             msyslog(LOG_WARNING,
@@ -434,19 +492,23 @@ again:
         }
     }
     if (!*phead || strchr("\\.:", phead[strlen(phead) - 1]))
-        goto again; /* empty or looks like a directory! */
+    {
+        goto again;
+    } /* empty or looks like a directory! */
 
     /* Make sure we have a proper module path when we need one. */
-    if (nodir && NULL == s_modpath)
+    if (nodir && (NULL == s_modpath))
     {
         s_modpath = get_module_path();
         if (NULL == s_modpath)
+        {
             s_modpath = s_nullstr;
+        }
     }
 
     /* Prepare buffer for copy of file name. */
     slen = strlen(phead);
-    if (nodir && NULL != s_modpath)
+    if (nodir && (NULL != s_modpath))
     {
         /* Prepend full path to executable to the name. */
         mlen = strlen(s_modpath);
@@ -472,8 +534,8 @@ load_pps_provider(
 {
     static const char msgfmt[] = "load_pps_provider: '%s': %s";
 
-    char short_name[16];
-    char full_name[64];
+    char short_name[16U];
+    char full_name[64U];
     ppsapi_provider* prov;
     HMODULE hmod;
     pppsapi_prov_init pprov_init;
@@ -509,7 +571,7 @@ load_pps_provider(
 
     prov->short_name = (*short_name) ? estrdup(short_name) : NULL;
     prov->full_name = (*full_name) ? estrdup(full_name) : NULL;
-    if (NULL == prov->short_name || NULL == prov->full_name)
+    if ((NULL == prov->short_name) || (NULL == prov->full_name))
     {
         msyslog(LOG_WARNING, msgfmt, dllpath,
                 "missing names");
@@ -527,11 +589,11 @@ load_pps_provider(
     prov->ptime_pps_kcbind = (provtime_pps_kcbind)
         GetProcAddress(hmod, "prov_time_pps_kcbind");
 
-    if (NULL == prov->ptime_pps_create ||
-        NULL == prov->ptime_pps_destroy ||
-        NULL == prov->ptime_pps_setparams ||
-        NULL == prov->ptime_pps_fetch ||
-        NULL == prov->ptime_pps_kcbind)
+    if ((NULL == prov->ptime_pps_create) ||
+        (NULL == prov->ptime_pps_destroy) ||
+        (NULL == prov->ptime_pps_setparams) ||
+        (NULL == prov->ptime_pps_fetch) ||
+        (NULL == prov->ptime_pps_kcbind))
     {
         msyslog(LOG_WARNING, msgfmt, prov->short_name,
                 "missing entry point");
@@ -555,20 +617,28 @@ get_first_provider(void)
 
     /* check if we have done our work so far... */
     if (g_provider_list == INVALID_HANDLE_VALUE)
+    {
         return NULL;
+    }
     if (g_provider_list != NULL)
+    {
         return g_provider_list;
+    }
 
     itpos = NULL;
     while (NULL != (dll = provlist_next_item(&itpos)))
     {
         err = load_pps_provider(dll);
         if (err)
+        {
             msyslog(LOG_ERR, "time_pps_create: load failed (%s) --> %d / %s",
                     dll, err, strerror(err));
+        }
         else
+        {
             msyslog(LOG_INFO, "time_pps_create: loaded '%s'",
                     dll);
+        }
         free(dll);
     }
 
@@ -604,11 +674,15 @@ int time_pps_create(
     int err;
 
     if (NULL == phandle)
+    {
         return set_pps_errno(EFAULT);
+    }
 
     winhandle = (HANDLE)_get_osfhandle(filedes);
     if (INVALID_HANDLE_VALUE == winhandle)
+    {
         return set_pps_errno(EBADF);
+    }
 
     /* Hand off to each provider in turn until one returns a PPS
      * handle or they've all declined.
@@ -628,6 +702,7 @@ int time_pps_create(
         return set_pps_errno(err);
     }
     else
+    {
         do
         {
             ppshandle = 0;
@@ -643,6 +718,7 @@ int time_pps_create(
             msyslog(LOG_INFO, "time_pps_create: provider '%s' failed: %d / %s",
                     prov->short_name, err, strerror(err));
         } while (NULL != (prov = prov->next));
+    }
 
     msyslog(LOG_ERR, "time_pps_create: %s",
             "all providers failed");
@@ -658,13 +734,17 @@ int time_pps_destroy(
 
     /* Check for valid arguments */
     if (NULL == punit)
+    {
         return set_pps_errno(EBADF);
+    }
     /* Call provider. Note the handle is gone anyway... */
     ppsu_remove(handle);
     err = (*punit->provider->ptime_pps_destroy)(punit, punit->context);
     free(punit);
     if (err)
+    {
         return set_pps_errno(err);
+    }
     return 0;
 }
 
@@ -678,13 +758,19 @@ int time_pps_setparams(
 
     /* Check for valid arguments */
     if (NULL == punit)
+    {
         return set_pps_errno(EBADF);
+    }
     if (NULL == params)
+    {
         return set_pps_errno(EFAULT);
+    }
     /* Call provider */
     err = (*punit->provider->ptime_pps_setparams)(punit, punit->context, params);
     if (err)
+    {
         return set_pps_errno(err);
+    }
     return 0;
 }
 
@@ -697,9 +783,13 @@ int time_pps_getparams(
 
     /* Check for valid arguments */
     if (NULL == punit)
+    {
         return set_pps_errno(EBADF);
+    }
     if (NULL == params_buf)
+    {
         return set_pps_errno(EFAULT);
+    }
     /* Copy out parameters */
     *params_buf = punit->params;
     return 0;
@@ -714,9 +804,13 @@ int time_pps_getcap(
 
     /* Check for valid arguments */
     if (NULL == punit)
+    {
         return set_pps_errno(EBADF);
+    }
     if (NULL == pmode)
+    {
         return set_pps_errno(EFAULT);
+    }
     /* Copy out capabilities */
     *pmode = punit->provider->caps;
     return 0;
@@ -734,9 +828,13 @@ int time_pps_fetch(
 
     /* Check for valid arguments */
     if (NULL == punit)
+    {
         return set_pps_errno(EBADF);
+    }
     if (NULL == pinfo)
+    {
         return set_pps_errno(EFAULT);
+    }
     /* Fetch timestamps */
     err = (*punit->provider->ptime_pps_fetch)(punit,
                                               punit->context,
@@ -745,7 +843,9 @@ int time_pps_fetch(
                                               ptimeout);
 
     if (err)
+    {
         return set_pps_errno(err);
+    }
     return 0;
 }
 
@@ -760,7 +860,9 @@ int time_pps_kcbind(
 
     /* Check for valid arguments */
     if (NULL == punit)
+    {
         return set_pps_errno(EBADF);
+    }
     /* Call provider */
     err = (*punit->provider->ptime_pps_kcbind)(
         punit,
@@ -770,7 +872,9 @@ int time_pps_kcbind(
         tsformat);
 
     if (err)
+    {
         return set_pps_errno(err);
+    }
     return 0;
 }
 

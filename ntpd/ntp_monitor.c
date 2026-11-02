@@ -92,10 +92,10 @@ u_char ntp_minpoll = NTP_MINPOLL; /* minimum average log2 seconds */
  * Initialization state.  We may be monitoring, we may not.  If
  * we aren't, we may not even have allocated any memory yet.
  */
-u_int mon_enabled;        /* enable switch */
-u_int mru_mindepth = 600; /* preempt above this */
-int mru_maxage = 64;      /* for entries older than */
-u_int mru_maxdepth =      /* MRU count hard limit */
+u_int mon_enabled;         /* enable switch */
+u_int mru_mindepth = 600U; /* preempt above this */
+int mru_maxage = 64;       /* for entries older than */
+u_int mru_maxdepth =       /* MRU count hard limit */
     MRU_MAXDEPTH_DEF;
 int mon_age = 3000; /* preemption limit */
 
@@ -185,8 +185,10 @@ mon_getmoremem(void)
     {
         chunk = eallocarray(entries, sizeof(*chunk));
         mru_alloc += entries;
-        for (chunk += entries; entries; entries--)
+        for (chunk += entries; entries; --entries)
+        {
             mon_free_entry(--chunk);
+        }
 
         mon_mem_increments++;
     }
@@ -202,15 +204,19 @@ void mon_start(
     size_t octets;
     u_int min_hash_slots;
 
-    if (MON_OFF == mode) /* MON_OFF is 0 */
+    if (MON_OFF == mode)
+    { /* MON_OFF is 0 */
         return;
+    }
     if (mon_enabled)
     {
         mon_enabled |= mode;
         return;
     }
     if (0 == mon_mem_increments)
+    {
         mon_getmoremem();
+    }
     /*
      * Select the MRU hash table size to limit the average count
      * per bucket at capacity (mru_maxdepth) to 8, if possible
@@ -219,7 +225,9 @@ void mon_start(
     min_hash_slots = (mru_maxdepth / 8) + 1;
     mon_hash_bits = 0;
     while (min_hash_slots >>= 1)
+    {
         mon_hash_bits++;
+    }
     mon_hash_bits = max(4, mon_hash_bits);
     mon_hash_bits = min(16, mon_hash_bits);
     octets = sizeof(*mon_hash) * MON_HASH_SIZE;
@@ -238,13 +246,19 @@ void mon_stop(
     mon_entry* mon;
 
     if (MON_OFF == mon_enabled)
+    {
         return;
-    if ((mon_enabled & mode) == 0 || mode == MON_OFF)
+    }
+    if (((mon_enabled & mode) == 0) || (mode == MON_OFF))
+    {
         return;
+    }
 
     mon_enabled &= ~mode;
     if (mon_enabled != MON_OFF)
+    {
         return;
+    }
 
     /*
      * Move everything on the MRU list to the free list quickly,
@@ -389,7 +403,7 @@ ntp_monitor(
          * This rate-limits the KoDs to no more often than the
          * average headway.
          */
-        if (interval + 1 >= ntp_minpkt && leak < limit)
+        if ((interval + 1 >= ntp_minpkt) && (leak < limit))
         {
             mon->leak = leak - 2;
             restrict_mask &= ~(RES_LIMITED | RES_KOD);
@@ -443,7 +457,9 @@ ntp_monitor(
     if (mru_entries < mru_mindepth)
     {
         if (NULL == mon_free)
+        {
             mon_getmoremem();
+        }
         UNLINK_HEAD_SLIST(mon, mon_free, hash_next);
     }
     else
@@ -459,16 +475,18 @@ ntp_monitor(
             oldest_age = interval_fp.l_i;
         }
         /* note -1 is legal for mru_maxage (disables) */
-        if (oldest != NULL && mru_maxage < oldest_age)
+        if ((oldest != NULL) && (mru_maxage < oldest_age))
         {
             mon_reclaim_entry(oldest);
             mon = oldest;
         }
-        else if (mon_free != NULL || mru_alloc <
-                                         mru_maxdepth)
+        else if ((mon_free != NULL) || (mru_alloc <
+                                        mru_maxdepth))
         {
             if (NULL == mon_free)
+            {
                 mon_getmoremem();
+            }
             UNLINK_HEAD_SLIST(mon, mon_free, hash_next);
             /* Preempt from the MRU list if old enough. */
         }
@@ -501,7 +519,7 @@ ntp_monitor(
     mon->lcladr = rbufp->dstadr;
     mon->cast_flags = (u_char)(((rbufp->dstadr->flags &
                                  INT_MCASTOPEN) &&
-                                rbufp->fd == mon->lcladr->fd)
+                                (rbufp->fd == mon->lcladr->fd))
                                    ? MDF_MCAST
                                : rbufp->fd == mon->lcladr->bfd ? MDF_BCAST
                                                                : MDF_UCAST);

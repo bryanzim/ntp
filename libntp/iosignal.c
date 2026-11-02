@@ -291,8 +291,10 @@ sigio_handler(
 
 #if defined(HAVE_SIGACTION)
     sigio_handler_active++;
-    if (sigio_handler_active != 1) /* This should never happen! */
+    if (sigio_handler_active != 1)
+    { /* This should never happen! */
         msyslog(LOG_ERR, "sigio_handler: sigio_handler_active != 1");
+    }
 #endif
 
     INSIST(input_handler_callback != NULL);
@@ -300,8 +302,10 @@ sigio_handler(
 
 #if defined(HAVE_SIGACTION)
     sigio_handler_active--;
-    if (sigio_handler_active != 0) /* This should never happen! */
+    if (sigio_handler_active != 0)
+    { /* This should never happen! */
         msyslog(LOG_ERR, "sigio_handler: sigio_handler_active != 0");
+    }
 #endif
 
     errno = saved_errno;
@@ -331,20 +335,30 @@ void block_io_and_alarm(void)
     sigset_t set;
 
     if (sigemptyset(&set))
+    {
         msyslog(LOG_ERR, "block_io_and_alarm: sigemptyset() failed: %m");
+    }
 #if defined(USE_SIGIO)
     if (sigaddset(&set, SIGIO))
+    {
         msyslog(LOG_ERR, "block_io_and_alarm: sigaddset(SIGIO) failed: %m");
+    }
 #endif
 #if defined(USE_SIGPOLL)
     if (sigaddset(&set, SIGPOLL))
+    {
         msyslog(LOG_ERR, "block_io_and_alarm: sigaddset(SIGPOLL) failed: %m");
+    }
 #endif
     if (sigaddset(&set, SIGALRM))
+    {
         msyslog(LOG_ERR, "block_io_and_alarm: sigaddset(SIGALRM) failed: %m");
+    }
 
     if (sigprocmask(SIG_BLOCK, &set, NULL))
+    {
         msyslog(LOG_ERR, "block_io_and_alarm: sigprocmask() failed: %m");
+    }
 }
 
 void block_sigio(void)
@@ -355,23 +369,35 @@ void block_sigio(void)
 
         ++sigio_block_count;
         if (sigio_block_count > 1)
+        {
             msyslog(LOG_INFO, "block_sigio: sigio_block_count > 1");
+        }
         if (sigio_block_count < 1)
+        {
             msyslog(LOG_INFO, "block_sigio: sigio_block_count < 1");
+        }
 
         if (sigemptyset(&set))
+        {
             msyslog(LOG_ERR, "block_sigio: sigemptyset() failed: %m");
+        }
 #if defined(USE_SIGIO)
         if (sigaddset(&set, SIGIO))
+        {
             msyslog(LOG_ERR, "block_sigio: sigaddset(SIGIO) failed: %m");
+        }
 #endif
 #if defined(USE_SIGPOLL)
         if (sigaddset(&set, SIGPOLL))
+        {
             msyslog(LOG_ERR, "block_sigio: sigaddset(SIGPOLL) failed: %m");
+        }
 #endif
 
         if (sigprocmask(SIG_BLOCK, &set, NULL))
+        {
             msyslog(LOG_ERR, "block_sigio: sigprocmask() failed: %m");
+        }
     }
 }
 
@@ -380,21 +406,31 @@ void unblock_io_and_alarm(void)
     sigset_t unset;
 
     if (sigemptyset(&unset))
+    {
         msyslog(LOG_ERR, "unblock_io_and_alarm: sigemptyset() failed: %m");
+    }
 
 #if defined(USE_SIGIO)
     if (sigaddset(&unset, SIGIO))
+    {
         msyslog(LOG_ERR, "unblock_io_and_alarm: sigaddset(SIGIO) failed: %m");
+    }
 #endif
 #if defined(USE_SIGPOLL)
     if (sigaddset(&unset, SIGPOLL))
+    {
         msyslog(LOG_ERR, "unblock_io_and_alarm: sigaddset(SIGPOLL) failed: %m");
+    }
 #endif
     if (sigaddset(&unset, SIGALRM))
+    {
         msyslog(LOG_ERR, "unblock_io_and_alarm: sigaddset(SIGALRM) failed: %m");
+    }
 
     if (sigprocmask(SIG_UNBLOCK, &unset, NULL))
+    {
         msyslog(LOG_ERR, "unblock_io_and_alarm: sigprocmask() failed: %m");
+    }
 }
 
 void unblock_sigio(void)
@@ -405,24 +441,36 @@ void unblock_sigio(void)
 
         --sigio_block_count;
         if (sigio_block_count > 0)
+        {
             msyslog(LOG_INFO, "unblock_sigio: sigio_block_count > 0");
+        }
         if (sigio_block_count < 0)
+        {
             msyslog(LOG_INFO, "unblock_sigio: sigio_block_count < 0");
+        }
 
         if (sigemptyset(&unset))
+        {
             msyslog(LOG_ERR, "unblock_sigio: sigemptyset() failed: %m");
+        }
 
 #if defined(USE_SIGIO)
         if (sigaddset(&unset, SIGIO))
+        {
             msyslog(LOG_ERR, "unblock_sigio: sigaddset(SIGIO) failed: %m");
+        }
 #endif
 #if defined(USE_SIGPOLL)
         if (sigaddset(&unset, SIGPOLL))
+        {
             msyslog(LOG_ERR, "unblock_sigio: sigaddset(SIGPOLL) failed: %m");
+        }
 #endif
 
         if (sigprocmask(SIG_UNBLOCK, &unset, NULL))
+        {
             msyslog(LOG_ERR, "unblock_sigio: sigprocmask() failed: %m");
+        }
     }
 }
 
@@ -431,21 +479,31 @@ void wait_for_signal(void)
     sigset_t old;
 
     if (sigprocmask(SIG_UNBLOCK, NULL, &old))
+    {
         msyslog(LOG_ERR, "wait_for_signal: sigprocmask() failed: %m");
+    }
 
 #if defined(USE_SIGIO)
     if (sigdelset(&old, SIGIO))
+    {
         msyslog(LOG_ERR, "wait_for_signal: sigdelset(SIGIO) failed: %m");
+    }
 #endif
 #if defined(USE_SIGPOLL)
     if (sigdelset(&old, SIGPOLL))
+    {
         msyslog(LOG_ERR, "wait_for_signal: sigdelset(SIGPOLL) failed: %m");
+    }
 #endif
     if (sigdelset(&old, SIGALRM))
+    {
         msyslog(LOG_ERR, "wait_for_signal: sigdelset(SIGALRM) failed: %m");
+    }
 
     if (sigsuspend(&old) && (errno != EINTR))
+    {
         msyslog(LOG_ERR, "wait_for_signal: sigsuspend() failed: %m");
+    }
 }
 
 #else /* !HAVE_SIGACTION */
@@ -460,7 +518,9 @@ void block_io_and_alarm(void)
 
     mask = sigmask(SIGIO) | sigmask(SIGALRM);
     if (sigblock(mask))
+    {
         msyslog(LOG_ERR, "block_io_and_alarm: sigblock() failed: %m");
+    }
 }
 
 void block_sigio(void)
@@ -469,13 +529,19 @@ void block_sigio(void)
 
     ++sigio_block_count;
     if (sigio_block_count > 1)
+    {
         msyslog(LOG_INFO, "block_sigio: sigio_block_count > 1");
+    }
     if (sigio_block_count < 1)
+    {
         msyslog(LOG_INFO, "block_sigio: sigio_block_count < 1");
+    }
 
     mask = sigmask(SIGIO);
     if (sigblock(mask))
+    {
         msyslog(LOG_ERR, "block_sigio: sigblock() failed: %m");
+    }
 }
 
 void set_signal(input_handler_t* input)
@@ -504,9 +570,13 @@ void unblock_sigio(void)
 
     --sigio_block_count;
     if (sigio_block_count > 0)
+    {
         msyslog(LOG_INFO, "unblock_sigio: sigio_block_count > 0");
+    }
     if (sigio_block_count < 0)
+    {
         msyslog(LOG_INFO, "unblock_sigio: sigio_block_count < 0");
+    }
     mask = sigmask(SIGIO);
     omask = sigblock(0);
     omask &= ~mask;
@@ -521,7 +591,9 @@ void wait_for_signal(void)
     omask = sigblock(0);
     omask &= ~mask;
     if (sigpause(omask) && (errno != EINTR))
+    {
         msyslog(LOG_ERR, "wait_for_signal: sigspause() failed: %m");
+    }
 }
 
 #endif /* HAVE_SIGACTION */

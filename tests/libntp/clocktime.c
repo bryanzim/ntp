@@ -53,7 +53,7 @@ void test_CurrentYear(void)
 
     const int yday = 175, hour = 12, minute = 50, second = 0, tzoff = 0;
 
-    u_long yearstart = 0;
+    u_long yearstart = 0U;
     u_int32 actual;
 
     TEST_ASSERT_TRUE(clocktime(yday, hour, minute, second, tzoff,
@@ -78,7 +78,7 @@ void test_CurrentYearFuzz(void)
 
     const int yday = 175, hour = 12, minute = 0, second = 0, tzoff = 0;
 
-    u_long yearstart = 0;
+    u_long yearstart = 0U;
     u_int32 actual;
 
     TEST_ASSERT_TRUE(clocktime(yday, hour, minute, second, tzoff,
@@ -101,7 +101,7 @@ void test_TimeZoneOffset(void)
 
     const int yday = 175, hour = 4, minute = 0, second = 0, tzoff = 8;
 
-    u_long yearstart = 0;
+    u_long yearstart = 0U;
     u_int32 actual;
 
     TEST_ASSERT_TRUE(clocktime(yday, hour, minute, second, tzoff, timestamp,
@@ -141,7 +141,7 @@ void test_PreviousYear(void)
 
     const int yday = 365, hour = 23, minute = 0, second = 0, tzoff = 0;
 
-    u_long yearstart = 0;
+    u_long yearstart = 0U;
     u_int32 actual;
 
     TEST_ASSERT_TRUE(clocktime(yday, hour, minute, second, tzoff, timestamp,
@@ -160,7 +160,7 @@ void test_NextYear(void)
     const u_int32 expected = 3471296400U;
 
     const int yday = 1, hour = 1, minute = 0, second = 0, tzoff = 0;
-    u_long yearstart = 0;
+    u_long yearstart = 0U;
     u_int32 actual;
 
     TEST_ASSERT_TRUE(clocktime(yday, hour, minute, second, tzoff,
@@ -176,7 +176,7 @@ void test_NoReasonableConversion(void)
     const u_int32 timestamp = 3471418800U;
 
     const int yday = 100, hour = 12, minute = 0, second = 0, tzoff = 0;
-    u_long yearstart = 0;
+    u_long yearstart = 0U;
     u_int32 actual;
 
     TEST_ASSERT_FALSE(clocktime(yday, hour, minute, second, tzoff,
@@ -195,7 +195,9 @@ isLE(u_int32 diff, u_int32 actual)
         return TRUE;
     }
     else
+    {
         return FALSE;
+    }
 }
 
 
@@ -215,7 +217,7 @@ void test_AlwaysInLimit(void)
     u_int32 diff;
 
     yearstart = 0;
-    for (cyc = 0; cyc < 5; cyc++)
+    for (cyc = 0; cyc < 5; ++cyc)
     {
         settime(1900 + cyc * 65, 1, 1, 0, 0, 0);
         for (yday = -26000; yday < 26000; yday += ydayinc)
@@ -224,14 +226,16 @@ void test_AlwaysInLimit(void)
             ydayinc = prime_incs[whichprime];
             for (hour = -204; hour < 204; hour += 2)
             {
-                for (minute = -60; minute < 60; minute++)
+                for (minute = -60; minute < 60; ++minute)
                 {
                     clocktime(yday, hour, minute, 30, 0,
                               timestamp, &yearstart,
                               &actual);
                     diff = actual - timestamp;
                     if (diff >= 0x80000000U)
+                    {
                         diff = ~diff + 1;
+                    }
                     TEST_ASSERT_TRUE(isLE(diff, (183u * SECSPERDAY)));
                 }
             }

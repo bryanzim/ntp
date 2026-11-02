@@ -219,7 +219,7 @@ int main(void)
         }
 
         days = 365 + 1; /* days in year 0 + 1 more day */
-        for (year = 1; year <= 2500; year++)
+        for (year = 1; year <= 2500; ++year)
         {
             long Test;
             Test = Days(year);
@@ -240,7 +240,9 @@ int main(void)
 
             days += 365;
             if (isleap_4(year))
+            {
                 days++;
+            }
         }
 
         if (isleap_4(1999))
@@ -271,7 +273,7 @@ int main(void)
     puts(" include/ntp.h");
     { /* test our new isleap_*() #define "functions" */
 
-        for (year = 1400; year <= 2200; year++)
+        for (year = 1400; year <= 2200; ++year)
         {
             int LeapSw;
             int IsLeapSw;
@@ -305,7 +307,7 @@ int main(void)
         /* we are testing this #define */
 #define is_leapyear(y) (y % 4 == 0 && !(y % 100 == 0 && !(y % 400 == 0)))
 
-        for (year = 1400; year <= 2200; year++)
+        for (year = 1400; year <= 2200; ++year)
         {
             int LeapSw;
 
@@ -336,7 +338,7 @@ int main(void)
         /* first test this #define */
 #define days_per_year(x) ((x) % 4 ? 365 : ((x % 400) ? ((x % 100) ? 366 : 365) : 366))
 
-        for (year = 1400; year <= 2200; year++)
+        for (year = 1400; year <= 2200; ++year)
         {
             int LeapSw;
             int DayCnt;
@@ -358,7 +360,7 @@ int main(void)
 
         Days1970 = Days(1970); /* get days since 1970 using a known good */
 
-        for (year = 1970; year < yearend; year++)
+        for (year = 1970; year < yearend; ++year)
         {
             unsigned long t;
             long DaysYear;
@@ -404,7 +406,7 @@ int main(void)
 #if 1 /* { */
         {
             debug = 1; /* enable debugging */
-            for (year = 1970; year < yearend; year++)
+            for (year = 1970; year < yearend; ++year)
             { /* (limited by theory unix 2038 related bug lives by, but
                * ends in yearend) */
                 clocktime_t ct;
@@ -433,7 +435,7 @@ int main(void)
                 }
                 t = julian0(year) - julian0(1970); /* Julian day from 1970 */
                 Expected = t * 24 * 60 * 60;
-                if (Observed != Expected || Flag)
+                if ((Observed != Expected) || Flag)
                 { /* time difference */
                     fprintf(stdout,
                             "%04d: parse_to_unixtime(,%d) FAILURE: was=%lu s/b=%lu  (%ld)\n",
@@ -453,7 +455,7 @@ int main(void)
 
                     Observed = parse_to_unixtime(&ct, &Flag);
 
-                    if (Observed != Expected || Flag)
+                    if ((Observed != Expected) || Flag)
                     { /* time difference */
                         fprintf(stdout,
                                 "%04d: parse_to_unixtime(%d,%d) FAILURE: was=%lu s/b=%lu  (%ld)\n",
@@ -471,7 +473,7 @@ int main(void)
 
                     Observed = parse_to_unixtime(&ct, &Flag);
 
-                    if (Observed != Expected || Flag)
+                    if ((Observed != Expected) || Flag)
                     { /* time difference */
                         fprintf(stdout,
                                 "%04d: parse_to_unixtime(%d,%d) FAILURE: was=%lu s/b=%lu  (%ld)\n",
@@ -511,14 +513,14 @@ int main(void)
                     (long)DAY_NTP_STARTS - (long)ntp_time);
         }
 
-        for (; year < yearend; year++)
+        for (; year < yearend; ++year)
         {
 
             /* 01-01 for the current year */
             ntp_time = Days(year) - Days(year0); /* days into NTP time */
             ntp_time *= 24 * 60 * 60;            /* convert into seconds */
             caljulian(ntp_time, &ot);            /* convert January 1 */
-            if (ot.year != year || ot.month != 1 || ot.monthday != 1)
+            if ((ot.year != year) || (ot.month != 1) || (ot.monthday != 1))
             {
                 Error(year);
                 fprintf(stdout, "%lu: EXPECTED %04d-01-01: FOUND %04d-%02d-%02d\n",
@@ -530,7 +532,7 @@ int main(void)
 
             ntp_time += (31 + 28 - 1) * (24 * 60 * 60); /* advance to 02-28 */
             caljulian(ntp_time, &ot);                   /* convert Feb 28 */
-            if (ot.year != year || ot.month != 2 || ot.monthday != 28)
+            if ((ot.year != year) || (ot.month != 2) || (ot.monthday != 28))
             {
                 Error(year);
                 fprintf(stdout, "%lu: EXPECTED %04d-02-28: FOUND %04d-%02d-%02d\n",
@@ -549,7 +551,7 @@ int main(void)
 
                 ntp_time += (24 * 60 * 60); /* advance to the next day */
                 caljulian(ntp_time, &ot);   /* convert this day */
-                if (ot.year != year || ot.month != m || ot.monthday != d)
+                if ((ot.year != year) || (ot.month != m) || (ot.monthday != d))
                 {
                     Error(year);
                     fprintf(stdout, "%lu: EXPECTED %04d-%02d-%02d: FOUND %04d-%02d-%02d\n",
@@ -572,7 +574,7 @@ int main(void)
         printf("  ending year   %04d\n", (int)yearend);
 
 
-        for (; year < yearend; year++)
+        for (; year < yearend; ++year)
         {
             u_long ObservedNtp;
 
@@ -598,7 +600,7 @@ int main(void)
 
             /* now call caljulian as a type of failsafe supercheck */
             caljulian(ObservedNtp, &ot); /* convert January 1 */
-            if (ot.year != year || ot.month != 1 || ot.monthday != 1)
+            if ((ot.year != year) || (ot.month != 1) || (ot.monthday != 1))
             {
                 Error(year);
                 fprintf(stdout, "%lu: caljulian FAILSAFE EXPECTED %04d-01-01: FOUND %04d-%02d-%02d\n",
@@ -611,9 +613,13 @@ int main(void)
     }
 
     if (Warnings > 0)
+    {
         fprintf(stdout, "%d WARNINGS\n", Warnings);
+    }
     if (Fatals > 0)
+    {
         fprintf(stdout, "%d FATAL ERRORS\n", Fatals);
+    }
     return Fatals ? 1 : 0;
 }
 /* Y2KFixes ] */

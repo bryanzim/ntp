@@ -4,7 +4,7 @@
 
 void printBytes(unsigned char* buf, size_t len)
 {
-    for (int i = 0; i < len; i++)
+    for (int i = 0; i < len; ++i)
     {
         printf("%02x ", buf[i]);
     }
@@ -16,7 +16,7 @@ int main(void)
 {
     int idx, err;
     omac_state omac;
-    unsigned char key[16], dst[MAXBLOCKSIZE];
+    unsigned char key[16U], dst[MAXBLOCKSIZE];
     unsigned long dstlen;
 
     /* register Rijndael */
@@ -68,7 +68,7 @@ unsigned char message[] = { 0x6b, 0xc1, 0xbe, 0xe2,
                             0xe9, 0x3d, 0x7e, 0x11,
                             0x73, 0x93, 0x17, 0x2a };
 
-unsigned char mact[16] = { 0 };
+unsigned char mact[16U] = { 0 };
 size_t mactlen;
 
 CMAC_CTX* ctx = CMAC_CTX_new();

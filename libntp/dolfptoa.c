@@ -17,7 +17,7 @@ char* dolfptoa(
 {
     u_char *cp, *cpend, *cpdec;
     int dec;
-    u_char cbuf[24];
+    u_char cbuf[24U];
     char *buf, *bp;
 
     /*
@@ -37,7 +37,7 @@ char* dolfptoa(
      * including a possible rounding from the fractional part.
      */
     cp = cpend = cpdec = &cbuf[10U];
-    for (dec = (int)(cp - cbuf); dec > 0 && fpi != 0; dec--)
+    for (dec = (int)(cp - cbuf); (dec > 0) && (fpi != 0); --dec)
     {
         /* can add another digit */
         u_int32 digit;
@@ -54,19 +54,23 @@ char* dolfptoa(
      */
     dec = ndec;
     if (dec < 0)
+    {
         dec = 0;
+    }
     if (msec)
     {
         dec += 3;
         cpdec += 3;
     }
     if ((size_t)dec > sizeof(cbuf) - (cpend - cbuf))
+    {
         dec = (int)(sizeof(cbuf) - (cpend - cbuf));
+    }
 
     /*
      * If there's a fraction to deal with, do so.
      */
-    for (/*NOP*/; dec > 0 && fpv != 0; dec--)
+    for (/*NOP*/; (dec > 0) && (fpv != 0); --dec)
     {
         u_int32 digit, tmph, tmpl;
 
@@ -98,17 +102,23 @@ char* dolfptoa(
         u_char* tp = cpend;
         int carry = ((fpv & 0x80000000) != 0);
 
-        for (dec = (int)(tp - cbuf); carry && dec > 0; dec--)
+        for (dec = (int)(tp - cbuf); carry && (dec > 0); --dec)
         {
             *--tp += 1;
             if (*tp == 10)
+            {
                 *tp = 0;
+            }
             else
+            {
                 carry = FALSE;
+            }
         }
 
-        if (tp < cp) /* rounding from 999 to 1000 or similiar? */
+        if (tp < cp)
+        { /* rounding from 999 to 1000 or similiar? */
             cp = tp;
+        }
     }
 
     /*
@@ -118,18 +128,26 @@ char* dolfptoa(
      * Remove leading zeros, then format the number into the
      * buffer.
      */
-    while (cp < cpdec && *cp == 0)
+    while ((cp < cpdec) && (*cp == 0))
+    {
         cp++;
+    }
     if (cp >= cpdec)
+    {
         cp = cpdec - 1;
+    }
 
     bp = buf;
     if (sign)
+    {
         *bp++ = sign;
+    }
     while (cp < cpend)
     {
         if (cp == cpdec)
+        {
             *bp++ = '.';
+        }
         *bp++ = (char)(*cp++) + '0';
     }
     *bp = '\0';

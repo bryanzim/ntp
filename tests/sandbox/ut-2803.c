@@ -44,7 +44,9 @@ void test_XPASS(void) // expecting fail but passes, should we get an alert about
     }
 
     else
+    {
         TEST_ASSERT_EQUAL(1, 1);
+    }
 }
 
 void test_XFAIL(void) // expecting fail, and XFAILs
@@ -58,7 +60,9 @@ void test_XFAIL(void) // expecting fail, and XFAILs
     }
 
     else
+    {
         TEST_ASSERT_EQUAL(1, 2);
+    }
 }
 
 void test_XFAIL_WITH_MESSAGE(void) // expecting fail, and XFAILs
@@ -72,7 +76,9 @@ void test_XFAIL_WITH_MESSAGE(void) // expecting fail, and XFAILs
     }
 
     else
+    {
         TEST_ASSERT_EQUAL(1, 2);
+    }
 }
 
 void test_main_incorrect(void)

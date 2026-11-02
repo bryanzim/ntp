@@ -64,9 +64,13 @@ realpath1(const char* path, char* resolved)
     if (!strncmp(path, "\\\\.\\", 4))
     {
         if (strlcpy(resolved, path, NTP_PATH_MAX) >= NTP_PATH_MAX)
+        {
             errno = ENAMETOOLONG;
+        }
         else
+        {
             retval = resolved;
+        }
     }
     else if ((retval = _fullpath(resolved, path, NTP_PATH_MAX)) == NULL)
     {
@@ -115,7 +119,9 @@ realpath1(const char* path, char* resolved)
         resolved[0U] = '/';
         resolved[1U] = '\0';
         if (path[1U] == '\0')
+        {
             return (resolved);
+        }
         resolved_len = 1;
         left_len = strlcpy(left, path + 1, sizeof(left));
     }
@@ -130,7 +136,7 @@ realpath1(const char* path, char* resolved)
         resolved_len = strlen(resolved);
         left_len = strlcpy(left, path, sizeof(left));
     }
-    if (left_len >= sizeof(left) || resolved_len >= NTP_PATH_MAX)
+    if (left_len >= sizeof(left) || (resolved_len >= NTP_PATH_MAX))
     {
         errno = ENAMETOOLONG;
         return (NULL);
@@ -207,7 +213,9 @@ realpath1(const char* path, char* resolved)
             return (NULL);
         }
         if (lstat(resolved, &sb) != 0)
+        {
             return (NULL);
+        }
         if (S_ISLNK(sb.st_mode))
         {
             if (++symlinks > NTP_MAXSYMLINKS)
@@ -216,7 +224,7 @@ realpath1(const char* path, char* resolved)
                 return (NULL);
             }
             slen = readlink(resolved, link_tgt, sizeof(link_tgt));
-            if (slen <= 0 || slen >= (ssize_t)sizeof(link_tgt))
+            if ((slen <= 0) || (slen >= (ssize_t)sizeof(link_tgt)))
             {
                 if (slen < 0)
                 {
@@ -273,7 +281,7 @@ realpath1(const char* path, char* resolved)
             }
             left_len = strlcpy(left, link_tgt, sizeof(left));
         }
-        else if (!S_ISDIR(sb.st_mode) && p != NULL)
+        else if (!S_ISDIR(sb.st_mode) && (p != NULL))
         {
             errno = ENOTDIR;
             return (NULL);
@@ -284,8 +292,10 @@ realpath1(const char* path, char* resolved)
      * Remove trailing slash except when the resolved pathname
      * is a single "/".
      */
-    if (resolved_len > 1 && resolved[resolved_len - 1] == '/')
+    if ((resolved_len > 1) && (resolved[resolved_len - 1] == '/'))
+    {
         resolved[resolved_len - 1] = '\0';
+    }
     return (resolved);
 }
 
@@ -303,15 +313,25 @@ char* ntp_realpath(const char* path)
 
     char *res = NULL, *m = NULL;
     if (path == NULL)
+    {
         errno = EINVAL;
+    }
     else if (path[0U] == '\0')
+    {
         errno = ENOENT;
+    }
     else if ((m = malloc(NTP_PATH_MAX)) == NULL)
-        errno = ENOMEM; /* MSVCRT malloc does not set this... */
+    {
+        errno = ENOMEM;
+    } /* MSVCRT malloc does not set this... */
     else if ((res = realpath1(path, m)) == NULL)
+    {
         free(m);
+    }
     else
+    {
         res = realloc(res, strlen(res) + 1);
+    }
     return (res);
 
 #endif

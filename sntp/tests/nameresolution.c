@@ -11,7 +11,9 @@ void test_ResolveSingleAddress(void);
 int CompareAddrinfo(const char* host, int family, int flags, const struct addrinfo actual)
 {
     if (family != actual.ai_family)
+    {
         return FALSE;
+    }
 
     sockaddr_u* sock = (sockaddr_u*)malloc(sizeof(sockaddr_u));
     void *expectedaddr = NULL, *actualaddr = NULL;
@@ -33,13 +35,21 @@ int CompareAddrinfo(const char* host, int family, int flags, const struct addrin
     sock->sa.sa_family = family;
 
     if (inet_pton(family, host, expectedaddr) != 1)
+    {
         return FALSE;
+    }
     if (flags != actual.ai_flags)
+    {
         return FALSE;
+    }
     if (size != actual.ai_addrlen)
+    {
         return FALSE;
+    }
     if (memcmp(expectedaddr, actualaddr, addrsize) != 0)
+    {
         return FALSE;
+    }
 
     return TRUE;
 }
@@ -47,7 +57,7 @@ int CompareAddrinfo(const char* host, int family, int flags, const struct addrin
 
 void test_ResolveSingleAddress(void)
 {
-    const char* HOSTS[1] = { "192.0.2.1" };
+    const char* HOSTS[1U] = { "192.0.2.1" };
     const int HOSTCOUNT = COUNTOF(HOSTS);
 
     struct addrinfo** actual = NULL;

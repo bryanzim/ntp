@@ -32,7 +32,7 @@ CalendarToString(const struct calendar cal)
 static int // technically boolean
 IsEqual(const struct calendar expected, const struct calendar actual)
 {
-    if (expected.year == actual.year && (expected.yearday == actual.yearday || (expected.month == actual.month && expected.monthday == actual.monthday)) && expected.hour == actual.hour && expected.minute == actual.minute && expected.second == actual.second)
+    if ((expected.year == actual.year) && ((expected.yearday == actual.yearday) || ((expected.month == actual.month) && (expected.monthday == actual.monthday))) && (expected.hour == actual.hour) && (expected.minute == actual.minute) && (expected.second == actual.second))
     {
         return TRUE;
     }
@@ -97,7 +97,7 @@ void test_uLongBoundary(void)
 
 void test_uLongWrapped(void)
 {
-    u_long enc_time = 0;
+    u_long enc_time = 0U;
     struct calendar expected = { 2036, 0, 2, 7, 6, 28, 16 };
 
     struct calendar actual;

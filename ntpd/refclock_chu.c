@@ -303,11 +303,11 @@
  */
 struct surv
 {
-    l_fp cstamp;      /* last bit timestamp */
-    double shift[12]; /* sample shift register */
-    double span;      /* shift register envelope span */
-    double dist;      /* sample distance */
-    int uart;         /* decoded character */
+    l_fp cstamp;       /* last bit timestamp */
+    double shift[12U]; /* sample shift register */
+    double span;       /* shift register envelope span */
+    double dist;       /* sample distance */
+    int uart;          /* decoded character */
 };
 #endif /* HAVE_AUDIO */
 
@@ -330,16 +330,16 @@ struct xmtr
  */
 struct chuunit
 {
-    u_char decode[20][16]; /* maximum-likelihood decoding matrix */
-    l_fp cstamp[BURST];    /* character timestamps */
-    l_fp tstamp[MAXSTAGE]; /* timestamp samples */
-    l_fp timestamp;        /* current buffer timestamp */
-    l_fp laststamp;        /* last buffer timestamp */
-    l_fp charstamp;        /* character time as a l_fp */
-    int second;            /* counts the seconds of the minute */
-    int errflg;            /* error flags */
-    int status;            /* status bits */
-    char ident[5];         /* station ID and channel */
+    u_char decode[20U][16U]; /* maximum-likelihood decoding matrix */
+    l_fp cstamp[BURST];      /* character timestamps */
+    l_fp tstamp[MAXSTAGE];   /* timestamp samples */
+    l_fp timestamp;          /* current buffer timestamp */
+    l_fp laststamp;          /* last buffer timestamp */
+    l_fp charstamp;          /* character time as a l_fp */
+    int second;              /* counts the seconds of the minute */
+    int errflg;              /* error flags */
+    int status;              /* status bits */
+    char ident[5U];          /* station ID and channel */
 #ifdef ICOM
     int fd_icom;             /* ICOM file descriptor */
     int chan;                /* radio channel */
@@ -383,21 +383,21 @@ struct chuunit
      * Modem variables
      */
     l_fp tick;        /* audio sample increment */
-    double bpf[9];    /* IIR bandpass filter */
+    double bpf[9U];   /* IIR bandpass filter */
     double disc[LAG]; /* discriminator shift register */
-    double lpf[27];   /* FIR lowpass filter */
+    double lpf[27U];  /* FIR lowpass filter */
     double monitor;   /* audio monitor */
     int discptr;      /* discriminator pointer */
 
     /*
      * Maximum-likelihood UART variables
      */
-    double baud;         /* baud interval */
-    struct surv surv[8]; /* UART survivor structures */
-    int decptr;          /* decode pointer */
-    int decpha;          /* decode phase */
-    int dbrk;            /* holdoff counter */
-#endif                   /* HAVE_AUDIO */
+    double baud;          /* baud interval */
+    struct surv surv[8U]; /* UART survivor structures */
+    int decptr;           /* decode pointer */
+    int decpha;           /* decode phase */
+    int dbrk;             /* holdoff counter */
+#endif                    /* HAVE_AUDIO */
 };
 
 /*
@@ -469,8 +469,8 @@ chu_start(
 {
     struct chuunit* up;
     struct refclockproc* pp;
-    char device[20]; /* device name */
-    int fd;          /* file descriptor */
+    char device[20U]; /* device name */
+    int fd;           /* file descriptor */
 #ifdef ICOM
     int temp;
 #endif /* ICOM */
@@ -485,8 +485,10 @@ chu_start(
     fd_audio = audio_init(DEVICE_AUDIO, AUDIO_BUFSIZ, unit);
 
 #ifdef DEBUG
-    if (fd_audio >= 0 && debug)
+    if ((fd_audio >= 0) && debug)
+    {
         audio_show();
+    }
 #endif
 
     /*
@@ -511,7 +513,9 @@ chu_start(
 #endif /* HAVE_AUDIO */
 
     if (fd < 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -555,12 +559,14 @@ chu_start(
     up->comp[2U] = 3;
     up->comp[OFFSET + 2] = -3.;
     step = 2.;
-    for (i = 3; i < OFFSET; i++)
+    for (i = 3; i < OFFSET; ++i)
     {
         up->comp[i] = up->comp[i - 1] + step;
         up->comp[OFFSET + i] = -up->comp[i];
         if (i % 16 == 0)
+        {
             step *= 2.;
+        }
     }
     DTOLFP(1. / SECOND, &up->tick);
 #endif /* HAVE_AUDIO */
@@ -568,16 +574,22 @@ chu_start(
     temp = 0;
 #ifdef DEBUG
     if (debug > 1)
+    {
         temp = P_TRACE;
+    }
 #endif
     if (peer->ttl > 0)
     {
         if (peer->ttl & 0x80)
+        {
             up->fd_icom = icom_init("/dev/icom", B1200,
                                     temp);
+        }
         else
+        {
             up->fd_icom = icom_init("/dev/icom", B9600,
                                     temp);
+        }
     }
     if (up->fd_icom > 0)
     {
@@ -612,12 +624,16 @@ chu_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (up == NULL)
+    {
         return;
+    }
 
     io_closeclock(&pp->io);
 #ifdef ICOM
     if (up->fd_icom > 0)
+    {
         close(up->fd_icom);
+    }
 #endif /* ICOM */
     free(up);
 }
@@ -649,9 +665,13 @@ chu_receive(
      * few degrees cooler.
      */
     if (up->fd_audio > 0)
+    {
         chu_audio_receive(rbufp);
+    }
     else
+    {
         chu_serial_receive(rbufp);
+    }
 #else
     chu_serial_receive(rbufp);
 #endif /* HAVE_AUDIO */
@@ -688,7 +708,7 @@ chu_audio_receive(
     L_SUB(&rbufp->recv_time, &ltemp);
     up->timestamp = rbufp->recv_time;
     dpt = rbufp->recv_buffer;
-    for (bufcnt = 0; bufcnt < rbufp->recv_length; bufcnt++)
+    for (bufcnt = 0; bufcnt < rbufp->recv_length; ++bufcnt)
     {
         sample = up->comp[~*dpt++ & 0xff];
 
@@ -724,13 +744,21 @@ chu_audio_receive(
      * Set the input port and monitor gain for the next buffer.
      */
     if (pp->sloppyclockflag & CLK_FLAG2)
+    {
         up->port = 2;
+    }
     else
+    {
         up->port = 1;
+    }
     if (pp->sloppyclockflag & CLK_FLAG3)
+    {
         up->mongain = MONGAIN;
+    }
     else
+    {
         up->mongain = 0;
+    }
 }
 
 
@@ -799,16 +827,24 @@ chu_rf(
      */
     limit = signal;
     if (limit > LIMIT)
+    {
         limit = LIMIT;
+    }
     else if (limit < -LIMIT)
+    {
         limit = -LIMIT;
+    }
     disc = up->disc[up->discptr] * -limit;
     up->disc[up->discptr] = limit;
     up->discptr = (up->discptr + 1) % LAG;
     if (disc >= 0)
+    {
         disc = SQRT(disc);
+    }
     else
+    {
         disc = -SQRT(-disc);
+    }
 
     /*
      * Lowpass filter. Raised cosine FIR, Ts = 1 / 300, beta = 0.1.
@@ -862,16 +898,20 @@ chu_rf(
         {
             up->dbrk--;
             if (up->dbrk > 0)
+            {
                 return;
+            }
 
             up->decpha = up->decptr;
         }
         if (up->decptr != up->decpha)
+        {
             return;
+        }
 
         dist = 0;
         j = -1;
-        for (i = 0; i < 8; i++)
+        for (i = 0; i < 8; ++i)
         {
 
             /*
@@ -879,9 +919,11 @@ chu_rf(
              * for correct decoding we reqire sufficient
              * span and correct start bit and two stop bits.
              */
-            if ((up->surv[i].uart & 0x601) != 0x600 ||
-                up->surv[i].span < SPAN)
+            if (((up->surv[i].uart & 0x601) != 0x600) ||
+                (up->surv[i].span < SPAN))
+            {
                 continue;
+            }
 
             if (up->surv[i].dist > dist)
             {
@@ -890,7 +932,9 @@ chu_rf(
             }
         }
         if (j < 0)
+        {
             return;
+        }
 
         /*
          * Process the character, then blank the decoder until
@@ -934,13 +978,17 @@ chu_uart(
     es_max = -1e6;
     es_min = 1e6;
     sp->shift[0U] = sample;
-    for (i = 11; i > 0; i--)
+    for (i = 11; i > 0; --i)
     {
         sp->shift[i] = sp->shift[i - 1];
         if (sp->shift[i] > es_max)
+        {
             es_max = sp->shift[i];
+        }
         if (sp->shift[i] < es_min)
+        {
             es_min = sp->shift[i];
+        }
     }
 
     /*
@@ -955,13 +1003,15 @@ chu_uart(
     slice = es_min + .45 * sp->span;
     dist = 0;
     sp->uart = 0;
-    for (i = 1; i < 12; i++)
+    for (i = 1; i < 12; ++i)
     {
         sp->uart <<= 1;
         dtemp = sp->shift[i];
         if (dtemp > slice)
+        {
             sp->uart |= 0x1;
-        if (i == 1 || i == 2)
+        }
+        if ((i == 1) || (i == 2))
         {
             dist += dtemp - es_min;
         }
@@ -972,9 +1022,13 @@ chu_uart(
         else
         {
             if (dtemp > slice)
+            {
                 dist += dtemp - es_min;
+            }
             else
+            {
                 dist += es_max - dtemp;
+            }
         }
     }
     sp->dist = dist / (11 * sp->span);
@@ -1028,7 +1082,9 @@ chu_decode(
      */
     tstmp = up->timestamp;
     if (L_ISZERO(&up->laststamp))
+    {
         up->laststamp = up->timestamp;
+    }
     L_SUB(&tstmp, &up->laststamp);
     up->laststamp = up->timestamp;
     LFPTOD(&tstmp, dtemp);
@@ -1082,8 +1138,10 @@ chu_burst(
         return;
     }
     up->burdist = 0;
-    for (i = 0; i < 5 && i < up->ndx - 5; i++)
+    for (i = 0; (i < 5) && (i < up->ndx - 5); ++i)
+    {
         up->burdist += chu_dist(up->cbuf[i], up->cbuf[i + 5]);
+    }
 
     /*
      * If the burst distance is at least MINDIST, this must be a
@@ -1113,7 +1171,9 @@ chu_burst(
      * timer interrupt routine.
      */
     if (peer->outdate != current_time)
+    {
         peer->nextdate = current_time + 10;
+    }
 }
 
 
@@ -1128,8 +1188,8 @@ chu_b(
     struct refclockproc* pp;
     struct chuunit* up;
 
-    u_char code[11]; /* decoded timecode */
-    char tbuf[80];   /* trace buffer */
+    u_char code[11U]; /* decoded timecode */
+    char tbuf[80U];   /* trace buffer */
     char* p;
     size_t chars;
     size_t cb;
@@ -1149,7 +1209,7 @@ chu_b(
              up->status, up->maxsignal, nchar, -up->burdist);
     cb = sizeof(tbuf);
     p = tbuf;
-    for (i = 0; i < nchar; i++)
+    for (i = 0; i < nchar; ++i)
     {
         chars = strlen(p);
         if (cb < chars + 1)
@@ -1162,10 +1222,14 @@ chu_b(
         snprintf(p, cb, "%02x", up->cbuf[i]);
     }
     if (pp->sloppyclockflag & CLK_FLAG4)
+    {
         record_clock_stats(&peer->srcadr, tbuf);
+    }
 #ifdef DEBUG
     if (debug)
+    {
         printf("%s\n", tbuf);
+    }
 #endif
     if (up->burdist > -40)
     {
@@ -1177,12 +1241,12 @@ chu_b(
      * Convert the burst data to internal format. Don't bother with
      * the timestamps.
      */
-    for (i = 0; i < 5; i++)
+    for (i = 0; i < 5; ++i)
     {
-        code[2 * i] = hexchar[up->cbuf[i] & 0xf];
-        code[2 * i + 1] = hexchar[(up->cbuf[i] >>
-                                   4) &
-                                  0xf];
+        code[2U * i] = hexchar[up->cbuf[i] & 0xf];
+        code[2U * i + 1] = hexchar[(up->cbuf[i] >>
+                                    4) &
+                                   0xf];
     }
     if (sscanf((char*)code, "%1x%1d%4d%2d%2x", &up->leap, &up->dut,
                &pp->year, &up->tai, &up->dst) != 5)
@@ -1192,7 +1256,9 @@ chu_b(
     }
     up->status |= BVALID;
     if (up->leap & 0x8)
+    {
         up->dut = -up->dut;
+    }
 }
 
 
@@ -1207,7 +1273,7 @@ chu_a(
     struct refclockproc* pp;
     struct chuunit* up;
 
-    char tbuf[80]; /* trace buffer */
+    char tbuf[80U]; /* trace buffer */
     char* p;
     size_t chars;
     size_t cb;
@@ -1230,15 +1296,19 @@ chu_a(
      */
     up->syndist = k = 0;
     // val = -16;
-    for (i = -1; i < 2; i++)
+    for (i = -1; i < 2; ++i)
     {
         temp = up->cbuf[i + 4] & 0xf;
         if (i >= 0)
+        {
             temp |= (up->cbuf[i] & 0xf) << 4;
+        }
         val = chu_dist(temp, 0x63);
         temp = (up->cbuf[i + 5] & 0xf) << 4;
         if (i + 9 < nchar)
+        {
             temp |= up->cbuf[i + 9] & 0xf;
+        }
         val += chu_dist(temp, 0x63);
         if (val > up->syndist)
         {
@@ -1252,15 +1322,17 @@ chu_a(
      * 9 and the two repititions must be the same.
      */
     temp = (up->cbuf[k + 4] >> 4) & 0xf;
-    if (temp < 2 || temp > 9 || k + 9 >= nchar || temp != ((up->cbuf[k + 9] >> 4) & 0xf))
+    if ((temp < 2) || (temp > 9) || (k + 9 >= nchar) || (temp != ((up->cbuf[k + 9] >> 4) & 0xf)))
+    {
         temp = 0;
+    }
     snprintf(tbuf, sizeof(tbuf),
              "chuA %04x %4.0f %2d %2d %2d %2d %1d ", up->status,
              up->maxsignal, nchar, up->burdist, k, up->syndist,
              temp);
     cb = sizeof(tbuf);
     p = tbuf;
-    for (i = 0; i < nchar; i++)
+    for (i = 0; i < nchar; ++i)
     {
         chars = strlen(p);
         if (cb < chars + 1)
@@ -1273,10 +1345,14 @@ chu_a(
         snprintf(p, cb, "%02x", up->cbuf[i]);
     }
     if (pp->sloppyclockflag & CLK_FLAG4)
+    {
         record_clock_stats(&peer->srcadr, tbuf);
+    }
 #ifdef DEBUG
     if (debug)
+    {
         printf("%s\n", tbuf);
+    }
 #endif
     if (up->syndist < MINSYNC)
     {
@@ -1303,20 +1379,26 @@ chu_a(
         offset.l_uf = 0;
         i = 0;
         if (k < 0)
+        {
             offset = up->charstamp;
+        }
         else if (k > 0)
+        {
             i = 1;
-        for (; i < nchar && (i - 10) < k; i++)
+        }
+        for (; (i < nchar) && ((i - 10) < k); ++i)
         {
             up->tstamp[up->ntstamp] = up->cstamp[i];
             L_SUB(&up->tstamp[up->ntstamp], &offset);
             L_ADD(&offset, &up->charstamp);
             if (up->ntstamp < MAXSTAGE - 1)
+            {
                 up->ntstamp++;
+            }
         }
         while (temp > up->prevsec)
         {
-            for (j = 15; j > 0; j--)
+            for (j = 15; j > 0; --j)
             {
                 up->decode[9U][j] = up->decode[9U][j - 1];
                 up->decode[19U][j] =
@@ -1331,9 +1413,9 @@ chu_a(
      * Stash the data in the decoding matrix.
      */
     i = -(2 * k);
-    for (j = 0; j < nchar; j++)
+    for (j = 0; j < nchar; ++j)
     {
-        if (i < 0 || i > 18)
+        if ((i < 0) || (i > 18))
         {
             i += 2;
             continue;
@@ -1389,7 +1471,9 @@ chu_second(
      */
     up->second = (up->second + 1) % 60;
     if (up->second != 0)
+    {
         return;
+    }
 
     /*
      * Process the last burst, if still in the burst buffer.
@@ -1402,15 +1486,25 @@ chu_second(
     dtemp = chu_major(peer);
     qual = 0;
     if (up->status & (BFRAME | AFRAME))
+    {
         qual |= SYNERR;
+    }
     if (up->status & (BFORMAT | AFORMAT))
+    {
         qual |= FMTERR;
+    }
     if (up->status & DECODE)
+    {
         qual |= DECERR;
+    }
     if (up->status & STAMP)
+    {
         qual |= TSPERR;
-    if (up->status & BVALID && dtemp >= MINMETRIC)
+    }
+    if ((up->status & BVALID) && (dtemp >= MINMETRIC))
+    {
         up->status |= INSYNC;
+    }
     synchar = leapchar = ' ';
     if (!(up->status & INSYNC))
     {
@@ -1443,8 +1537,8 @@ chu_second(
      * timecode is ipso fatso valid and can be selected to
      * discipline the clock.
      */
-    if (up->status & INSYNC && !(up->status & (DECODE | STAMP)) &&
-        dtemp > MINMETRIC)
+    if ((up->status & INSYNC) && !(up->status & (DECODE | STAMP)) &&
+        (dtemp > MINMETRIC))
     {
         if (!clocktime(pp->day, pp->hour, pp->minute, 0, GMT,
                        up->tstamp[0U].l_ui, &pp->yearstart, &offset.l_ui))
@@ -1454,26 +1548,34 @@ chu_second(
         else
         {
             offset.l_uf = 0;
-            for (i = 0; i < up->ntstamp; i++)
+            for (i = 0; i < up->ntstamp; ++i)
+            {
                 refclock_process_offset(pp, offset,
                                         up->tstamp[i], PDELAY + pp->fudgetime1);
+            }
             pp->lastref = up->timestamp;
             refclock_receive(peer);
         }
     }
     if (dtemp > 0)
+    {
         record_clock_stats(&peer->srcadr, pp->a_lastcode);
+    }
 #ifdef DEBUG
     if (debug)
+    {
         printf("chu: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif
 #ifdef ICOM
     chu_newchan(peer, dtemp);
 #endif /* ICOM */
     chu_clear(peer);
     if (up->errflg)
+    {
         refclock_report(peer, up->errflg);
+    }
     up->errflg = 0;
 }
 
@@ -1489,10 +1591,10 @@ chu_major(
     struct refclockproc* pp;
     struct chuunit* up;
 
-    u_char code[11]; /* decoded timecode */
-    int metric;      /* distance metric */
-    int val1;        /* maximum distance */
-    int synchar;     /* stray cat */
+    u_char code[11U]; /* decoded timecode */
+    int metric;       /* distance metric */
+    int val1;         /* maximum distance */
+    int synchar;      /* stray cat */
     int temp;
     int i, j, k;
 
@@ -1513,11 +1615,11 @@ chu_major(
      * tenth digit varies over the seconds, so we don't count it.
      */
     metric = 0;
-    for (i = 0; i < 9; i++)
+    for (i = 0; i < 9; ++i)
     {
         val1 = 0;
         k = 0;
-        for (j = 0; j < 16; j++)
+        for (j = 0; j < 16; ++j)
         {
             temp = up->decode[i][j] + up->decode[i + 10][j];
             if (temp > val1)
@@ -1527,7 +1629,9 @@ chu_major(
             }
         }
         if (val1 <= up->burstcnt)
+        {
             up->status |= DECODE;
+        }
         metric += val1;
         code[i] = hexchar[k];
     }
@@ -1541,9 +1645,13 @@ chu_major(
      */
     if (sscanf((char*)code, "%1x%3d%2d%2d", &synchar, &pp->day,
                &pp->hour, &pp->minute) != 4)
+    {
         up->status |= DECODE;
+    }
     if (up->ntstamp < MINSTAMP)
+    {
         up->status |= STAMP;
+    }
     return (metric);
 }
 
@@ -1569,10 +1677,12 @@ chu_clear(
     up->ndx = up->prevsec = 0;
     up->burstcnt = up->ntstamp = 0;
     up->status &= INSYNC | METRIC;
-    for (i = 0; i < 20; i++)
+    for (i = 0; i < 20; ++i)
     {
-        for (j = 0; j < 16; j++)
+        for (j = 0; j < 16; ++j)
+        {
             up->decode[i][j] = 0;
+        }
     }
 }
 
@@ -1606,7 +1716,9 @@ chu_newchan(
      * to the channel with the highest channel metric.
      */
     if (up->fd_icom <= 0)
+    {
         return (0);
+    }
 
     /*
      * Update the current channel metric and age of all channels.
@@ -1619,7 +1731,7 @@ chu_newchan(
     sp->probe = 0;
     sp->iptr = (sp->iptr + 1) % ISTAGE;
     metric = 0;
-    for (i = 0; i < NCHAN; i++)
+    for (i = 0; i < NCHAN; ++i)
     {
         up->xmtr[i].probe++;
         if (up->xmtr[i].metric > metric)
@@ -1635,10 +1747,10 @@ chu_newchan(
      * been heard, continue round-robin scan.
      */
     up->dwell = (up->dwell + 1) % DWELL;
-    if (up->dwell == 0 || metric == 0)
+    if ((up->dwell == 0) || (metric == 0))
     {
         rval = 0;
-        for (i = 0; i < NCHAN; i++)
+        for (i = 0; i < NCHAN; ++i)
         {
             if (up->xmtr[i].probe > rval)
             {
@@ -1655,7 +1767,7 @@ chu_newchan(
     snprintf(up->ident, sizeof(up->ident), "CHU%d", up->chan);
     memcpy(&pp->refid, up->ident, 4);
     memcpy(&peer->refid, up->ident, 4);
-    if (metric == 0 && up->status & METRIC)
+    if ((metric == 0) && (up->status & METRIC))
     {
         up->status &= ~METRIC;
         refclock_report(peer, CEVNT_PROP);
@@ -1686,12 +1798,16 @@ chu_dist(
      */
     temp = x ^ y;
     val = 0;
-    for (i = 0; i < 8; i++)
+    for (i = 0; i < 8; ++i)
     {
         if ((temp & 0x1) == 0)
+        {
             val++;
+        }
         else
+        {
             val--;
+        }
         temp >>= 1;
     }
     return (val);
@@ -1729,13 +1845,17 @@ chu_gain(
     {
         up->gain += 4;
         if (up->gain > MAXGAIN)
+        {
             up->gain = MAXGAIN;
+        }
     }
     else if (up->clipcnt > MAXCLP)
     {
         up->gain -= 4;
         if (up->gain < 0)
+        {
             up->gain = 0;
+        }
     }
     audio_gain(up->gain, up->mongain, up->port);
     up->clipcnt = 0;

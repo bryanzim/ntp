@@ -34,7 +34,7 @@
 static HANDLE hAppLog = NULL;
 static FILE* log_stream;
 static int debug_level = 0;
-static char progname[51] = "NTP";
+static char progname[51U] = "NTP";
 static int logmask = 0;
 
 /*
@@ -43,8 +43,8 @@ static int logmask = 0;
 void syslog(int level, const char* fmt, ...)
 {
     va_list ap;
-    char buf[1024];
-    char* str[1];
+    char buf[1024U];
+    char* str[1U];
 
     str[0U] = buf;
 
@@ -133,7 +133,7 @@ void InitNTLogging(FILE* stream, int debug)
 void NTReportError(const char* name, const char* str)
 {
     HANDLE hNTAppLog = NULL;
-    const char* buf[1];
+    const char* buf[1U];
 
     buf[0U] = str;
 

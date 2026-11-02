@@ -151,8 +151,10 @@ local_poll(
     /*
      * Do no evil unless the house is dark or lit with our own lamp.
      */
-    if (!(sys_peer == NULL || sys_peer == peer))
+    if (!((sys_peer == NULL) || (sys_peer == peer)))
+    {
         return;
+    }
 
 #if defined(VMS) && defined(VMS_LOCALUNIT)
     if (unit == VMS_LOCALUNIT)

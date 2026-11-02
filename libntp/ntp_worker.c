@@ -40,11 +40,11 @@ volatile u_int blocking_child_ready_done;
  * pair of unidirectional pipes.
  */
 int pipe_socketpair(
-    int caller_fds[2],
+    int caller_fds[2U],
     int* is_pipe)
 {
     int rc;
-    int fds[2];
+    int fds[2U];
     int called_pipe;
 
 #ifdef HAVE_SOCKETPAIR
@@ -64,12 +64,16 @@ int pipe_socketpair(
     }
 
     if (-1 == rc)
+    {
         return rc;
+    }
 
     caller_fds[0U] = fds[0U];
     caller_fds[1U] = fds[1U];
     if (is_pipe != NULL)
+    {
         *is_pipe = called_pipe;
+    }
 
     return 0;
 }
@@ -85,8 +89,10 @@ void close_all_except(
 {
     int fd;
 
-    for (fd = 0; fd < keep_fd; fd++)
+    for (fd = 0; fd < keep_fd; ++fd)
+    {
         close(fd);
+    }
 
     close_all_beyond(keep_fd);
 }
@@ -110,14 +116,18 @@ void close_all_beyond(
      * calls)
      */
     if (fcntl(keep_fd + 1, F_CLOSEM, 0) == -1)
+    {
         msyslog(LOG_ERR, "F_CLOSEM(%d): %m", keep_fd + 1);
+    }
 #else  /* !HAVE_CLOSEFROM && !F_CLOSEM follows */
     int fd;
     int max_fd;
 
     max_fd = GETDTABLESIZE();
-    for (fd = keep_fd + 1; fd < max_fd; fd++)
+    for (fd = keep_fd + 1; fd < max_fd; ++fd)
+    {
         close(fd);
+    }
 #endif /* !HAVE_CLOSEFROM && !F_CLOSEM */
 }
 #endif /* HAVE_IO_COMPLETION_PORT */
@@ -132,10 +142,12 @@ u_int available_blocking_child_slot(void)
     size_t prev_octets;
     size_t octets;
 
-    for (slot = 0; slot < blocking_children_alloc; slot++)
+    for (slot = 0; slot < blocking_children_alloc; ++slot)
     {
         if (NULL == blocking_children[slot])
+        {
             return slot;
+        }
         if (blocking_children[slot]->reusable)
         {
             blocking_children[slot]->reusable = FALSE;
@@ -175,17 +187,25 @@ int queue_blocking_request(
     req_hdr.context = context;
 
     child_slot = UINT_MAX;
-    if (worker_per_query || UINT_MAX == intres_slot ||
+    if (worker_per_query || (UINT_MAX == intres_slot) ||
         blocking_children[intres_slot]->reusable)
+    {
         child_slot = available_blocking_child_slot();
+    }
     if (!worker_per_query)
     {
         if (UINT_MAX == intres_slot)
+        {
             intres_slot = child_slot;
+        }
         else
+        {
             child_slot = intres_slot;
+        }
         if (0 == intres_req_pending)
+        {
             intres_timeout_req(0);
+        }
     }
     intres_req_pending++;
     INSIST(UINT_MAX != child_slot);
@@ -256,10 +276,14 @@ void process_blocking_resp(
 #ifdef WORK_THREAD
     } while (NULL != resp);
 #endif
-    if (!worker_per_query && 0 == intres_req_pending)
+    if (!worker_per_query && (0 == intres_req_pending))
+    {
         intres_timeout_req(CHILD_MAX_IDLE);
+    }
     else if (worker_per_query)
+    {
         req_child_exit(c);
+    }
 }
 
 void harvest_blocking_responses(void)
@@ -273,11 +297,13 @@ void harvest_blocking_responses(void)
     if (scdone != scseen)
     {
         blocking_child_ready_done = scseen;
-        for (idx = 0; idx < blocking_children_alloc; idx++)
+        for (idx = 0; idx < blocking_children_alloc; ++idx)
         {
             cp = blocking_children[idx];
             if (NULL == cp)
+            {
                 continue;
+            }
             scseen = cp->resp_ready_seen;
             scdone = cp->resp_ready_done;
             if (scdone != scseen)
@@ -315,12 +341,16 @@ int blocking_child_common(
         {
         case BLOCKING_GETADDRINFO:
             if (blocking_getaddrinfo(c, req))
+            {
                 say_bye = TRUE;
+            }
             break;
 
         case BLOCKING_GETNAMEINFO:
             if (blocking_getnameinfo(c, req))
+            {
                 say_bye = TRUE;
+            }
             break;
 
         default:
@@ -354,11 +384,13 @@ void worker_idle_timer_fired(void)
     DEBUG_REQUIRE(0 == intres_req_pending);
 
     intres_timeout_req(0);
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
         if (NULL == c)
+        {
             continue;
+        }
         req_child_exit(c);
     }
 }

@@ -416,7 +416,7 @@ typedef enum
 
 typedef struct
 {
-    char String[4 * 4];
+    char String[4U * 4];
 } IP_ADDRESS_STRING, *PIP_ADDRESS_STRING, IP_MASK_STRING, *PIP_MASK_STRING;
 
 //
@@ -703,7 +703,7 @@ typedef struct _IP_ADAPTER_ADDRESSES_LH
     IFTYPE IfType;
     IF_OPER_STATUS OperStatus;
     IF_INDEX Ipv6IfIndex;
-    ULONG ZoneIndices[16];
+    ULONG ZoneIndices[16U];
     PIP_ADAPTER_PREFIX_XP FirstPrefix;
 
     ULONG64 TransmitLinkSpeed;
@@ -755,7 +755,7 @@ typedef struct _IP_ADAPTER_ADDRESSES_XP
     DWORD IfType;
     IF_OPER_STATUS OperStatus;
     DWORD Ipv6IfIndex;
-    DWORD ZoneIndices[16];
+    DWORD ZoneIndices[16U];
     PIP_ADAPTER_PREFIX_XP FirstPrefix;
 } IP_ADAPTER_ADDRESSES_XP,
     *PIP_ADAPTER_ADDRESSES_XP;

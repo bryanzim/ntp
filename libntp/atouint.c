@@ -24,15 +24,21 @@ int atouint(
 
     cp = str;
     if ('\0' == *cp)
+    {
         return 0;
+    }
 
     u = 0;
     while ('\0' != *cp)
     {
         if (!isdigit((unsigned char)*cp))
+        {
             return 0;
-        if (u > 429496729 || (u == 429496729 && *cp >= '6'))
-            return 0; /* overflow */
+        }
+        if ((u > 429496729) || ((u == 429496729) && (*cp >= '6')))
+        {
+            return 0;
+        } /* overflow */
         /* hand-optimized u *= 10; */
         u = (u << 3) + (u << 1);
         u += *cp++ - '0'; /* not '\0' */

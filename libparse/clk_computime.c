@@ -177,9 +177,13 @@ inp_computime(
     case '\n':
         parseprintf(DD_PARSE, ("inp_computime: END seen\n"));
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
     default:
         return parse_addchar(parseio, ch);

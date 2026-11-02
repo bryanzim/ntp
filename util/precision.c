@@ -69,15 +69,21 @@ int default_get_resolution(void)
 
     gettimeofday(&tp, &tzp);
     last = tp.tv_usec;
-    for (i = - --minsteps; i < MAXLOOPS; i++)
+    for (i = - --minsteps; i < MAXLOOPS; ++i)
     {
         gettimeofday(&tp, &tzp);
         diff = tp.tv_usec - last;
         if (diff < 0)
+        {
             diff += DUSECS;
+        }
         if (diff > MINSTEP)
+        {
             if (minsteps-- <= 0)
+            {
                 break;
+            }
+        }
         last = tp.tv_usec;
     }
 
@@ -99,8 +105,12 @@ int default_get_resolution(void)
         diff = 1; /* time to read clock >= resolution */
     }
     for (i = 0, val = HUSECS; val > 0; i--, val >>= 1)
+    {
         if (diff >= val)
+        {
             return i;
+        }
+    }
     printf("     (Oh dear -- that wasn't expected ! I'll guess !)\n");
     return DEFAULT_SYS_PRECISION /* Something's BUST, so lie ! */;
 }
@@ -142,7 +152,7 @@ int default_get_precision(void)
     GETTIMEOFDAY(&tp, &tzp);
 #endif /* not HAVE_GETCLOCK */
     last = tp.tv_usec;
-    for (i = 0; i < MINLOOPS && usec < HUSECS;)
+    for (i = 0; (i < MINLOOPS) && (usec < HUSECS);)
     {
 #ifdef HAVE_GETCLOCK
         (void)getclock(TIMEOFDAY, &ts);
@@ -154,13 +164,17 @@ int default_get_precision(void)
         diff = tp.tv_usec - last;
         last = tp.tv_usec;
         if (diff < 0)
+        {
             diff += DUSECS;
+        }
         usec += diff;
         if (diff > MINSTEP)
         {
             i++;
             if (diff < val)
+            {
                 val = diff;
+            }
         }
     }
     printf("precision  = %ld usec after %d loop%s\n",
@@ -172,7 +186,9 @@ int default_get_precision(void)
         val = MINSTEP; /* val <= MINSTEP; fast machine */
     }
     diff = HUSECS;
-    for (i = 0; diff > val; i--)
+    for (i = 0; diff > val; --i)
+    {
         diff >>= 1;
+    }
     return (i);
 }

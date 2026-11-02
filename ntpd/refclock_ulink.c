@@ -120,7 +120,7 @@ ulink_start(
     register struct ulinkunit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port. Use CLK line discipline, if available.
@@ -128,7 +128,9 @@ ulink_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -173,9 +175,13 @@ ulink_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (pp->io.fd != -1)
+    {
         io_closeclock(&pp->io);
+    }
     if (up != NULL)
+    {
         free(up);
+    }
 }
 
 
@@ -197,7 +203,7 @@ ulink_receive(
     char leapchar;         /* leap indicator */
     char modechar;         /* model 320 mode flag */
     char siglchar;         /* model difference between 33x/325 */
-    char char_quality[2];  /* temp quality flag */
+    char char_quality[2U]; /* temp quality flag */
 
     /*
      * Initialize pointers and read the timecode and timestamp
@@ -219,7 +225,9 @@ ulink_receive(
             up->laststamp = trtmp;
         }
         else
+        {
             up->tcswitch = 0;
+        }
         return;
     }
     pp->lencode = temp;
@@ -228,8 +236,10 @@ ulink_receive(
     up->tcswitch = 1;
 #ifdef DEBUG
     if (debug)
+    {
         printf("ulink: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif
 
     /*
@@ -313,9 +323,13 @@ ulink_receive(
                     }
 
                     if (leapchar == 'I')
+                    {
                         leapchar = '+';
+                    }
                     if (leapchar == 'D')
+                    {
                         leapchar = '-';
+                    }
 
                     /*
                     #ifdef DEBUG
@@ -444,11 +458,17 @@ ulink_receive(
         {
             pp->nsec *= 10000000; /* M320 returns 10's of msecs */
             if (leapchar == 'I')
+            {
                 leapchar = '+';
+            }
             if (leapchar == 'D')
+            {
                 leapchar = '-';
+            }
             if (syncchar != '?')
+            {
                 syncchar = ':';
+            }
 
             break;
         }
@@ -536,13 +556,21 @@ ulink_receive(
      */
 
     if (syncchar != ':')
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else if (leapchar == '+')
+    {
         pp->leap = LEAP_ADDSECOND;
+    }
     else if (leapchar == '-')
+    {
         pp->leap = LEAP_DELSECOND;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
 
     /*
      * Process the new sample in the median filter and determine the
@@ -571,12 +599,18 @@ ulink_poll(
     if (pp->sloppyclockflag & CLK_FLAG1)
     {
         if (write(pp->io.fd, &pollchar, 1) != 1)
+        {
             refclock_report(peer, CEVNT_FAULT);
+        }
         else
+        {
             pp->polls++;
+        }
     }
     else
+    {
         pp->polls++;
+    }
 
     if (pp->coderecv == pp->codeproc)
     {

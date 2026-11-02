@@ -166,10 +166,14 @@ void parse_ioend(
     parseprintf(DD_PARSE, ("parse_ioend\n"));
 
     if (parseio->parse_pdata)
+    {
         FREE(parseio->parse_pdata, parseio->parse_plen);
+    }
 
     if (parseio->parse_data)
+    {
         FREE(parseio->parse_data, (unsigned)(parseio->parse_dsize * 2 + 2));
+    }
 }
 
 unsigned int
@@ -219,10 +223,12 @@ parse_addchar(
         return PARSE_INP_SKIP;
     }
     else
+    {
         /*
          * buffer overflow - attempt to make the best of it
          */
         return parse_restart(parseio, ch);
+    }
 }
 
 unsigned int
@@ -391,12 +397,18 @@ parse_to_unixtime(
     time_t t;
 
     if (clock_time->utctime)
-        return clock_time->utctime; /* if the conversion routine gets it right away - why not */
+    {
+        return clock_time->utctime;
+    } /* if the conversion routine gets it right away - why not */
 
-    if (clock_time->year < YEAR_PIVOT) /* Y2KFixes [ */
-        clock_time->year += 100;       /* convert 20xx%100 to 20xx-1900 */
-    if (clock_time->year < YEAR_BREAK) /* expand to full four-digits */
+    if (clock_time->year < YEAR_PIVOT)
+    { /* Y2KFixes [ */
+        clock_time->year += 100;
+    } /* convert 20xx%100 to 20xx-1900 */
+    if (clock_time->year < YEAR_BREAK)
+    { /* expand to full four-digits */
         clock_time->year += 1900;
+    }
 
     if (clock_time->year < 1970) /* Y2KFixes ] */
     {
@@ -409,7 +421,7 @@ parse_to_unixtime(
      */
     t = julian0(clock_time->year) - julian0(1970); /* Y2kFixes */
                                                    /* month */
-    if (clock_time->month <= 0 || clock_time->month > 12)
+    if ((clock_time->month <= 0) || (clock_time->month > 12))
     {
         SETRTC(CVT_FAIL | CVT_BADDATE);
         return -1; /* bad month */
@@ -417,19 +429,23 @@ parse_to_unixtime(
 
 #if 0 /* Y2KFixes */
 				/* adjust leap year */
-	if (clock_time->month < 3 && days_per_year(clock_time->year) == 366)
+	if ((clock_time->month < 3) && (days_per_year(clock_time->year) == 366))
+	{
 	    t--;
+	}
 #else /* Y2KFixes [ */
-    if (clock_time->month >= 3 && isleap_4(clock_time->year))
-        t++; /* add one more if within leap year */
-#endif       /* Y2KFixes ] */
+    if ((clock_time->month >= 3) && isleap_4(clock_time->year))
+    {
+        t++;
+    } /* add one more if within leap year */
+#endif /* Y2KFixes ] */
 
-    for (i = 1; i < clock_time->month; i++)
+    for (i = 1; i < clock_time->month; ++i)
     {
         t += days_of_month[i];
     }
     /* day */
-    if (clock_time->day < 1 || ((clock_time->month == 2 && days_per_year(clock_time->year) == 366) ? clock_time->day > 29 : clock_time->day > days_of_month[clock_time->month]))
+    if ((clock_time->day < 1) || (((clock_time->month == 2) && (days_per_year(clock_time->year) == 366)) ? clock_time->day > 29 : clock_time->day > days_of_month[clock_time->month]))
     {
         SETRTC(CVT_FAIL | CVT_BADDATE);
         return -1; /* bad day */
@@ -437,7 +453,7 @@ parse_to_unixtime(
 
     t += clock_time->day - 1;
     /* hour */
-    if (clock_time->hour < 0 || clock_time->hour >= 24)
+    if ((clock_time->hour < 0) || (clock_time->hour >= 24))
     {
         SETRTC(CVT_FAIL | CVT_BADTIME);
         return -1; /* bad hour */
@@ -446,7 +462,7 @@ parse_to_unixtime(
     t = TIMES24(t) + clock_time->hour;
 
     /* min */
-    if (clock_time->minute < 0 || clock_time->minute > 59)
+    if ((clock_time->minute < 0) || (clock_time->minute > 59))
     {
         SETRTC(CVT_FAIL | CVT_BADTIME);
         return -1; /* bad min */
@@ -455,7 +471,7 @@ parse_to_unixtime(
     t = TIMES60(t) + clock_time->minute;
     /* sec */
 
-    if (clock_time->second < 0 || clock_time->second > 60) /* allow for LEAPs */
+    if ((clock_time->second < 0) || (clock_time->second > 60)) /* allow for LEAPs */
     {
         SETRTC(CVT_FAIL | CVT_BADTIME);
         return -1; /* bad sec */
@@ -486,7 +502,9 @@ int Stoi(
     f = z = v = 0;
 
     while (*s == ' ')
+    {
         s++;
+    }
 
     if (*s == '-')
     {
@@ -494,19 +512,23 @@ int Stoi(
         v = 1;
     }
     else if (*s == '+')
+    {
         s++;
+    }
 
     for (;;)
     {
         c = *s++;
-        if (c == '\0' || c < '0' || c > '9' || (cnt && ((s - b) > cnt)))
+        if ((c == '\0') || (c < '0') || (c > '9') || (cnt && ((s - b) > cnt)))
         {
             if (f == 0)
             {
                 return (-1);
             }
             if (v)
+            {
                 z = -z;
+            }
             *zp = z;
             return (0);
         }
@@ -520,7 +542,9 @@ int Strok(
     const unsigned char* m)
 {
     if (!s || !m)
+    {
         return 0;
+    }
 
     while (*s && *m)
     {
@@ -615,7 +639,9 @@ pps_one(
     register timestamp_t* ptime)
 {
     if (status)
+    {
         return pps_simple(parseio, status, ptime);
+    }
 
     return CVT_NONE;
 }
@@ -633,7 +659,9 @@ pps_zero(
     register timestamp_t* ptime)
 {
     if (!status)
+    {
         return pps_simple(parseio, status, ptime);
+    }
 
     return CVT_NONE;
 }
@@ -656,7 +684,9 @@ timepacket(
     format = parseio->parse_lformat;
 
     if (format == (unsigned short)~0)
+    {
         return CVT_NONE;
+    }
 
     switch ((cvtrtc = clockformats[format]->convert ? clockformats[format]->convert((unsigned char*)parseio->parse_ldata, parseio->parse_ldsize, (struct format*)(clockformats[format]->data), &clock_time, parseio->parse_pdata) : CVT_NONE) & CVT_MASK)
     {
@@ -746,12 +776,14 @@ int parse_setfmt(
         {
             register unsigned short i;
 
-            for (i = 0; i < nformats; i++)
+            for (i = 0; i < nformats; ++i)
             {
                 if (!Strcmp(dct->parseformat.parse_buffer, clockformats[i]->name))
                 {
                     if (parse->parse_pdata)
+                    {
                         FREE(parse->parse_pdata, parse->parse_plen);
+                    }
                     parse->parse_pdata = 0;
 
                     parse->parse_plen = clockformats[i]->plen;
@@ -768,7 +800,9 @@ int parse_setfmt(
                     }
 
                     if (parse->parse_data)
+                    {
                         FREE(parse->parse_data, (unsigned)(parse->parse_dsize * 2 + 2));
+                    }
                     parse->parse_ldata = parse->parse_data = 0;
 
                     parse->parse_dsize = clockformats[i]->length;
@@ -779,7 +813,9 @@ int parse_setfmt(
                         if (!parse->parse_data)
                         {
                             if (parse->parse_pdata)
+                            {
                                 FREE(parse->parse_pdata, parse->parse_plen);
+                            }
                             parse->parse_pdata = 0;
 
                             parseprintf(DD_PARSE, ("init failed: malloc for data area failed\n"));
@@ -808,8 +844,8 @@ int parse_getfmt(
     parsectl_t* dct,
     parse_t* parse)
 {
-    if (dct->parseformat.parse_format < nformats &&
-        Strlen(clockformats[dct->parseformat.parse_format]->name) <= PARSE_TCMAX)
+    if ((dct->parseformat.parse_format < nformats) &&
+        (Strlen(clockformats[dct->parseformat.parse_format]->name) <= PARSE_TCMAX))
     {
         dct->parseformat.parse_count = (unsigned short)(Strlen(clockformats[dct->parseformat.parse_format]->name) + 1);
         memcpy(dct->parseformat.parse_buffer, clockformats[dct->parseformat.parse_format]->name, dct->parseformat.parse_count);

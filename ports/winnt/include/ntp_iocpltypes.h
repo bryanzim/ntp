@@ -38,8 +38,8 @@ struct IoHndPad
         endpt* ept;    /*  interface backlink		*/
         ULONG_PTR key; /*  as key for IOCPL queue	*/
         void* any;
-    } rsrc;            /* registered source		*/
-    HANDLE handles[2]; /* 0->COM/SOCK 1->BCASTSOCK	*/
+    } rsrc;             /* registered source		*/
+    HANDLE handles[2U]; /* 0->COM/SOCK 1->BCASTSOCK	*/
 
     /* COMPORT specific stuff */
     int riofd;                    /* FD for comports		*/

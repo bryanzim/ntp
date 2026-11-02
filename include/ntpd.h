@@ -631,7 +631,7 @@ extern char* group;           /* group to switch to */
 extern const char* chrootdir; /* directory to chroot() to */
 #endif
 #ifdef HAVE_WORKING_FORK
-extern int daemon_pipe[2]; /* startup monitoring */
+extern int daemon_pipe[2U]; /* startup monitoring */
 #endif
 
 /* ntservice.c */

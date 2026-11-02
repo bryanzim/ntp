@@ -19,7 +19,7 @@ TODO:
 
 typedef struct Element
 {
-    char str[37]; // 37 seems like a nice candidate to break stuff
+    char str[37U]; // 37 seems like a nice candidate to break stuff
     int number;
 
 } element;

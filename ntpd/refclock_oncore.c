@@ -339,10 +339,10 @@ struct instance
     u_char polled;
     u_long ev_serial;
     unsigned Rcvptr;
-    u_char Rcvbuf[500];
-    u_char BEHa[160]; /* Ba, Ea or Ha */
-    u_char BEHn[80];  /* Bn , En , or Hn */
-    u_char Cj[300];
+    u_char Rcvbuf[500U];
+    u_char BEHa[160U]; /* Ba, Ea or Ha */
+    u_char BEHn[80U];  /* Bn , En , or Hn */
+    u_char Cj[300U];
     u_char Ag; /* Satellite mask angle */
     u_char saw_At;
     u_char saw_Ay;
@@ -443,7 +443,7 @@ struct refclock refclock_oncore = {
 
 static struct msg_desc
 {
-    const char flag[3];
+    const char flag[3U];
     const int len;
     void (*handler)(struct instance*, u_char*, size_t);
     const char* fmt;
@@ -713,8 +713,10 @@ oncore_start(
      */
 
 #ifndef SYS_WINNT
-    if ((stat1.st_dev == stat2.st_dev) && (stat1.st_ino == stat2.st_ino)) /* same device here */
+    if ((stat1.st_dev == stat2.st_dev) && (stat1.st_ino == stat2.st_ino))
+    { /* same device here */
         fd2 = fd1;
+    }
     else
 #endif /* !SYS_WINNT */
     {  /* different devices here */
@@ -744,7 +746,9 @@ oncore_start(
     oncore_read_config(instance);
 
     if (!oncore_ppsapi(instance))
+    {
         return (0);
+    }
 
     pp->io.clock_recv = oncore_receive;
     pp->io.srcclock = peer;
@@ -803,7 +807,9 @@ oncore_shutdown(
     instance = pp->unitptr;
 
     if (pp->io.fd != -1)
+    {
         io_closeclock(&pp->io);
+    }
 
     if (instance != NULL)
     {
@@ -812,10 +818,14 @@ oncore_shutdown(
         close(instance->ttyfd);
 
         if ((instance->ppsfd != -1) && (instance->ppsfd != instance->ttyfd))
+        {
             close(instance->ppsfd);
+        }
 
         if (instance->shmemfd)
+        {
             close(instance->shmemfd);
+        }
 
         free(instance);
     }
@@ -853,9 +863,13 @@ oncore_poll(
     }
 
     if (!instance->pollcnt)
+    {
         refclock_report(peer, CEVNT_TIMEOUT);
+    }
     else
+    {
         instance->pollcnt--;
+    }
     peer->procptr->polls++;
     instance->polled = 1;
 }
@@ -938,9 +952,13 @@ oncore_ppsapi(
         oncore_log(instance, LOG_INFO, "HARDPPS Set.");
 
         if (instance->assert)
+        {
             i = PPS_CAPTUREASSERT;
+        }
         else
+        {
             i = PPS_CAPTURECLEAR;
+        }
 
         /* we know that 'i' is legal from above */
 
@@ -979,7 +997,9 @@ oncore_init_shmem(
     shmem_old = 0;
     shmem_old_size = 0;
     if ((fd = open(instance->shmem_fname, O_RDONLY)) < 0)
+    {
         oncore_log(instance, LOG_WARNING, "ONCORE: Can't open SHMEM file");
+    }
     else
     {
         fstat(fd, &sbuf);
@@ -988,8 +1008,10 @@ oncore_init_shmem(
         {
             shmem_old = emalloc((unsigned)sbuf.st_size);
             if (read(fd, shmem_old, shmem_old_size) != shmem_old_size)
+            {
                 oncore_log(instance, LOG_WARNING,
                            "ONCORE: truncated/failed read of SHMEM file");
+            }
         }
         close(fd);
     }
@@ -1000,7 +1022,9 @@ oncore_init_shmem(
     {
         oncore_log(instance, LOG_WARNING, "ONCORE: Can't open shmem");
         if (shmem_old)
+        {
             free(shmem_old);
+        }
 
         return;
     }
@@ -1008,7 +1032,7 @@ oncore_init_shmem(
     /* see how big it needs to be */
 
     n = 1;
-    for (mp = oncore_messages; mp->flag[0U]; mp++)
+    for (mp = oncore_messages; mp->flag[0U]; ++mp)
     {
         mp->shmem = n;
         /* Allocate space for multiplexed almanac, and 0D/2D/3D @@Ea records */
@@ -1041,7 +1065,7 @@ oncore_init_shmem(
 
     /* next build the new SHMEM buffer in memory */
 
-    for (mp = oncore_messages; mp->flag[0U]; mp++)
+    for (mp = oncore_messages; mp->flag[0U]; ++mp)
     {
         l = mp->shmem;
         buf[l + 0] = mp->len >> 8;
@@ -1054,10 +1078,14 @@ oncore_init_shmem(
         if (!strcmp(mp->flag, "Cb") || !strcmp(mp->flag, "Ba") || !strcmp(mp->flag, "Ea") || !strcmp(mp->flag, "Ha"))
         {
             if (!strcmp(mp->flag, "Cb"))
+            {
                 n = 35;
+            }
             else
+            {
                 n = 4;
-            for (i = 1; i < n; i++)
+            }
+            for (i = 1; i < n; ++i)
             {
                 buf[l + i * (mp->len + 3) + 0] = mp->len >> 8;
                 buf[l + i * (mp->len + 3) + 1] = mp->len & 0xff;
@@ -1084,8 +1112,10 @@ oncore_init_shmem(
             for (cp = buf + 4, cp1 = shmem_old + 4; (n = 256 * (*(cp - 3)) + *(cp - 2)); cp += (n + 3), cp1 += (n + 3))
             {
                 n1 = 256 * (*(cp1 - 3)) + *(cp1 - 2);
-                if (n == 0 || n1 != n || strncmp((char*)cp, (char*)cp1, 4))
+                if ((n == 0) || (n1 != n) || strncmp((char*)cp, (char*)cp1, 4))
+                {
                     break;
+                }
 
                 memcpy(cp, cp1, (size_t)n);
             }
@@ -1260,27 +1290,33 @@ oncore_read_config(
      */
 
     FILE* fd;
-    char *cc, *ca, line[100], units[2], device[64];
+    char *cc, *ca, line[100U], units[2U], device[64U];
     const char* dirs[] = { "/etc/ntp", "/etc", 0 };
     const char *cp, **cpp;
     int i, sign, lat_flg, long_flg, ht_flg, mode, mask;
     double f1, f2, f3;
 
     fd = NULL; /* just to shutup gcc complaint */
-    for (cpp = dirs; *cpp; cpp++)
+    for (cpp = dirs; *cpp; ++cpp)
     {
         cp = *cpp;
         snprintf(device, sizeof(device), "%s/ntp.oncore.%d",
                  cp, instance->unit); /* try "ntp.oncore.0 */
         if ((fd = fopen(device, "r")))
+        {
             break;
+        }
         snprintf(device, sizeof(device), "%s/ntp.oncore%d",
                  cp, instance->unit); /* try "ntp.oncore0" */
         if ((fd = fopen(device, "r")))
+        {
             break;
+        }
         snprintf(device, sizeof(device), "%s/ntp.oncore", cp);
-        if ((fd = fopen(device, "r"))) /* last try "ntp.oncore" */
+        if ((fd = fopen(device, "r")))
+        { /* last try "ntp.oncore" */
             break;
+        }
     }
 
     if (!fd)
@@ -1297,23 +1333,31 @@ oncore_read_config(
 
         /* Remove comments */
         if ((cpw = strchr(line, '#')))
+        {
             *cpw = '\0';
+        }
 
         /* Remove trailing space */
         for (i = strlen(line);
-             i > 0 && isascii((unsigned char)line[i - 1]) && isspace((unsigned char)line[i - 1]);)
+             (i > 0) && isascii((unsigned char)line[i - 1]) && isspace((unsigned char)line[i - 1]);)
+        {
             line[--i] = '\0';
+        }
 
         /* Remove leading space */
-        for (cc = line; *cc && isascii((unsigned char)*cc) && isspace((unsigned char)*cc); cc++)
+        for (cc = line; *cc && isascii((unsigned char)*cc) && isspace((unsigned char)*cc); ++cc)
+        {
             continue;
+        }
 
         /* Stop if nothing left */
         if (!*cc)
+        {
             continue;
+        }
 
         /* Uppercase the command and find the arg */
-        for (ca = cc; *ca; ca++)
+        for (ca = cc; *ca; ++ca)
         {
             if (isascii((unsigned char)*ca))
             {
@@ -1322,13 +1366,17 @@ oncore_read_config(
                     *ca = toupper((unsigned char)*ca);
                 }
                 else if (isspace((unsigned char)*ca) || (*ca == '='))
+                {
                     break;
+                }
             }
         }
 
         /* Remove space (and possible =) leading the arg */
-        for (; *ca && isascii((unsigned char)*ca) && (isspace((unsigned char)*ca) || (*ca == '=')); ca++)
+        for (; *ca && isascii((unsigned char)*ca) && (isspace((unsigned char)*ca) || (*ca == '=')); ++ca)
+        {
             continue;
+        }
 
         if (!strncmp(cc, "STATUS", (size_t)6) || !strncmp(cc, "SHMEM", (size_t)5))
         {
@@ -1337,9 +1385,13 @@ oncore_read_config(
         }
 
         /* Uppercase argument as well */
-        for (cpw = ca; *cpw; cpw++)
+        for (cpw = ca; *cpw; ++cpw)
+        {
             if (isascii((unsigned char)*cpw) && islower((unsigned char)*cpw))
+            {
                 *cpw = toupper((unsigned char)*cpw);
+            }
+        }
 
         if (!strncmp(cc, "LAT", (size_t)3))
         {
@@ -1373,7 +1425,9 @@ oncore_read_config(
             units[0U] = '\0';
             sscanf(ca, "%lf %1s", &f1, units);
             if (units[0U] == 'F')
+            {
                 f1 = 0.3048 * f1;
+            }
             instance->ss_ht = 100 * f1; /* cm */
             ht_flg++;
         }
@@ -1383,21 +1437,35 @@ oncore_read_config(
             units[0U] = '\0';
             sscanf(ca, "%lf %1s", &f1, units);
             if (units[0U] == 'N')
+            {
                 ;
+            }
             else if (units[0U] == 'U')
+            {
                 f1 = 1000 * f1;
+            }
             else if (units[0U] == 'M')
+            {
                 f1 = 1000000 * f1;
+            }
             else
+            {
                 f1 = 1000000000 * f1;
-            if (f1 < 0 || f1 > 1.e9)
+            }
+            if ((f1 < 0) || (f1 > 1.e9))
+            {
                 f1 = 0;
-            if (f1 < 0 || f1 > 999999)
+            }
+            if ((f1 < 0) || (f1 > 999999))
+            {
                 oncore_log_f(instance, LOG_WARNING,
                              "PPS Cable delay of %fns out of Range, ignored",
                              f1);
+            }
             else
-                instance->delay = f1; /* delay in ns */
+            {
+                instance->delay = f1;
+            } /* delay in ns */
         }
         else if (!strncmp(cc, "OFFSET", (size_t)6))
         {
@@ -1405,27 +1473,43 @@ oncore_read_config(
             units[0U] = '\0';
             sscanf(ca, "%lf %1s", &f1, units);
             if (units[0U] == 'N')
+            {
                 ;
+            }
             else if (units[0U] == 'U')
+            {
                 f1 = 1000 * f1;
+            }
             else if (units[0U] == 'M')
+            {
                 f1 = 1000000 * f1;
+            }
             else
+            {
                 f1 = 1000000000 * f1;
-            if (f1 < 0 || f1 > 1.e9)
+            }
+            if ((f1 < 0) || (f1 > 1.e9))
+            {
                 f1 = 0;
-            if (f1 < 0 || f1 > 999999999.)
+            }
+            if ((f1 < 0) || (f1 > 999999999.))
+            {
                 oncore_log_f(instance, LOG_WARNING,
                              "PPS Offset of %fns out of Range, ignored",
                              f1);
+            }
             else
-                instance->offset = f1; /* offset in ns */
+            {
+                instance->offset = f1;
+            } /* offset in ns */
         }
         else if (!strncmp(cc, "MODE", (size_t)4))
         {
             sscanf(ca, "%d", &mode);
-            if (mode < 0 || mode > 4)
+            if ((mode < 0) || (mode > 4))
+            {
                 mode = 4;
+            }
         }
         else if (!strncmp(cc, "ASSERT", (size_t)6))
         {
@@ -1451,19 +1535,25 @@ oncore_read_config(
         {
             sscanf(ca, "%d", &i);
             if ((i == 6) || (i == 8) || (i == 12))
+            {
                 instance->chan_in = i;
+            }
         }
         else if (!strncmp(cc, "TRAIM", (size_t)5))
         {
-            instance->traim_in = 1;                      /* so TRAIM alone is YES */
-            if (!strcmp(ca, "NO") || !strcmp(ca, "OFF")) /* Yes/No, On/Off */
+            instance->traim_in = 1; /* so TRAIM alone is YES */
+            if (!strcmp(ca, "NO") || !strcmp(ca, "OFF"))
+            { /* Yes/No, On/Off */
                 instance->traim_in = 0;
+            }
         }
         else if (!strncmp(cc, "MASK", (size_t)4))
         {
             sscanf(ca, "%d", &mask);
-            if (mask > -1 && mask < 90)
-                instance->Ag = mask; /* Satellite mask angle */
+            if ((mask > -1) && (mask < 90))
+            {
+                instance->Ag = mask;
+            } /* Satellite mask angle */
         }
         else if (!strncmp(cc, "PPSCONTROL", 10))
         { /* pps control M12 only */
@@ -1500,7 +1590,7 @@ oncore_read_config(
         oncore_log_f(instance, LOG_WARNING,
                      "ONCORE: incomplete data on %s", device);
         instance->posn_set = 0;
-        if (mode == 1 || mode == 3)
+        if ((mode == 1) || (mode == 3))
         {
             oncore_log_f(instance, LOG_WARNING,
                          "Input Mode = %d, but no/incomplete position, mode set to %d",
@@ -1536,13 +1626,13 @@ oncore_receive(
     if (debug > 4)
     {
         int i;
-        char Msg[120], Msg2[10];
+        char Msg[120U], Msg2[10U];
 
         oncore_log_f(instance, LOG_DEBUG,
                      ">>> %d bytes available",
                      rbufp->recv_length);
         strlcpy(Msg, ">>>", sizeof(Msg));
-        for (i = 0; i < rbufp->recv_length; i++)
+        for (i = 0; i < rbufp->recv_length; ++i)
         {
             snprintf(Msg2, sizeof(Msg2), "%02x ", p[i]);
             strlcat(Msg, Msg2, sizeof(Msg));
@@ -1550,7 +1640,7 @@ oncore_receive(
         oncore_log(instance, LOG_DEBUG, Msg);
 
         strlcpy(Msg, ">>>", sizeof(Msg));
-        for (i = 0; i < rbufp->recv_length; i++)
+        for (i = 0; i < rbufp->recv_length; ++i)
         {
             snprintf(Msg2, sizeof(Msg2), "%03o ", p[i]);
             strlcat(Msg, Msg2, sizeof(Msg));
@@ -1561,7 +1651,9 @@ oncore_receive(
 
     i = rbufp->recv_length;
     if ((size_t)rcvptr + i >= sizeof(rcvbuf))
-        i = sizeof(rcvbuf) - rcvptr; /* and some char will be lost */
+    {
+        i = sizeof(rcvbuf) - rcvptr;
+    } /* and some char will be lost */
     memcpy(rcvbuf + rcvptr, p, i);
     rcvptr += i;
     oncore_consume(instance);
@@ -1581,36 +1673,50 @@ oncore_consume(
 
     while (rcvptr >= 7)
     {
-        if (rcvbuf[0U] != '@' || rcvbuf[1U] != '@')
+        if ((rcvbuf[0U] != '@') || (rcvbuf[1U] != '@'))
         {
             /* We're not in sync, lets try to get there */
-            for (i = 1; i < rcvptr - 1; i++)
-                if (rcvbuf[i] == '@' && rcvbuf[i + 1] == '@')
+            for (i = 1; i < rcvptr - 1; ++i)
+            {
+                if ((rcvbuf[i] == '@') && (rcvbuf[i + 1] == '@'))
+                {
                     break;
+                }
+            }
 #ifdef ONCORE_VERBOSE_CONSUME
             if (debug > 4)
+            {
                 oncore_log_f(instance, LOG_DEBUG,
                              ">>> skipping %d chars",
                              i);
+            }
 #endif
             if (i != rcvptr)
+            {
                 memcpy(rcvbuf, rcvbuf + i, (size_t)(rcvptr - i));
+            }
             rcvptr -= i;
             continue;
         }
 
         /* Ok, we have a header now */
         l = sizeof(oncore_messages) / sizeof(oncore_messages[0U]) - 1;
-        for (m = 0; m < l; m++)
+        for (m = 0; m < l; ++m)
+        {
             if (!strncmp(oncore_messages[m].flag, (char*)(rcvbuf + 2), (size_t)2))
+            {
                 break;
+            }
+        }
         if (m == l)
         {
 #ifdef ONCORE_VERBOSE_CONSUME
             if (debug > 4)
+            {
                 oncore_log_f(instance, LOG_DEBUG,
                              ">>> Unknown MSG, skipping 4 (%c%c)",
-                             rcvbuf[2U], rcvbuf[3]);
+                             rcvbuf[2U], rcvbuf[3U]);
+            }
 #endif
             memcpy(rcvbuf, rcvbuf + 4, (size_t)4);
             rcvptr -= 4;
@@ -1620,23 +1726,29 @@ oncore_consume(
         l = oncore_messages[m].len;
 #ifdef ONCORE_VERBOSE_CONSUME
         if (debug > 3)
+        {
             oncore_log_f(instance, LOG_DEBUG,
                          "GOT: %c%c  %d of %d entry %d",
                          instance->unit, rcvbuf[2U],
                          rcvbuf[3U], rcvptr, l, m);
+        }
 #endif
         /* Got the entire message ? */
 
         if (rcvptr < l)
+        {
             return;
+        }
 
         /* are we at the end of message? should be <Cksum><CR><LF> */
 
-        if (rcvbuf[l - 2] != '\r' || rcvbuf[l - 1] != '\n')
+        if ((rcvbuf[l - 2] != '\r') || (rcvbuf[l - 1] != '\n'))
         {
 #ifdef ONCORE_VERBOSE_CONSUME
             if (debug)
+            {
                 oncore_log(instance, LOG_DEBUG, "NO <CR><LF> at end of message");
+            }
 #endif
         }
         else
@@ -1651,16 +1763,18 @@ oncore_consume(
                 }
                 oncore_msg_any(instance, rcvbuf, (size_t)(l - 3), m);
                 if (oncore_messages[m].handler)
+                {
                     oncore_messages[m].handler(instance, rcvbuf, (size_t)(l - 3));
+                }
             }
 #ifdef ONCORE_VERBOSE_CONSUME
             else if (debug)
             {
-                char Msg[120], Msg2[10];
+                char Msg[120U], Msg2[10U];
 
                 oncore_log(instance, LOG_ERR, "Checksum mismatch!");
                 snprintf(Msg, sizeof(Msg), "@@%c%c ", rcvbuf[2U], rcvbuf[3U]);
-                for (i = 4; i < l; i++)
+                for (i = 4; i < l; ++i)
                 {
                     snprintf(Msg2, sizeof(Msg2),
                              "%03o ", rcvbuf[i]);
@@ -1672,7 +1786,9 @@ oncore_consume(
         }
 
         if (l != rcvptr)
+        {
             memcpy(rcvbuf, rcvbuf + l, (size_t)(rcvptr - l));
+        }
         rcvptr -= l;
     }
 }
@@ -1700,7 +1816,7 @@ oncore_get_timestamp(
     struct timespec timeout;
     struct peer* peer;
     pps_info_t pps_i;
-    char Msg[160];
+    char Msg[160U];
 
     peer = instance->peer;
 
@@ -1856,9 +1972,13 @@ oncore_get_timestamp(
     /* the addition, so that the Kernel PLL sees the offset too */
 
     if (instance->assert)
+    {
         instance->pps_p.assert_offset.tv_nsec = -dt2;
+    }
     else
+    {
         instance->pps_p.clear_offset.tv_nsec = -dt2;
+    }
 
     /* The following code is necessary, and not just a time_pps_setparams,
      * using the saved instance->pps_p, since some other process on the
@@ -1900,7 +2020,9 @@ oncore_get_timestamp(
     current_params.clear_offset.tv_nsec = -dt2;
 
     if (time_pps_setparams(instance->pps_h, &current_params))
+    {
         oncore_log(instance, LOG_ERR, "ONCORE: Error doing time_pps_setparams");
+    }
 
     /* have time from UNIX origin, convert to NTP origin. */
 
@@ -1916,15 +2038,21 @@ oncore_get_timestamp(
 
     Rsm = 0;
     if (instance->chan == 6)
-        Rsm = instance->BEHa[64U];
-    else if (instance->chan == 8)
-        Rsm = instance->BEHa[72U];
-    else if (instance->chan == 12)
-        Rsm = ((instance->BEHa[129U] << 8) | instance->BEHa[130U]);
-
-    if (instance->chan == 6 || instance->chan == 8)
     {
-        char f1[5], f2[5], f3[5], f4[5];
+        Rsm = instance->BEHa[64U];
+    }
+    else if (instance->chan == 8)
+    {
+        Rsm = instance->BEHa[72U];
+    }
+    else if (instance->chan == 12)
+    {
+        Rsm = ((instance->BEHa[129U] << 8) | instance->BEHa[130U]);
+    }
+
+    if ((instance->chan == 6) || (instance->chan == 8))
+    {
+        char f1[5U], f2[5U], f3[5U], f4[5U];
         if (instance->traim)
         {
             snprintf(f1, sizeof(f1), "%d",
@@ -1961,7 +2089,7 @@ oncore_get_timestamp(
     }
     else if (instance->chan == 12)
     {
-        char f1[5], f2[5], f3[5], f4[5];
+        char f1[5U], f2[5U], f3[5U], f4[5U];
         if (instance->traim)
         {
             snprintf(f1, sizeof(f1), "%d",
@@ -2049,7 +2177,7 @@ oncore_msg_any(
     struct timespec ts;
 #endif
     struct timeval tv;
-    char Msg[120], Msg2[10];
+    char Msg[120U], Msg2[10U];
 
     if (debug > 3)
     {
@@ -2067,7 +2195,7 @@ oncore_msg_any(
         {
             snprintf(Msg, sizeof(Msg), ">>@@%c%c ", buf[2U],
                      buf[3U]);
-            for (i = 2; i < len && i < 2400; i++)
+            for (i = 2; (i < len) && (i < 2400); ++i)
             {
                 snprintf(Msg2, sizeof(Msg2), "%02x",
                          buf[i]);
@@ -2080,7 +2208,7 @@ oncore_msg_any(
         {
             strlcpy(Msg, "##", sizeof(Msg));
             qlim = Msg + sizeof(Msg) - 3;
-            for (p = fmt, q = Msg + 2; q < qlim && *p;)
+            for (p = fmt, q = Msg + 2; (q < qlim) && *p;)
             {
                 *q++ = *p++;
                 *q++ = '_';
@@ -2090,7 +2218,7 @@ oncore_msg_any(
             snprintf(Msg, sizeof(Msg), "%c%c", buf[2U],
                      buf[3U]);
             i = 4;
-            for (p = fmt; *p; p++)
+            for (p = fmt; *p; ++p)
             {
                 snprintf(Msg2, "%02x", buf[i++]);
                 strlcat(Msg, Msg2, sizeof(Msg));
@@ -2127,7 +2255,9 @@ oncore_msg_Ag(
 
     cp = "set to";
     if (instance->o_state == ONCORE_RUN)
+    {
         cp = "is";
+    }
 
     instance->Ag = buf[4U];
     oncore_log_f(instance, LOG_INFO,
@@ -2196,7 +2326,9 @@ oncore_msg_Ay(
     size_t len)
 {
     if (instance->saw_Ay)
+    {
         return;
+    }
 
     instance->saw_Ay = 1;
 
@@ -2219,7 +2351,9 @@ oncore_msg_Az(
     size_t len)
 {
     if (instance->saw_Az)
+    {
         return;
+    }
 
     instance->saw_Az = 1;
 
@@ -2256,28 +2390,40 @@ oncore_msg_BaEaHa(
         if (buf[2U] == 'B')
         { /* 6chan */
             if (instance->chan_ck < 6)
+            {
                 instance->chan_ck = 6;
+            }
         }
         else if (buf[2U] == 'E')
         { /* 8chan */
             if (instance->chan_ck < 8)
+            {
                 instance->chan_ck = 8;
+            }
         }
         else if (buf[2U] == 'H')
         { /* 12chan */
             if (instance->chan_ck < 12)
+            {
                 instance->chan_ck = 12;
+            }
         }
 
         if (instance->count3++ < 5)
+        {
             return;
+        }
 
         instance->count3 = 0;
 
-        if (instance->chan_in != -1) /* set in Input */
+        if (instance->chan_in != -1)
+        { /* set in Input */
             instance->chan = instance->chan_in;
-        else /* set from test */
+        }
+        else
+        { /* set from test */
             instance->chan = instance->chan_ck;
+        }
 
         oncore_log_f(instance, LOG_INFO, "Input   says chan = %d",
                      instance->chan_in);
@@ -2296,15 +2442,19 @@ oncore_msg_BaEaHa(
         return;
     }
 
-    if (instance->o_state != ONCORE_ALMANAC && instance->o_state != ONCORE_RUN)
+    if ((instance->o_state != ONCORE_ALMANAC) && (instance->o_state != ONCORE_RUN))
+    {
         return;
+    }
 
     /* PAUSE 5sec - make sure results are stable, before using position */
 
     if (instance->count)
     {
         if (instance->count++ < 5)
+        {
             return;
+        }
         instance->count = 0;
     }
 
@@ -2330,8 +2480,12 @@ oncore_msg_BaEaHa(
     /* When we have an almanac, we will start the Bn/En/@@Hn messages */
 
     if (instance->o_state == ONCORE_ALMANAC)
+    {
         if (oncore_wait_almanac(instance))
+        {
             return;
+        }
+    }
 
     /* do some things once when we get this far in BaEaHa */
 
@@ -2343,7 +2497,7 @@ oncore_msg_BaEaHa(
         /* Have we seen an @@At (position hold) command response */
         /* if not, message out */
 
-        if (instance->chan != 12 && !instance->saw_At)
+        if ((instance->chan != 12) && !instance->saw_At)
         {
             oncore_log(instance, LOG_NOTICE,
                        "Not Good, no @@At command (no Position Hold), must be a GT/GT+");
@@ -2371,9 +2525,13 @@ oncore_msg_BaEaHa(
             instance->site_survey = ONCORE_SS_TESTING;
             instance->count1 = 1;
             if (instance->chan == 12)
-                oncore_sendmsg(instance, oncore_cmd_Gd3, sizeof(oncore_cmd_Gd3)); /* M12+T */
+            {
+                oncore_sendmsg(instance, oncore_cmd_Gd3, sizeof(oncore_cmd_Gd3));
+            } /* M12+T */
             else
-                oncore_sendmsg(instance, oncore_cmd_At2, sizeof(oncore_cmd_At2)); /* not GT, arg not VP */
+            {
+                oncore_sendmsg(instance, oncore_cmd_At2, sizeof(oncore_cmd_At2));
+            } /* not GT, arg not VP */
             break;
         }
 
@@ -2405,7 +2563,7 @@ oncore_msg_BaEaHa(
         {
             if (instance->count1)
             {
-                if (instance->count1++ > 5 || instance->BEHa[130U] & 0x10)
+                if ((instance->count1++ > 5) || (instance->BEHa[130U] & 0x10))
                 {
                     instance->count1 = 0;
                     if (instance->BEHa[130U] & 0x10)
@@ -2458,7 +2616,9 @@ oncore_msg_BaEaHa(
 
                     instance->ss_lat = instance->ss_long = instance->ss_ht = 0;
                     if (instance->chan == 12)
-                        oncore_sendmsg(instance, oncore_cmd_Gd0, sizeof(oncore_cmd_Gd0)); /* disable */
+                    {
+                        oncore_sendmsg(instance, oncore_cmd_Gd0, sizeof(oncore_cmd_Gd0));
+                    } /* disable */
                     else
                     {
                         oncore_sendmsg(instance, oncore_cmd_At0, sizeof(oncore_cmd_At0)); /* disable */
@@ -2474,20 +2634,32 @@ oncore_msg_BaEaHa(
     if (instance->chan == 6)
     {
         if (instance->BEHa[64U] & 0x8)
+        {
             instance->mode = MODE_0D;
+        }
         else if (instance->BEHa[64U] & 0x10)
+        {
             instance->mode = MODE_2D;
+        }
         else if (instance->BEHa[64U] & 0x20)
+        {
             instance->mode = MODE_3D;
+        }
     }
     else if (instance->chan == 8)
     {
         if (instance->BEHa[72U] & 0x8)
+        {
             instance->mode = MODE_0D;
+        }
         else if (instance->BEHa[72U] & 0x10)
+        {
             instance->mode = MODE_2D;
+        }
         else if (instance->BEHa[72U] & 0x20)
+        {
             instance->mode = MODE_3D;
+        }
     }
     else if (instance->chan == 12)
     {
@@ -2495,11 +2667,17 @@ oncore_msg_BaEaHa(
 
         bits = (instance->BEHa[129U] >> 5) & 0x7; /* actually Ha */
         if (bits == 0x4)
+        {
             instance->mode = MODE_0D;
+        }
         else if (bits == 0x6)
+        {
             instance->mode = MODE_2D;
+        }
         else if (bits == 0x7)
+        {
             instance->mode = MODE_3D;
+        }
     }
 
     /* copy the record to the (extra) location in SHMEM */
@@ -2541,7 +2719,7 @@ oncore_msg_BaEaHa(
             break;
         }
 
-        if (i && smp != NULL)
+        if (i && (smp != NULL))
         {
             i *= (len + 6);
             smp[i + 2]++;
@@ -2566,13 +2744,17 @@ oncore_msg_BaEaHa(
             oncore_set_traim(instance);
         }
         else
+        {
             return;
+        }
     }
 
     /* by now should have a @@Ba/@@Ea/@@Ha with good data in it */
 
     if (!instance->have_dH && !instance->traim_delay)
+    {
         oncore_compute_dH(instance);
+    }
 
     /*
      * must be ONCORE_RUN if we are here.
@@ -2589,8 +2771,10 @@ oncore_msg_BaEaHa(
      * Are we doing a Hardware or Software Site Survey?
      */
 
-    if (instance->site_survey == ONCORE_SS_HW || instance->site_survey == ONCORE_SS_SW)
+    if ((instance->site_survey == ONCORE_SS_HW) || (instance->site_survey == ONCORE_SS_SW))
+    {
         oncore_ss(instance);
+    }
 
     /* see if we ever saw a response from the @@Ayx above */
 
@@ -2622,10 +2806,14 @@ oncore_msg_BaEaHa(
      */
 
     if (instance->shmem && !instance->shmem_bad_Ea && instance->shmem_Posn && (instance->site_survey == ONCORE_SS_DONE))
+    {
         oncore_shmem_get_3D(instance);
+    }
 
-    if (!instance->traim) /* NO traim, no BnEnHn, go get tick */
+    if (!instance->traim)
+    { /* NO traim, no BnEnHn, go get tick */
         oncore_get_timestamp(instance, instance->offset, instance->offset);
+    }
 }
 
 
@@ -2710,7 +2898,7 @@ oncore_msg_Bl(
     valid = (buf[6U] >> 4) & 017;
     page = buf[7U];
 
-    if ((!instance->Bl.lsf_flg && !instance->Bl.wn_flg) && (subframe == 4 && page == 18 && valid == 10))
+    if ((!instance->Bl.lsf_flg && !instance->Bl.wn_flg) && ((subframe == 4) && (page == 18) && (valid == 10)))
     {
         instance->Bl.dt_ls = buf[32U];
         instance->Bl.WN_lsf = buf[33U];
@@ -2718,11 +2906,11 @@ oncore_msg_Bl(
         instance->Bl.dt_lsf = buf[35U];
         instance->Bl.lsf_flg++;
     }
-    if ((instance->Bl.lsf_flg && !instance->Bl.wn_flg) && (subframe == 1 && valid == 10))
+    if ((instance->Bl.lsf_flg && !instance->Bl.wn_flg) && ((subframe == 1) && (valid == 10)))
     {
-        i = (buf[7 + 7] << 8) + buf[7 + 8];
+        i = (buf[7U + 7] << 8) + buf[7U + 8];
         instance->Bl.WN = i >> 6;
-        tow = (buf[7 + 4] << 16) + (buf[7 + 5] << 8) + buf[7 + 6];
+        tow = (buf[7U + 4] << 16) + (buf[7U + 5] << 8) + buf[7U + 6];
         tow >>= 7;
         tow = tow & 0377777;
         tow <<= 2;
@@ -2743,17 +2931,19 @@ oncore_msg_Bl(
 
         i = (instance->Bl.WN_lsf - instance->Bl.WN);
         if (i < 0)
+        {
             i += 1024;
+        }
         day_now = instance->Bl.DN;
         day_lsf = 7 * i + instance->Bl.DN_lsf;
 
         /* ignore if in past or more than a month in future */
 
         warn = WARN_NOT_YET;
-        if (day_lsf >= day_now && day_lsf - day_now < 32)
+        if ((day_lsf >= day_now) && (day_lsf - day_now < 32))
         {
             /* if < 28d, doit, if 28-31, ck day-of-month < 20 (not at end of prev month) */
-            if (day_lsf - day_now < 28 || instance->BEHa[5U] < 20)
+            if ((day_lsf - day_now < 28) || (instance->BEHa[5U] < 20))
             {
                 i = instance->Bl.dt_lsf - instance->Bl.dt_ls;
                 switch (i)
@@ -2828,7 +3018,9 @@ oncore_msg_BnEnHn(
     long dt1, dt2;
 
     if (instance->o_state != ONCORE_RUN)
+    {
         return;
+    }
 
     if (instance->traim_delay)
     { /* flag that @@Bn/@@En/Hn returned */
@@ -2841,8 +3033,10 @@ oncore_msg_BnEnHn(
 
     memcpy(instance->BEHn, buf, (size_t)len); /* Bn or En or Hn */
 
-    if (!instance->traim) /* BnEnHn will be turned off in any case */
+    if (!instance->traim)
+    { /* BnEnHn will be turned off in any case */
         return;
+    }
 
     /* If Time RAIM doesn't like it, don't trust it */
 
@@ -2860,8 +3054,10 @@ oncore_msg_BnEnHn(
     }
     else
     {
-        if (instance->BEHn[21U]) /* bad TRAIM */
+        if (instance->BEHn[21U])
+        { /* bad TRAIM */
             return;
+        }
 
         dt1 = instance->saw_tooth + instance->offset;      /* dt this time step */
         instance->saw_tooth = (s_char)instance->BEHn[25U]; /* update for next time Bn[25], En[25] */
@@ -2907,13 +3103,17 @@ oncore_msg_CaFaIa(
         if (debug > 2)
         {
             if (buf[2U] == 'I')
+            {
                 oncore_log_f(instance, LOG_DEBUG,
-                             ">>@@%ca %x %x %x", buf[2],
-                             buf[4U], buf[5], buf[6]);
+                             ">>@@%ca %x %x %x", buf[2U],
+                             buf[4U], buf[5U], buf[6U]);
+            }
             else
+            {
                 oncore_log_f(instance, LOG_DEBUG,
-                             ">>@@%ca %x %x", buf[2],
-                             buf[4U], buf[5]);
+                             ">>@@%ca %x %x", buf[2U],
+                             buf[4U], buf[5U]);
+            }
         }
 #endif
 
@@ -2922,17 +3122,23 @@ oncore_msg_CaFaIa(
 
         i = buf[4U] || buf[5U];
         if (buf[2U] == 'I')
+        {
             i = i || buf[6U];
+        }
         if (i)
         {
             if (buf[2U] == 'I')
+            {
                 oncore_log_f(instance, LOG_ERR,
                              "self test failed: result %02x %02x %02x",
-                             buf[4U], buf[5], buf[6]);
+                             buf[4U], buf[5U], buf[6U]);
+            }
             else
+            {
                 oncore_log_f(instance, LOG_ERR,
                              "self test failed: result %02x %02x",
-                             buf[4U], buf[5]);
+                             buf[4U], buf[5U]);
+            }
 
             oncore_log(instance, LOG_ERR,
                        "ONCORE: self test failed, shutting down driver");
@@ -2969,16 +3175,26 @@ oncore_msg_Cb(
     int i;
 
     if (instance->shmem == NULL)
+    {
         return;
+    }
 
-    if (buf[4U] == 5 && buf[5U] > 0 && buf[5U] < 26)
+    if ((buf[4U] == 5) && (buf[5U] > 0) && (buf[5U] < 26))
+    {
         i = buf[5U];
-    else if (buf[4U] == 4 && buf[5U] <= 5)
+    }
+    else if ((buf[4U] == 4) && (buf[5U] <= 5))
+    {
         i = buf[5U] + 24;
-    else if (buf[4U] == 4 && buf[5U] <= 10)
+    }
+    else if ((buf[4U] == 4) && (buf[5U] <= 10))
+    {
         i = buf[5U] + 23;
-    else if (buf[4U] == 4 && buf[5U] == 25)
+    }
+    else if ((buf[4U] == 4) && (buf[5U] == 25))
+    {
         i = 34;
+    }
     else
     {
         oncore_log(instance, LOG_NOTICE, "Cb: Response is NO ALMANAC");
@@ -3055,7 +3271,7 @@ oncore_msg_Cj(
     else if (instance->o_state == ONCORE_HAVE_CHAN)
     {
         mode = instance->init_type;
-        if (mode == 3 || mode == 4)
+        if ((mode == 3) || (mode == 4))
         { /* Cf will return here to check for TEST */
             instance->o_state = ONCORE_RESET_SENT;
             oncore_log(instance, LOG_NOTICE, "state = ONCORE_RESET_SENT");
@@ -3071,14 +3287,22 @@ oncore_msg_Cj(
     if (instance->o_state == ONCORE_TEST_SENT)
     {
         if (instance->chan == 6)
+        {
             oncore_sendmsg(instance, oncore_cmd_Ca, sizeof(oncore_cmd_Ca));
+        }
         else if (instance->chan == 8)
+        {
             oncore_sendmsg(instance, oncore_cmd_Fa, sizeof(oncore_cmd_Fa));
+        }
         else if (instance->chan == 12)
+        {
             oncore_sendmsg(instance, oncore_cmd_Ia, sizeof(oncore_cmd_Ia));
+        }
     }
     else if (instance->o_state == ONCORE_INIT)
+    {
         oncore_msg_Cj_init(instance, buf, len);
+    }
 }
 
 
@@ -3101,7 +3325,7 @@ oncore_msg_Cj_id(
     u_char* buf,
     size_t len)
 {
-    char *cp2, Model[21];
+    char *cp2, Model[21U];
     const char *cp, *cp1;
 
     /* Write Receiver ID message to clockstats file */
@@ -3111,7 +3335,9 @@ oncore_msg_Cj_id(
     {
         char* cpw = strchr(cp, '\r');
         if (!cpw)
+        {
             cpw = (char*)&instance->Cj[294U];
+        }
         *cpw = '\0';
         oncore_log(instance, LOG_NOTICE, cp);
         *cpw = '\r';
@@ -3126,12 +3352,16 @@ oncore_msg_Cj_id(
     /* from model number decide which Oncore this is,
         and then the number of channels */
 
-    for (cp = (char*)&instance->Cj[160U]; *cp == ' '; cp++) /* start right after 'Model #' */
+    for (cp = (char*)&instance->Cj[160U]; *cp == ' '; ++cp)
+    { /* start right after 'Model #' */
         ;
+    }
     cp1 = cp;
     cp2 = Model;
-    for (; !isspace((unsigned char)*cp) && cp - cp1 < 20; cp++, cp2++)
+    for (; !isspace((unsigned char)*cp) && (cp - cp1 < 20); cp++, cp2++)
+    {
         *cp2 = *cp;
+    }
     *cp2 = '\0';
 
     cp = 0;
@@ -3145,7 +3375,7 @@ oncore_msg_Cj_id(
         cp = "Basic";
         instance->model = ONCORE_BASIC;
     }
-    else if (Model[0U] == 'B' || !strncmp(Model, "T8", (size_t)2))
+    else if ((Model[0U] == 'B') || !strncmp(Model, "T8", (size_t)2))
     {
         cp = "VP";
         instance->model = ONCORE_VP;
@@ -3155,29 +3385,29 @@ oncore_msg_Cj_id(
         cp = "M12";
         instance->model = ONCORE_M12;
     }
-    else if (Model[0U] == 'R' || Model[0U] == 'D' || Model[0U] == 'S')
+    else if ((Model[0U] == 'R') || (Model[0U] == 'D') || (Model[0U] == 'S'))
     {
         if (Model[5U] == 'N')
         {
             cp = "GT";
             instance->model = ONCORE_GT;
         }
-        else if ((Model[1U] == '3' || Model[1U] == '4') && Model[5U] == 'G')
+        else if (((Model[1U] == '3') || (Model[1U] == '4')) && (Model[5U] == 'G'))
         {
             cp = "GT+";
             instance->model = ONCORE_GTPLUS;
         }
-        else if ((Model[1U] == '5' && Model[5U] == 'U') || (Model[1U] == '1' && Model[5U] == 'A'))
+        else if (((Model[1U] == '5') && (Model[5U] == 'U')) || ((Model[1U] == '1') && (Model[5U] == 'A')))
         {
             cp = "UT";
             instance->model = ONCORE_UT;
         }
-        else if (Model[1U] == '5' && Model[5U] == 'G')
+        else if ((Model[1U] == '5') && (Model[5U] == 'G'))
         {
             cp = "UT+";
             instance->model = ONCORE_UTPLUS;
         }
-        else if (Model[1U] == '6' && Model[5U] == 'G')
+        else if ((Model[1U] == '6') && (Model[5U] == 'G'))
         {
             cp = "SL";
             instance->model = ONCORE_SL;
@@ -3201,20 +3431,32 @@ oncore_msg_Cj_id(
                  cp, instance->version, instance->revision);
 
     instance->chan_id = 8; /* default */
-    if (instance->model == ONCORE_BASIC || instance->model == ONCORE_PVT6)
+    if ((instance->model == ONCORE_BASIC) || (instance->model == ONCORE_PVT6))
+    {
         instance->chan_id = 6;
-    else if (instance->model == ONCORE_VP || instance->model == ONCORE_UT || instance->model == ONCORE_UTPLUS)
+    }
+    else if ((instance->model == ONCORE_VP) || (instance->model == ONCORE_UT) || (instance->model == ONCORE_UTPLUS))
+    {
         instance->chan_id = 8;
+    }
     else if (instance->model == ONCORE_M12)
+    {
         instance->chan_id = 12;
+    }
 
     instance->traim_id = 0; /* default */
-    if (instance->model == ONCORE_BASIC || instance->model == ONCORE_PVT6)
+    if ((instance->model == ONCORE_BASIC) || (instance->model == ONCORE_PVT6))
+    {
         instance->traim_id = 0;
-    else if (instance->model == ONCORE_VP || instance->model == ONCORE_UT || instance->model == ONCORE_UTPLUS)
+    }
+    else if ((instance->model == ONCORE_VP) || (instance->model == ONCORE_UT) || (instance->model == ONCORE_UTPLUS))
+    {
         instance->traim_id = 1;
+    }
     else if (instance->model == ONCORE_M12)
+    {
         instance->traim_id = -1;
+    }
 
     oncore_log_f(instance, LOG_INFO, "Channels = %d, TRAIM = %s",
                  instance->chan_id,
@@ -3239,7 +3481,7 @@ oncore_msg_Cj_init(
     u_char* buf,
     size_t len)
 {
-    u_char Cmd[20];
+    u_char Cmd[20U];
     int mode;
 
 
@@ -3279,7 +3521,9 @@ oncore_msg_Cj_init(
     }
     else /* must issue an @@At here to check on 6/8 Position Hold, set_posn would have */
         if (instance->chan != 12)
+        {
             oncore_sendmsg(instance, oncore_cmd_Atx, sizeof(oncore_cmd_Atx));
+        }
 
     if (mode != 0)
     {
@@ -3437,7 +3681,7 @@ oncore_msg_Gj(
     u_char* buf,
     size_t len)
 {
-    static const char* insrem[2] = {
+    static const char* insrem[2U] = {
         "removed",
         "inserted"
     };
@@ -3453,11 +3697,11 @@ oncore_msg_Gj(
 
     oncore_log_f(instance, LOG_INFO,
                  "Leap Sec Msg: %d %d %d %d %d %d %d %d %d %d",
-                 buf[4U], buf[5], 256 * buf[6U] + buf[7U], buf[8U],
-                 buf[9U], buf[10],
+                 buf[4U], buf[5U], 256 * buf[6U] + buf[7U], buf[8U],
+                 buf[9U], buf[10U],
                  (buf[14U] + 256 *
                                  (buf[13U] + 256 * (buf[12U] + 256 * buf[11U]))),
-                 buf[15U], buf[16], buf[17]);
+                 buf[15U], buf[16U], buf[17U]);
 
     /* There seems to be eternal confusion about when a leap second
      * takes place. It's the second *before* the new TAI offset
@@ -3472,19 +3716,21 @@ oncore_msg_Gj(
      * second.
      */
     if (dt)
+    {
         oncore_log_f(instance, LOG_NOTICE,
                      "Leap second %s (%d) before %04u-%02u-%02u/%02u:%02u:%02u",
                      insrem[(dt > 0)], dt,
-                     256u * buf[6] + buf[7U], buf[8U], buf[9U],
-                     buf[15U], buf[16], buf[17]);
+                     256u * buf[6U] + buf[7U], buf[8U], buf[9U],
+                     buf[15U], buf[16U], buf[17U]);
+    }
 
     /* Only raise warning within a month of the leap second */
 
     instance->pp->leap = LEAP_NOWARNING;
     cp = "Set pp.leap to LEAP_NOWARNING";
 
-    if (buf[6U] == instance->BEHa[6U] && buf[7U] == instance->BEHa[7U] && /* year */
-        buf[8U] == instance->BEHa[4U])
+    if ((buf[6U] == instance->BEHa[6U]) && (buf[7U] == instance->BEHa[7U]) && /* year */
+        (buf[8U] == instance->BEHa[4U]))
     { /* month */
         if (dt)
         {
@@ -3531,7 +3777,9 @@ oncore_antenna_report(
     const char* cp;
 
     if (instance->ant_state == new_state)
+    {
         return;
+    }
 
     switch (new_state)
     {
@@ -3640,9 +3888,13 @@ oncore_check_antenna(
     enum antenna_state antenna; /* antenna state */
 
     if (instance->chan == 12)
+    {
         antenna = (instance->BEHa[130U] & 0x6) >> 1;
+    }
     else
-        antenna = (instance->BEHa[37U] & 0xc0) >> 6; /* prob unset 6, set GT, UT unset VP */
+    {
+        antenna = (instance->BEHa[37U] & 0xc0) >> 6;
+    } /* prob unset 6, set GT, UT unset VP */
 
     oncore_antenna_report(instance, antenna);
 }
@@ -3684,13 +3936,17 @@ oncore_check_leap_sec(
         if (instance->saw_Gj < 0)
         { /* -1 DONT have Gj use Bj */
             if ((instance->BEHa[4U] == 6) || (instance->BEHa[4U] == 12))
+            {
                 oncore_sendmsg(instance, oncore_cmd_Bj, sizeof(oncore_cmd_Bj));
+            }
             oncore_sendmsg(instance, oncore_cmd_Bl, sizeof(oncore_cmd_Bl));
             return;
         }
 
-        if (instance->saw_Gj == 0) /* 0 is dont know if we have Gj */
+        if (instance->saw_Gj == 0)
+        { /* 0 is dont know if we have Gj */
             instance->count4 = 1;
+        }
 
         oncore_sendmsg(instance, oncore_cmd_Gj, sizeof(oncore_cmd_Gj));
         return;
@@ -3703,7 +3959,9 @@ oncore_check_leap_sec(
     if (instance->count4)
     { /* delay, waiting for Gj response */
         if (instance->saw_Gj == 1)
+        {
             instance->count4 = 0;
+        }
         else if (instance->count4++ > 5)
         {                          /* delay, waiting for Gj response */
             instance->saw_Gj = -1; /* didnt see it, will use Bj */
@@ -3732,8 +3990,10 @@ oncore_checksum_ok(
     int i, j;
 
     j = 0;
-    for (i = 2; i < len - 3; i++)
+    for (i = 2; i < len - 3; ++i)
+    {
         j ^= buf[i];
+    }
 
     return (j == buf[len - 3]);
 }
@@ -3765,9 +4025,11 @@ oncore_compute_dH(
 
     /* if MSL is not set, the calculation is meaningless */
 
-    if (MSL) /* not set ! */
+    if (MSL)
+    { /* not set ! */
         oncore_log_f(instance, LOG_INFO,
                      "dH = (GPS - MSL) = %.2fm", instance->dH);
+    }
 }
 
 
@@ -3780,13 +4042,15 @@ static void
 oncore_load_almanac(
     struct instance* instance)
 {
-    u_char *cp, Cmd[20];
+    u_char *cp, Cmd[20U];
     int n;
     struct timeval tv;
     struct tm* tm;
 
     if (!instance->shmem)
+    {
         return;
+    }
 
 #ifndef ONCORE_VERBOSE_LOAD_ALMANAC
     for (cp = instance->shmem + 4; (n = 256 * (*(cp - 3)) + *(cp - 2));
@@ -3794,7 +4058,7 @@ oncore_load_almanac(
     {
         if (!strncmp((char*)cp, "@@Cb", 4) &&
             oncore_checksum_ok(cp, 33) &&
-            (*(cp + 4) == 4 || *(cp + 4) == 5))
+            ((*(cp + 4) == 4) || (*(cp + 4) == 5)))
         {
             refclock_fdwrite(instance->peer, instance->ttyfd,
                              cp, n, "data");
@@ -3813,16 +4077,20 @@ oncore_load_almanac(
             oncore_print_Cb(instance, cp);
             if (oncore_checksum_ok(cp, 33))
             {
-                if (*(cp + 4) == 4 || *(cp + 4) == 5)
+                if ((*(cp + 4) == 4) || (*(cp + 4) == 5))
                 {
                     oncore_log(instance, LOG_DEBUG, "GOOD SF");
                     write(instance->ttyfd, cp, n);
                 }
                 else
+                {
                     oncore_log(instance, LOG_DEBUG, "BAD SF");
+                }
             }
             else
+            {
                 oncore_log(instance, LOG_DEBUG, "BAD CHECKSUM");
+            }
         }
     }
 #endif
@@ -3834,9 +4102,9 @@ oncore_load_almanac(
         oncore_log(instance, LOG_NOTICE, "Loading Posn from SHMEM");
         for (cp = instance->shmem + 4; (n = 256 * (*(cp - 3)) + *(cp - 2)); cp += (n + 3))
         {
-            if ((instance->chan == 6 && (!strncmp((char*)cp, "@@Ba", 4) && oncore_checksum_ok(cp, 68))) ||
-                (instance->chan == 8 && (!strncmp((char*)cp, "@@Ea", 4) && oncore_checksum_ok(cp, 76))) ||
-                (instance->chan == 12 && (!strncmp((char*)cp, "@@Ha", 4) && oncore_checksum_ok(cp, 154))))
+            if (((instance->chan == 6) && (!strncmp((char*)cp, "@@Ba", 4) && oncore_checksum_ok(cp, 68))) ||
+                ((instance->chan == 8) && (!strncmp((char*)cp, "@@Ea", 4) && oncore_checksum_ok(cp, 76))) ||
+                ((instance->chan == 12) && (!strncmp((char*)cp, "@@Ha", 4) && oncore_checksum_ok(cp, 154))))
             {
                 int ii, jj, kk;
 
@@ -3850,7 +4118,7 @@ oncore_load_almanac(
                              (long)(cp - instance->shmem),
                              ii, jj, kk);
 #endif
-                if (ii != 0 || jj != 0 || kk != 0)
+                if ((ii != 0) || (jj != 0) || (kk != 0))
                 { /* phk asked for this test */
                     instance->ss_lat = ii;
                     instance->ss_long = jj;
@@ -3920,14 +4188,14 @@ oncore_print_Cb(
 {
 #ifdef ONCORE_VERBOSE_CB
     int ii;
-    char Msg[160], Msg2[10];
+    char Msg[160U], Msg2[10U];
 
     oncore_log_f(instance, LOG_DEBUG, "DEBUG: See: %c%c%c%c", *(cp),
                  *(cp + 1), *(cp + 2), *(cp + 3));
 
     snprintf(Msg, sizeof(Msg), "DEBUG: Cb: [%d,%d]", *(cp + 4),
              *(cp + 5));
-    for (ii = 0; ii < 33; ii++)
+    for (ii = 0; ii < 33; ++ii)
     {
         snprintf(Msg2, sizeof(Msg2), " %d", *(cp + ii));
         strlcat(Msg, Msg2, sizeof(Msg));
@@ -3952,11 +4220,13 @@ oncore_print_array(
 	nn = 0;
 	printf("\nTOP\n");
 	jj = n/16;
-	for (j=0; j<jj; j++) {
+	for (j=0; j<jj; ++j) {
 		printf("%4d: ", nn);
 		nn += 16;
-		for (i=0; i<16; i++)
+		for (i=0; i<16; ++i)
+		{
 			printf(" %o", *cp++);
+		}
 		printf("\n");
 	}
 }
@@ -4032,7 +4302,7 @@ oncore_sendmsg(
     size_t len)
 {
     int fd;
-    u_char cs = 0;
+    u_char cs = 0U;
     const struct peer* peer;
 
     fd = instance->ttyfd;
@@ -4041,13 +4311,15 @@ oncore_sendmsg(
     if (debug > 4)
     {
         oncore_log_f(instance, LOG_DEBUG, "ONCORE: Send @@%c%c %d",
-                     ptr[0U], ptr[1], (int)len);
+                     ptr[0U], ptr[1U], (int)len);
     }
 #endif
     refclock_fdwrite(peer, fd, "@@", (size_t)2, "data");
     refclock_fdwrite(peer, fd, ptr, len, "data");
     while (len--)
+    {
         cs ^= *ptr++;
+    }
     refclock_fdwrite(peer, fd, &cs, (size_t)1, "data");
     refclock_fdwrite(peer, fd, "\r\n", (size_t)2, "data");
 }
@@ -4059,13 +4331,15 @@ oncore_set_posn(
     struct instance* instance)
 {
     int mode;
-    u_char Cmd[20];
+    u_char Cmd[20U];
 
     /* Turn OFF position hold, it needs to be off to set position (for some units),
        will get set ON in @@Ea later */
 
     if (instance->chan == 12)
-        oncore_sendmsg(instance, oncore_cmd_Gd0, sizeof(oncore_cmd_Gd0)); /* (12) */
+    {
+        oncore_sendmsg(instance, oncore_cmd_Gd0, sizeof(oncore_cmd_Gd0));
+    } /* (12) */
     else
     {
         oncore_sendmsg(instance, oncore_cmd_At0, sizeof(oncore_cmd_At0)); /* (6/8) */
@@ -4118,9 +4392,13 @@ oncore_set_posn(
         /* Finally, turn on position hold */
 
         if (instance->chan == 12)
+        {
             oncore_sendmsg(instance, oncore_cmd_Gd1, sizeof(oncore_cmd_Gd1));
+        }
         else
+        {
             oncore_sendmsg(instance, oncore_cmd_At1, sizeof(oncore_cmd_At1));
+        }
     }
 }
 
@@ -4130,10 +4408,14 @@ static void
 oncore_set_traim(
     struct instance* instance)
 {
-    if (instance->traim_in != -1) /* set in Input */
+    if (instance->traim_in != -1)
+    { /* set in Input */
         instance->traim = instance->traim_in;
+    }
     else
+    {
         instance->traim = instance->traim_ck;
+    }
 
     oncore_log_f(instance, LOG_INFO, "Input   says TRAIM = %d",
                  instance->traim_in);
@@ -4144,16 +4426,22 @@ oncore_set_traim(
     oncore_log_f(instance, LOG_INFO, "Using        TRAIM = %d",
                  instance->traim);
 
-    if (instance->traim_ck == 1 && instance->traim == 0)
+    if ((instance->traim_ck == 1) && (instance->traim == 0))
     {
         /* if it should be off, and I turned it on during testing,
            then turn it off again */
         if (instance->chan == 6)
+        {
             oncore_sendmsg(instance, oncore_cmd_Bnx, sizeof(oncore_cmd_Bnx));
+        }
         else if (instance->chan == 8)
+        {
             oncore_sendmsg(instance, oncore_cmd_Enx, sizeof(oncore_cmd_Enx));
-        else /* chan == 12 */
+        }
+        else
+        { /* chan == 12 */
             oncore_sendmsg(instance, oncore_cmd_Ge0, sizeof(oncore_cmd_Ge0));
+        }
         oncore_sendmsg(instance, oncore_cmd_Hn0, sizeof(oncore_cmd_Hn0));
     }
 }
@@ -4174,37 +4462,51 @@ oncore_shmem_get_3D(
         if (instance->chan == 12)
         {
             if (instance->shmem_Posn == 2)
-                oncore_sendmsg(instance, oncore_cmd_Gd2, sizeof(oncore_cmd_Gd2)); /* 2D */
+            {
+                oncore_sendmsg(instance, oncore_cmd_Gd2, sizeof(oncore_cmd_Gd2));
+            } /* 2D */
             else
-                oncore_sendmsg(instance, oncore_cmd_Gd0, sizeof(oncore_cmd_Gd0)); /* 3D */
+            {
+                oncore_sendmsg(instance, oncore_cmd_Gd0, sizeof(oncore_cmd_Gd0));
+            } /* 3D */
         }
         else
         {
             if (instance->saw_At)
             { /* out of 0D -> 3D mode */
                 oncore_sendmsg(instance, oncore_cmd_At0, sizeof(oncore_cmd_At0));
-                if (instance->shmem_Posn == 2) /* 3D -> 2D mode */
+                if (instance->shmem_Posn == 2)
+                { /* 3D -> 2D mode */
                     oncore_sendmsg(instance, oncore_cmd_Av1, sizeof(oncore_cmd_Av1));
+                }
             }
             else
+            {
                 oncore_sendmsg(instance, oncore_cmd_Av0, sizeof(oncore_cmd_Av0));
+            }
         }
     }
     else if (instance->shmem_reset || (instance->mode != MODE_0D))
     {
         instance->shmem_reset = 0;
         if (instance->chan == 12)
-            oncore_sendmsg(instance, oncore_cmd_Gd1, sizeof(oncore_cmd_Gd1)); /* 0D */
+        {
+            oncore_sendmsg(instance, oncore_cmd_Gd1, sizeof(oncore_cmd_Gd1));
+        } /* 0D */
         else
         {
             if (instance->saw_At)
             {
-                if (instance->mode == MODE_2D) /* 2D -> 3D or 0D mode */
+                if (instance->mode == MODE_2D)
+                { /* 2D -> 3D or 0D mode */
                     oncore_sendmsg(instance, oncore_cmd_Av0, sizeof(oncore_cmd_Av0));
+                }
                 oncore_sendmsg(instance, oncore_cmd_At1, sizeof(oncore_cmd_At1)); /* to 0D mode */
             }
             else
+            {
                 oncore_sendmsg(instance, oncore_cmd_Av1, sizeof(oncore_cmd_Av1));
+            }
         }
     }
 }
@@ -4231,15 +4533,19 @@ oncore_ss(
          * Check to see if Hardware SiteSurvey has Finished.
          */
 
-        if ((instance->chan == 8 && !(instance->BEHa[37U] & 0x20)) ||
-            (instance->chan == 12 && !(instance->BEHa[130U] & 0x10)))
+        if (((instance->chan == 8) && !(instance->BEHa[37U] & 0x20)) ||
+            ((instance->chan == 12) && !(instance->BEHa[130U] & 0x10)))
         {
             oncore_log(instance, LOG_INFO, "Now in 0D mode");
 
             if (instance->chan == 12)
+            {
                 oncore_sendmsg(instance, oncore_cmd_Gax, sizeof(oncore_cmd_Gax));
+            }
             else
+            {
                 oncore_sendmsg(instance, oncore_cmd_Asx, sizeof(oncore_cmd_Asx));
+            }
 
             oncore_log(instance, LOG_NOTICE, "SSstate = ONCORE_SS_DONE");
             instance->site_survey = ONCORE_SS_DONE;
@@ -4251,11 +4557,15 @@ oncore_ss(
          * Must be a Software Site Survey.
          */
 
-        if (instance->rsm.bad_fix) /* Not if poor geometry or less than 3 sats */
+        if (instance->rsm.bad_fix)
+        { /* Not if poor geometry or less than 3 sats */
             return;
+        }
 
-        if (instance->mode != MODE_3D) /* Use only 3D Fixes */
+        if (instance->mode != MODE_3D)
+        { /* Use only 3D Fixes */
             return;
+        }
 
         instance->ss_lat += buf_w32(&instance->BEHa[15U]);
         instance->ss_long += buf_w32(&instance->BEHa[19U]);
@@ -4263,7 +4573,9 @@ oncore_ss(
         instance->ss_count++;
 
         if (instance->ss_count != POS_HOLD_AVERAGE)
+        {
             return;
+        }
 
         instance->ss_lat /= POS_HOLD_AVERAGE;
         instance->ss_long /= POS_HOLD_AVERAGE;
@@ -4299,7 +4611,9 @@ oncore_wait_almanac(
     {
         instance->counta++;
         if (instance->counta % 5 == 0)
+        {
             oncore_log(instance, LOG_INFO, "Waiting for Almanac");
+        }
 
         /*
          * If we get here (first time) then we don't have an almanac in memory.
@@ -4319,9 +4633,13 @@ oncore_wait_almanac(
      (5sec) and wait for things to settle down */
 
         if (instance->chan == 6)
+        {
             oncore_sendmsg(instance, oncore_cmd_Bn, sizeof(oncore_cmd_Bn));
+        }
         else if (instance->chan == 8)
+        {
             oncore_sendmsg(instance, oncore_cmd_En, sizeof(oncore_cmd_En));
+        }
         else if (instance->chan == 12)
         {
             oncore_sendmsg(instance, oncore_cmd_Gc, sizeof(oncore_cmd_Gc)); /* 1PPS on, continuous */
@@ -4409,7 +4727,7 @@ oncore_log_f(
 {
     va_list ap;
     int rc;
-    char msg[512];
+    char msg[512U];
 
     va_start(ap, fmt);
     rc = mvsnprintf(msg, sizeof(msg), fmt, ap);
@@ -4420,9 +4738,11 @@ oncore_log_f(
     instance->max_len = max(strlen(msg), instance->max_len);
     instance->max_count++;
     if (instance->max_count % 100 == 0)
+    {
         oncore_log_f(instance, LOG_INFO,
                      "Max Message Length so far is %d",
                      instance->max_len);
+    }
 #endif
     return rc;
 }

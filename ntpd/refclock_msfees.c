@@ -317,7 +317,7 @@ static l_fp offset_fudge[MAXUNITS];   /* Sum of above */
 static u_char stratumtouse[MAXUNITS];
 static u_char sloppyclockflag[MAXUNITS];
 
-static int deltas[60];
+static int deltas[60U];
 
 static l_fp acceptable_slop; /* = { 0, 1 << (FRACTION_PREC -2) }; */
 static l_fp onesec;          /* = { 1, 0 }; */
@@ -382,7 +382,7 @@ dump_buf(
     register char* ptr = buff;
 
     snprintf(buff, sizeof(buff), text);
-    for (i = from; i < to; i++)
+    for (i = from; i < to; ++i)
     {
         ptr += strlen(ptr);
         if ((ptr - buff) > DUMP_BUF_SIZE)
@@ -412,7 +412,7 @@ msfees_init(void)
     onesec.l_uf = 0;
 
     /* Initialize fudge factors to default. */
-    for (i = 0; i < MAXUNITS; i++)
+    for (i = 0; i < MAXUNITS; ++i)
     {
         fudgefactor[i].l_ui = 0;
         fudgefactor[i].l_uf = DEFFUDGETIME;
@@ -438,7 +438,7 @@ msfees_start(
     register struct eesunit* ees;
     register int i;
     int fd232 = -1;
-    char eesdev[20];
+    char eesdev[20U];
     struct termios ttyb, *ttyp;
     struct refclockproc* pp;
     pp = peer->procptr;
@@ -521,15 +521,19 @@ msfees_start(
     /* Looks like this might succeed.  Find memory for the structure.
      * Look to see if there are any unused ones, if not we malloc() one.
      */
-    if (eesunits[unit] != 0) /* The one we want is okay */
+    if (eesunits[unit] != 0)
+    { /* The one we want is okay */
         ees = eesunits[unit];
+    }
     else
     {
         /* Look for an unused, but allocated struct */
-        for (i = 0; i < MAXUNITS; i++)
+        for (i = 0; i < MAXUNITS; ++i)
         {
-            if (!unitinuse[i] && eesunits[i] != 0)
+            if (!unitinuse[i] && (eesunits[i] != 0))
+            {
                 break;
+            }
         }
 
         if (i < MAXUNITS)
@@ -538,7 +542,9 @@ msfees_start(
             eesunits[i] = 0;
         } /* no spare -- make a new one */
         else
+        {
             ees = (struct eesunit*)emalloc(sizeof(struct eesunit));
+        }
     }
     memset((char*)ees, 0, sizeof(struct eesunit));
     eesunits[unit] = ees;
@@ -566,8 +572,8 @@ msfees_start(
             ;
 
         /* Now try pushing either of the possible modules */
-        if ((rc1 = ioctl(fd232, I_PUSH, STREAM_PP1)) < 0 &&
-            ioctl(fd232, I_PUSH, STREAM_PP2) < 0)
+        if (((rc1 = ioctl(fd232, I_PUSH, STREAM_PP1)) < 0) &&
+            (ioctl(fd232, I_PUSH, STREAM_PP2) < 0))
         {
             msyslog(LOG_ERR,
                     "ees clock: Push of `%s' and `%s' to %s failed %m",
@@ -600,8 +606,10 @@ msfees_start(
     if (stratumtouse[unit] <= 1)
     {
         memcpy((char*)&pp->refid, EESREFID, 4);
-        if (unit > 0 && unit < 10)
+        if ((unit > 0) && (unit < 10))
+        {
             ((char*)&pp->refid)[3U] = '0' + unit;
+        }
     }
     else
     {
@@ -615,7 +623,9 @@ msfees_start(
 
 screwed:
     if (fd232 != -1)
+    {
         (void)close(fd232);
+    }
     return (0);
 }
 
@@ -659,7 +669,9 @@ ees_report_event(
     {
         ees->status = (u_char)code;
         if (code != CEVNT_NOMINAL)
+        {
             ees->lastevent = (u_char)code;
+        }
         /* Should report event to trap handler in here.
          * Soon...
          */
@@ -700,7 +712,9 @@ ees_receive(
     dpt = (u_char*)&rbufp->recv_space;
     dpend = dpt + rbufp->recv_length;
     if ((dbg & DB_LOG_AWAITMORE) && (rbufp->recv_length != LENEESCODE))
+    {
         printf("[%d] ", rbufp->recv_length);
+    }
 
     /* Check out our state and process appropriately */
     switch (ees->codestate)
@@ -720,7 +734,7 @@ ees_receive(
         cp = &(ees->lastcode[ees->lencode]);
 
         /* Gobble the bytes until the final (possibly stripped) 0xff */
-        while (dpt < dpend && (*dpt & 0x7f) != 0x7f)
+        while ((dpt < dpend) && ((*dpt & 0x7f) != 0x7f))
         {
             *cp++ = (char)*dpt++;
             ees->lencode++;
@@ -747,9 +761,11 @@ ees_receive(
         {
             /* Incomplete.  Wait for more. */
             if (dbg & DB_LOG_AWAITMORE)
+            {
                 msyslog(LOG_INFO,
                         "I: ees clock %d: %p == %p: await more",
                         ees->unit, dpt, dpend);
+            }
             return;
         }
 
@@ -809,7 +825,7 @@ ees_receive(
     }
 
     /* Check flag formats */
-    if (cp[EESM_LEAP] != 0 && cp[EESM_LEAP] != 0x0f)
+    if ((cp[EESM_LEAP] != 0) && (cp[EESM_LEAP] != 0x0f))
     {
         ees->badformat++;
         ees->reason = CODEREASON + 8;
@@ -818,7 +834,7 @@ ees_receive(
         return;
     }
 
-    if (cp[EESM_BST] != 0 && cp[EESM_BST] != 0x03)
+    if ((cp[EESM_BST] != 0) && (cp[EESM_BST] != 0x03))
     {
         ees->badformat++;
         ees->reason = CODEREASON + 9;
@@ -827,7 +843,7 @@ ees_receive(
         return;
     }
 
-    if (cp[EESM_MSFOK] != 0 && cp[EESM_MSFOK] != 0x3f)
+    if ((cp[EESM_MSFOK] != 0) && (cp[EESM_MSFOK] != 0x3f))
     {
         ees->badformat++;
         ees->reason = CODEREASON + 10;
@@ -876,7 +892,9 @@ ees_receive(
     case 3:
         day += FEB;
         if (istrue(cp[EESM_LEAP]))
-            day++; /*FALLSTHROUGH*/
+        {
+            day++;
+        } /*FALLSTHROUGH*/
     case 2:
         day += JAN; /*FALLSTHROUGH*/
     case 1:
@@ -899,8 +917,8 @@ ees_receive(
      */
     ees->tz = istrue(cp[EESM_BST]) ? -1 : 0;
 
-    if (ees->day > 366 || ees->day < 1 ||
-        ees->hour > 23 || ees->minute > 59 || ees->second > 59)
+    if ((ees->day > 366) || (ees->day < 1) ||
+        (ees->hour > 23) || (ees->minute > 59) || (ees->second > 59))
     {
         ees->baddata++;
         ees->reason = CODEREASON + 12;
@@ -950,10 +968,12 @@ ees_receive(
 
     rc = ioctl(ees->io.fd, request, (char*)&ppsclockev);
     if (dbg & DB_PRINT_EV)
+    {
         fprintf(stderr,
                 "[%x] CIOGETEV u%d %d (%x %d) gave %d (%d): %08lx %08lx %ld\n",
                 DB_PRINT_EV, ees->unit, ees->io.fd, request, is_pps(ees),
-                rc, errno, ptr[0], ptr[1], ptr[2]);
+                rc, errno, ptr[0U], ptr[1U], ptr[2U]);
+    }
 
     /* If we managed to get the time of arrival, process the info */
     if (rc >= 0)
@@ -963,16 +983,24 @@ ees_receive(
 
         /* Possible that PPS triggered, but text message didn't */
         if (pps_step == 2)
+        {
             msyslog(LOG_ERR, "pps step = 2 @ %02d", ees->second);
-        if (pps_step == 2 && ees->second == 1)
+        }
+        if ((pps_step == 2) && (ees->second == 1))
+        {
             suspect_4ms_step |= 1;
-        if (pps_step == 2 && ees->second == 2)
+        }
+        if ((pps_step == 2) && (ees->second == 2))
+        {
             suspect_4ms_step |= 4;
+        }
 
         /* allow for single loss of PPS only */
-        if (pps_step != 1 && pps_step != 2)
+        if ((pps_step != 1) && (pps_step != 2))
+        {
             fprintf(stderr, "PPS step: %d too far off %ld (%d)\n",
                     ppsclockev.serial, ees->last_pps_no, pps_step);
+        }
         else
         {
             pps_arrvstamp = tval_stamp_to_lfp(ppsclockev.tv);
@@ -984,13 +1012,17 @@ ees_receive(
             conv = 0;
             L_SUB(&diff, &ees->arrvtime);
             if (dbg & DB_PRINT_CDT)
+            {
                 printf("[%x] Have %lx.%08lx and %lx.%08lx -> %lx.%08lx @ %s",
                        DB_PRINT_CDT, (long)ees->arrvtime.l_ui, (long)ees->arrvtime.l_uf,
                        (long)pps_arrvstamp.l_ui, (long)pps_arrvstamp.l_uf,
                        (long)diff.l_ui, (long)diff.l_uf,
                        ctime(&(ppsclockev.tv.tv_sec)));
+            }
             if (L_ISNEG(&diff))
+            {
                 M_NEG(diff.l_ui, diff.l_uf);
+            }
             L_SUB(&diff, &acceptable_slop);
             if (L_ISNEG(&diff))
             { /* AOK -- pps_sample */
@@ -1005,7 +1037,9 @@ ees_receive(
                 L_ADD(&diff, &onesec);
                 L_SUB(&diff, &ees->arrvtime);
                 if (L_ISNEG(&diff))
+                {
                     M_NEG(diff.l_ui, diff.l_uf);
+                }
                 L_SUB(&diff, &acceptable_slop);
                 msyslog(LOG_ERR, "Have sec==1 slip %ds a=%08x-p=%08x -> %x.%08x (u=%d) %s",
                         pps_arrvstamp.l_ui - ees->arrvtime.l_ui,
@@ -1026,11 +1060,13 @@ ees_receive(
         }
         ees->last_pps_no = ppsclockev.serial;
         if (dbg & DB_PRINT_CDTC)
+        {
             printf(
                 "[%x] %08lx %08lx %d u%d (%d %d)\n",
                 DB_PRINT_CDTC, (long)pps_arrvstamp.l_ui,
                 (long)pps_arrvstamp.l_uf, conv, ees->unit,
                 call_pps_sample, pps_step);
+        }
     }
 
     /* See if there has been a 4ms jump at a minute boundry */
@@ -1047,21 +1083,25 @@ ees_receive(
         L_SUB(&delta, &ees->last_l);
         delta_f_abs = delta_sfsec;
         if (delta_f_abs < 0)
+        {
             delta_f_abs = -delta_f_abs;
+        }
 
         /* Dump the deltas each minute */
         if (dbg & DB_DUMP_DELTAS)
         {
             if (/*0 <= ees->second && */
                 ees->second < COUNTOF(deltas))
+            {
                 deltas[ees->second] = delta_sfsec;
+            }
             /* Dump on second 1, as second 0 sometimes missed */
             if (ees->second == 1)
             {
-                char text[16 * COUNTOF(deltas)];
+                char text[16U * COUNTOF(deltas)];
                 char* cptr = text;
                 int i;
-                for (i = 0; i < COUNTOF(deltas); i++)
+                for (i = 0; i < COUNTOF(deltas); ++i)
                 {
                     snprintf(cptr, sizeof(text) / COUNTOF(deltas),
                              " %d.%04d", msec(deltas[i]),
@@ -1072,23 +1112,27 @@ ees_receive(
                         msec(EES_STEP_F - EES_STEP_F_GRACE), subms(EES_STEP_F - EES_STEP_F_GRACE),
                         msec(EES_STEP_F + EES_STEP_F_GRACE), subms(EES_STEP_F + EES_STEP_F_GRACE),
                         text + 1);
-                for (i = 0; i < ((sizeof deltas) / (sizeof deltas[0])); i++)
+                for (i = 0; i < ((sizeof deltas) / (sizeof deltas[0U])); ++i)
+                {
                     deltas[i] = 0;
+                }
             }
         }
 
         /* Lets see if we have a 4 mS step at a minute boundaary */
         if (((EES_STEP_F - EES_STEP_F_GRACE) < delta_f_abs) &&
             (delta_f_abs < (EES_STEP_F + EES_STEP_F_GRACE)) &&
-            (ees->second == 0 || ees->second == 1 || ees->second == 2) &&
-            (sincelast < 0 || sincelast > 122))
+            ((ees->second == 0) || (ees->second == 1) || (ees->second == 2)) &&
+            ((sincelast < 0) || (sincelast > 122)))
         { /* 4ms jump at min boundry */
             int old_sincelast;
             int count = 0;
             int sum = 0;
             /* Yes -- so compute the ramp time */
             if (ees->last_step == 0)
+            {
                 sincelast = 0;
+            }
             old_sincelast = sincelast;
 
             /* First time in, just set "ees->last_step" */
@@ -1103,47 +1147,63 @@ ees_receive(
                 p = p_step;
                 p_step++;
                 if (p_step >= LAST_STEPS)
+                {
                     p_step = 0;
+                }
                 ees->this_step = p_step;
                 /* Find the "average" interval */
                 while (p != p_step)
                 {
                     int this = ees->last_steps[p];
                     if (this == 0)
+                    {
                         break;
+                    }
                     if (this != this_step)
                     {
-                        if (other_step == 0 && (this == (this_step + 2) ||
-                                                this == (this_step - 2) ||
-                                                this == (this_step + 1) ||
-                                                this == (this_step - 1)))
+                        if ((other_step == 0) && ((this == (this_step + 2)) ||
+                                                  (this == (this_step - 2)) ||
+                                                  (this == (this_step + 1)) ||
+                                                  (this == (this_step - 1))))
+                        {
                             other_step = this;
+                        }
                         if (other_step != this)
                         {
                             int idelta = (this_step - other_step);
                             if (idelta < 0)
+                            {
                                 idelta = -idelta;
-                            if (third_step == 0 && ((idelta == 1) ? (
-                                                                        this == (other_step + 1) ||
-                                                                        this == (other_step - 1) ||
-                                                                        this == (this_step + 1) ||
-                                                                        this == (this_step - 1))
-                                                                  : (
-                                                                        this == (this_step + other_step) / 2)))
+                            }
+                            if ((third_step == 0) && ((idelta == 1) ? (
+                                                                          (this == (other_step + 1)) ||
+                                                                          (this == (other_step - 1)) ||
+                                                                          (this == (this_step + 1)) ||
+                                                                          (this == (this_step - 1)))
+                                                                    : (
+                                                                          this == (this_step + other_step) / 2)))
+                            {
                                 third_step = this;
+                            }
                             if (third_step != this)
+                            {
                                 break;
+                            }
                         }
                     }
                     sum += this;
                     p--;
                     if (p < 0)
+                    {
                         p += LAST_STEPS;
+                    }
                     count++;
                 }
                 msyslog(LOG_ERR, "MSF%d: %d: This=%d (%d), other=%d/%d, sum=%d, count=%d, pps_step=%d, suspect=%x", ees->unit, p, ees->last_steps[p], this_step, other_step, third_step, sum, count, pps_step, suspect_4ms_step);
                 if (count != 0)
+                {
                     sum = ((sum * 60) + (count / 2)) / count;
+                }
 #define SV(x) (ees->last_steps[(x + p_step) % LAST_STEPS])
                 msyslog(LOG_ERR, "MSF%d: %x steps %d: %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d %d",
                         ees->unit, suspect_4ms_step, p_step, SV(0), SV(1), SV(2), SV(3), SV(4), SV(5), SV(6),
@@ -1155,15 +1215,25 @@ ees_receive(
                 ees->jump_fsecs = delta_sfsec;
                 ees->using_ramp = 1;
                 if (sincelast > 170)
+                {
                     ees->last_step_late += sincelast - ((sum) ? sum : ees->last_step_secs);
+                }
                 else
+                {
                     ees->last_step_late = 30;
-                if (ees->last_step_late < -60 || ees->last_step_late > 120)
+                }
+                if ((ees->last_step_late < -60) || (ees->last_step_late > 120))
+                {
                     ees->last_step_late = 30;
+                }
                 if (ees->last_step_late < 0)
+                {
                     ees->last_step_late = 0;
+                }
                 if (ees->last_step_late >= 60)
+                {
                     ees->last_step_late = 59;
+                }
                 sincelast = 0;
             }
             else
@@ -1182,12 +1252,15 @@ ees_receive(
                     ees->unit, msec(delta_sfsec), subms(delta_sfsec), ees->second,
                     old_sincelast, ees->last_step_late, count, sum, ees->last_step_secs);
             if (sum)
+            {
                 ees->last_step_secs = sum;
+            }
         }
         /* OK, so not a 4ms step at a minute boundry */
         else
         {
             if (suspect_4ms_step)
+            {
                 msyslog(LOG_ERR,
                         "MSF%d: suspect = %x, but delta of %d.%04d [%d.%04d<%d.%04d<%d.%04d: %d %d]",
                         ees->unit, suspect_4ms_step, msec(delta_sfsec), subms(delta_sfsec),
@@ -1199,6 +1272,7 @@ ees_receive(
                         subms(EES_STEP_F + EES_STEP_F_GRACE),
                         ees->second,
                         sincelast);
+            }
             if ((delta_f_abs > EES_STEP_NOTE) && ees->last_l.l_i)
             {
                 static int ees_step_notes = EES_STEP_NOTES;
@@ -1222,7 +1296,7 @@ ees_receive(
      * THEN we twiddle things
      */
     if (ees->using_ramp &&
-        sincelast < (ees->last_step_secs) * 2 &&
+        (sincelast < (ees->last_step_secs) * 2) &&
         ees->last_step_secs)
     {
         long sec_of_ramp = sincelast + ees->last_step_late;
@@ -1231,22 +1305,28 @@ ees_receive(
 
         /* Ramp time may vary, so may ramp for longer than last time */
         if (sec_of_ramp > (ees->last_step_secs + 120))
+        {
             sec_of_ramp = ees->last_step_secs;
+        }
 
         /* sec_of_ramp * ees->jump_fsecs may overflow 2**32 */
         fsecs = sec_of_ramp * (ees->jump_fsecs / ees->last_step_secs);
 
         if (dbg & DB_LOG_DELTAS)
+        {
             msyslog(LOG_ERR,
                     "[%x] MSF%d: %3ld/%03d -> d=%11ld (%d|%ld)",
                     DB_LOG_DELTAS,
                     ees->unit, sec_of_ramp, ees->last_step_secs, fsecs,
                     pps_arrvstamp.l_f, pps_arrvstamp.l_f + fsecs);
+        }
         if (dbg & DB_PRINT_DELTAS)
+        {
             printf(
                 "MSF%d: %3ld/%03d -> d=%11ld (%ld|%ld)\n",
                 ees->unit, sec_of_ramp, ees->last_step_secs, fsecs,
                 (long)pps_arrvstamp.l_f, pps_arrvstamp.l_f + fsecs);
+        }
 
         /* Must sign extend the result */
         inc.l_i = (fsecs < 0) ? -1 : 0;
@@ -1265,6 +1345,7 @@ ees_receive(
     else
     {
         if (dbg & DB_LOG_DELTAS)
+        {
             msyslog(LOG_ERR,
                     "[%x] MSF%d: ees->using_ramp=%d, sincelast=%x / %x, ees->last_step_secs=%x",
                     DB_LOG_DELTAS,
@@ -1272,7 +1353,9 @@ ees_receive(
                     sincelast,
                     (ees->last_step_secs) * 2,
                     ees->last_step_secs);
+        }
         if (dbg & DB_PRINT_DELTAS)
+        {
             printf(
                 "[%x] MSF%d: ees->using_ramp=%d, sincelast=%x / %x, ees->last_step_secs=%x\n",
                 DB_LOG_DELTAS,
@@ -1280,6 +1363,7 @@ ees_receive(
                 sincelast,
                 (ees->last_step_secs) * 2,
                 ees->last_step_secs);
+        }
     }
 
     L_SUB(&ees->arrvtime, &offset_fudge[ees->unit]);
@@ -1300,6 +1384,7 @@ ees_receive(
     /* Subtract off the local clock time stamp */
     L_SUB(&ees->codeoffsets[n_sample], &ees->arrvtime);
     if (dbg & DB_LOG_SAMPLES)
+    {
         msyslog(LOG_ERR,
                 "MSF%d: [%x] %d (ees: %d %d) (pps: %d %d)%s",
                 ees->unit, DB_LOG_DELTAS, n_sample,
@@ -1308,9 +1393,12 @@ ees_receive(
                 pps_arrvstamp.l_f,
                 pps_arrvstamp.l_f / 4295,
                 (dbg & DB_NO_PPS) ? " [no PPS]" : "");
+    }
 
     if (ees->nsamples++ == NCODES - 1)
+    {
         ees_process(ees);
+    }
 
     /* Done! */
 }
@@ -1359,19 +1447,23 @@ ees_process(
         samplereduce = (1 << samplelog);
     }
 
-    if (samples != last_samples &&
-        ((samples != (last_samples - 1)) || samples < 3))
+    if ((samples != last_samples) &&
+        ((samples != (last_samples - 1)) || (samples < 3)))
     {
         msyslog(LOG_ERR, "Samples=%d (%d), samplereduce=%d ....",
                 samples, last_samples, samplereduce);
         last_samples = samples;
     }
     if (samples < 1)
+    {
         return;
+    }
 
     /* If requested, dump the raw data we have in the buffer */
     if (ees->dump_vals)
+    {
         dump_buf(coffs, 0, samples, "Raw  data  is:");
+    }
 
     /* Sort the offsets, trim off the extremes, then choose one. */
     qsort(coffs, (size_t)samples, sizeof(coffs[0U]), offcompare);
@@ -1391,14 +1483,20 @@ ees_process(
         L_SUB(&tmp, &coffs[i]);
         L_SUB(&tmp, &coffs[noff - 1]);
         if (L_ISNEG(&tmp))
+        {
             noff--;
+        }
         else
+        {
             i++;
+        }
     }
 
     /* If requested, dump the reduce data we have in the buffer */
     if (ees->dump_vals)
+    {
         dump_buf(coffs, i, noff, "Reduced    to:");
+    }
 
     /* What we do next depends on the setting of the sloppy clock flag.
      * If it is on, average the remainder to derive our estimate.
@@ -1407,13 +1505,19 @@ ees_process(
     if (sloppyclockflag[ees->unit])
     {
         offset.l_ui = offset.l_uf = 0;
-        for (j = i; j < noff; j++)
+        for (j = i; j < noff; ++j)
+        {
             L_ADD(&offset, &coffs[j]);
-        for (j = samplelog; j > 0; j--)
+        }
+        for (j = samplelog; j > 0; --j)
+        {
             L_RSHIFTU(&offset);
+        }
     }
     else
+    {
         offset = coffs[i + BESTSAMPLE];
+    }
 
     /* Compute the dispersion as the difference between the
      * lowest and highest offsets that remain in the
@@ -1426,6 +1530,7 @@ ees_process(
 #define FRACT_SEC(n) ((1 << 30) / (n / 2))
     dispersion = LFPTOFP(&tmp) / 2; /* ++++ */
     if (dbg & (DB_SYSLOG_SMPLI | DB_SYSLOG_SMPLE))
+    {
         msyslog(
             (dbg & DB_SYSLOG_SMPLE) ? LOG_ERR : LOG_INFO,
             "I: [%x] Offset=%06d (%d), disp=%f%s [%d], %d %d=%d %d:%d %d=%d %d",
@@ -1442,6 +1547,7 @@ ees_process(
             noff - 1,
             (coffs[noff - 1].l_f) / 4295,
             (coffs[samples - 1].l_f) / 4295);
+    }
 
     /* Are we playing silly wotsits ?
      * If we are using all data, see if there is a "small" delta,
@@ -1452,12 +1558,14 @@ ees_process(
         long diff = (long)(ees->offset.l_uf - offset.l_uf);
 
         /* is the delta small enough ? */
-        if ((-FRACT_SEC(100)) < diff && diff < FRACT_SEC(100))
+        if (((-FRACT_SEC(100)) < diff) && (diff < FRACT_SEC(100)))
         {
             int samd = (64 * 4) / samples;
             long new;
             if (samd < 2)
+            {
                 samd = 2;
+            }
             new = offset.l_uf + ((diff * (samd - 1)) / samd);
 
             /* Sign change -> need to fix up int part */
@@ -1474,28 +1582,34 @@ ees_process(
             }
             dispersion /= 4;
             if (dbg & (DB_SYSLOG_SMTHI | DB_SYSLOG_SMTHE))
+            {
                 msyslog(
                     (dbg & DB_SYSLOG_SMTHE) ? LOG_ERR : LOG_INFO,
                     "I: [%x] Smooth data: %ld -> %ld, dispersion now %f",
                     dbg & (DB_SYSLOG_SMTHI | DB_SYSLOG_SMTHE),
                     ((long)offset.l_uf) / 4295, new / 4295,
                     (dispersion * 1526) / 100);
+            }
             offset.l_uf = (unsigned long)new;
         }
         else if (dbg & (DB_SYSLOG_NSMTHI | DB_SYSLOG_NSMTHE))
+        {
             msyslog(
                 (dbg & DB_SYSLOG_NSMTHE) ? LOG_ERR : LOG_INFO,
                 "[%x] No smooth as delta not %d < %ld < %d",
                 dbg & (DB_SYSLOG_NSMTHI | DB_SYSLOG_NSMTHE),
                 -FRACT_SEC(100), diff, FRACT_SEC(100));
+        }
     }
     else if (dbg & (DB_SYSLOG_NSMTHI | DB_SYSLOG_NSMTHE))
+    {
         msyslog(
             (dbg & DB_SYSLOG_NSMTHE) ? LOG_ERR : LOG_INFO,
             "I: [%x] No smooth as flag=%x and old=%x=%d (%d:%d)",
             dbg & (DB_SYSLOG_NSMTHI | DB_SYSLOG_NSMTHE),
             ees->usealldata, ees->offset.l_f, ees->offset.l_uf,
             offset.l_f, ees->offset.l_f - offset.l_f);
+    }
 
     /* Collect offset info for debugging info */
     ees->offset = offset;
@@ -1515,7 +1629,7 @@ ees_process(
      * to ride out those, we will give it 5 minutes.
      */
     lostsync = current_time - ees->clocklastgood > 300 ? 1 : 0;
-    isinsync = (lostsync || ees->leaphold > current_time) ? 0 : 1;
+    isinsync = (lostsync || (ees->leaphold > current_time)) ? 0 : 1;
 
     /* Done.  Use time of last good, synchronised code as the
      * reference time, and lastsampletime as the receive time.
@@ -1553,7 +1667,9 @@ msfees_poll(
     ees_process(eesunits[unit]);
 
     if ((current_time - eesunits[unit]->lasttime) > 150)
+    {
         ees_event(eesunits[unit], CEVNT_FAULT);
+    }
 }
 
 

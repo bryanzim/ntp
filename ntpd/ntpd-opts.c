@@ -80,7 +80,7 @@ extern int atoi(const char*);
 /**
  *  static const strings for ntpd options
  */
-static char const ntpd_opt_strs[3133] =
+static char const ntpd_opt_strs[3133U] =
     /*     0 */ "ntpd 4.2.8p18\n"
                 "Copyright (C) 1992-2025 The University of Delaware and Network Time Foundation, all rights reserved.\n"
                 "This is free software. It is licensed for use, modification and\n"
@@ -1441,7 +1441,9 @@ AO_gettext(char const* pz)
 {
     char* res;
     if (pz == NULL)
+    {
         return NULL;
+    }
 #ifdef HAVE_DCGETTEXT
     /*
      * While processing the option_xlateable_txt data, try to use the
@@ -1452,15 +1454,21 @@ AO_gettext(char const* pz)
     {
         res = dgettext("libopts", pz);
         if (res == pz)
+        {
             res = (char*)VOIDP(_(pz));
+        }
     }
     else
+    {
         res = (char*)VOIDP(_(pz));
+    }
 #else
     res = (char*)VOIDP(_(pz));
 #endif
     if (res == pz)
+    {
         return res;
+    }
     res = strdup(res);
     if (res == NULL)
     {
@@ -1518,7 +1526,9 @@ translate_option_strings(void)
         {
             tOptDesc* od = opts->pOptDesc;
             for (ix = opts->optCt; ix > 0; ix--, od++)
+            {
                 coerce_it(VOIDP(&(od->pzText)));
+            }
         }
     }
 }

@@ -58,23 +58,33 @@ int main(int argc, char** argv)
     }
 
     if (!HAVE_OPT(NOFORK))
+    {
         background = 1;
+    }
 
     if (!HAVE_OPT(SYSLOG))
+    {
         use_syslog = 0;
+    }
 
     /* using the net-snmp syslog facility */
     if (use_syslog)
+    {
         snmp_enable_calllog();
+    }
     else
+    {
         snmp_enable_stderrlog();
+    }
 
     /* Become Subagent */
     netsnmp_ds_set_boolean(NETSNMP_DS_APPLICATION_ID, NETSNMP_DS_AGENT_ROLE, 1);
 
     /* go into background mode, if requested */
     if (background && netsnmp_daemonize(1, !use_syslog))
+    {
         exit(1);
+    }
 
     /* Now register with the master Agent X process */
 

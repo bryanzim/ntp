@@ -100,7 +100,7 @@ struct as2201unit
  * are not installed, the radio and this driver will continue to operate
  * successfuly, but no data will be captured for these commands.
  */
-static char stat_command[][30] = {
+static char stat_command[][30U] = {
     "ITF\r",            /* internal time/frequency */
     "ETF\r",            /* external time/frequency */
     "LORAN ENSEMBLE\r", /* GPS/LORAN ensemble statistics */
@@ -160,7 +160,7 @@ as2201_start(
     register struct as2201unit* up;
     struct refclockproc* pp;
     int fd;
-    char gpsdev[20];
+    char gpsdev[20U];
 
     /*
      * Open serial port. Use CLK line discipline, if available.
@@ -168,7 +168,9 @@ as2201_start(
     snprintf(gpsdev, sizeof(gpsdev), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, gpsdev, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -214,9 +216,13 @@ as2201_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -242,11 +248,15 @@ as2201_receive(
     pp->lencode = refclock_gtlin(rbufp, pp->a_lastcode, BMAX, &trtmp);
 #ifdef DEBUG
     if (debug)
+    {
         printf("gps: timecode %d %d %s\n",
                up->linect, pp->lencode, pp->a_lastcode);
+    }
 #endif
     if (pp->lencode == 0)
+    {
         return;
+    }
 
     /*
      * If linect is greater than zero, we must be in the middle of a
@@ -260,12 +270,16 @@ as2201_receive(
      * quietly return.
      */
     if (pp->sloppyclockflag & CLK_FLAG2)
+    {
         pp->lastrec = trtmp;
+    }
     if (up->linect > 0)
     {
         up->linect--;
         if ((int)(up->lastptr - up->stats + pp->lencode) > SMAX - 2)
+        {
             return;
+        }
         *up->lastptr++ = ' ';
         memcpy(up->lastptr, pp->a_lastcode, 1 + pp->lencode);
         up->lastptr += pp->lencode;
@@ -283,7 +297,9 @@ as2201_receive(
             record_clock_stats(&peer->srcadr, up->stats);
 #ifdef DEBUG
             if (debug)
+            {
                 printf("gps: stat %s\n", up->stats);
+            }
 #endif
         }
     }
@@ -316,9 +332,13 @@ as2201_receive(
      * Test for synchronization (this is a temporary crock).
      */
     if (pp->a_lastcode[2U] != ':')
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
 
     /*
      * Process the new sample in the median filter and determine the
@@ -336,14 +356,18 @@ as2201_receive(
      * the clockstats file.
      */
     if ((int)(up->lastptr - up->stats + pp->lencode) > SMAX - 2)
+    {
         return;
+    }
     memcpy(up->lastptr, pp->a_lastcode, pp->lencode);
     up->lastptr += pp->lencode;
     if (pp->sloppyclockflag & CLK_FLAG4)
     {
         octets = strlen(stat_command[up->index]);
         if ((int)(up->lastptr - up->stats + 1 + octets) > SMAX - 2)
+        {
             return;
+        }
         *up->lastptr++ = ' ';
         memcpy(up->lastptr, stat_command[up->index], octets);
         up->lastptr += octets - 1;
@@ -353,7 +377,9 @@ as2201_receive(
                        "command");
         up->index++;
         if (*stat_command[up->index] == '\0')
+        {
             up->index = 0;
+        }
     }
 }
 
@@ -385,7 +411,9 @@ as2201_poll(
     {
         pp->polls++;
         if (!(pp->sloppyclockflag & CLK_FLAG2))
+        {
             get_systime(&pp->lastrec);
+        }
     }
     if (pp->coderecv == pp->codeproc)
     {

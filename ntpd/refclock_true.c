@@ -264,14 +264,14 @@ true_debug(struct peer* peer, const char* fmt, ...)
     {
         if (want_debugging)
         {
-            char filename[40];
+            char filename[40U];
             int fd;
 
             snprintf(filename, sizeof(filename),
                      "/tmp/true%d.debug", up->unit);
             fd = open(filename, O_CREAT | O_WRONLY | O_EXCL,
                       0600);
-            if (fd >= 0 && (up->debug = fdopen(fd, "w")))
+            if ((fd >= 0) && (up->debug = fdopen(fd, "w")))
             {
 #ifdef HAVE_SETVBUF
                 static char buf[BUFSIZ];
@@ -308,7 +308,7 @@ true_start(
 {
     register struct true_unit* up;
     struct refclockproc* pp;
-    char device[40];
+    char device[40U];
     int fd;
 
     /*
@@ -317,7 +317,9 @@ true_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_CLK);
     if (fd <= 0)
+    {
         return 0;
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -374,9 +376,13 @@ true_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (pp->io.fd != -1)
+    {
         io_closeclock(&pp->io);
+    }
     if (up != NULL)
+    {
         free(up);
+    }
 }
 
 
@@ -416,7 +422,9 @@ true_receive(
      * There is a case where <cr><lf> generates 2 timestamps.
      */
     if (rd_lencode == 0)
+    {
         return;
+    }
     pp->lencode = rd_lencode;
     strlcpy(pp->a_lastcode, rd_lastcode, sizeof(pp->a_lastcode));
     pp->lastrec = rd_tmp;
@@ -437,8 +445,8 @@ true_receive(
     /*
      * Clock misunderstood our last command?
      */
-    if (pp->a_lastcode[0U] == '?' ||
-        strcmp(pp->a_lastcode, "ERROR 05 NO SUCH FUNCTION") == 0)
+    if ((pp->a_lastcode[0U] == '?') ||
+        (strcmp(pp->a_lastcode, "ERROR 05 NO SUCH FUNCTION") == 0))
     {
         true_doevent(peer, e_Huh);
         return;
@@ -448,9 +456,9 @@ true_receive(
      * Timecode: "nnnnn+nnn-nnn"
      * (from GOES clock when asked about satellite position)
      */
-    if ((pp->a_lastcode[5U] == '+' || pp->a_lastcode[5U] == '-') &&
-        (pp->a_lastcode[9U] == '+' || pp->a_lastcode[9U] == '-') &&
-        sscanf(pp->a_lastcode, "%5d%*c%3d%*c%3d", &lon, &lat, &off) == 3)
+    if (((pp->a_lastcode[5U] == '+') || (pp->a_lastcode[5U] == '-')) &&
+        ((pp->a_lastcode[9U] == '+') || (pp->a_lastcode[9U] == '-')) &&
+        (sscanf(pp->a_lastcode, "%5d%*c%3d%*c%3d", &lon, &lat, &off) == 3))
     {
         const char* label = "Botch!";
 
@@ -460,7 +468,7 @@ true_receive(
          * Perfectionists would recalculate the exact delay
          * and adjust accordingly...
          */
-        if (lon > 7000 && lon < 14000)
+        if ((lon > 7000) && (lon < 14000))
         {
             if (lon < 10000)
             {
@@ -497,7 +505,7 @@ true_receive(
      * Timecode: "Fnn"
      * (from TM/TMD clock when it wants to tell us what it's up to.)
      */
-    if (sscanf(pp->a_lastcode, "F%2d", &i) == 1 && i > 0 && i < 80)
+    if ((sscanf(pp->a_lastcode, "F%2d", &i) == 1) && (i > 0) && (i < 80))
     {
         switch (i)
         {
@@ -518,8 +526,8 @@ true_receive(
      * Timecode: "VER xx.xx"
      * (from a TL3 when sent "QV", so id's it during initialization.)
      */
-    if (pp->a_lastcode[0U] == 'V' && pp->a_lastcode[1U] == 'E' &&
-        pp->a_lastcode[2U] == 'R' && pp->a_lastcode[6U] == '.')
+    if ((pp->a_lastcode[0U] == 'V') && (pp->a_lastcode[1U] == 'E') &&
+        (pp->a_lastcode[2U] == 'R') && (pp->a_lastcode[6U] == '.'))
     {
         true_doevent(peer, e_TL3);
         NLOG(NLOG_CLOCKSTATUS)
@@ -533,8 +541,8 @@ true_receive(
      * Timecode: " TRUETIME Mk III" or " TRUETIME XL"
      * (from a TM/TMD/XL clock during initialization.)
      */
-    if (strncmp(pp->a_lastcode, " TRUETIME Mk III ", 17) == 0 ||
-        strncmp(pp->a_lastcode, " TRUETIME XL", 12) == 0)
+    if ((strncmp(pp->a_lastcode, " TRUETIME Mk III ", 17) == 0) ||
+        (strncmp(pp->a_lastcode, " TRUETIME XL", 12) == 0))
     {
         true_doevent(peer, e_F18);
         NLOG(NLOG_CLOCKSTATUS)
@@ -550,9 +558,9 @@ true_receive(
      * index      0123456789012345678901234
      * (from a TCU during initialization)
      */
-    if ((pp->a_lastcode[0U] == 'N' || pp->a_lastcode[0U] == 'S') &&
-        (pp->a_lastcode[9U] == 'W' || pp->a_lastcode[9U] == 'E') &&
-        pp->a_lastcode[18U] == '+')
+    if (((pp->a_lastcode[0U] == 'N') || (pp->a_lastcode[0U] == 'S')) &&
+        ((pp->a_lastcode[9U] == 'W') || (pp->a_lastcode[9U] == 'E')) &&
+        (pp->a_lastcode[18U] == '+'))
     {
         true_doevent(peer, e_Location);
         NLOG(NLOG_CLOCKSTATUS)
@@ -567,22 +575,26 @@ true_receive(
      * index      0123456789012345678901234
      * (from all clocks supported by this driver.)
      */
-    if (pp->a_lastcode[3U] == ':' &&
-        pp->a_lastcode[6U] == ':' &&
-        pp->a_lastcode[9U] == ':' &&
-        sscanf(pp->a_lastcode, "%3d:%2d:%2d:%2d%c",
-               &pp->day, &pp->hour, &pp->minute,
-               &pp->second, &synced) == 5)
+    if ((pp->a_lastcode[3U] == ':') &&
+        (pp->a_lastcode[6U] == ':') &&
+        (pp->a_lastcode[9U] == ':') &&
+        (sscanf(pp->a_lastcode, "%3d:%2d:%2d:%2d%c",
+                &pp->day, &pp->hour, &pp->minute,
+                &pp->second, &synced) == 5))
     {
 
         /*
          * Adjust the synchronize indicator according to timecode
          * say were OK, and then say not if we really are not OK
          */
-        if (synced == '>' || synced == '#' || synced == '?' || synced == 'X')
+        if (synced == '>' || synced == '#' || (synced == '?') || (synced == 'X'))
+        {
             pp->leap = LEAP_NOTINSYNC;
+        }
         else
+        {
             pp->leap = LEAP_NOWARNING;
+        }
 
         true_doevent(peer, e_TS);
 
@@ -636,14 +648,18 @@ true_receive(
          * want one when polled.  If we havn't been polled, bail out.
          */
         if (!up->polled)
+        {
             return;
+        }
 
         /* We only call doevent if additional things need be done
          * at poll interval.  Currently, its only for GOES.  We also
          * call it for clock unknown so that it gets logged.
          */
-        if (up->type == t_goes || up->type == t_unknown)
+        if ((up->type == t_goes) || (up->type == t_unknown))
+        {
             true_doevent(peer, e_Poll);
+        }
 
         if (!refclock_process(pp))
         {
@@ -692,9 +708,13 @@ true_send(
 
         true_debug(peer, "Send '%s'\n", cmd);
         if (refclock_write(peer, cmd, len, NULL) != (ssize_t)len)
+        {
             refclock_report(peer, CEVNT_FAULT);
+        }
         else
+        {
             pp->polls++;
+        }
     }
 }
 
@@ -756,7 +776,7 @@ true_doevent(
             up->state = s_Start;
             break;
         case e_TS:
-            if (up->state != s_Start && up->state != s_Auto)
+            if ((up->state != s_Start) && (up->state != s_Auto))
             {
                 true_send(peer, "\03\r");
                 break;
@@ -780,8 +800,8 @@ true_doevent(
              * Timecode: " TRUETIME Mk III" or " TRUETIME XL"
              * (from a TM/TMD/XL clock during initialization.)
              */
-            if (strcmp(pp->a_lastcode, " TRUETIME Mk III") == 0 ||
-                strncmp(pp->a_lastcode, " TRUETIME XL", 12) == 0)
+            if ((strcmp(pp->a_lastcode, " TRUETIME Mk III") == 0) ||
+                (strncmp(pp->a_lastcode, " TRUETIME XL", 12) == 0))
             {
                 true_doevent(peer, e_F18);
                 NLOG(NLOG_CLOCKSTATUS)
@@ -802,7 +822,7 @@ true_doevent(
             up->state = s_Start;
             break;
         case e_TS:
-            if (up->state != s_Start && up->state != s_Auto)
+            if ((up->state != s_Start) && (up->state != s_Auto))
             {
                 true_send(peer, "\03\r");
                 break;
@@ -823,7 +843,7 @@ true_doevent(
             up->state = s_Start;
             break;
         case e_TS:
-            if (up->state != s_Start && up->state != s_Auto)
+            if ((up->state != s_Start) && (up->state != s_Auto))
             {
                 true_send(peer, "\03\r");
                 break;
@@ -849,12 +869,16 @@ true_doevent(
         break;
     case t_unknown:
         if (event == e_Poll)
+        {
             break;
+        }
         switch (up->state)
         {
         case s_Base:
             if (event != e_Init)
+            {
                 abort();
+            }
             true_send(peer, "P\r");
             up->state = s_InqGOES;
             break;

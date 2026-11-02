@@ -59,9 +59,9 @@
 struct irig_time
 {
     struct timeval stamp; /* timestamp */
-    u_char bits[13];      /* 100 irig data bits */
+    u_char bits[13U];     /* 100 irig data bits */
     u_char status;        /* status byte */
-    char time[14];        /* time string */
+    char time[14U];       /* time string */
 };
 
 /*
@@ -74,7 +74,7 @@ struct auib
     u_short active;           /* 0=inactive, else=active */
     u_short format;           /* time output format */
     struct irig_time timestr; /* time structure */
-    char buffer[14];          /* output formation buffer */
+    char buffer[14U];         /* output formation buffer */
 
     /* hardware interrupt variables */
     struct timeval tv1, tv2, tv3; /* time stamps (median filter) */
@@ -90,8 +90,8 @@ struct auib
     int shi, slo, phase;          /* AGC variables */
     u_long err;                   /* error status bits */
     int ecount;                   /* count of elements this second */
-    long shift[4];                /* shift register of pos ident */
-    long sdata[4];                /* shift register of symbols */
+    long shift[4U];               /* shift register of pos ident */
+    long sdata[4U];               /* shift register of symbols */
 
     int ib_head;               /* queue head */
     int ib_tail;               /* queue tail */

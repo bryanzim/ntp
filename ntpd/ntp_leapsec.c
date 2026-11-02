@@ -63,7 +63,7 @@ struct leap_table
 };
 
 /* Where we store our tables */
-static leap_table_t _ltab[2], *_lptr;
+static leap_table_t _ltab[2U], *_lptr;
 static int /*BOOL*/ _electric;
 
 /* Forward decls of local helpers */
@@ -124,8 +124,10 @@ int /*BOOL*/
 leapsec_set_table(
     leap_table_t* pt)
 {
-    if (pt == &_ltab[0U] || pt == &_ltab[1U])
+    if ((pt == &_ltab[0U]) || (pt == &_ltab[1U]))
+    {
         _lptr = pt;
+    }
     return _lptr == pt;
 }
 
@@ -136,14 +138,20 @@ leapsec_electric(
 {
     int res = _electric;
     if (on < 0)
+    {
         return res;
+    }
 
     _electric = (on != 0);
     if (_electric == res)
+    {
         return res;
+    }
 
-    if (_lptr == &_ltab[0U] || _lptr == &_ltab[1U])
+    if ((_lptr == &_ltab[0U]) || (_lptr == &_ltab[1U]))
+    {
         reset_times(_lptr);
+    }
 
     return res;
 }
@@ -173,7 +181,7 @@ leapsec_load(
     void* farg,
     int use_build_limit)
 {
-    char *cp, *ep, *endp, linebuf[50];
+    char *cp, *ep, *endp, linebuf[50U];
     vint64 ttime, limit;
     long taiof;
     struct calendar build;
@@ -203,7 +211,9 @@ leapsec_load(
                 cp = skipws(cp + 1);
                 pt->head.expire = strtouv64(cp, &ep, 10);
                 if (parsefail(cp, ep))
+                {
                     goto fail_read;
+                }
                 pt->lsig.etime = pt->head.expire.D_s.lo;
             }
             else if (*cp == '$')
@@ -211,23 +221,31 @@ leapsec_load(
                 cp = skipws(cp + 1);
                 pt->head.update = strtouv64(cp, &ep, 10);
                 if (parsefail(cp, ep))
+                {
                     goto fail_read;
+                }
             }
         }
         else if (isdigit((u_char)*cp))
         {
             ttime = strtouv64(cp, &ep, 10);
             if (parsefail(cp, ep))
+            {
                 goto fail_read;
+            }
             cp = skipws(ep);
             taiof = strtol(cp, &endp, 10);
-            if (parsefail(cp, endp) || taiof > INT16_MAX || taiof < INT16_MIN)
+            if (parsefail(cp, endp) || (taiof > INT16_MAX) || (taiof < INT16_MIN))
+            {
                 goto fail_read;
+            }
             if (ucmpv64(&ttime, &limit) >= 0)
             {
                 if (!leapsec_raw(pt, &ttime,
                                  taiof, FALSE))
+                {
                     goto fail_insn;
+                }
             }
             else
             {
@@ -358,7 +376,9 @@ leapsec_query(
 
     /* If before the next scheduling alert, we're done. */
     if (ucmpv64(&ts64, &pt->head.stime) < 0)
+    {
         return fired;
+    }
 
     /* now start to collect the remaining data */
     due32 = pt->head.dtime.D_s.lo;
@@ -370,11 +390,15 @@ leapsec_query(
 
     /* if not in the last day before transition, we're done. */
     if (!betweenu32(due32 - SECSPERDAY, ts32, due32))
+    {
         return fired;
+    }
 
     qr->proximity = LSPROX_ANNOUNCE;
     if (!betweenu32(due32 - 10, ts32, due32))
+    {
         return fired;
+    }
 
     /* The last 10s before the transition. Prepare for action! */
     qr->proximity = LSPROX_ALERT;
@@ -439,7 +463,9 @@ leapsec_load_stream(
     int rcheck;
 
     if (NULL == fname)
+    {
         fname = "<unknown>";
+    }
 
     if (vhash)
     {
@@ -470,7 +496,9 @@ leapsec_load_stream(
                 break;
             }
         if (rcheck < 0)
+        {
             return FALSE;
+        }
         rewind(ifp);
     }
     pt = leapsec_get_table(TRUE);
@@ -495,14 +523,18 @@ leapsec_load_stream(
     }
 
     if (pt->head.size)
+    {
         msyslog(LOG_NOTICE, "%s ('%s'): loaded, expire=%s last=%s ofs=%d",
                 logPrefix, fname, lstostr(&pt->head.expire),
                 lstostr(&pt->info[0U].ttime), pt->info[0U].taiof);
+    }
     else
+    {
         msyslog(LOG_NOTICE,
                 "%s ('%s'): loaded, expire=%s ofs=%d (no entries after build date)",
                 logPrefix, fname, lstostr(&pt->head.expire),
                 pt->head.base_tai);
+    }
 
     return leapsec_set_table(pt);
 }
@@ -522,22 +554,28 @@ leapsec_load_file(
 
     /* just do nothing if there is no leap file */
     if (!(fname && *fname))
+    {
         return FALSE;
+    }
 
     /* try to stat the leapfile */
     if (0 != stat(fname, &sb_new))
     {
         if (logall)
+        {
             msyslog(LOG_ERR, "%s ('%s'): stat failed: %m",
                     logPrefix, fname);
+        }
         return FALSE;
     }
 
     /* silently skip to postcheck if no new file found */
     if (NULL != sb_old)
     {
-        if (!force && sb_old->st_mtime == sb_new.st_mtime && sb_old->st_ctime == sb_new.st_ctime)
+        if (!force && (sb_old->st_mtime == sb_new.st_mtime) && (sb_old->st_ctime == sb_new.st_ctime))
+        {
             return FALSE;
+        }
         *sb_old = sb_new;
     }
 
@@ -561,9 +599,11 @@ leapsec_load_file(
     if ((fp = fopen(fname, "r")) == NULL)
     {
         if (logall)
+        {
             msyslog(LOG_ERR,
                     "%s ('%s'): open failed: %m",
                     logPrefix, fname);
+        }
         return FALSE;
     }
 
@@ -633,9 +673,11 @@ leapsec_add_fix(
 	tt64 = ntpcal_ntp_to_ntp(ttime, pivot);
 	pt   = leapsec_get_table(TRUE);
 
-	if (   ucmpv64(&et64, &pt->head.expire) <= 0
+	if (   (ucmpv64(&et64, &pt->head.expire) <= 0)
 	   || !leapsec_raw(pt, &tt64, total, FALSE) )
+	{
 		return FALSE;
+	}
 
 	pt->lsig.etime = etime;
 	pt->lsig.ttime = ttime;
@@ -681,8 +723,10 @@ leapsec_autokey_tai(
      * offset is bigger than 10s. That was in 1972 -- we don't want
      * to go back that far!
      */
-    if (pt->head.base_tai != 0 || tai_offset < 10)
+    if ((pt->head.base_tai != 0) || (tai_offset < 10))
+    {
         return FALSE;
+    }
 
     /* If there's already data in the table, check if an update is
      * possible. Update is impossible if there are static entries
@@ -693,9 +737,13 @@ leapsec_autokey_tai(
      */
 
     /* Check for static entries */
-    for (idx = 0; idx != pt->head.size; idx++)
+    for (idx = 0; idx != pt->head.size; ++idx)
+    {
         if (!pt->info[idx].dynls)
+        {
             return FALSE;
+        }
+    }
 
     /* get the fulll time stamp and leap era for it */
     now64 = ntpcal_ntp_to_ntp(ntpnow, pivot);
@@ -704,11 +752,15 @@ leapsec_autokey_tai(
     /* check the limits with 20s dead band */
     era.ebase = addv64i32(&era.ebase, 20);
     if (ucmpv64(&now64, &era.ebase) < 0)
+    {
         return FALSE;
+    }
 
     era.ttime = addv64i32(&era.ttime, -20);
     if (ucmpv64(&now64, &era.ttime) > 0)
+    {
         return FALSE;
+    }
 
     /* Here we can proceed. Calculate the delta update. */
     tai_offset -= era.taiof;
@@ -719,8 +771,10 @@ leapsec_autokey_tai(
     pt->head.next_tai += tai_offset;
 
     /* Shift table entry offsets (if any) */
-    for (idx = 0; idx != pt->head.size; idx++)
+    for (idx = 0; idx != pt->head.size; ++idx)
+    {
         pt->info[idx].taiof += tai_offset;
+    }
 
     /* claim success... */
     return TRUE;
@@ -770,12 +824,16 @@ add_range(
      * first entry is a dynamic request without having a leap file
      * for the history proper.
      */
-    if (pt->head.size == 0)
+    if (pt->head.size == 0U)
     {
         if (pi->taiof >= 0)
+        {
             pt->head.base_tai = pi->taiof - 1;
+        }
         else
+        {
             pt->head.base_tai = pi->taiof + 1;
+        }
     }
     else if (pt->head.size >= MAX_HIST)
     {
@@ -818,21 +876,25 @@ get_line(
     char* ptr;
 
     /* if we cannot even store the delimiter, declare failure */
-    if (buff == NULL || size == 0)
+    if ((buff == NULL) || (size == 0U))
+    {
         return NULL;
+    }
 
     ptr = buff;
-    while (EOF != (ch = (*func)(farg)) && '\n' != ch)
-        if (size > 1)
+    while ((EOF != (ch = (*func)(farg))) && ('\n' != ch))
+        if (size > 1U)
         {
             size--;
             *ptr++ = (char)ch;
         }
     /* discard trailing whitespace */
-    while (ptr != buff && isspace((u_char)ptr[-1]))
+    while ((ptr != buff) && isspace((u_char)ptr[-1]))
+    {
         ptr--;
+    }
     *ptr = '\0';
-    return (ptr == buff && ch == EOF) ? NULL : buff;
+    return ((ptr == buff) && (ch == EOF)) ? NULL : buff;
 }
 
 /* [internal] skips whitespace characters from a character buffer. */
@@ -880,9 +942,13 @@ reload_limits(
      * not warrant a binary search. This also works for an empty
      * table, so there is no shortcut for that case.
      */
-    for (idx = 0; idx != pt->head.size; idx++)
+    for (idx = 0; idx != pt->head.size; ++idx)
+    {
         if (ucmpv64(ts, &pt->info[idx].ttime) >= 0)
+        {
             break;
+        }
+    }
 
     /* get time limits with proper bound conditions. Note that the
      * bounds of the table will be observed even if the table is
@@ -905,11 +971,15 @@ reload_limits(
         pt->head.ttime = pt->info[idx].ttime;
 
         if (_electric)
+        {
             pt->head.dtime = pt->head.ttime;
+        }
         else
+        {
             pt->head.dtime = addv64i32(
                 &pt->head.ttime,
                 pt->head.next_tai - pt->head.this_tai);
+        }
 
         pt->head.stime = subv64u32(
             &pt->head.ttime, pt->info[idx].stime);
@@ -938,9 +1008,13 @@ fetch_leap_era(
     int idx;
 
     /* Simple search loop, also works with empty table. */
-    for (idx = 0; idx != pt->head.size; idx++)
+    for (idx = 0; idx != pt->head.size; ++idx)
+    {
         if (ucmpv64(ts, &pt->info[idx].ttime) >= 0)
+        {
             break;
+        }
+    }
     /* fetch era data, keeping an eye on boundary conditions */
     if (idx >= pt->head.size)
     {
@@ -953,9 +1027,13 @@ fetch_leap_era(
         into->taiof = pt->info[idx].taiof;
     }
     if (--idx >= 0)
+    {
         into->ttime = pt->info[idx].ttime;
+    }
     else
+    {
         memset(&into->ttime, 0xFF, sizeof(vint64));
+    }
 }
 
 /* [internal] Take a time stamp and create a leap second frame for
@@ -982,7 +1060,7 @@ leapsec_add(
      * leap entry. Do not permit inserts, only appends, and only if
      * the extend the table beyond the expiration!
      */
-    if (ucmpv64(now64, &pt->head.expire) < 0 || (pt->head.size && ucmpv64(now64, &pt->info[0U].ttime) <= 0))
+    if ((ucmpv64(now64, &pt->head.expire) < 0) || (pt->head.size && (ucmpv64(now64, &pt->info[0U].ttime) <= 0)))
     {
         errno = ERANGE;
         return FALSE;
@@ -992,7 +1070,7 @@ leapsec_add(
     /* To guard against dangling leap flags: do not accept leap
      * second request on the 1st hour of the 1st day of the month.
      */
-    if (fts.monthday == 1 && fts.hour == 0)
+    if ((fts.monthday == 1) && (fts.hour == 0))
     {
         errno = EINVAL;
         return FALSE;
@@ -1040,19 +1118,23 @@ leapsec_raw(
     {
         int cmp = ucmpv64(ttime, &pt->info[0U].ttime);
         if (cmp == 0)
+        {
             cmp -= (taiof != pt->info[0U].taiof);
+        }
         if (cmp < 0)
         {
             errno = ERANGE;
             return FALSE;
         }
         if (cmp == 0)
+        {
             return TRUE;
+        }
     }
 
     ntpcal_ntp64_to_date(&fts, ttime);
     /* If this does not match the exact month start, bail out. */
-    if (fts.monthday != 1 || fts.hour || fts.minute || fts.second)
+    if ((fts.monthday != 1) || fts.hour || fts.minute || fts.second)
     {
         errno = EINVAL;
         return FALSE;
@@ -1079,9 +1161,13 @@ betweenu32(
     int rc;
 
     if (lo <= hi)
+    {
         rc = (lo <= x) && (x < hi);
+    }
     else
+    {
         rc = (lo <= x) || (x < hi);
+    }
     return rc;
 }
 
@@ -1111,14 +1197,16 @@ do_leap_hash(
     char const* cp)
 {
     int wi, di, num, len;
-    unsigned long tmp[5];
+    unsigned long tmp[5U];
 
     memset(mac, 0, sizeof(*mac));
     num = sscanf(cp, " %lx %lx %lx %lx %lx%n",
-                 &tmp[0U], &tmp[1], &tmp[2], &tmp[3], &tmp[4],
+                 &tmp[0U], &tmp[1U], &tmp[2U], &tmp[3U], &tmp[4U],
                  &len);
-    if (num != 5 || cp[len] > ' ')
+    if ((num != 5) || (cp[len] > ' '))
+    {
         return FALSE;
+    }
 
     /* now do the byte twiddle */
     for (wi = 0; wi < 5; ++wi)
@@ -1139,7 +1227,7 @@ do_hash_data(
     isc_sha1_t* mdctx,
     char const* cp)
 {
-    unsigned char text[32]; // must be power of two!
+    unsigned char text[32U]; // must be power of two!
     unsigned int tlen = 0;
     unsigned char ch;
 
@@ -1149,12 +1237,16 @@ do_hash_data(
             text[tlen++] = ch;
             tlen &= (sizeof(text) - 1);
             if (0 == tlen)
+            {
                 isc_sha1_update(
                     mdctx, text, sizeof(text));
+            }
         }
 
     if (0 < tlen)
+    {
         isc_sha1_update(mdctx, text, tlen);
+    }
 }
 
 /* given a reader and a reader arg, calculate and validate the the hash
@@ -1166,30 +1258,44 @@ int leapsec_validate(
 {
     isc_sha1_t mdctx;
     sha1_digest rdig, ldig; /* remote / local digests */
-    char line[50];
+    char line[50U];
     int hlseen = -1;
 
     isc_sha1_init(&mdctx);
     while (get_line(func, farg, line, sizeof(line)))
     {
         if (!strncmp(line, "#h", 2))
+        {
             hlseen = do_leap_hash(&rdig, line + 2);
+        }
         else if (!strncmp(line, "#@", 2))
+        {
             do_hash_data(&mdctx, line + 2);
+        }
         else if (!strncmp(line, "#$", 2))
+        {
             do_hash_data(&mdctx, line + 2);
+        }
         else if (isdigit((unsigned char)line[0U]))
+        {
             do_hash_data(&mdctx, line);
+        }
     }
     isc_sha1_final(&mdctx, ldig.hv);
     isc_sha1_invalidate(&mdctx);
 
     if (0 > hlseen)
+    {
         return LSVALID_NOHASH;
+    }
     if (0 == hlseen)
+    {
         return LSVALID_BADFORMAT;
+    }
     if (0 != memcmp(&rdig, &ldig, sizeof(sha1_digest)))
+    {
         return LSVALID_BADHASH;
+    }
     return LSVALID_GOODHASH;
 }
 
@@ -1205,12 +1311,16 @@ lstostr(
 
     LIB_GETBUF(buf);
 
-    if (!(ts->d_s.hi >= 0 && ntpcal_ntp64_to_date(&tm, ts) >= 0))
+    if (!((ts->d_s.hi >= 0) && (ntpcal_ntp64_to_date(&tm, ts) >= 0)))
+    {
         snprintf(buf, LIB_BUFLENGTH, "%s", "9999-12-31T23:59:59Z");
+    }
     else
+    {
         snprintf(buf, LIB_BUFLENGTH, "%04d-%02d-%02dT%02d:%02d:%02dZ",
                  tm.year, tm.month, tm.monthday,
                  tm.hour, tm.minute, tm.second);
+    }
 
     return buf;
 }

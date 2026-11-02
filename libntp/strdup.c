@@ -21,7 +21,9 @@ char* strdup(
     REQUIRE(s);
     octets = strlen(s) + 1;
     if ((cp = malloc(octets)) == NULL)
+    {
         return NULL;
+    }
     memcpy(cp, s, octets);
 
     return cp;
@@ -33,7 +35,7 @@ char* strdup(
 void* memchr(const void* s, int c, size_t n)
 {
     const unsigned char* p = s;
-    while (n && *p != c)
+    while (n && (*p != c))
     {
         --n;
         ++p;

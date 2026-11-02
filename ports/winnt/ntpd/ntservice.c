@@ -99,7 +99,9 @@ int main(
     /* Under original Windows NT we must not discard the wildcard */
     /* socket to workaround a bug in NT's getsockname(). */
     if (isc_win32os_majorversion() <= 4)
+    {
         accept_wildcard_if_for_winnt = TRUE;
+    }
 
     argc_after_opts = argc;
     argv_after_opts = argv;
@@ -110,10 +112,14 @@ int main(
         || OPT_VALUE_SET_DEBUG_LEVEL != 0
 #endif
         || HAVE_OPT(NOFORK))
+    {
         foreground = TRUE;
+    }
 
-    if (foreground) /* run in console window */
+    if (foreground)
+    { /* run in console window */
         rc = ntpdmain(argc, argv);
+    }
     else
     {
         /* Start up as service */
@@ -125,7 +131,9 @@ int main(
 
         rc = StartServiceCtrlDispatcher(dispatchTable);
         if (rc)
+        {
             rc = 0;
+        }
         else
         {
             rc = GetLastError();
@@ -147,7 +155,7 @@ int main(
  */
 void ntservice_init(void)
 {
-    char ConsoleTitle[256];
+    char ConsoleTitle[256U];
 
     if (!foreground)
     {
@@ -248,7 +256,7 @@ void WINAPI
 ServiceControl(
     DWORD dwCtrlCode)
 {
-    static const char* const msg_tab[2] = {
+    static const char* const msg_tab[2U] = {
         "explicit stop",
         "system shutdown"
     };
@@ -290,14 +298,16 @@ void UpdateSCM(
     DWORD state)
 {
     static DWORD dwState = SERVICE_STOPPED;
-    static DWORD dwCheck = 0;
+    static DWORD dwCheck = 0U;
 
     SERVICE_STATUS ss;
 
     if (hServiceStatus)
     {
         if (state)
+        {
             dwState = state;
+        }
 
         ZERO(ss);
         ss.dwServiceType |= SERVICE_WIN32_OWN_PROCESS;

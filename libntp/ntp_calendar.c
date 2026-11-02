@@ -107,7 +107,9 @@ ntpcal_set_timefunc(
 
     res = systime_func;
     if (NULL == nfunc)
+    {
         nfunc = &time;
+    }
     systime_func = nfunc;
 
     return res;
@@ -171,9 +173,13 @@ uint32_2cpl_to_int32(
      * with two's complement representation for signed integers.
      */
     if (vu > INT32_MAX)
+    {
         v = -(int32_t)(~vu) - 1;
+    }
     else
+    {
         v = (int32_t)vu;
+    }
 
 #endif
 
@@ -297,7 +303,7 @@ int ntpcal_get_build_date(
 #endif
     static const char mlist[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
 
-    char monstr[4];
+    char monstr[4U];
     const char* cp;
     unsigned short hour, minute, second, day, year;
     /* Note: The above quantities are used for sscanf 'hu' format,
@@ -322,7 +328,9 @@ int ntpcal_get_build_date(
         ignore = 1 + (envstr && (!*envstr || !strcasecmp(envstr, "yes")));
     }
     if (ignore > 1)
+    {
         return FALSE;
+    }
 #endif
 
     if (6 == sscanf(build, "%hu:%hu:%hu/%3s %hu %hu",
@@ -695,9 +703,13 @@ ntpcal_daysplit(
      * division by a substantial factor....)
      */
     if (ts->q_s < 0)
+    {
         Q = ~(uint32_t)(~ts->Q_s / SECSPERDAY);
+    }
     else
+    {
         Q = (uint32_t)(ts->Q_s / SECSPERDAY);
+    }
     R = ts->D_s.lo - Q * SECSPERDAY;
 
 #else
@@ -786,9 +798,13 @@ ntpcal_weeksplit(
 #elif defined(UINT64_MAX) && !defined(__arm__)
 
     if (ts->q_s < 0)
+    {
         Q = ~(uint32_t)(~ts->Q_s / SECSPERWEEK);
+    }
     else
+    {
         Q = (uint32_t)(ts->Q_s / SECSPERWEEK);
+    }
     R = ts->D_s.lo - Q * SECSPERWEEK;
 
 #else
@@ -826,7 +842,7 @@ ntpcal_weeksplit(
  */
 static int32_t
 priv_timesplit(
-    int32_t split[3],
+    int32_t split[3U],
     int32_t ts)
 {
     /* Do 3 chained floor divisions by positive constants, using the
@@ -967,9 +983,11 @@ ntpcal_split_yeardays(
     isleap = 1 + !isleap;
     /* adjust for February of 30 nominal days */
     if (eyd >= 61 - isleap)
+    {
         eyd += isleap;
+    }
     /* if in range, convert to months and days in month */
-    if (eyd >= 0 && eyd < 367)
+    if ((eyd >= 0) && (eyd < 367))
     {
         res.hi = (eyd * 67 + 32) >> 11;
         res.lo = eyd - ((489 * res.hi + 8) >> 4);
@@ -1054,7 +1072,7 @@ ntpcal_daysec_to_date(
     int32_t sec)
 {
     int32_t days;
-    int ts[3];
+    int ts[3U];
 
     days = priv_timesplit(ts, sec);
     jd->hour = (uint8_t)ts[0U];
@@ -1076,7 +1094,7 @@ ntpcal_daysec_to_tm(
     int32_t sec)
 {
     int32_t days;
-    int32_t ts[3];
+    int32_t ts[3U];
 
     days = priv_timesplit(ts, sec);
     utm->tm_hour = ts[0U];
@@ -1336,7 +1354,7 @@ ntpcal_days_in_months(
 
     /* Possibly normalise by floor division. This does not hapen for
      * input in normal range. */
-    if (res.lo < 0 || res.lo >= 12)
+    if ((res.lo < 0) || (res.lo >= 12))
     {
         uint32_t mu, Q, sf32;
         sf32 = int32_sflag(res.lo);
@@ -1380,7 +1398,9 @@ ntpcal_edate_to_eradays(
         res = ntpcal_days_in_years(years + tmp.hi) + tmp.lo;
     }
     else
+    {
         res = ntpcal_days_in_years(years);
+    }
     res += mdays;
 
     return res;
@@ -1403,10 +1423,12 @@ ntpcal_edate_to_yeardays(
 {
     ntpcal_split tmp;
 
-    if (0 <= mons && mons < 12)
+    if ((0 <= mons) && (mons < 12))
     {
         if (mons >= 2)
+        {
             mdays -= 2 - is_leapyear(years + 1);
+        }
         mdays += (489 * mons + 8) >> 4;
     }
     else
@@ -1739,7 +1761,7 @@ isocal_weeks_in_years(
     /*
      * use: w = (y * 53431 + b[c]) / 1024 as interpolation
      */
-    static const uint16_t bctab[4] = { 157, 449, 597, 889 };
+    static const uint16_t bctab[4U] = { 157, 449, 597, 889 };
 
     int32_t cs, cw;
     uint32_t cc, ci, yu, sf32;
@@ -1787,7 +1809,7 @@ isocal_split_eraweeks(
      * use: y = (w * 157 + b[c]) / 8192 as interpolation
      */
 
-    static const uint16_t bctab[4] = { 85, 130, 17, 62 };
+    static const uint16_t bctab[4U] = { 85, 130, 17, 62 };
 
     ntpcal_split res;
     int32_t cc, ci;
@@ -1858,7 +1880,7 @@ int isocal_ntp64_to_date(
     const vint64* ntp)
 {
     ntpcal_split ds;
-    int32_t ts[3];
+    int32_t ts[3U];
     uint32_t uw, ud, sf32;
 
     /*
@@ -1890,7 +1912,7 @@ int isocal_ntp64_to_date(
     id->year = (uint16_t)ds.hi + 1;    /* shift to current  */
     id->week = (uint8_t)ds.lo + 1;
 
-    return (ds.hi >= 0 && ds.hi < 0x0000FFFF);
+    return ((ds.hi >= 0) && (ds.hi < 0x0000FFFF));
 }
 
 int isocal_ntp_to_date(
@@ -1952,7 +1974,9 @@ basedate_eval_buildstamp(void)
     int32_t ed;
 
     if (!ntpcal_get_build_date(&jd))
+    {
         return NTP_TO_UNIX_DAYS;
+    }
 
     /* The time zone of the build stamp is unspecified; we remove
      * one day to provide a certain slack. And in case somebody
@@ -1977,18 +2001,22 @@ basedate_eval_string(
 
     sl = strlen(str);
     rc = sscanf(str, "%4hu-%2hu-%2hu%n", &y, &m, &d, &nc);
-    if (rc == 3 && (size_t)nc == sl)
+    if ((rc == 3) && ((size_t)nc == sl))
     {
-        if (m >= 1 && m <= 12 && d >= 1 && d <= 31)
+        if ((m >= 1) && (m <= 12) && (d >= 1) && (d <= 31))
+        {
             return ntpcal_edate_to_eradays(y - 1, m - 1, d) - DAY_NTP_STARTS;
+        }
         goto buildstamp;
     }
 
     rc = sscanf(str, "%lu%n", &ned, &nc);
-    if (rc == 1 && (size_t)nc == sl)
+    if ((rc == 1) && ((size_t)nc == sl))
     {
         if (ned <= INT32_MAX)
+        {
             return (int32_t)ned;
+        }
         goto buildstamp;
     }
 
@@ -2029,7 +2057,9 @@ basedate_set_day(
     /* set GPS base week for GPS week unfolding */
     day = ntpcal_weekday_ge(day + DAY_NTP_STARTS, CAL_SUNDAY) - DAY_NTP_STARTS;
     if (day < NTP_TO_GPS_DAYS)
+    {
         day = NTP_TO_GPS_DAYS;
+    }
     s_gpsweek = (day - NTP_TO_GPS_DAYS) / DAYSPERWEEK;
     ntpcal_rd_to_date(&jd, day + DAY_NTP_STARTS);
     msyslog(LOG_INFO, "gps base set to %04hu-%02hu-%02hu (week %d)",
@@ -2133,12 +2163,18 @@ ntpcal_expand_century(
 
     /* check basic constraints */
     if ((y >= 100u) || (--m >= 12u) || (--d >= 31u))
+    {
         return 0;
+    }
 
-    if ((m += 10u) >= 12u) /* shift base to prev. March,1st */
+    if ((m += 10u) >= 12u)
+    { /* shift base to prev. March,1st */
         m -= 12u;
+    }
     else if (--y >= 100u)
+    {
         y += 100u;
+    }
     d += y + (y >> 2) + 2u;    /* year share */
     d += (m * 83u + 16u) >> 5; /* month share */
 
@@ -2150,7 +2186,9 @@ ntpcal_expand_century(
      */
     c = u32mod7(3 * (251u + wd - d));
     if (c > 3u)
+    {
         return 0;
+    }
 
     if ((m > 9u) && (++y >= 100u))
     { /* undo base shift */
@@ -2178,7 +2216,9 @@ char* ntpcal_iso8601std(
                        cdp->year, cdp->month, cdp->monthday,
                        cdp->hour, cdp->minute, cdp->second);
         if (len < 0)
+        {
             *buf = '\0';
+        }
     }
     return buf;
 }

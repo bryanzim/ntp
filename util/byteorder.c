@@ -31,24 +31,32 @@ int main(
     if (sizeof(long) > 4)
     {
         if (u.c[0U] == 0x08)
+        {
             big = 1;
+        }
         else
+        {
             big = 0;
+        }
     }
     else
     {
         if (u.c[0U] == 0x04)
+        {
             big = 1;
+        }
         else
+        {
             big = 0;
+        }
     }
-    for (i = 0; i < sizeof(long); i++)
+    for (i = 0; i < sizeof(long); ++i)
     {
-        if (big == 1 && (u.c[i] == (sizeof(long) - i)))
+        if ((big == 1) && (u.c[i] == (sizeof(long) - i)))
         {
             continue;
         }
-        else if (big == 0 && (u.c[i] == (i + 1)))
+        else if ((big == 0) && (u.c[i] == (i + 1)))
         {
             continue;
         }

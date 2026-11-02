@@ -80,7 +80,7 @@ extern int atoi(const char*);
 /**
  *  static const strings for ntpdsim options
  */
-static char const ntpdsim_opt_strs[3245] =
+static char const ntpdsim_opt_strs[3245U] =
     /*     0 */ "ntpdsim 4.2.8p15\n"
                 "Copyright (C) 1992-2023 The University of Delaware and Network Time Foundation, all rights reserved.\n"
                 "This is free software. It is licensed for use, modification and\n"
@@ -1300,7 +1300,7 @@ static tOptDesc optDesc[OPTION_CT] = {
 /** ntpdsim configuration file name. */
 #define zRcName (ntpdsim_opt_strs + 3185)
 /** Directories to search for ntpdsim config files. */
-static char const* const apzHomeList[3] = {
+static char const* const apzHomeList[3U] = {
     ntpdsim_opt_strs + 3177,
     ntpdsim_opt_strs + 3183,
     NULL
@@ -1484,7 +1484,9 @@ AO_gettext(char const* pz)
 {
     char* res;
     if (pz == NULL)
+    {
         return NULL;
+    }
 #ifdef HAVE_DCGETTEXT
     /*
      * While processing the option_xlateable_txt data, try to use the
@@ -1495,15 +1497,21 @@ AO_gettext(char const* pz)
     {
         res = dgettext("libopts", pz);
         if (res == pz)
+        {
             res = (char*)VOIDP(_(pz));
+        }
     }
     else
+    {
         res = (char*)VOIDP(_(pz));
+    }
 #else
     res = (char*)VOIDP(_(pz));
 #endif
     if (res == pz)
+    {
         return res;
+    }
     res = strdup(res);
     if (res == NULL)
     {
@@ -1561,7 +1569,9 @@ translate_option_strings(void)
         {
             tOptDesc* od = opts->pOptDesc;
             for (ix = opts->optCt; ix > 0; ix--, od++)
+            {
                 coerce_it(VOIDP(&(od->pzText)));
+            }
         }
     }
 }

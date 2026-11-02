@@ -475,7 +475,9 @@ free_config_tree(
 #endif
 
     if (ptree->source.value.s != NULL)
+    {
         free(ptree->source.value.s);
+    }
 
     free_config_other_modes(ptree);
     free_config_auth(ptree);
@@ -532,7 +534,9 @@ int dump_all_config_trees(
     for (cfg_ptr = cfg_tree_history;
          cfg_ptr != NULL;
          cfg_ptr = cfg_ptr->link)
+    {
         return_value |= dump_config_tree(cfg_ptr, df, comment);
+    }
 
     return return_value;
 }
@@ -562,7 +566,7 @@ int dump_config_tree(
     const char* s = NULL;
     char* s1;
     char* s2;
-    char timestamp[80];
+    char timestamp[80U];
     int enable;
 
     DPRINTF(1, ("dump_config_tree(%p)\n", ptree));
@@ -572,7 +576,9 @@ int dump_config_tree(
         if (!strftime(timestamp, sizeof(timestamp),
                       "%Y-%m-%d %H:%M:%S",
                       localtime(&ptree->timestamp)))
+        {
             timestamp[0U] = '\0';
+        }
 
         fprintf(df, "# %s %s %s\n",
                 timestamp,
@@ -612,9 +618,9 @@ int dump_config_tree(
         case T_String:
             fprintf(df, "%s \"%s\"", keyword(atrv->attr),
                     atrv->value.s);
-            if (T_Driftfile == atrv->attr &&
-                atrv->link != NULL &&
-                T_WanderThreshold == atrv->link->attr)
+            if ((T_Driftfile == atrv->attr) &&
+                (atrv->link != NULL) &&
+                (T_WanderThreshold == atrv->link->attr))
             {
                 atrv = atrv->link;
                 fprintf(df, " %s\n",
@@ -640,19 +646,25 @@ int dump_config_tree(
     {
         fprintf(df, "logconfig");
         for (; atrv != NULL; atrv = atrv->link)
+        {
             fprintf(df, " %c%s", atrv->attr, atrv->value.s);
+        }
         fprintf(df, "\n");
     }
 
     if (ptree->stats_dir)
+    {
         fprintf(df, "statsdir \"%s\"\n", ptree->stats_dir);
+    }
 
     i_n = HEAD_PFIFO(ptree->stats_list);
     if (i_n != NULL)
     {
         fprintf(df, "statistics");
         for (; i_n != NULL; i_n = i_n->link)
+        {
             fprintf(df, " %s", keyword(i_n->i));
+        }
         fprintf(df, "\n");
     }
 
@@ -710,13 +722,19 @@ int dump_config_tree(
     }
 
     if (ptree->auth.revoke != 0)
+    {
         fprintf(df, "revoke %d\n", ptree->auth.revoke);
+    }
 
     if (ptree->auth.keysdir != NULL)
+    {
         fprintf(df, "keysdir \"%s\"\n", ptree->auth.keysdir);
+    }
 
     if (ptree->auth.keys != NULL)
+    {
         fprintf(df, "keys \"%s\"\n", ptree->auth.keys);
+    }
 
     atrv = HEAD_PFIFO(ptree->auth.trusted_key_list);
     if (atrv != NULL)
@@ -725,30 +743,40 @@ int dump_config_tree(
         for (; atrv != NULL; atrv = atrv->link)
         {
             if (T_Integer == atrv->type)
+            {
                 fprintf(df, " %d", atrv->value.i);
+            }
             else if (T_Intrange == atrv->type)
+            {
                 fprintf(df, " (%d ... %d)",
                         atrv->value.r.first,
                         atrv->value.r.last);
+            }
 #ifdef DEBUG
             else
+            {
                 fprintf(df, "\n# dump error:\n"
                             "# unknown trustedkey attr type %d\n"
                             "trustedkey",
                         atrv->type);
+            }
 #endif
         }
         fprintf(df, "\n");
     }
 
     if (ptree->auth.control_key)
+    {
         fprintf(df, "controlkey %d\n", ptree->auth.control_key);
+    }
 
     if (ptree->auth.request_key)
+    {
         fprintf(df, "requestkey %d\n", ptree->auth.request_key);
+    }
 
     /* dump enable list, then disable list */
-    for (enable = 1; enable >= 0; enable--)
+    for (enable = 1; enable >= 0; --enable)
     {
         atrv = (enable)
                    ? HEAD_PFIFO(ptree->enable_opts)
@@ -757,8 +785,10 @@ int dump_config_tree(
         {
             fprintf(df, "%s", (enable) ? "enable" : "disable");
             for (; atrv != NULL; atrv = atrv->link)
+            {
                 fprintf(df, " %s",
                         keyword(atrv->value.i));
+            }
             fprintf(df, "\n");
         }
     }
@@ -835,7 +865,9 @@ int dump_config_tree(
     }
 
     if (ptree->broadcastclient)
+    {
         fprintf(df, "broadcastclient\n");
+    }
 
     peern = HEAD_PFIFO(ptree->peers);
     for (; peern != NULL; peern = peern->link)
@@ -867,27 +899,41 @@ int dump_config_tree(
         fprintf(df, " %s", addr->address);
 
         if (peern->minpoll != 0)
+        {
             fprintf(df, " minpoll %u", peern->minpoll);
+        }
 
         if (peern->maxpoll != 0)
+        {
             fprintf(df, " maxpoll %u", peern->maxpoll);
+        }
 
         if (peern->ttl != 0)
         {
-            if (strlen(addr->address) > 8 && !memcmp(addr->address, "127.127.", 8))
+            if ((strlen(addr->address) > 8) && !memcmp(addr->address, "127.127.", 8))
+            {
                 fprintf(df, " mode %u", peern->ttl);
+            }
             else
+            {
                 fprintf(df, " ttl %u", peern->ttl);
+            }
         }
 
         if (peern->peerversion != NTP_VERSION)
+        {
             fprintf(df, " version %u", peern->peerversion);
+        }
 
         if (peern->peerkey != 0)
+        {
             fprintf(df, " key %u", peern->peerkey);
+        }
 
         if (peern->group != NULL)
+        {
             fprintf(df, " ident \"%s\"", peern->group);
+        }
 
         atrv = HEAD_PFIFO(peern->peerflags);
         for (; atrv != NULL; atrv = atrv->link)
@@ -909,7 +955,9 @@ int dump_config_tree(
             s2 = fudge_addr->address;
 
             if (strcmp(s1, s2))
+            {
                 continue;
+            }
 
             fprintf(df, "fudge %s", s1);
 
@@ -961,7 +1009,9 @@ int dump_config_tree(
             s2 = fudge_addr->address;
 
             if (strcmp(s1, s2))
+            {
                 continue;
+            }
 
             fprintf(df, "device %s", s1);
 
@@ -997,7 +1047,9 @@ int dump_config_tree(
     {
         fprintf(df, "manycastserver");
         for (; addr != NULL; addr = addr->link)
+        {
             fprintf(df, " %s", addr->address);
+        }
         fprintf(df, "\n");
     }
 
@@ -1006,7 +1058,9 @@ int dump_config_tree(
     {
         fprintf(df, "multicastclient");
         for (; addr != NULL; addr = addr->link)
+        {
             fprintf(df, " %s", addr->address);
+        }
         fprintf(df, "\n");
     }
 
@@ -1014,15 +1068,19 @@ int dump_config_tree(
     for (unpeern = HEAD_PFIFO(ptree->unpeers);
          unpeern != NULL;
          unpeern = unpeern->link)
+    {
         fprintf(df, "unpeer %s\n", unpeern->addr->address);
+    }
 
     atrv = HEAD_PFIFO(ptree->mru_opts);
     if (atrv != NULL)
     {
         fprintf(df, "mru");
         for (; atrv != NULL; atrv = atrv->link)
+        {
             fprintf(df, " %s %d", keyword(atrv->attr),
                     atrv->value.i);
+        }
         fprintf(df, "\n");
     }
 
@@ -1031,8 +1089,10 @@ int dump_config_tree(
     {
         fprintf(df, "discard");
         for (; atrv != NULL; atrv = atrv->link)
+        {
             fprintf(df, " %s %d", keyword(atrv->attr),
                     atrv->value.i);
+        }
         fprintf(df, "\n");
     }
 
@@ -1069,7 +1129,7 @@ int dump_config_tree(
         atrv = HEAD_PFIFO(rest_node->flag_tok_fifo);
         for (; atrv != NULL; atrv = atrv->link)
         {
-            if (T_Integer == atrv->type && T_Source == atrv->attr)
+            if ((T_Integer == atrv->type) && (T_Source == atrv->attr))
             {
                 s = keyword(T_Source);
                 break;
@@ -1089,14 +1149,16 @@ int dump_config_tree(
             const char* mp = "";
 
             if (rest_node->mask)
+            {
                 mp = rest_node->mask->address;
+            }
 
-            if (rest_node->addr->type == AF_INET && !strcmp(mp, "0.0.0.0") && !strcmp(ap, mp))
+            if ((rest_node->addr->type == AF_INET) && !strcmp(mp, "0.0.0.0") && !strcmp(ap, mp))
             {
                 is_default = TRUE;
                 s = "-4 default";
             }
-            else if (rest_node->mask && rest_node->mask->type == AF_INET6 && !strcmp(mp, "::") && !strcmp(ap, mp))
+            else if (rest_node->mask && (rest_node->mask->type == AF_INET6) && !strcmp(mp, "::") && !strcmp(ap, mp))
             {
                 is_default = TRUE;
                 s = "-6 default";
@@ -1122,7 +1184,7 @@ int dump_config_tree(
                             ? T_Delrestrict
                             : T_Restrict),
                 s);
-        if (rest_node->mask != NULL && !is_default)
+        if ((rest_node->mask != NULL) && !is_default)
         {
             ZERO(mask);
             AF(&mask) = AF_UNSPEC;
@@ -1147,7 +1209,7 @@ int dump_config_tree(
         atrv = HEAD_PFIFO(rest_node->flag_tok_fifo);
         for (; atrv != NULL; atrv = atrv->link)
         {
-            if (T_Integer == atrv->type && T_Source != atrv->attr)
+            if ((T_Integer == atrv->type) && (T_Source != atrv->attr))
             {
                 fprintf(df, " %s", keyword(atrv->attr));
             }
@@ -1190,7 +1252,9 @@ for ( ; atrv != NULL; atrv = atrv->link) {
     {
         fprintf(df, "phone");
         for (; str_node != NULL; str_node = str_node->link)
+        {
             fprintf(df, " \"%s\"", str_node->s);
+        }
         fprintf(df, "\n");
     }
 
@@ -1203,7 +1267,9 @@ for ( ; atrv != NULL; atrv = atrv->link) {
         free(s1);
         free(s2);
         if (setv_node->isdefault)
+        {
             fprintf(df, " default");
+        }
         fprintf(df, "\n");
     }
 
@@ -1212,7 +1278,9 @@ for ( ; atrv != NULL; atrv = atrv->link) {
     {
         fprintf(df, "ttl");
         for (; i_n != NULL; i_n = i_n->link)
+        {
             fprintf(df, " %d", i_n->i);
+        }
         fprintf(df, "\n");
     }
 
@@ -1254,7 +1322,9 @@ for ( ; atrv != NULL; atrv = atrv->link) {
         fprintf(df, "reset");
         for (; counter_set != NULL;
              counter_set = counter_set->link)
+        {
             fprintf(df, " %s", keyword(counter_set->i));
+        }
         fprintf(df, "\n");
     }
 
@@ -1274,11 +1344,17 @@ void* append_gen_fifo(
     pf = fifo;
     pe = entry;
     if (NULL == pf)
+    {
         pf = emalloc_zero(sizeof(*pf));
+    }
     else
+    {
         CHECK_FIFO_CONSISTENCY(*pf);
+    }
     if (pe != NULL)
+    {
         LINK_FIFO(*pf, pe, link);
+    }
     CHECK_FIFO_CONSISTENCY(*pf);
 
     return pf;
@@ -1295,9 +1371,13 @@ void* concat_gen_fifos(
     pf1 = first;
     pf2 = second;
     if (NULL == pf1)
+    {
         return pf2;
+    }
     if (NULL == pf2)
+    {
         return pf1;
+    }
 
     CONCAT_FIFO(*pf1, *pf2, link);
     free(pf2);
@@ -1315,12 +1395,16 @@ void* destroy_gen_fifo(
     if (pf1 != NULL)
     {
         if (!func)
+        {
             func = free;
+        }
         for (;;)
         {
             UNLINK_FIFO(np, *pf1, link);
             if (np == NULL)
+            {
                 break;
+            }
             (*func)(np);
         }
         free(pf1);
@@ -1338,7 +1422,9 @@ void destroy_attr_val(
     if (av)
     {
         if (T_String == av->type)
+        {
             free(av->value.s);
+        }
         free(av);
     }
 }
@@ -1418,8 +1504,10 @@ create_attr_sval(
 
     my_val = emalloc_zero(sizeof(*my_val));
     my_val->attr = attr;
-    if (NULL == s) /* free() hates NULL */
+    if (NULL == s)
+    { /* free() hates NULL */
         s = estrdup("");
+    }
     my_val->value.s = _UC(s);
     my_val->type = T_String;
 
@@ -1461,7 +1549,7 @@ create_address_node(
     address_node* my_node;
 
     REQUIRE(NULL != addr);
-    REQUIRE(AF_INET == type || AF_INET6 == type || AF_UNSPEC == type);
+    REQUIRE((AF_INET == type) || (AF_INET6 == type) || (AF_UNSPEC == type));
     my_node = emalloc_zero(sizeof(*my_node));
     my_node->address = addr;
     my_node->type = (u_short)type;
@@ -1474,7 +1562,9 @@ void destroy_address_node(
     address_node* my_node)
 {
     if (NULL == my_node)
+    {
         return;
+    }
     REQUIRE(NULL != my_node->address);
 
     free(my_node->address);
@@ -1510,7 +1600,9 @@ create_peer_node(
      */
 
     if (options != NULL)
+    {
         CHECK_FIFO_CONSISTENCY(*options);
+    }
     while (options != NULL)
     {
         UNLINK_FIFO(option, *options, link);
@@ -1531,8 +1623,8 @@ create_peer_node(
             break;
 
         case T_Minpoll:
-            if (option->value.i < NTP_MINPOLL ||
-                option->value.i > UCHAR_MAX)
+            if ((option->value.i < NTP_MINPOLL) ||
+                (option->value.i > UCHAR_MAX))
             {
                 msyslog(LOG_INFO,
                         "minpoll: provided value (%d) is out of range [%d-%d])",
@@ -1548,8 +1640,8 @@ create_peer_node(
             break;
 
         case T_Maxpoll:
-            if (option->value.i < 0 ||
-                option->value.i > NTP_MAXPOLL)
+            if ((option->value.i < 0) ||
+                (option->value.i > NTP_MAXPOLL))
             {
                 msyslog(LOG_INFO,
                         "maxpoll: provided value (%d) is out of range [0-%d])",
@@ -1629,7 +1721,9 @@ create_peer_node(
             errflag = 1;
         }
         if (freenode)
+        {
             free(option);
+        }
     }
 
     /* Check if errors were reported. If yes, ignore the node */
@@ -1664,7 +1758,7 @@ create_unpeer_node(
         u = (10 * u + *pch - '0') | (u & 0xFF000000u);
     }
 
-    if (!*pch && u <= ASSOCID_MAX)
+    if (!*pch && (u <= ASSOCID_MAX))
     {
         my_node->assocID = (associd_t)u;
         my_node->addr = NULL;
@@ -1745,7 +1839,9 @@ destroy_int_fifo(
         {
             UNLINK_FIFO(i_n, *fifo, link);
             if (i_n == NULL)
+            {
                 break;
+            }
             free(i_n);
         }
         free(fifo);
@@ -1765,7 +1861,9 @@ destroy_string_fifo(
         {
             UNLINK_FIFO(sn, *fifo, link);
             if (sn == NULL)
+            {
                 break;
+            }
             free(sn->s);
             free(sn);
         }
@@ -1786,7 +1884,9 @@ destroy_attr_val_fifo(
         {
             UNLINK_FIFO(av, *av_fifo, link);
             if (av == NULL)
+            {
                 break;
+            }
             destroy_attr_val(av);
         }
         free(av_fifo);
@@ -1806,7 +1906,9 @@ destroy_filegen_fifo(
         {
             UNLINK_FIFO(fg, *fifo, link);
             if (fg == NULL)
+            {
                 break;
+            }
             destroy_attr_val_fifo(fg->options);
             free(fg);
         }
@@ -1827,7 +1929,9 @@ destroy_restrict_fifo(
         {
             UNLINK_FIFO(rn, *fifo, link);
             if (rn == NULL)
+            {
                 break;
+            }
             destroy_restrict_node(rn);
         }
         free(fifo);
@@ -1847,7 +1951,9 @@ destroy_setvar_fifo(
         {
             UNLINK_FIFO(sv, *fifo, link);
             if (sv == NULL)
+            {
                 break;
+            }
             free(sv->var);
             free(sv->val);
             free(sv);
@@ -1869,7 +1975,9 @@ destroy_addr_opts_fifo(
         {
             UNLINK_FIFO(aon, *fifo, link);
             if (aon == NULL)
+            {
                 break;
+            }
             destroy_address_node(aon->addr);
             destroy_attr_val_fifo(aon->options);
             free(aon);
@@ -1891,7 +1999,9 @@ create_setvar_node(
     /* do not allow = in the variable name */
     pch = strchr(var, '=');
     if (NULL != pch)
+    {
         *pch = '\0';
+    }
 
     /* Now store the string into a setvar_node */
     my_node = emalloc_zero(sizeof(*my_node));
@@ -1911,7 +2021,7 @@ create_nic_rule_node(
 {
     nic_rule_node* my_node;
 
-    REQUIRE(match_class != 0 || if_name != NULL);
+    REQUIRE((match_class != 0) || (if_name != NULL));
 
     my_node = emalloc_zero(sizeof(*my_node));
     my_node->match_class = match_class;
@@ -2087,8 +2197,10 @@ config_other_modes(
     address_node* addr_node;
 
     if (ptree->broadcastclient)
+    {
         proto_config(PROTO_BROADCLIENT, ptree->broadcastclient,
                      0., NULL);
+    }
 
     addr_node = HEAD_PFIFO(ptree->manycastserver);
     while (addr_node != NULL)
@@ -2140,7 +2252,9 @@ destroy_address_fifo(
         {
             UNLINK_FIFO(addr_node, *pfifo, link);
             if (addr_node == NULL)
+            {
                 break;
+            }
             destroy_address_node(addr_node);
         }
         free(pfifo);
@@ -2211,7 +2325,9 @@ config_auth(
     if (ptree->auth.keysdir)
     {
         if (keysdir != default_keysdir)
+        {
             free(keysdir);
+        }
         keysdir = estrdup(ptree->auth.keysdir);
     }
 
@@ -2220,7 +2336,9 @@ config_auth(
     if (ptree->auth.ntp_signd_socket)
     {
         if (ntp_signd_socket != default_ntp_signd_socket)
+        {
             free(ntp_signd_socket);
+        }
         ntp_signd_socket = estrdup(ptree->auth.ntp_signd_socket);
     }
 
@@ -2243,16 +2361,18 @@ config_auth(
         if (T_Integer == my_val->type)
         {
             first = my_val->value.i;
-            if (first > 1 && first <= NTP_MAXKEY)
+            if ((first > 1) && (first <= NTP_MAXKEY))
+            {
                 count++;
+            }
         }
         else
         {
             REQUIRE(T_Intrange == my_val->type);
             first = my_val->value.r.first;
             last = my_val->value.r.last;
-            if (!(first > last || first < 1 ||
-                  last > NTP_MAXKEY))
+            if (!((first > last) || (first < 1) ||
+                  (last > NTP_MAXKEY)))
             {
                 count += 1 + last - first;
             }
@@ -2262,14 +2382,18 @@ config_auth(
 
     /* Keys Command */
     if (ptree->auth.keys)
+    {
         getauthkeys(ptree->auth.keys);
+    }
 
     /* Control Key Command */
     if (ptree->auth.control_key)
     {
         ctl_auth_keyid = (keyid_t)ptree->auth.control_key;
         if (!auth_approve_mgmt_key(ctl_auth_keyid, "controlkey"))
+        {
             ctl_auth_keyid = 0;
+        }
     }
 
     /* Requested Key Command */
@@ -2279,7 +2403,9 @@ config_auth(
                     (u_long)ptree->auth.request_key));
         info_auth_keyid = (keyid_t)ptree->auth.request_key;
         if (!auth_approve_mgmt_key(info_auth_keyid, "requestkey"))
+        {
             info_auth_keyid = 0;
+        }
     }
 
     /* Trusted Key Command */
@@ -2289,7 +2415,7 @@ config_auth(
         if (T_Integer == my_val->type)
         {
             first = my_val->value.i;
-            if (first >= 1 && first <= NTP_MAXKEY)
+            if ((first >= 1) && (first <= NTP_MAXKEY))
             {
                 authtrust(first, TRUE);
             }
@@ -2304,8 +2430,8 @@ config_auth(
         {
             first = my_val->value.r.first;
             last = my_val->value.r.last;
-            if (first > last || first < 1 ||
-                last > NTP_MAXKEY)
+            if ((first > last) || (first < 1) ||
+                (last > NTP_MAXKEY))
             {
                 msyslog(LOG_NOTICE,
                         "Ignoring invalid trustedkey range %d ... %d, min 1 max %d.",
@@ -2313,7 +2439,7 @@ config_auth(
             }
             else
             {
-                for (i = first; i <= last; i++)
+                for (i = first; i <= last; ++i)
                 {
                     authtrust(i, TRUE);
                 }
@@ -2323,12 +2449,16 @@ config_auth(
 
 #ifdef AUTOKEY
     /* crypto revoke command */
-    if (ptree->auth.revoke > 2 && ptree->auth.revoke < 32)
+    if ((ptree->auth.revoke > 2) && (ptree->auth.revoke < 32))
+    {
         sys_revoke = (u_char)ptree->auth.revoke;
+    }
     else if (ptree->auth.revoke)
+    {
         msyslog(LOG_ERR,
                 "'revoke' value %d ignored",
                 ptree->auth.revoke);
+    }
 #endif /* AUTOKEY */
 }
 #endif /* !SIM */
@@ -2482,27 +2612,33 @@ config_tos(
         case T_Minclock:
             val = tos->value.d;
             if ((int)tos->value.d < 1)
+            {
                 tos->value.d = 1;
+            }
             l_minclock = (int)tos->value.d;
             break;
 
         case T_Maxclock:
             val = tos->value.d;
             if ((int)tos->value.d < 1)
+            {
                 tos->value.d = 1;
+            }
             l_maxclock = (int)tos->value.d;
             break;
 
         case T_Minsane:
             val = tos->value.d;
             if ((int)tos->value.d < 0)
+            {
                 tos->value.d = 0;
+            }
             l_minsane = (int)tos->value.d;
             break;
         }
     }
 
-    if (!(l_minsane < l_minclock && l_minclock <= l_maxclock))
+    if (!((l_minsane < l_minclock) && (l_minclock <= l_maxclock)))
     {
         msyslog(LOG_ERR, "Must have tos "
                          "minsane (%d) < minclock (%d) <= maxclock (%d)%s",
@@ -2815,37 +2951,57 @@ config_access(
 
         case T_Incalloc:
             if (0 <= my_opt->value.i)
+            {
                 mru_incalloc = my_opt->value.u;
+            }
             else
+            {
                 range_err = TRUE;
+            }
             break;
 
         case T_Incmem:
             if (0 <= my_opt->value.i)
+            {
                 mru_incalloc = (my_opt->value.u * 1024U) / sizeof(mon_entry);
+            }
             else
+            {
                 range_err = TRUE;
+            }
             break;
 
         case T_Initalloc:
             if (0 <= my_opt->value.i)
+            {
                 mru_initalloc = my_opt->value.u;
+            }
             else
+            {
                 range_err = TRUE;
+            }
             break;
 
         case T_Initmem:
             if (0 <= my_opt->value.i)
+            {
                 mru_initalloc = (my_opt->value.u * 1024U) / sizeof(mon_entry);
+            }
             else
+            {
                 range_err = TRUE;
+            }
             break;
 
         case T_Mindepth:
             if (0 <= my_opt->value.i)
+            {
                 mru_mindepth = my_opt->value.u;
+            }
             else
+            {
                 range_err = TRUE;
+            }
             break;
 
         case T_Maxage:
@@ -2854,17 +3010,25 @@ config_access(
 
         case T_Maxdepth:
             if (0 <= my_opt->value.i)
+            {
                 mru_maxdepth = my_opt->value.u;
+            }
             else
+            {
                 mru_maxdepth = UINT_MAX;
+            }
             break;
 
         case T_Maxmem:
             if (0 <= my_opt->value.i)
+            {
                 mru_maxdepth = (my_opt->value.u * 1024U) /
                                sizeof(mon_entry);
+            }
             else
+            {
                 mru_maxdepth = UINT_MAX;
+            }
             break;
 
         default:
@@ -2874,9 +3038,11 @@ config_access(
             exit(1);
         }
         if (range_err)
+        {
             msyslog(LOG_ERR,
                     "mru %s %d out of range, ignored.",
                     keyword(my_opt->attr), my_opt->value.i);
+        }
     }
 
     /* Configure the discard options */
@@ -2888,13 +3054,17 @@ config_access(
         {
 
         case T_Average:
-            if (0 <= my_opt->value.i &&
-                my_opt->value.i <= UCHAR_MAX)
+            if ((0 <= my_opt->value.i) &&
+                (my_opt->value.i <= UCHAR_MAX))
+            {
                 ntp_minpoll = (u_char)my_opt->value.u;
+            }
             else
+            {
                 msyslog(LOG_ERR,
                         "discard average %d out of range, ignored.",
                         my_opt->value.i);
+            }
             break;
 
         case T_Minimum:
@@ -3111,15 +3281,15 @@ config_access(
                 INSIST(sizeof(addr) >= pai->ai_addrlen);
                 memcpy(&addr, pai->ai_addr,
                        pai->ai_addrlen);
-                INSIST(AF_INET == AF(&addr) ||
-                       AF_INET6 == AF(&addr));
+                INSIST((AF_INET == AF(&addr)) ||
+                       (AF_INET6 == AF(&addr)));
             }
 
             /* default to all-ones mask for single address */
             SET_HOSTMASK(&mask, AF(&addr));
 
             /* Ignore mask if addr from hostname [Bug 3872] */
-            if (NULL == ai_list && my_node->mask)
+            if ((NULL == ai_list) && my_node->mask)
             {
                 ZERO_SOCK(&mask);
                 AF(&mask) = my_node->mask->type;
@@ -3181,8 +3351,8 @@ config_access(
                             : "save",
                         stoa(&addr), stoa(&mask));
             }
-            if (pai != NULL &&
-                NULL != (pai = pai->ai_next))
+            if ((pai != NULL) &&
+                (NULL != (pai = pai->ai_next)))
             {
                 INSIST(pai->ai_addr != NULL);
                 INSIST(sizeof(addr) >=
@@ -3190,8 +3360,8 @@ config_access(
                 ZERO_SOCK(&addr);
                 memcpy(&addr, pai->ai_addr,
                        pai->ai_addrlen);
-                INSIST(AF_INET == AF(&addr) ||
-                       AF_INET6 == AF(&addr));
+                INSIST((AF_INET == AF(&addr)) ||
+                       (AF_INET6 == AF(&addr)));
                 SET_HOSTMASK(&mask, AF(&addr));
             }
         } while (pai != NULL);
@@ -3222,7 +3392,7 @@ config_access(
         { /* default */
             dflt_psl_atr = atrv;
         }
-        else if (atrv->attr < NTP_MINPOLL || atrv->attr > NTP_MAXPOLL)
+        else if ((atrv->attr < NTP_MINPOLL) || (atrv->attr > NTP_MAXPOLL))
         {
             msyslog(LOG_ERR,
                     "Poll %d out of bounds [%d-%d] for pollskewlist",
@@ -3231,7 +3401,7 @@ config_access(
     }
 
     /* If we have a nonzero default, put it in all entries */
-    if (dflt_psl_atr && (0 != dflt_psl_atr->value.r.first || 0 != dflt_psl_atr->value.r.last))
+    if (dflt_psl_atr && ((0 != dflt_psl_atr->value.r.first) || (0 != dflt_psl_atr->value.r.last)))
     {
         int i;
 
@@ -3245,7 +3415,7 @@ config_access(
     atrv = HEAD_PFIFO(ptree->pollskewlist);
     for (; atrv != NULL; atrv = atrv->link)
     {
-        if (atrv->attr >= NTP_MINPOLL && atrv->attr <= NTP_MAXPOLL)
+        if ((atrv->attr >= NTP_MINPOLL) && (atrv->attr <= NTP_MAXPOLL))
         {
             attrtopsl(atrv->attr, atrv);
         }
@@ -3279,7 +3449,7 @@ attrtopsl(
     u_int psmax = 1 << (log2_poll - 1);
     u_int32 qmsk;
 
-    DEBUG_INSIST(pao >= 0 && pao < COUNTOF(psl));
+    DEBUG_INSIST((pao >= 0) && (pao < COUNTOF(psl)));
 
     if (lower > psmax)
     {
@@ -3312,9 +3482,9 @@ int get_pollskew(
     psl_item* rv)
 {
 #ifdef DISABLE_BUG3767_FIX
-    DEBUG_INSIST(NTP_MINPOLL <= p && NTP_MAXPOLL >= p);
+    DEBUG_INSIST((NTP_MINPOLL <= p) && (NTP_MAXPOLL >= p));
 #endif
-    if (NTP_MINPOLL <= p && p <= NTP_MAXPOLL)
+    if ((NTP_MINPOLL <= p) && (p <= NTP_MAXPOLL))
     {
         *rv = psl[p - NTP_MINPOLL];
         return 0;
@@ -3529,15 +3699,19 @@ config_nic_rules(
 
     curr_node = HEAD_PFIFO(ptree->nic_rules);
 
-    if (curr_node != NULL && (HAVE_OPT(NOVIRTUALIPS) || HAVE_OPT(INTERFACE)))
+    if ((curr_node != NULL) && (HAVE_OPT(NOVIRTUALIPS) || HAVE_OPT(INTERFACE)))
     {
         msyslog(LOG_ERR,
                 "interface/nic rules are not allowed with --interface (-I) or --novirtualips (-L)%s",
                 (input_from_file) ? ", exiting" : "");
         if (input_from_file)
+        {
             exit(1);
+        }
         else
+        {
             return;
+        }
     }
 
     for (; curr_node != NULL; curr_node = curr_node->link)
@@ -3545,7 +3719,9 @@ config_nic_rules(
         prefixlen = -1;
         if_name = curr_node->if_name;
         if (if_name != NULL)
+        {
             if_name = estrdup(if_name);
+        }
 
         switch (curr_node->match_class)
         {
@@ -3567,12 +3743,14 @@ config_nic_rules(
             INSIST(if_name != NULL);
             pchSlash = strchr(if_name, '/');
             if (pchSlash != NULL)
+            {
                 *pchSlash = '\0';
+            }
             if (is_ip_address(if_name, AF_UNSPEC, &addr))
             {
                 match_type = MATCH_IFADDR;
-                if (pchSlash != NULL && 1 == sscanf(pchSlash + 1, "%d",
-                                                    &prefixlen))
+                if ((pchSlash != NULL) && (1 == sscanf(pchSlash + 1, "%d",
+                                                       &prefixlen)))
                 {
                     addrbits = 8 *
                                SIZEOF_INADDR(AF(&addr));
@@ -3585,7 +3763,9 @@ config_nic_rules(
             {
                 match_type = MATCH_IFNAME;
                 if (pchSlash != NULL)
+                {
                     *pchSlash = '/';
+                }
             }
             break;
 
@@ -3628,7 +3808,9 @@ config_nic_rules(
             endpt_scan_timer = 1 + current_time;
         }
         if (if_name != NULL)
+        {
             free(if_name);
+        }
     }
 }
 #endif /* !SIM */
@@ -3647,7 +3829,9 @@ free_config_nic_rules(
         {
             UNLINK_FIFO(curr_node, *ptree->nic_rules, link);
             if (NULL == curr_node)
+            {
                 break;
+            }
             free(curr_node->if_name);
             free(curr_node);
         }
@@ -3738,7 +3922,9 @@ apply_enable_disable(
             while (pentry->token)
             {
                 if (pentry->token == option)
+                {
                     break;
+                }
                 pentry++;
             }
             if (!pentry->token)
@@ -3886,7 +4072,9 @@ config_setvar(
         set_sys_var(str, octets, (my_node->isdefault) ? DEF : 0);
     }
     if (str != NULL)
+    {
         free(str);
+    }
 }
 #endif /* !SIM */
 
@@ -3906,7 +4094,7 @@ static void
 config_ttl(
     config_tree* ptree)
 {
-    size_t i = 0;
+    size_t i = 0U;
     int_node* curr_ttl;
 
     /* [Bug 3465] There is a built-in default for the TTLs. We must
@@ -3917,14 +4105,20 @@ config_ttl(
     for (; curr_ttl != NULL; curr_ttl = curr_ttl->link)
     {
         if (i < COUNTOF(sys_ttl))
+        {
             sys_ttl[i++] = (u_char)curr_ttl->i;
+        }
         else
+        {
             msyslog(LOG_INFO,
                     "ttl: Number of TTL entries exceeds %zu. Ignoring TTL %d...",
                     COUNTOF(sys_ttl), curr_ttl->i);
+        }
     }
-    if (0 != i) /* anything written back at all? */
+    if (0 != i)
+    { /* anything written back at all? */
         sys_ttlmax = i - 1;
+    }
 }
 #endif /* !SIM */
 
@@ -3950,7 +4144,7 @@ config_trap(
     sockaddr_u peeraddr;
     endpt* localaddr;
     struct addrinfo hints;
-    char port_text[8];
+    char port_text[8U];
     settrap_parms* pstp;
     u_short port;
     int err_flag;
@@ -3971,7 +4165,7 @@ config_trap(
         {
             if (T_Port == curr_opt->attr)
             {
-                if (curr_opt->value.i < 1 || curr_opt->value.i > USHRT_MAX)
+                if ((curr_opt->value.i < 1) || (curr_opt->value.i > USHRT_MAX))
                 {
                     msyslog(LOG_ERR,
                             "invalid port number "
@@ -4010,7 +4204,9 @@ config_trap(
         if (!err_flag)
         {
             if (!port)
+            {
                 port = TRAPPORT;
+            }
             ZERO_SOCK(&peeraddr);
             rc = getnetnum(curr_trap->addr->address,
                            &peeraddr, 1, t_UNK);
@@ -4047,10 +4243,12 @@ config_trap(
                     &trap_name_resolved,
                     pstp);
                 if (!rc)
+                {
                     msyslog(LOG_ERR,
                             "config_trap: getaddrinfo_sometime(%s,%s): %m",
                             curr_trap->addr->address,
                             port_text);
+                }
 #endif /* WORKER */
                 continue;
             }
@@ -4058,16 +4256,22 @@ config_trap(
             SET_PORT(&peeraddr, port);
 
             if (NULL == localaddr)
+            {
                 localaddr = ANY_INTERFACE_CHOOSE(&peeraddr);
+            }
             else
+            {
                 AF(&peeraddr) = AF(&addr_sock);
+            }
 
             if (!ctlsettrap(&peeraddr, localaddr, 0,
                             NTP_VERSION))
+            {
                 msyslog(LOG_ERR,
                         "set trap %s -> %s failed.",
                         latoa(localaddr),
                         stoa(&peeraddr));
+            }
         }
     }
 }
@@ -4110,12 +4314,18 @@ trap_name_resolved(
     memcpy(&peeraddr, res->ai_addr, res->ai_addrlen);
     localaddr = NULL;
     if (pstp->ifaddr_nonnull)
+    {
         localaddr = findinterface(&pstp->ifaddr);
+    }
     if (NULL == localaddr)
+    {
         localaddr = ANY_INTERFACE_CHOOSE(&peeraddr);
+    }
     if (!ctlsettrap(&peeraddr, localaddr, 0, NTP_VERSION))
+    {
         msyslog(LOG_ERR, "set trap %s -> %s failed.",
                 latoa(localaddr), stoa(&peeraddr));
+    }
     free(pstp);
 }
 #endif /* WORKER */
@@ -4142,7 +4352,7 @@ config_fudge(
     sockaddr_u addr_sock;
     address_node* addr_node;
     struct refclockstat clock_stat;
-    char refidstr[5];
+    char refidstr[5U];
     int err_flag;
 
     curr_fudge = HEAD_PFIFO(ptree->fudge);
@@ -4216,33 +4426,49 @@ config_fudge(
             case T_Flag1:
                 clock_stat.haveflags |= CLK_HAVEFLAG1;
                 if (curr_opt->value.i)
+                {
                     clock_stat.flags |= CLK_FLAG1;
+                }
                 else
+                {
                     clock_stat.flags &= ~CLK_FLAG1;
+                }
                 break;
 
             case T_Flag2:
                 clock_stat.haveflags |= CLK_HAVEFLAG2;
                 if (curr_opt->value.i)
+                {
                     clock_stat.flags |= CLK_FLAG2;
+                }
                 else
+                {
                     clock_stat.flags &= ~CLK_FLAG2;
+                }
                 break;
 
             case T_Flag3:
                 clock_stat.haveflags |= CLK_HAVEFLAG3;
                 if (curr_opt->value.i)
+                {
                     clock_stat.flags |= CLK_FLAG3;
+                }
                 else
+                {
                     clock_stat.flags &= ~CLK_FLAG3;
+                }
                 break;
 
             case T_Flag4:
                 clock_stat.haveflags |= CLK_HAVEFLAG4;
                 if (curr_opt->value.i)
+                {
                     clock_stat.flags |= CLK_FLAG4;
+                }
                 else
+                {
                     clock_stat.flags &= ~CLK_FLAG4;
+                }
                 break;
 
             case T_Minjitter:
@@ -4260,7 +4486,9 @@ config_fudge(
         }
 #ifdef REFCLOCK
         if (!err_flag)
+        {
             refclock_control(&addr_sock, &clock_stat, NULL);
+        }
 #endif
     }
 }
@@ -4372,7 +4600,9 @@ config_vars(
 
         case T_Driftfile:
             if ('\0' == curr_var->value.s[0U])
+            {
                 msyslog(LOG_INFO, "config: driftfile disabled");
+            }
             stats_config(STATS_FREQ_FILE, curr_var->value.s, TRUE);
             break;
 
@@ -4407,14 +4637,18 @@ config_vars(
 
         case T_Logfile:
             if (-1 == change_logfile(curr_var->value.s, TRUE))
+            {
                 msyslog(LOG_ERR,
                         "Cannot open logfile %s: %m",
                         curr_var->value.s);
+            }
             break;
 
         case T_Saveconfigdir:
             if (saveconfigdir != NULL)
+            {
                 free(saveconfigdir);
+            }
             len = strlen(curr_var->value.s);
             if (0 == len)
             {
@@ -4447,7 +4681,9 @@ config_vars(
              * ntp.conf "user".  Format matches -u: user[:group]
              */
             if (HAVE_OPT(USER) || HAVE_OPT(JAILDIR))
+            {
                 break;
+            }
             if (user != NULL)
             {
                 free(user);
@@ -4481,12 +4717,16 @@ config_vars(
 
         case T_Automax:
 #ifdef AUTOKEY
-            if (curr_var->value.i > 2 && curr_var->value.i < 32)
+            if ((curr_var->value.i > 2) && (curr_var->value.i < 32))
+            {
                 sys_automax = (u_char)curr_var->value.i;
+            }
             else
+            {
                 msyslog(LOG_ERR,
                         "'automax' value %d ignored",
                         curr_var->value.i);
+            }
 #endif
             break;
 
@@ -4530,14 +4770,14 @@ is_sane_resolved_address(
      * - multicast address for server/peer!
      * - unicast address for manycastclient!
      */
-    if ((T_Server == hmode || T_Peer == hmode || T_Pool == hmode) && IS_MCAST(peeraddr))
+    if (((T_Server == hmode) || (T_Peer == hmode) || (T_Pool == hmode)) && IS_MCAST(peeraddr))
     {
         msyslog(LOG_ERR,
                 "attempt to configure invalid address %s",
                 stoa(peeraddr));
         return 0;
     }
-    if (T_Manycastclient == hmode && !IS_MCAST(peeraddr))
+    if ((T_Manycastclient == hmode) && !IS_MCAST(peeraddr))
     {
         msyslog(LOG_ERR,
                 "attempt to configure invalid address %s",
@@ -4546,7 +4786,9 @@ is_sane_resolved_address(
     }
 
     if (IS_IPV6(peeraddr) && !ipv6_works)
+    {
         return 0;
+    }
 
     /* Ok, all tests succeeded, now we can return 1 */
     return 1;
@@ -4679,6 +4921,7 @@ config_peers(
             SET_PORT(&peeraddr, NTP_PORT);
             if (is_sane_resolved_address(&peeraddr,
                                          T_Server))
+            {
                 peer_config(
                     &peeraddr,
                     NULL,
@@ -4692,6 +4935,7 @@ config_peers(
                     0,
                     0,
                     NULL);
+            }
         }
         else
         {
@@ -4761,6 +5005,7 @@ config_peers(
             SET_PORT(&peeraddr, NTP_PORT);
             if (is_sane_resolved_address(&peeraddr,
                                          curr_peer->host_mode))
+            {
                 peer_config(
                     &peeraddr,
                     NULL,
@@ -4774,6 +5019,7 @@ config_peers(
                     curr_peer->ttl,
                     curr_peer->peerkey,
                     curr_peer->group);
+            }
         }
         else
         {
@@ -4919,7 +5165,9 @@ free_config_peers(
         {
             UNLINK_FIFO(curr_peer, *ptree->peers, link);
             if (NULL == curr_peer)
+            {
                 break;
+            }
             destroy_address_node(curr_peer->addr);
             destroy_attr_val_fifo(curr_peer->peerflags);
             free(curr_peer);
@@ -4986,9 +5234,15 @@ config_unpeers(
          * Check for associations with a matching hostname.
          */
         for (p = peer_list; p != NULL; p = p->p_link)
+        {
             if (p->hostname != NULL)
+            {
                 if (!strcasecmp(p->hostname, name))
+                {
                     break;
+                }
+            }
+        }
         if (p != NULL)
         {
             msyslog(LOG_NOTICE, "unpeered %s", name);
@@ -5085,7 +5339,9 @@ free_config_unpeers(
         {
             UNLINK_FIFO(curr_unpeer, *ptree->unpeers, link);
             if (NULL == curr_unpeer)
+            {
                 break;
+            }
             destroy_address_node(curr_unpeer->addr);
             free(curr_unpeer);
         }
@@ -5209,7 +5465,9 @@ config_sim(
     simulation.num_of_servers = 0;
     serv_info = HEAD_PFIFO(sim_n->servers);
     for (; serv_info != NULL; serv_info = serv_info->link)
+    {
         simulation.num_of_servers++;
+    }
     simulation.servers = eallocarray(simulation.num_of_servers,
                                      sizeof(simulation.servers[0U]));
 
@@ -5246,19 +5504,25 @@ free_config_sim(
     script_info* script_n;
 
     if (NULL == ptree->sim_details)
+    {
         return;
+    }
     sim_n = HEAD_PFIFO(ptree->sim_details);
     free(ptree->sim_details);
     ptree->sim_details = NULL;
     if (NULL == sim_n)
+    {
         return;
+    }
 
     FREE_ATTR_VAL_FIFO(sim_n->init_opts);
     for (;;)
     {
         UNLINK_FIFO(serv_n, *sim_n->servers, link);
         if (NULL == serv_n)
+        {
             break;
+        }
         free(serv_n->curr_script);
         if (serv_n->script != NULL)
         {
@@ -5267,7 +5531,9 @@ free_config_sim(
                 UNLINK_FIFO(script_n, *serv_n->script,
                             link);
                 if (script_n == NULL)
+                {
                     break;
+                }
                 free(script_n);
             }
             free(serv_n->script);
@@ -5297,7 +5563,9 @@ config_ntpd(
     if (input_from_files)
     {
         if (config_tos_clock(ptree))
+        {
             clamp_systime();
+        }
     }
 
     config_nic_rules(ptree, input_from_files);
@@ -5364,7 +5632,9 @@ config_ntpdsim(
     config_monitor(ptree);
     config_tinker(ptree);
     if (0)
-        config_rlimit(ptree); /* not needed for the simulator */
+    {
+        config_rlimit(ptree);
+    } /* not needed for the simulator */
     config_system_opts(ptree);
     config_logconfig(ptree);
     config_vars(ptree);
@@ -5379,7 +5649,7 @@ config_ntpdsim(
 void config_remotely(
     sockaddr_u* remote_addr)
 {
-    char origin[128];
+    char origin[128U];
 
     snprintf(origin, sizeof(origin), "remote config from %s",
              stoa(remote_addr));
@@ -5405,7 +5675,7 @@ void getconfig(
     int argc,
     char** argv)
 {
-    char line[256];
+    char line[256U];
 
 #ifdef DEBUG
     atexit(free_all_config_trees);
@@ -5497,7 +5767,9 @@ void getconfig(
 
 #ifdef HAVE_NETINFO
     if (config_netinfo)
+    {
         free_netinfo_config(config_netinfo);
+    }
 #endif /* HAVE_NETINFO */
 }
 
@@ -5539,14 +5811,18 @@ void save_and_apply_config_tree(int /*BOOL*/ input_from_file)
 
         dumpfailed = dump_all_config_trees(dumpfile, 0);
         if (dumpfailed)
+        {
             fprintf(stderr,
                     "--saveconfigquit %s error %d\n",
                     OPT_ARG(SAVECONFIGQUIT),
                     dumpfailed);
+        }
         else
+        {
             fprintf(stderr,
                     "configuration saved to %s\n",
                     OPT_ARG(SAVECONFIGQUIT));
+        }
 
         exit(dumpfailed);
     }
@@ -5589,7 +5865,7 @@ static void
 ntpd_set_tod_using(
     const char* which)
 {
-    char line[128];
+    char line[128U];
 
     snprintf(line, sizeof(line), "settimeofday=\"%s\"", which);
     set_sys_var(line, strlen(line) + 1, RO);
@@ -5613,15 +5889,21 @@ normal_dtoa(
     {
         pch_e = strchr(buf, 'E');
         if (NULL == pch_e)
+        {
             return buf;
+        }
         *pch_e = 'e';
     }
     pch_e++;
     if ('-' == *pch_e)
+    {
         pch_e++;
+    }
     pch_nz = pch_e;
     while ('0' == *pch_nz)
+    {
         pch_nz++;
+    }
     if (pch_nz > pch_e)
     {
         memmove(pch_e, pch_nz, 1 + strlen(pch_nz));
@@ -5670,9 +5952,13 @@ get_match(
     while (m->name != NULL)
     {
         if (strcmp(str, m->name) == 0)
+        {
             return m->mask;
+        }
         else
+        {
             m++;
+        }
     }
     return 0;
 }
@@ -5690,17 +5976,23 @@ get_logmask(
 
     mask = get_match(str, logcfg_noclass_items);
     if (mask != 0)
+    {
         return mask;
+    }
 
     t = str;
     offset = get_pfxmatch(&t, logcfg_class);
     mask = get_match(t, logcfg_class_items);
 
     if (mask)
+    {
         return mask << offset;
+    }
     else
+    {
         msyslog(LOG_ERR, "logconfig: '%s' not recognized - ignored",
                 str);
+    }
 
     return 0;
 }
@@ -5721,7 +6013,9 @@ get_netinfo_config(void)
     struct netinfo_config_state* config;
 
     if (ni_open(NULL, ".", &domain) != NI_OK)
+    {
         return NULL;
+    }
 
     while ((status = ni_pathsearch(domain, &config_dir, NETINFO_CONFIG_DIR)) == NI_NODIR)
     {
@@ -5782,7 +6076,7 @@ gettokens_netinfo(
 again:
     if (!val_list)
     {
-        for (; prop_index < COUNTOF(keywords); prop_index++)
+        for (; prop_index < COUNTOF(keywords); ++prop_index)
         {
             ni_namelist namelist;
             struct keyword current_prop = keywords[prop_index];
@@ -5801,7 +6095,9 @@ again:
 
                 /* Found the property, but it has no values */
                 if (namelist.ni_namelist_len == 0)
+                {
                     continue;
+                }
 
                 config->val_list =
                     eallocarray(
@@ -5811,7 +6107,7 @@ again:
 
                 for (index = 0;
                      index < namelist.ni_namelist_len;
-                     index++)
+                     ++index)
                 {
                     char* value;
 
@@ -5829,7 +6125,9 @@ again:
 
     /* No list; we're done here. */
     if (!val_list)
+    {
         return CONFIG_UNKNOWN;
+    }
 
     /*
      * We have a list of values for the current property.
@@ -5844,11 +6142,13 @@ again:
         msyslog(LOG_INFO, "%s %s", keywords[prop_index].text, val_list[val_index]);
 
         (const char*)tokenlist[0U] = keywords[prop_index].text;
-        for (ntok = 1; ntok < MAXTOKENS; ntok++)
+        for (ntok = 1; ntok < MAXTOKENS; ++ntok)
         {
             tokenlist[ntok] = tokens;
             while (!ISEOL(*tokens) && (!ISSPACE(*tokens) || quoted))
+            {
                 quoted ^= (*tokens++ == '"');
+            }
 
             if (ISEOL(*tokens))
             {
@@ -5859,9 +6159,13 @@ again:
             { /* must be space */
                 *tokens++ = '\0';
                 while (ISSPACE(*tokens))
+                {
                     tokens++;
+                }
                 if (ISEOL(*tokens))
+                {
                     break;
+                }
             }
         }
 
@@ -5886,8 +6190,10 @@ again:
     prop_index = ++config->prop_index;
 
     /* Free val_list and reset counters. */
-    for (val_index = 0; val_list[val_index]; val_index++)
+    for (val_index = 0; val_list[val_index]; ++val_index)
+    {
         free(val_list[val_index]);
+    }
     free(val_list);
     val_list = config->val_list = NULL;
     val_index = config->val_index = 0;
@@ -5911,9 +6217,9 @@ getnetnum(
     enum gnn_type a_type /* ignored */
 )
 {
-    REQUIRE(AF_UNSPEC == AF(addr) ||
-            AF_INET == AF(addr) ||
-            AF_INET6 == AF(addr));
+    REQUIRE((AF_UNSPEC == AF(addr)) ||
+            (AF_INET == AF(addr)) ||
+            (AF_INET6 == AF(addr)));
 
     if (!is_ip_address(num, AF(addr), addr))
     {
@@ -5962,7 +6268,9 @@ void ntp_rlimit(
                     (int)(rl_value / rl_scale), rl_sstr));
         rl.rlim_cur = rl.rlim_max = rl_value;
         if (setrlimit(RLIMIT_MEMLOCK, &rl) == -1)
+        {
             msyslog(LOG_ERR, "Cannot set RLIMIT_MEMLOCK: %m");
+        }
         break;
 #endif /* RLIMIT_MEMLOCK */
 
@@ -5976,7 +6284,9 @@ void ntp_rlimit(
                     (int)(rl_value / rl_scale), rl_sstr));
         rl.rlim_cur = rl.rlim_max = rl_value;
         if (setrlimit(RLIMIT_NOFILE, &rl) == -1)
+        {
             msyslog(LOG_ERR, "Cannot set RLIMIT_NOFILE: %m");
+        }
         break;
 #endif /* RLIMIT_NOFILE */
 

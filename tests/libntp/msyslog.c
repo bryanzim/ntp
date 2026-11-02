@@ -31,8 +31,8 @@ void setUp(void)
 void test_msnprintf(void)
 {
 #define FMT_PREFIX "msyslog.cpp ENOENT: "
-    char exp_buf[512];
-    char act_buf[512];
+    char exp_buf[512U];
+    char act_buf[512U];
     int exp_cnt;
     int act_cnt;
 
@@ -47,8 +47,8 @@ void test_msnprintf(void)
 
 void test_msnprintfLiteralPercentm(void)
 {
-    char exp_buf[32];
-    char act_buf[32];
+    char exp_buf[32U];
+    char act_buf[32U];
     int exp_cnt;
     int act_cnt;
 
@@ -62,8 +62,8 @@ void test_msnprintfLiteralPercentm(void)
 
 void test_msnprintfBackslashLiteralPercentm(void)
 {
-    char exp_buf[32];
-    char act_buf[32];
+    char exp_buf[32U];
+    char act_buf[32U];
     int exp_cnt;
     int act_cnt;
 
@@ -77,8 +77,8 @@ void test_msnprintfBackslashLiteralPercentm(void)
 
 void test_msnprintfBackslashPercent(void)
 {
-    char exp_buf[32];
-    char act_buf[32];
+    char exp_buf[32U];
+    char act_buf[32U];
     int exp_cnt;
     int act_cnt;
 
@@ -94,8 +94,8 @@ void test_msnprintfBackslashPercent(void)
 void test_msnprintfHangingPercent(void)
 {
     static char fmt[] = "percent then nul term then non-nul %\0oops!";
-    char exp_buf[64];
-    char act_buf[64];
+    char exp_buf[64U];
+    char act_buf[64U];
     int exp_cnt;
     int act_cnt;
 
@@ -113,7 +113,7 @@ void test_format_errmsgHangingPercent(void)
 {
 #ifndef VSNPRINTF_PERCENT_M
     static char fmt[] = "percent then nul term then non-nul %\0oops!";
-    char act_buf[64];
+    char act_buf[64U];
 
     ZERO(act_buf);
     format_errmsg(act_buf, sizeof(act_buf), fmt, ENOENT);
@@ -140,8 +140,8 @@ void test_msnprintfNullTarget(void)
 void test_msnprintfTruncate(void)
 {
     char undist[] = "undisturbed";
-    char exp_buf[512];
-    char act_buf[512];
+    char exp_buf[512U];
+    char act_buf[512U];
     int exp_cnt;
     int act_cnt;
 

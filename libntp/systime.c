@@ -217,7 +217,7 @@ void get_systime(
         if (cmp_tspec(ts, ts_min) < 0)
         {
             ts_lam = sub_tspec(ts_min, ts);
-            if (ts_lam.tv_sec > 0 && !lamport_violated)
+            if ((ts_lam.tv_sec > 0) && !lamport_violated)
             {
                 msyslog(LOG_ERR,
                         "get_systime Lamport advance exceeds one second (%.9f)",
@@ -226,7 +226,9 @@ void get_systime(
                 exit(1);
             }
             if (!lamport_violated)
+            {
                 ts = ts_min;
+            }
         }
         ts_prev = ts;
     }
@@ -275,7 +277,9 @@ void get_systime(
         }
         lfp_prev = result;
         if (lamport_violated)
+        {
             lamport_violated = FALSE;
+        }
     }
     LEAVE_GET_SYSTIME_CRITSEC();
     *now = result;
@@ -332,9 +336,13 @@ adj_systime(
     adjtv.tv_sec = (long)dtemp;
     dtemp -= adjtv.tv_sec;
     if (sys_tick > sys_fuzz)
+    {
         quant = sys_tick;
+    }
     else
+    {
         quant = 1e-6;
+    }
     ticks = (long)(dtemp / quant + .5);
     adjtv.tv_usec = (long)(ticks * quant * 1.e6 + .5);
     /* The rounding in the conversions could us push over the
@@ -361,7 +369,7 @@ adj_systime(
         adjtv.tv_usec = -adjtv.tv_usec;
         sys_residual = -sys_residual;
     }
-    if (adjtv.tv_sec != 0 || adjtv.tv_usec != 0)
+    if ((adjtv.tv_sec != 0) || (adjtv.tv_usec != 0))
     {
         if (adjtime(&adjtv, &oadjtv) < 0)
         {
@@ -585,7 +593,9 @@ int step_systime(
     sys_residual = 0;
     lamport_violated = (step < 0);
     if (step_callback)
+    {
         (*step_callback)();
+    }
 
 #ifdef NEED_HPUX_ADJTIME
     /*
@@ -673,7 +683,9 @@ clamp_systime(void)
     sys_residual = 0;
     lamport_violated = (tvbase.tv_sec < tvlast.tv_sec);
     if (step_callback)
+    {
         (*step_callback)();
+    }
 
 #ifdef NEED_HPUX_ADJTIME
     /*

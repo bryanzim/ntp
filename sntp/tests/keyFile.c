@@ -105,8 +105,8 @@ void test_ReadHexKeys(void)
     struct key* keys = NULL;
     struct key* result = NULL;
     const char* path = CreatePath("key-test-hex", INPUT_DIR);
-    char data1[15];
-    char data2[13];
+    char data1[15U];
+    char data2[13U];
 
     TEST_ASSERT_NOT_NULL(path);
     TEST_ASSERT_EQUAL(3, auth_init(path, &keys));
@@ -139,7 +139,7 @@ void test_ReadKeyFileWithComments(void)
     struct key* keys = NULL;
     struct key* result = NULL;
     const char* path = CreatePath("key-test-comments", INPUT_DIR);
-    char data[15];
+    char data[15U];
 
     TEST_ASSERT_NOT_NULL(path);
     TEST_ASSERT_EQUAL(2, auth_init(path, &keys));
@@ -164,7 +164,7 @@ void test_ReadKeyFileWithInvalidHex(void)
     struct key* keys = NULL;
     struct key* result = NULL;
     const char* path = CreatePath("key-test-invalid-hex", INPUT_DIR);
-    char data[15];
+    char data[15U];
 
     TEST_ASSERT_NOT_NULL(path);
     TEST_ASSERT_EQUAL(1, auth_init(path, &keys));

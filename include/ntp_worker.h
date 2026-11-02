@@ -133,8 +133,8 @@ typedef struct blocking_child_tag
 #endif
     volatile u_int resp_ready_seen; /* signal/scan */
     volatile u_int resp_ready_done; /* consumer/mainloop */
-    sema_type sem_table[4];
-    thread_type thr_table[1];
+    sema_type sem_table[4U];
+    thread_type thr_table[1U];
 } blocking_child;
 
 #endif /* WORK_THREAD */
@@ -174,7 +174,7 @@ extern void worker_idle_timer_fired(void);
 extern void interrupt_worker_sleep(void);
 extern int req_child_exit(blocking_child*);
 #ifndef HAVE_IO_COMPLETION_PORT
-extern int pipe_socketpair(int fds[2], int* is_pipe);
+extern int pipe_socketpair(int fds[2U], int* is_pipe);
 extern void close_all_beyond(int);
 extern void close_all_except(int);
 extern void kill_asyncio(int);

@@ -101,9 +101,9 @@ u_long timer_overflows;
 u_long timer_xmtcalls;
 
 #if defined(VMS)
-static int vmstimer[2]; /* time for next timer AST */
-static int vmsinc[2];   /* timer increment */
-#endif                  /* VMS */
+static int vmstimer[2U]; /* time for next timer AST */
+static int vmsinc[2U];   /* timer increment */
+#endif                   /* VMS */
 
 #ifdef SYS_WINNT
 HANDLE WaitableTimerHandle;
@@ -166,14 +166,20 @@ void reinit_timer(void)
 #else
     getitimer(ITIMER_REAL, &itimer);
 #endif
-    if (itimer.it_value.tv_sec < 0 ||
-        itimer.it_value.tv_sec > (1 << EVENT_TIMEOUT))
+    if ((itimer.it_value.tv_sec < 0) ||
+        (itimer.it_value.tv_sec > (1 << EVENT_TIMEOUT)))
+    {
         itimer.it_value.tv_sec = (1 << EVENT_TIMEOUT);
+    }
     if (itimer.it_value.itv_frac < 0)
+    {
         itimer.it_value.itv_frac = 0;
-    if (0 == itimer.it_value.tv_sec &&
-        0 == itimer.it_value.itv_frac)
+    }
+    if ((0 == itimer.it_value.tv_sec) &&
+        (0 == itimer.it_value.itv_frac))
+    {
         itimer.it_value.tv_sec = (1 << EVENT_TIMEOUT);
+    }
     itimer.it_interval.tv_sec = (1 << EVENT_TIMEOUT);
     itimer.it_interval.itv_frac = 0;
     set_timer_or_die(&itimer);
@@ -317,7 +323,9 @@ void timer(void)
         {
             next_peer = p->p_link;
             if (FLAG_REFCLOCK & p->flags)
+            {
                 refclock_timer(p);
+            }
         }
 #endif /* REFCLOCK */
     }
@@ -371,7 +379,7 @@ void timer(void)
      *
      * XXX: do we want to log an event about this?
      */
-    if (sys_peer == NULL && current_time > orphwait)
+    if ((sys_peer == NULL) && (current_time > orphwait))
     {
         if (sys_orphan < STRATUM_UNSPEC)
         {
@@ -380,7 +388,9 @@ void timer(void)
                 set_sys_leap(LEAP_NOWARNING);
 #ifdef AUTOKEY
                 if (crypto_flags)
+                {
                     crypto_update();
+                }
 #endif /* AUTOKEY */
             }
             sys_stratum = (u_char)sys_orphan;
@@ -396,9 +406,13 @@ void timer(void)
             sys_stratum = STRATUM_UNSPEC;
         }
         if (sys_stratum > 1)
+        {
             sys_refid = htonl(LOOPBACKADR);
+        }
         else
+        {
             memcpy(&sys_refid, "ORPH", 4);
+        }
         sys_offset = 0;
         sys_rootdelay = 0;
         sys_rootdisp = 0;
@@ -411,11 +425,13 @@ void timer(void)
      * Leapseconds. Get time and defer to worker if either something
      * is imminent or every 8th second.
      */
-    if (leapsec > LSPROX_NOWARN || 0 == (current_time & 7))
+    if ((leapsec > LSPROX_NOWARN) || (0 == (current_time & 7)))
+    {
         check_leapsec(now.l_ui, &tnow, (sys_leap == LEAP_NOTINSYNC));
+    }
     if (sys_leap != LEAP_NOTINSYNC)
     {
-        if (leapsec >= LSPROX_ANNOUNCE && leapdif)
+        if ((leapsec >= LSPROX_ANNOUNCE) && leapdif)
         {
             if (leapdif > 0)
             {
@@ -455,7 +471,7 @@ void timer(void)
      * Generate new private value. This causes all associations
      * to regenerate cookies.
      */
-    if (revoke_timer && revoke_timer <= current_time)
+    if (revoke_timer && (revoke_timer <= current_time))
     {
         revoke_timer += (1UL << sys_revoke);
         RAND_bytes((u_char*)&sys_private, sizeof(sys_private));
@@ -465,7 +481,7 @@ void timer(void)
     /*
      * Network interface rescan timer
      */
-    if (endpt_scan_timer && endpt_scan_timer <= current_time)
+    if (endpt_scan_timer && (endpt_scan_timer <= current_time))
     {
         if (no_periodic_scan)
         {
@@ -480,7 +496,7 @@ void timer(void)
         interface_update(NULL, NULL);
     }
 
-    if (worker_idle_timer && worker_idle_timer <= current_time)
+    if (worker_idle_timer && (worker_idle_timer <= current_time))
     {
         worker_idle_timer_fired();
     }
@@ -545,7 +561,9 @@ alarming(
 #endif
 #ifdef DEBUG
     if (debug >= 4)
+    {
         (void)(-1 == write(1, msg, strlen(msg)));
+    }
 #endif
 }
 #endif /* SYS_WINNT */
@@ -659,7 +677,7 @@ check_leapsec(
             {
                 double dtemp = now;
 
-                if (dtemp >= leap_smear.intv_start && dtemp <= leap_smear.intv_end)
+                if ((dtemp >= leap_smear.intv_start) && (dtemp <= leap_smear.intv_end))
                 {
                     double leap_smear_time = dtemp - leap_smear.intv_start;
 #if 0
@@ -699,8 +717,8 @@ check_leapsec(
             double lswarp = lsdata.warped;
             if (lswarp < 0.0)
             {
-                if (clock_max_back > 0.0 &&
-                    clock_max_back < -lswarp)
+                if ((clock_max_back > 0.0) &&
+                    (clock_max_back < -lswarp))
                 {
                     step_systime(lswarp);
                     leapmsg = leapmsg_p_step;
@@ -712,8 +730,8 @@ check_leapsec(
             }
             else if (lswarp > 0.0)
             {
-                if (clock_max_fwd > 0.0 &&
-                    clock_max_fwd < lswarp)
+                if ((clock_max_fwd > 0.0) &&
+                    (clock_max_fwd < lswarp))
                 {
                     step_systime(lswarp);
                     leapmsg = leapmsg_n_step;
@@ -753,20 +771,24 @@ check_leapsec(
      * Also make sure the alarming events are edge-triggered, that is,
      * created only when the threshold is crossed.
      */
-    if ((leapsec > 0 || lsprox < LSPROX_ALERT) && leapsec < lsprox)
+    if (((leapsec > 0) || (lsprox < LSPROX_ALERT)) && (leapsec < lsprox))
     {
-        if (leapsec < LSPROX_SCHEDULE && lsprox >= LSPROX_SCHEDULE)
+        if ((leapsec < LSPROX_SCHEDULE) && (lsprox >= LSPROX_SCHEDULE))
         {
             if (lsdata.dynamic)
+            {
                 report_event(PEVNT_ARMED, sys_peer, NULL);
+            }
             else
+            {
                 report_event(EVNT_ARMED, NULL, NULL);
+            }
         }
         leapsec = lsprox;
     }
     if (leapsec > lsprox)
     {
-        if (leapsec >= LSPROX_SCHEDULE && lsprox < LSPROX_SCHEDULE)
+        if ((leapsec >= LSPROX_SCHEDULE) && (lsprox < LSPROX_SCHEDULE))
         {
             report_event(EVNT_DISARMED, NULL, NULL);
         }

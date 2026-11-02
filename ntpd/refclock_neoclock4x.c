@@ -116,10 +116,10 @@ struct neoclock4x_unit
     char leap_status; /* leap second flag */
     int recvnow;
 
-    char firmware[80];
+    char firmware[80U];
     char firmwaretag;
-    char serial[7];
-    char radiosignal[4];
+    char serial[7U];
+    char radiosignal[4U];
     char timesource;
     char dststatus;
     char quarzstatus;
@@ -167,7 +167,7 @@ neoclock4x_start(int unit,
     struct neoclock4x_unit* up;
     struct refclockproc* pp;
     int fd;
-    char dev[20];
+    char dev[20U];
     int sl232;
 #if defined(HAVE_TERMIOS)
     struct termios termsettings;
@@ -351,7 +351,7 @@ neoclock4x_start(int unit,
     return (0);
 #endif
 #else
-    for (tries = 0; tries < 5; tries++)
+    for (tries = 0; tries < 5; ++tries)
     {
         NLOG(NLOG_CLOCKINFO)
         msyslog(LOG_INFO, "NeoClock4X(%d): checking NeoClock4X firmware version (%d/5)", unit, tries);
@@ -463,7 +463,9 @@ neoclock4x_receive(struct recvbuf* rbufp)
 
     /* wait till poll interval is reached */
     if (0 == up->recvnow)
+    {
         return;
+    }
 
     /* reset poll interval flag */
     up->recvnow = 0;
@@ -485,7 +487,7 @@ neoclock4x_receive(struct recvbuf* rbufp)
 
     /* calculate checksum */
     calc_chksum = 0;
-    for (c = 0; c < NEOCLOCK4X_OFFSET_CRC; c++)
+    for (c = 0; c < NEOCLOCK4X_OFFSET_CRC; ++c)
     {
         calc_chksum += pp->a_lastcode[c];
     }
@@ -609,7 +611,9 @@ neoclock4x_receive(struct recvbuf* rbufp)
     calc_utc -= 3600;
     /* adjust NeoClock4X daylight saving time if needed */
     if ('S' == up->dststatus)
+    {
         calc_utc -= 3600;
+    }
     neol_localtime(calc_utc, &pp->year, &month, &day, &pp->hour, &pp->minute, &pp->second);
 
     /*
@@ -729,7 +733,7 @@ neoclock4x_control(int unit,
     if (NULL != out)
     {
         char* tt;
-        char tmpbuf[80];
+        char tmpbuf[80U];
 
         out->kv_list = (struct ctl_var*)0;
         out->type = REFCLK_NEOCLOCK4X;
@@ -750,25 +754,43 @@ neoclock4x_control(int unit,
         snprintf(tt, 39, "antenna2=\"%d\"", up->antenna2);
         tt = add_var(&out->kv_list, 40, RO | DEF);
         if ('A' == up->timesource)
+        {
             snprintf(tt, 39, "timesource=\"radio\"");
+        }
         else if ('C' == up->timesource)
+        {
             snprintf(tt, 39, "timesource=\"quartz\"");
+        }
         else
+        {
             snprintf(tt, 39, "timesource=\"unknown\"");
+        }
         tt = add_var(&out->kv_list, 40, RO | DEF);
         if ('I' == up->quarzstatus)
+        {
             snprintf(tt, 39, "quartzstatus=\"synchronized\"");
+        }
         else if ('X' == up->quarzstatus)
+        {
             snprintf(tt, 39, "quartzstatus=\"not synchronized\"");
+        }
         else
+        {
             snprintf(tt, 39, "quartzstatus=\"unknown\"");
+        }
         tt = add_var(&out->kv_list, 40, RO | DEF);
         if ('S' == up->dststatus)
+        {
             snprintf(tt, 39, "dststatus=\"summer\"");
+        }
         else if ('W' == up->dststatus)
+        {
             snprintf(tt, 39, "dststatus=\"winter\"");
+        }
         else
+        {
             snprintf(tt, 39, "dststatus=\"unknown\"");
+        }
         tt = add_var(&out->kv_list, 80, RO | DEF);
         snprintf(tt, 79, "firmware=\"%s\"", up->firmware);
         tt = add_var(&out->kv_list, 40, RO | DEF);
@@ -789,7 +811,7 @@ neol_hexatoi_len(const char str[],
     int i;
     int n = 0;
 
-    for (i = 0; isxdigit((unsigned char)str[i]) && i < maxlen; i++)
+    for (i = 0; isxdigit((unsigned char)str[i]) && (i < maxlen); ++i)
     {
         hexdigit = isdigit((unsigned char)str[i]) ? toupper((unsigned char)str[i]) - '0' : toupper((unsigned char)str[i]) - 'A' + 10;
         n = 16 * n + hexdigit;
@@ -807,7 +829,7 @@ neol_atoi_len(const char str[],
     int i;
     int n = 0;
 
-    for (i = 0; isdigit((unsigned char)str[i]) && i < maxlen; i++)
+    for (i = 0; isdigit((unsigned char)str[i]) && (i < maxlen); ++i)
     {
         digit = str[i] - '0';
         n = 10 * n + digit;
@@ -908,7 +930,7 @@ neol_query_firmware(int fd,
                     char* firmware,
                     size_t maxlen)
 {
-    char tmpbuf[256];
+    char tmpbuf[256U];
     size_t len;
     int lastsearch;
     unsigned char c;
@@ -968,8 +990,10 @@ neol_query_firmware(int fd,
 
             if (init)
             {
-                if (0xA9 != c) /* wait for (c) char in input stream */
+                if (0xA9 != c)
+                { /* wait for (c) char in input stream */
                     continue;
+                }
 
                 strlcpy(tmpbuf, "(c)", sizeof(tmpbuf));
                 len = 3;
@@ -981,7 +1005,7 @@ neol_query_firmware(int fd,
 	  msyslog(LOG_NOTICE, "NeoClock4X(%d): firmware %c = %02Xh", unit, c, c);
 #endif
 
-            if (0x0A == c || 0x0D == c)
+            if ((0x0A == c) || (0x0D == c))
             {
                 if (last_c_was_crlf)
                 {
@@ -1006,11 +1030,15 @@ neol_query_firmware(int fd,
             {
                 last_c_was_crlf = 0;
                 if (0x00 != c)
+                {
                     tmpbuf[len++] = (char)c;
+                }
             }
             tmpbuf[len] = '\0';
             if (len > sizeof(tmpbuf) - 5)
+            {
                 break;
+            }
         }
     }
     else
@@ -1019,7 +1047,9 @@ neol_query_firmware(int fd,
         strlcpy(tmpbuf, "unknown error", sizeof(tmpbuf));
     }
     if (strlcpy(firmware, tmpbuf, maxlen) >= maxlen)
+    {
         strlcpy(firmware, "buffer too small", maxlen);
+    }
 
     if (flag)
     {
@@ -1048,8 +1078,10 @@ neol_check_firmware(int unit,
     {
         if ((strlen(firmware) - strlen(ptr)) >= 7)
         {
-            if (':' == *(ptr + 5) && '*' == *(ptr + 6))
+            if ((':' == *(ptr + 5)) && ('*' == *(ptr + 6)))
+            {
                 *firmwaretag = *(ptr + 4);
+            }
         }
     }
 

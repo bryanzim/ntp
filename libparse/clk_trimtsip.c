@@ -140,9 +140,11 @@ inp_tsip(
     struct trimble* t = (struct trimble*)parseio->parse_pdata;
 
     if (!t)
-        return PARSE_INP_SKIP; /* local data not allocated - sigh! */
+    {
+        return PARSE_INP_SKIP;
+    } /* local data not allocated - sigh! */
 
-    if (!t->t_in_pkt && ch != DLE)
+    if (!t->t_in_pkt && (ch != DLE))
     {
         /* wait for start of packet */
         return PARSE_INP_SKIP;
@@ -178,7 +180,9 @@ inp_tsip(
             parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = DLE;
         }
         else
+        {
             t->t_dle = 1;
+        }
         break;
 
     case ETX:
@@ -259,7 +263,9 @@ cvt_trimtsip(
 
             bp = &mb(0);
             if (fetch_ieee754(&bp, IEEE_SINGLE, &secs, trim_offsets) != IEEE_OK)
+            {
                 return CVT_FAIL | CVT_BADFMT;
+            }
 
             if ((secs.l_i <= 0) ||
                 (t->t_utcknown == 0))
@@ -274,7 +280,9 @@ cvt_trimtsip(
             /* fetch UTC offset */
             bp = &mb(6);
             if (fetch_ieee754(&bp, IEEE_SINGLE, &utcoffset, trim_offsets) != IEEE_OK)
+            {
                 return CVT_FAIL | CVT_BADFMT;
+            }
 
             L_SUB(&secs, &utcoffset); /* adjust GPS time to UTC time */
 
@@ -288,10 +296,14 @@ cvt_trimtsip(
             TSFTOTVU(gpstime.l_uf, clock_time->usecond);
 
             if (t->t_leap == ADDSECOND)
+            {
                 clock_time->flags |= PARSEB_LEAPADD;
+            }
 
             if (t->t_leap == DELSECOND)
+            {
                 clock_time->flags |= PARSEB_LEAPDEL;
+            }
 
             switch (t->t_operable)
             {
@@ -309,7 +321,9 @@ cvt_trimtsip(
             }
 
             if (t->t_mode == 0)
+            {
                 clock_time->flags |= PARSEB_POSITION;
+            }
 
             clock_time->flags |= PARSEB_S_LEAP | PARSEB_S_POSITION;
 
@@ -358,7 +372,9 @@ cvt_trimtsip(
 
             lbp = (unsigned char*)&mb(14); /* last update time */
             if (fetch_ieee754(&lbp, IEEE_SINGLE, &t0t, trim_offsets) != IEEE_OK)
+            {
                 return CVT_FAIL | CVT_BADFMT;
+            }
 
             t->t_utcknown = t0t.l_ui != 0;
 
@@ -368,9 +384,13 @@ cvt_trimtsip(
             {
                 /* generate a leap warning */
                 if (tlsf > tls)
+                {
                     t->t_leap = ADDSECOND;
+                }
                 else
+                {
                     t->t_leap = DELSECOND;
+                }
             }
             else
             {

@@ -108,7 +108,7 @@ struct shmTime
     volatile int valid;
     unsigned clockTimeStampNSec;   /* Unsigned ns timestamps */
     unsigned receiveTimeStampNSec; /* Unsigned ns timestamps */
-    int dummy[8];
+    int dummy[8U];
 };
 
 struct shmunit
@@ -160,8 +160,8 @@ getShmTime(
     return p;
 #else
 
-    static const char* nspref[2] = { "Local", "Global" };
-    char buf[20];
+    static const char* nspref[2U] = { "Local", "Global" };
+    char buf[20U];
     LPSECURITY_ATTRIBUTES psec = 0;
     HANDLE shmid = 0;
     SECURITY_DESCRIPTOR sd;
@@ -170,7 +170,7 @@ getShmTime(
     PSID sidAdmin = NULL;
     PSID sidSystem = NULL;
     SID_IDENTIFIER_AUTHORITY ntAuth = SECURITY_NT_AUTHORITY;
-    EXPLICIT_ACCESS ea[2];
+    EXPLICIT_ACCESS ea[2U];
     unsigned int numch;
 
     numch = snprintf(buf, sizeof(buf), "%s\\NTP%d",
@@ -245,15 +245,21 @@ getShmTime(
     if (forall)
     {
         if (pacl != NULL)
+        {
             LocalFree(pacl);
+        }
         if (sidAdmin != NULL)
+        {
             FreeSid(sidAdmin);
+        }
         if (sidSystem != NULL)
+        {
             FreeSid(sidSystem);
+        }
     }
     if (shmid == NULL)
     { /*error*/
-        char buf[1000];
+        char buf[1000U];
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                       0, GetLastError(), 0, buf, sizeof(buf), 0);
         msyslog(LOG_ERR, "SHM CreateFileMapping (unit %d): %s", unit, buf);
@@ -263,7 +269,7 @@ getShmTime(
                                        sizeof(struct shmTime));
     if (p == NULL)
     { /*error*/
-        char buf[1000];
+        char buf[1000U];
         FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM,
                       0, GetLastError(), 0, buf, sizeof(buf), 0);
         msyslog(LOG_ERR, "SHM MapViewOfFile (unit %d): %s", unit, buf);
@@ -345,13 +351,21 @@ shm_control(
     UNUSED_ARG(in_st);
     UNUSED_ARG(out_st);
     if (NULL == up)
+    {
         return;
+    }
     if (pp->sloppyclockflag & CLK_FLAG1)
+    {
         up->max_delta = 0;
-    else if (pp->fudgetime2 < 1. || pp->fudgetime2 > 86400.)
+    }
+    else if ((pp->fudgetime2 < 1.) || (pp->fudgetime2 > 86400.))
+    {
         up->max_delta = 4 * 3600;
+    }
     else
+    {
         up->max_delta = (time_t)floor(pp->fudgetime2 + 0.5);
+    }
 }
 
 
@@ -368,7 +382,9 @@ shm_shutdown(
 
     UNUSED_ARG(unit);
     if (NULL == up)
+    {
         return;
+    }
 #ifndef SYS_WINNT
 
     /* HMS: shmdt() wants char* or const void * */
@@ -514,7 +530,7 @@ static enum segstat_t shm_query(volatile struct shmTime* shm_in, struct shm_stat
      * Not supported in mode 0, and word access to the count field
      * must be atomic for this to work.
      */
-    if (shmcopy.mode > 0 && cnt != shm->count)
+    if ((shmcopy.mode > 0) && (cnt != shm->count))
     {
         shm_stat->status = CLASH;
         return shm_stat->status;
@@ -690,11 +706,11 @@ shm_timer(
                  cd.year, cd.month, cd.monthday,
                  cd.hour, cd.minute, cd.second,
                  (long)shm_stat.tvt.tv_nsec);
-    pp->lencode = (c > 0 && (size_t)c < sizeof(pp->a_lastcode)) ? c : 0;
+    pp->lencode = ((c > 0) && ((size_t)c < sizeof(pp->a_lastcode))) ? c : 0;
 
     /* check 1: age control of local time stamp */
     tt = shm_stat.tvc.tv_sec - shm_stat.tvr.tv_sec;
-    if (tt < 0 || tt > up->max_delay)
+    if ((tt < 0) || (tt > up->max_delay))
     {
         DPRINTF(1, ("%s:SHM stale/bad receive time, delay=%llds\n",
                     refnumtoa(&peer->srcadr), (long long)tt));
@@ -707,8 +723,10 @@ shm_timer(
     /* check 2: delta check */
     tt = shm_stat.tvr.tv_sec - shm_stat.tvt.tv_sec - (shm_stat.tvr.tv_nsec < shm_stat.tvt.tv_nsec);
     if (tt < 0)
+    {
         tt = -tt;
-    if (up->max_delta > 0 && tt > up->max_delta)
+    }
+    if ((up->max_delta > 0) && (tt > up->max_delta))
     {
         DPRINTF(1, ("%s: SHM diff limit exceeded, delta=%llds\n",
                     refnumtoa(&peer->srcadr), (long long)tt));

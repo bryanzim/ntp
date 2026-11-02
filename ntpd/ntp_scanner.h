@@ -106,7 +106,7 @@ struct FILE_INFO
     struct LCPOS tokpos; /* current token position */
     struct LCPOS errpos; /* error position */
 
-    char fname[1]; /* (formal only) buffered name */
+    char fname[1U]; /* (formal only) buffered name */
 };
 
 

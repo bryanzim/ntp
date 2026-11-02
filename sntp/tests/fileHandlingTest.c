@@ -23,8 +23,10 @@ CreatePath(
     UNUSED_ARG(argument);
 
     retc = snprintf(path, plen, "%s%s", srcdir, filename);
-    if (retc <= 0 || (size_t)retc >= plen)
+    if ((retc <= 0) || ((size_t)retc >= plen))
+    {
         exit(1);
+    }
     return path;
 }
 
@@ -61,8 +63,8 @@ bool CompareFileContent(
 {
     int currentLine = 1;
 
-    char actualLine[1024];
-    char expectedLine[1024];
+    char actualLine[1024U];
+    char expectedLine[1024U];
     size_t lenAct = sizeof actualLine;
     size_t lenExp = sizeof expectedLine;
 
@@ -87,5 +89,7 @@ void ClearFile(
     const char* filename)
 {
     if (!truncate(filename, 0))
+    {
         exit(1);
+    }
 }

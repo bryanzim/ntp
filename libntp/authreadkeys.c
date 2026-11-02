@@ -36,27 +36,37 @@ nexttok(
     /*
      * Space past white space
      */
-    while (*cp == ' ' || *cp == '\t')
+    while ((*cp == ' ') || (*cp == '\t'))
+    {
         cp++;
+    }
 
     /*
      * Save this and space to end of token
      */
     starttok = cp;
-    while (*cp != '\0' && *cp != '\n' && *cp != ' ' && *cp != '\t' && *cp != '#')
+    while ((*cp != '\0') && (*cp != '\n') && (*cp != ' ') && (*cp != '\t') && *cp != '#')
+    {
         cp++;
+    }
 
     /*
      * If token length is zero return an error, else set end of
      * token to zero and return start.
      */
     if (starttok == cp)
+    {
         return NULL;
+    }
 
-    if (*cp == ' ' || *cp == '\t')
+    if ((*cp == ' ') || (*cp == '\t'))
+    {
         *cp++ = '\0';
+    }
     else
+    {
         *cp = '\0';
+    }
 
     *str = cp;
     return starttok;
@@ -79,7 +89,7 @@ nexttok(
  */
 
 static const u_int nerr_loglimit = 5u;
-static const u_int nerr_maxlimit = 15;
+static const u_int nerr_maxlimit = 15U;
 
 static void log_maybe(u_int*, const char*, ...) NTP_PRINTF(2, 3);
 
@@ -91,7 +101,7 @@ struct keydata
     keyid_t keyid;       /* stored key ID		*/
     u_short keytype;     /* stored key type		*/
     u_short seclen;      /* length of secret		*/
-    u_char secbuf[1];    /* begin of secret (formal only)*/
+    u_char secbuf[1U];   /* begin of secret (formal only)*/
 };
 
 static void
@@ -141,7 +151,7 @@ int authreadkeys(
     char* token;
     keyid_t keyno;
     int keytype;
-    char buf[512]; /* lots of room for line */
+    char buf[512U]; /* lots of room for line */
     u_char keystr[AUTHPWD_MAXSECLEN];
     size_t len;
     u_int nerr;
@@ -169,10 +179,14 @@ int authreadkeys(
     while ((line = fgets(buf, sizeof buf, fp)) != NULL)
     {
         if (nerr > nerr_maxlimit)
+        {
             break;
+        }
         token = nexttok(&line);
         if (token == NULL)
+        {
             continue;
+        }
 
         /*
          * First is key number.  See if it is okay.
@@ -228,8 +242,8 @@ int authreadkeys(
                       token, keyno);
 #ifdef ENABLE_CMAC
         }
-        else if (NID_cmac != keytype &&
-                 EVP_get_digestbynid(keytype) == NULL)
+        else if ((NID_cmac != keytype) &&
+                 (EVP_get_digestbynid(keytype) == NULL))
         {
             log_maybe(NULL,
                       "authreadkeys: no algorithm for %s key %d",
@@ -330,9 +344,13 @@ int authreadkeys(
                     while (*sp != '\0')
                     {
                         if (!isdigit((unsigned char)*sp))
+                        {
                             break;
+                        }
                         if (snbits > 1000)
-                            break;                            /* overflow */
+                        {
+                            break;
+                        } /* overflow */
                         snbits = 10 * snbits + (*sp++ - '0'); /* ascii dependent */
                     }
                     if (*sp != '\0')
@@ -352,8 +370,8 @@ int authreadkeys(
                 {
                     /* Make sure that snbits is valid for addr */
                     if ((snbits < UINT_MAX) &&
-                        ((IS_IPV4(&addr) && snbits > 32) ||
-                         (IS_IPV6(&addr) && snbits > 128)))
+                        ((IS_IPV4(&addr) && (snbits > 32)) ||
+                         (IS_IPV6(&addr) && (snbits > 128))))
                     {
                         log_maybe(NULL,
                                   "authreadkeys: excessive subnet mask <%s/%s> for key %d",
@@ -391,7 +409,7 @@ int authreadkeys(
 
         DEBUG_INSIST(NULL != next);
 #if defined(OPENSSL) && defined(ENABLE_CMAC)
-        if (NID_cmac == keytype && len < 16)
+        if ((NID_cmac == keytype) && (len < 16))
         {
             msyslog(LOG_WARNING, CMAC " keys are 128 bits, "
                                       "zero-extending key %u by %u bits",
@@ -407,7 +425,9 @@ int authreadkeys(
         const char* why = "";
 
         if (nerr > nerr_maxlimit)
+        {
             why = " (emergency break)";
+        }
         msyslog(LOG_ERR,
                 "authreadkeys: rejecting file '%s' after %u error(s)%s",
                 file, nerr, why);

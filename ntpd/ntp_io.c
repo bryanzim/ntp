@@ -208,7 +208,7 @@ static int maxactivefd;
 /*
  * bit alternating value to detect verified interfaces during an update cycle
  */
-static u_short sys_interphase = 0;
+static u_short sys_interphase = 0U;
 
 static endpt* new_interface(endpt*);
 static void add_interface(endpt*);
@@ -389,7 +389,7 @@ void maintain_activefds(
 {
     int i;
 
-    if (fd < 0 || fd >= FD_SETSIZE)
+    if ((fd < 0) || (fd >= FD_SETSIZE))
     {
         msyslog(LOG_ERR,
                 "Too many sockets in use, FD_SETSIZE %d exceeded by fd %d",
@@ -405,9 +405,9 @@ void maintain_activefds(
     else
     {
         FD_CLR(fd, &activefds);
-        if (maxactivefd && fd == maxactivefd)
+        if (maxactivefd && (fd == maxactivefd))
         {
-            for (i = maxactivefd - 1; i >= 0; i--)
+            for (i = maxactivefd - 1; i >= 0; --i)
                 if (FD_ISSET(i, &activefds))
                 {
                     maxactivefd = i;
@@ -430,7 +430,7 @@ void maintain_activefds(
  */
 void collect_timing(struct recvbuf* rb, const char* tag, int count, l_fp* dts)
 {
-    char buf[256];
+    char buf[256U];
 
     snprintf(buf, sizeof(buf), "%s %d %s %s",
              (rb != NULL)
@@ -512,7 +512,9 @@ ntpd_addremove_io_fd(
 
 #ifdef HAVE_SIGNALED_IO
     if (!remove_it)
+    {
         init_socket_sig(fd);
+    }
 #endif /* not HAVE_SIGNALED_IO */
 
     maintain_activefds(fd, remove_it);
@@ -528,7 +530,9 @@ void io_open_sockets(void)
     static int already_opened;
 
     if (already_opened || HAVE_OPT(SAVECONFIGQUIT))
+    {
         return;
+    }
 
     already_opened = 1;
 
@@ -596,7 +600,9 @@ print_interface(const endpt* iface, const char* pfx, const char* sfx)
     if (AF_INET == iface->family)
     {
         if (iface->flags & INT_BROADCAST)
+        {
             printf(", bcast=%s", stoa(&iface->bcast));
+        }
         printf(", mask=%s", stoa(&iface->mask));
     }
     printf(", %s:%s",
@@ -604,8 +610,10 @@ print_interface(const endpt* iface, const char* pfx, const char* sfx)
                ? "Disabled"
                : "Enabled",
            sfx);
-    if (debug > 4) /* in-depth debugging only */
+    if (debug > 4)
+    { /* in-depth debugging only */
         interface_dump(iface);
+    }
 }
 #endif
 
@@ -711,7 +719,9 @@ addr_samesubnet(
      * the masks also validates the address's families match.
      */
     if (!SOCK_EQ(a_mask, b_mask))
+    {
         return FALSE;
+    }
 
     if (IS_IPV6(a))
     {
@@ -728,8 +738,12 @@ addr_samesubnet(
         pm = (const void*)&NSRCADR(a_mask);
     }
     for (pa_limit = pa + loops; pa < pa_limit; pa++, pb++, pm++)
+    {
         if ((*pa & *pm) != (*pb & *pm))
+        {
             return FALSE;
+        }
+    }
 
     return TRUE;
 }
@@ -746,7 +760,9 @@ void interface_enumerate(
 
     ifi.action = IFS_EXISTS;
     for (ifi.ep = ep_list; ifi.ep != NULL; ifi.ep = ifi.ep->elink)
+    {
         (*receiver)(data, &ifi);
+    }
 }
 
 /*
@@ -839,11 +855,15 @@ add_interface(
 #ifdef MCAST
     /* the rest is for enabled multicast-capable addresses only */
     if (ep->ignore_packets || !(INT_MULTICAST & ep->flags) ||
-        INT_LOOPBACK & ep->flags)
+        (INT_LOOPBACK & ep->flags))
+    {
         return;
+    }
 #ifndef INCLUDE_IPV6_MULTICAST_SUPPORT
     if (AF_INET6 == ep->family)
+    {
         return;
+    }
 #endif
     pmclisthead = (AF_INET == ep->family)
                       ? &mc4_list
@@ -856,7 +876,7 @@ add_interface(
     for (scan = *pmclisthead; scan != NULL; scan = scan_next)
     {
         scan_next = scan->mclink;
-        if (ep->family != scan->family || ep->ifindex != scan->ifindex)
+        if ((ep->family != scan->family) || (ep->ifindex != scan->ifindex))
         {
             continue;
         }
@@ -872,7 +892,9 @@ add_interface(
     }
     LINK_SLIST(*pmclisthead, ep, mclink);
     if (INVALID_SOCKET == ep->fd)
+    {
         return;
+    }
 
     /*
      * select the local address from which to send to multicast.
@@ -886,9 +908,11 @@ add_interface(
                         (void*)&NSRCADR(&ep->sin),
                         sizeof(NSRCADR(&ep->sin)));
         if (rc)
+        {
             msyslog(LOG_ERR,
                     "setsockopt IP_MULTICAST_IF %s fails: %m",
                     stoa(&ep->sin));
+        }
         break;
 
 #ifdef INCLUDE_IPV6_MULTICAST_SUPPORT
@@ -898,10 +922,12 @@ add_interface(
                         (void*)&ep->ifindex,
                         sizeof(ep->ifindex));
         /* do not complain if bound addr scope is ifindex */
-        if (rc && ep->ifindex != SCOPE(&ep->sin))
+        if (rc && (ep->ifindex != SCOPE(&ep->sin)))
+        {
             msyslog(LOG_ERR,
                     "setsockopt IPV6_MULTICAST_IF %u for %s fails: %m",
                     ep->ifindex, stoa(&ep->sin));
+        }
         break;
 #endif
     }
@@ -923,7 +949,7 @@ remove_interface(
     int /*BOOL*/ success;
 
     UNLINK_SLIST(unlinked, ep_list, ep, elink, endpt);
-    if (!ep->ignore_packets && INT_MULTICAST & ep->flags)
+    if (!ep->ignore_packets && (INT_MULTICAST & ep->flags))
     {
         pmclisthead = (AF_INET == ep->family)
                           ? &mc4_list
@@ -1161,7 +1187,9 @@ void add_nic_rule(
         REQUIRE(is_ip);
     }
     else
+    {
         REQUIRE(NULL == if_name);
+    }
 
     LINK_SLIST(nic_rule_list, rule, next);
 }
@@ -1231,7 +1259,9 @@ interface_action(
         case MATCH_ALL:
             /* loopback and wildcard excluded from "all" */
             if (isloopback || iswildcard)
+            {
                 break;
+            }
             DPRINTF(4, ("nic all %s\n",
                         action_text(rule->action)));
             return rule->action;
@@ -1330,7 +1360,7 @@ interface_action(
      * the rules so that "ntpd --interface eth0:1 -novirtualips"
      * does indeed listen on eth0:1's addresses.
      */
-    if (!listen_to_virtual_ips && if_name != NULL && (strchr(if_name, ':') != NULL))
+    if (!listen_to_virtual_ips && (if_name != NULL) && (strchr(if_name, ':') != NULL))
     {
 
         DPRINTF(4, ("virtual ip - ignore\n"));
@@ -1446,7 +1476,9 @@ refresh_interface(
         /* as we forcibly close() the socket remove the
            broadcast permission indication */
         if (bcast)
+        {
             socket_broadcast_disable(iface, &iface->sin);
+        }
 
         close_and_delete_fd_from_list(iface->fd);
 
@@ -1462,10 +1494,12 @@ refresh_interface(
         return (iface->fd != INVALID_SOCKET);
     }
     else
-        return 0; /* invalid sockets are not refreshable */
-#else             /* !OS_MISSES_SPECIFIC_ROUTE_UPDATES */
+    {
+        return 0;
+    } /* invalid sockets are not refreshable */
+#else  /* !OS_MISSES_SPECIFIC_ROUTE_UPDATES */
     return (iface->fd != INVALID_SOCKET);
-#endif            /* !OS_MISSES_SPECIFIC_ROUTE_UPDATES */
+#endif /* !OS_MISSES_SPECIFIC_ROUTE_UPDATES */
 }
 
 /*
@@ -1525,11 +1559,15 @@ is_wildcard_addr(
     const sockaddr_u* psau)
 {
     if (IS_IPV4(psau) && !NSRCADR(psau))
+    {
         return 1;
+    }
 
 #ifdef INCLUDE_IPV6_SUPPORT
     if (IS_IPV6(psau) && S_ADDR6_EQ(psau, &in6addr_any))
+    {
         return 1;
+    }
 #endif
 
     return 0;
@@ -1577,15 +1615,19 @@ set_wildcard_reuse(
 
     any = ANY_INTERFACE_BYFAM(family);
     if (any != NULL)
+    {
         fd = any->fd;
+    }
 
     if (fd != INVALID_SOCKET)
     {
         if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR,
                        (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_ERR,
                     "set_wildcard_reuse: setsockopt(SO_REUSEADDR, %s) failed: %m",
                     on ? "on" : "off");
+        }
 
         DPRINTF(4, ("set SO_REUSEADDR to %s on %s\n",
                     on ? "on" : "off",
@@ -1605,9 +1647,13 @@ check_flags(
     int fd;
 
     if (psau->sa.sa_family != AF_INET)
+    {
         return ISC_FALSE;
+    }
     if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+    {
         return ISC_FALSE;
+    }
     ZERO(ifr);
     memcpy(&ifr.ifr_addr, &psau->sa, sizeof(ifr.ifr_addr));
     strlcpy(ifr.ifr_name, name, sizeof(ifr.ifr_name));
@@ -1618,7 +1664,9 @@ check_flags(
     }
     close(fd);
     if ((ifr.ifr_addrflags & flags) != 0)
+    {
         return ISC_TRUE;
+    }
 #endif /* SIOCGIFAFLAG_IN */
     return ISC_FALSE;
 }
@@ -1634,9 +1682,13 @@ check_flags6(
     int fd;
 
     if (psau->sa.sa_family != AF_INET6)
+    {
         return ISC_FALSE;
+    }
     if ((fd = socket(AF_INET6, SOCK_DGRAM, 0)) < 0)
+    {
         return ISC_FALSE;
+    }
     ZERO(ifr6);
     memcpy(&ifr6.ifr_addr, &psau->sa6, sizeof(ifr6.ifr_addr));
     strlcpy(ifr6.ifr_name, name, sizeof(ifr6.ifr_name));
@@ -1647,7 +1699,9 @@ check_flags6(
     }
     close(fd);
     if ((ifr6.ifr_ifru.ifru_flags6 & flags6) != 0)
+    {
         return ISC_TRUE;
+    }
 #endif /* INCLUDE_IPV6_SUPPORT && SIOCGIFAFLAG_IN6 */
     return ISC_FALSE;
 }
@@ -1763,7 +1817,9 @@ update_interfaces(
     result = isc_interfaceiter_create(mctx, &iter);
 
     if (result != ISC_R_SUCCESS)
+    {
         return 0;
+    }
 
     /*
      * Toggle system interface scan phase to find untouched
@@ -1784,12 +1840,18 @@ update_interfaces(
         }
         /* See if we have a valid family to use */
         family = isc_if.address.family;
-        if (AF_INET != family && AF_INET6 != family)
+        if ((AF_INET != family) && (AF_INET6 != family))
+        {
             continue;
-        if (AF_INET == family && !ipv4_works)
+        }
+        if ((AF_INET == family) && !ipv4_works)
+        {
             continue;
-        if (AF_INET6 == family && !ipv6_works)
+        }
+        if ((AF_INET6 == family) && !ipv6_works)
+        {
             continue;
+        }
 
         /* create prototype */
         init_interface(&enumep);
@@ -1837,16 +1899,22 @@ update_interfaces(
          * wild
          */
         if (is_wildcard_addr(&enumep.sin))
+        {
             continue;
+        }
 
         if (is_anycast(&enumep.sin, isc_if.name))
+        {
             continue;
+        }
 
         /*
          * skip any address that is an invalid state to be used
          */
         if (!is_valid(&enumep.sin, isc_if.name))
+        {
             continue;
+        }
 
         /*
          * Keep track of having non-linklocal connectivity
@@ -1975,7 +2043,7 @@ update_interfaces(
         {
             for (ep2 = newaddrs; ep2 != NULL; ep2 = ep2->elink)
             {
-                if (IS_IPV6(&ep2->sin) && ep != ep2 && !is_linklocal(&ep2->sin))
+                if (IS_IPV6(&ep2->sin) && (ep != ep2) && !is_linklocal(&ep2->sin))
                 {
 
                     ep->flags |= INT_LL_OF_GLOB;
@@ -2029,8 +2097,10 @@ update_interfaces(
          * INT_MCASTIF).
          */
         if (((INT_WILDCARD | INT_MCASTIF) & ep->flags) ||
-            ep->phase == sys_interphase)
+            (ep->phase == sys_interphase))
+        {
             continue;
+        }
 
         DPRINT_INTERFACE(3, (ep, "updating ",
                              "GONE - deleting\n"));
@@ -2167,13 +2237,17 @@ create_interface(
     iface->fd = open_socket(&iface->sin, 0, 0, iface);
 
     if (iface->fd != INVALID_SOCKET)
+    {
         log_listen_address(iface);
+    }
 
-    if ((INT_BROADCAST & iface->flags) && iface->bfd != INVALID_SOCKET)
+    if ((INT_BROADCAST & iface->flags) && (iface->bfd != INVALID_SOCKET))
+    {
         msyslog(LOG_INFO, "Listening on broadcast address %s",
                 sptoa(&iface->bcast));
+    }
 
-    if (INVALID_SOCKET == iface->fd && INVALID_SOCKET == iface->bfd)
+    if ((INVALID_SOCKET == iface->fd) && (INVALID_SOCKET == iface->bfd))
     {
         msyslog(LOG_ERR, "unable to create socket on %s (%d) for %s",
                 iface->name,
@@ -2200,8 +2274,10 @@ create_interface(
      * set globals with the first found
      * loopback interface of the appropriate class
      */
-    if (NULL == loopback_interface && AF_INET == iface->family && (INT_LOOPBACK & iface->flags))
+    if ((NULL == loopback_interface) && (AF_INET == iface->family) && (INT_LOOPBACK & iface->flags))
+    {
         loopback_interface = iface;
+    }
 
     /*
      * put into our interface list
@@ -2213,7 +2289,7 @@ create_interface(
     /*
      * Join any previously-configured compatible multicast groups.
      */
-    if (INT_MULTICAST & iface->flags &&
+    if ((INT_MULTICAST & iface->flags) &&
         !((INT_LOOPBACK | INT_WILDCARD) & iface->flags) &&
         !iface->ignore_packets)
     {
@@ -2222,20 +2298,26 @@ create_interface(
              entry = next_entry)
         {
             next_entry = entry->link;
-            if (AF(&iface->sin) != AF(&entry->addr) ||
+            if ((AF(&iface->sin) != AF(&entry->addr)) ||
                 !IS_MCAST(&entry->addr))
+            {
                 continue;
+            }
             if (socket_multicast_enable(iface,
                                         &entry->addr))
+            {
                 msyslog(LOG_INFO,
                         "Joined %s socket to multicast group %s",
                         stoa(&iface->sin),
                         stoa(&entry->addr));
+            }
             else
+            {
                 msyslog(LOG_ERR,
                         "Failed to join %s socket to multicast group %s",
                         stoa(&iface->sin),
                         stoa(&entry->addr));
+            }
         }
     }
 #endif /* MCAST && MCAST_NONEWSOCKET */
@@ -2350,7 +2432,9 @@ set_excladdruse(
                         (void*)&one, sizeof(one));
 
     if (!failed)
+    {
         return;
+    }
 
 #ifdef SYS_WINNT
     /*
@@ -2361,9 +2445,11 @@ set_excladdruse(
      */
     err = GetLastError();
 
-    if (isc_win32os_versioncheck(5, 1, 0, 0) < 0 /* < 5.1/XP */
-        && WSAEINVAL == err)
+    if ((isc_win32os_versioncheck(5, 1, 0, 0) < 0) /* < 5.1/XP */
+        && (WSAEINVAL == err))
+    {
         return;
+    }
 
     SetLastError(err);
 #endif
@@ -2389,7 +2475,9 @@ set_reuseaddr(
     for (ep = ep_list; ep != NULL; ep = ep->elink)
     {
         if (ep->flags & INT_WILDCARD)
+        {
             continue;
+        }
 
         /*
          * if ep->fd  is INVALID_SOCKET, we might have a adapter
@@ -2445,12 +2533,16 @@ socket_broadcast_enable(
         /* if this interface can support broadcast, set SO_BROADCAST */
         if (setsockopt(fd, SOL_SOCKET, SO_BROADCAST,
                        (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_ERR,
                     "setsockopt(SO_BROADCAST) enable failure on address %s: %m",
                     stoa(baddr));
+        }
         else
+        {
             DPRINTF(2, ("Broadcast enabled on socket %d for address %s\n",
                         fd, stoa(baddr)));
+        }
     }
     iface->flags |= INT_BCASTXMIT;
     return ISC_TRUE;
@@ -2475,9 +2567,11 @@ socket_broadcast_disable(
 
     if (IS_IPV4(baddr) && setsockopt(iface->fd, SOL_SOCKET,
                                      SO_BROADCAST, (void*)&off, sizeof(off)))
+    {
         msyslog(LOG_ERR,
                 "setsockopt(SO_BROADCAST) disable failure on address %s: %m",
                 stoa(baddr));
+    }
 
     iface->flags &= ~INT_BCASTXMIT;
     return ISC_TRUE;
@@ -2504,14 +2598,18 @@ addr_ismulticast(
      * If we don't have IPV6 support any IPV6 addr is not multicast
      */
     if (IS_IPV6(maddr))
+    {
         result = ISC_FALSE;
+    }
     else
 #endif
         result = IS_MCAST(maddr);
 
     if (!result)
+    {
         DPRINTF(4, ("address %s is not multicast\n",
                     stoa(maddr)));
+    }
 
     return result;
 }
@@ -2530,7 +2628,7 @@ void enable_multicast_if(
     TYPEOF_IP_MULTICAST_LOOP off = 0;
 #endif
 #if defined(INCLUDE_IPV6_MULTICAST_SUPPORT) && defined(IPV6_MULTICAST_LOOP)
-    u_int off6 = 0;
+    u_int off6 = 0U;
 #endif
 
     REQUIRE(AF(maddr) == AF(&iface->sin));
@@ -2769,15 +2867,21 @@ void io_setbclient(void)
         }
 
         if (ep->flags & (INT_WILDCARD | INT_LOOPBACK))
+        {
             continue;
+        }
 
         /* use only allowed addresses */
         if (ep->ignore_packets)
+        {
             continue;
+        }
 
         /* Need a broadcast-capable interface */
         if (!(ep->flags & INT_BROADCAST))
+        {
             continue;
+        }
 
         /* Only IPv4 addresses are valid for broadcast */
         REQUIRE(IS_IPV4(&ep->bcast));
@@ -2877,9 +2981,13 @@ void io_unsetbclient(void)
     for (ep = ep_list; ep != NULL; ep = ep->elink)
     {
         if (INT_WILDCARD & ep->flags)
+        {
             continue;
+        }
         if (!(INT_BCASTOPEN & ep->flags))
+        {
             continue;
+        }
 
         if (ep->bfd != INVALID_SOCKET)
         {
@@ -2910,7 +3018,9 @@ void io_multicast_add(
      * Check to see if this is a multicast address
      */
     if (!addr_ismulticast(addr))
+    {
         return;
+    }
 
     /* If we already have it we can just return */
     if (NULL != find_flagged_addr_in_list(addr, INT_MCASTOPEN))
@@ -2950,11 +3060,17 @@ void io_multicast_add(
         delete_interface(ep);
 
         if (IS_IPV4(addr))
+        {
             ep = wildipv4;
+        }
         else if (IS_IPV6(addr))
+        {
             ep = wildipv6;
+        }
         else
+        {
             ep = NULL;
+        }
 
         if (ep != NULL)
         {
@@ -2981,22 +3097,30 @@ void io_multicast_add(
      * join each applicable endpoint socket to the group address.
      */
     if (IS_IPV4(addr))
+    {
         one_ep = wildipv4;
+    }
     else
+    {
         one_ep = wildipv6;
+    }
     for (ep = ep_list; ep != NULL; ep = ep->elink)
     {
-        if (ep->ignore_packets || AF(&ep->sin) != AF(addr) ||
+        if (ep->ignore_packets || (AF(&ep->sin) != AF(addr)) ||
             !(INT_MULTICAST & ep->flags) ||
-            (INT_LOOPBACK | INT_WILDCARD) & ep->flags)
+            ((INT_LOOPBACK | INT_WILDCARD) & ep->flags))
+        {
             continue;
+        }
         one_ep = ep;
 #endif /* MULTICAST_NONEWSOCKET */
         if (socket_multicast_enable(ep, addr))
+        {
             msyslog(LOG_INFO,
                     "Joined %s socket to multicast group %s",
                     stoa(&ep->sin),
                     stoa(addr));
+        }
     }
 
     add_addr_to_list(addr, one_ep);
@@ -3032,7 +3156,9 @@ void io_multicast_del(
      * Disable reception of multicast packets
      */
     while ((iface = find_flagged_addr_in_list(addr, INT_MCASTOPEN)) != NULL)
+    {
         socket_multicast_disable(iface, addr);
+    }
 
     delete_addr_from_list(addr);
 
@@ -3065,7 +3191,9 @@ open_socket(
     int off = 0;
 
     if (IS_IPV6(addr) && !ipv6_works)
+    {
         return INVALID_SOCKET;
+    }
 
     /* create a datagram (UDP) socket */
     fd = socket(AF(addr), SOCK_DGRAM, 0);
@@ -3076,10 +3204,12 @@ open_socket(
                 "socket(AF_INET%s, SOCK_DGRAM, 0) failed on address %s: %m",
                 IS_IPV6(addr) ? "6" : "", stoa(addr));
 
-        if (errval == EPROTONOSUPPORT ||
-            errval == EAFNOSUPPORT ||
-            errval == EPFNOSUPPORT)
+        if ((errval == EPROTONOSUPPORT) ||
+            (errval == EAFNOSUPPORT) ||
+            (errval == EPFNOSUPPORT))
+        {
             return (INVALID_SOCKET);
+        }
 
         errno = errval;
         msyslog(LOG_ERR,
@@ -3128,7 +3258,9 @@ open_socket(
      * first will cause more specific binds to fail.
      */
     if (!(interf->flags & INT_WILDCARD))
+    {
         set_excladdruse(fd);
+    }
 #endif
 
     /*
@@ -3139,12 +3271,16 @@ open_socket(
 #if defined(IPPROTO_IP) && defined(IP_TOS)
         if (setsockopt(fd, IPPROTO_IP, IP_TOS, (void*)&qos,
                        sizeof(qos)))
+        {
             msyslog(LOG_ERR,
                     "setsockopt IP_TOS (%02x) fails on address %s: %m",
                     qos, stoa(addr));
+        }
 #endif /* IPPROTO_IP && IP_TOS */
         if (bcast)
+        {
             socket_broadcast_enable(interf, fd, addr);
+        }
     }
 
     /*
@@ -3155,23 +3291,29 @@ open_socket(
 #if defined(IPPROTO_IPV6) && defined(IPV6_TCLASS)
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_TCLASS, (void*)&qos,
                        sizeof(qos)))
+        {
             msyslog(LOG_ERR,
                     "setsockopt IPV6_TCLASS (%02x) fails on address %s: %m",
                     qos, stoa(addr));
+        }
 #endif /* IPPROTO_IPV6 && IPV6_TCLASS */
 #ifdef IPV6_V6ONLY
-        if (isc_net_probe_ipv6only() == ISC_R_SUCCESS && setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
-                                                                    (void*)&on, sizeof(on)))
+        if ((isc_net_probe_ipv6only() == ISC_R_SUCCESS) && setsockopt(fd, IPPROTO_IPV6, IPV6_V6ONLY,
+                                                                      (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_ERR,
                     "setsockopt IPV6_V6ONLY on fails on address %s: %m",
                     stoa(addr));
+        }
 #endif
 #ifdef IPV6_BINDV6ONLY
         if (setsockopt(fd, IPPROTO_IPV6, IPV6_BINDV6ONLY,
                        (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_ERR,
                     "setsockopt IPV6_BINDV6ONLY on fails on address %s: %m",
                     stoa(addr));
+        }
 #endif
     }
 
@@ -3182,7 +3324,9 @@ open_socket(
      * to the port and SO_REUSEADDR is not set
      */
     if (!is_wildcard_addr(addr))
+    {
         set_wildcard_reuse(AF(addr), 1);
+    }
 #endif
 
     /*
@@ -3192,7 +3336,9 @@ open_socket(
 
 #ifdef OS_NEEDS_REUSEADDR_FOR_IFADDRBIND
     if (!is_wildcard_addr(addr))
+    {
         set_wildcard_reuse(AF(addr), 0);
+    }
 #endif
 
     if (errval < 0)
@@ -3223,36 +3369,48 @@ open_socket(
     {
         if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMP,
                        (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_DEBUG,
                     "setsockopt SO_TIMESTAMP on fails on address %s: %m",
                     stoa(addr));
+        }
         else
+        {
             DPRINTF(4, ("setsockopt SO_TIMESTAMP enabled on fd %d address %s\n",
                         fd, stoa(addr)));
+        }
     }
 #endif
 #ifdef HAVE_TIMESTAMPNS
     {
         if (setsockopt(fd, SOL_SOCKET, SO_TIMESTAMPNS,
                        (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_DEBUG,
                     "setsockopt SO_TIMESTAMPNS on fails on address %s: %m",
                     stoa(addr));
+        }
         else
+        {
             DPRINTF(4, ("setsockopt SO_TIMESTAMPNS enabled on fd %d address %s\n",
                         fd, stoa(addr)));
+        }
     }
 #endif
 #ifdef HAVE_BINTIME
     {
         if (setsockopt(fd, SOL_SOCKET, SO_BINTIME,
                        (void*)&on, sizeof(on)))
+        {
             msyslog(LOG_DEBUG,
                     "setsockopt SO_BINTIME on fails on address %s: %m",
                     stoa(addr));
+        }
         else
+        {
             DPRINTF(4, ("setsockopt SO_BINTIME enabled on fd %d address %s\n",
                         fd, stoa(addr)));
+        }
     }
 #endif
 
@@ -3345,7 +3503,7 @@ void sendpkt(
                     ismcast ? "\tMCAST\t***** " : "", src->fd,
                     stoa(dest), stoa(&src->sin), ttl, len));
 #ifdef MCAST
-        if (ismcast && ttl > 0 && ttl != src->last_ttl)
+        if (ismcast && (ttl > 0) && (ttl != src->last_ttl))
         {
             /*
              * set the multicast ttl for outgoing packets
@@ -3375,11 +3533,15 @@ void sendpkt(
             }
 
             if (!rc)
+            {
                 src->last_ttl = ttl;
+            }
             else
+            {
                 msyslog(LOG_ERR,
                         "setsockopt IP_MULTICAST_TTL/IPV6_MULTICAST_HOPS fails on address %s: %m",
                         stoa(&src->sin));
+            }
         }
 #endif /* MCAST */
 
@@ -3404,8 +3566,10 @@ void sendpkt(
         }
     loop:
         if (ismcast)
+        {
             src = src->mclink;
-    } while (ismcast && src != NULL);
+        }
+    } while (ismcast && (src != NULL));
 
     /* HMS: pkt->rootdisp is usually random here */
     NTOHL_FP(&pkt->org, &org);
@@ -3435,7 +3599,7 @@ fdbits(
     int count,
     const fd_set* set)
 {
-    static char buffer[256];
+    static char buffer[256U];
     char* buf = buffer;
 
     count = min(count, sizeof(buffer) - 1);
@@ -3480,10 +3644,11 @@ read_refclock_packet(
          *
          * ...hmmmm... what about "tcflush(fd,TCIFLUSH)" here?!?
          */
-        char buf[128];
+        char buf[128U];
         do
+        {
             buflen = read(fd, buf, sizeof(buf));
-        while (buflen > 0);
+        } while (buflen > 0);
         packets_dropped++;
         return (buflen);
     }
@@ -3491,14 +3656,18 @@ read_refclock_packet(
     /* TALOS-CAN-0064: avoid signed/unsigned clashes that can lead
      * to buffer overrun and memory corruption
      */
-    if (rp->datalen <= 0 || (size_t)rp->datalen > sizeof(rb->recv_space))
+    if ((rp->datalen <= 0) || ((size_t)rp->datalen > sizeof(rb->recv_space)))
+    {
         read_count = sizeof(rb->recv_space);
+    }
     else
+    {
         read_count = (u_int)rp->datalen;
+    }
     do
     {
         buflen = read(fd, (char*)&rb->recv_space, read_count);
-    } while (buflen < 0 && EINTR == errno);
+    } while ((buflen < 0) && (EINTR == errno));
 
     if (buflen <= 0)
     {
@@ -3576,8 +3745,8 @@ fetch_timestamp(
                  */
                 nts.l_i = pbt.sec + JAN_1970;
                 nts.l_uf = (u_int32)(pbt.frac >> 32);
-                if (sys_tick > measured_tick &&
-                    sys_tick > 1e-9)
+                if ((sys_tick > measured_tick) &&
+                    (sys_tick > 1e-9))
                 {
                     ticks = (unsigned long)(nts.l_uf / (unsigned long)(sys_tick * FRAC));
                     nts.l_uf = (unsigned long)(ticks * (unsigned long)(sys_tick * FRAC));
@@ -3591,8 +3760,8 @@ fetch_timestamp(
             case SCM_TIMESTAMPNS: {
                 struct timespec pts;
                 memcpy(&pts, CMSG_DATA(cmsghdr), sizeof(pts));
-                if (sys_tick > measured_tick &&
-                    sys_tick > 1e-9)
+                if ((sys_tick > measured_tick) &&
+                    (sys_tick > 1e-9))
                 {
                     ticks = (unsigned long)((pts.tv_nsec * 1e-9) /
                                             sys_tick);
@@ -3609,8 +3778,8 @@ fetch_timestamp(
             case SCM_TIMESTAMP: {
                 struct timeval ptv;
                 memcpy(&ptv, CMSG_DATA(cmsghdr), sizeof(ptv));
-                if (sys_tick > measured_tick &&
-                    sys_tick > 1e-6)
+                if ((sys_tick > measured_tick) &&
+                    (sys_tick > 1e-6))
                 {
                     ticks = (unsigned long)((ptv.tv_usec * 1e-6) /
                                             sys_tick);
@@ -3683,11 +3852,13 @@ read_network_packet(
          * removes the message from the queue. So there's no
          * need to have a full buffer here on the stack.
          */
-        char buf[16];
+        char buf[16U];
         sockaddr_u from;
 
         if (rb != NULL)
+        {
             freerecvbuf(rb);
+        }
 
         fromlen = sizeof(from);
         buflen = recvfrom(fd, buf, sizeof(buf), 0,
@@ -3698,9 +3869,13 @@ read_network_packet(
                         : "drop",
                     free_recvbuffs(), fd, stoa(&from)));
         if (itf->ignore_packets)
+        {
             packets_ignored++;
+        }
         else
+        {
             packets_dropped++;
+        }
         return (buflen);
     }
 
@@ -3725,12 +3900,12 @@ read_network_packet(
 
     buflen = rb->recv_length;
 
-    if (buflen == 0 || (buflen == -1 &&
-                        (EWOULDBLOCK == errno
+    if ((buflen == 0) || ((buflen == -1) &&
+                          (EWOULDBLOCK == errno
 #ifdef EAGAIN
-                         || EAGAIN == errno
+                           || EAGAIN == errno
 #endif
-                         )))
+                           )))
     {
         freerecvbuf(rb);
         return (buflen);
@@ -3835,7 +4010,7 @@ void io_handler(void)
                         &t1);
     }
 #endif /* VMS, VxWorks */
-    if (nfound < 0 && sanitize_fdset(errno))
+    if ((nfound < 0) && sanitize_fdset(errno))
     {
         struct timeval t1;
         t1.tv_sec = 0;
@@ -3854,7 +4029,7 @@ void io_handler(void)
 
         input_handler_scan(&ts, &rdfdes);
     }
-    else if (nfound == -1 && errno != EINTR)
+    else if ((nfound == -1) && (errno != EINTR))
     {
         msyslog(LOG_ERR, "select() error: %m");
     }
@@ -3897,14 +4072,16 @@ input_handler(
     tvzero.tv_sec = tvzero.tv_usec = 0;
 
     n = select(maxactivefd + 1, &fds, NULL, NULL, &tvzero);
-    if (n < 0 && sanitize_fdset(errno))
+    if ((n < 0) && sanitize_fdset(errno))
     {
         fds = activefds;
         tvzero.tv_sec = tvzero.tv_usec = 0;
         n = select(maxactivefd + 1, &fds, NULL, NULL, &tvzero);
     }
     if (n > 0)
+    {
         input_handler_scan(cts, &fds);
+    }
 }
 #endif /* HAVE_SIGNALED_IO */
 
@@ -3934,10 +4111,12 @@ sanitize_fdset(
 #endif
 
     if (errc != EBADF)
+    {
         return FALSE;
+    }
 
     /* if we have oviously bad FDs, try to sanitize the FD set. */
-    for (j = 0, maxscan = 0; j <= maxactivefd; j++)
+    for (j = 0, maxscan = 0; j <= maxactivefd; ++j)
     {
         if (FD_ISSET(j, &activefds))
         {
@@ -3955,7 +4134,9 @@ sanitize_fdset(
         }
     }
     if (maxactivefd != maxscan)
+    {
         maxactivefd = maxscan;
+    }
     return TRUE;
 }
 
@@ -4003,7 +4184,9 @@ input_handler_scan(
         fd = rp->fd;
 
         if (!FD_ISSET(fd, pfds))
+        {
             continue;
+        }
         buflen = read_refclock_packet(fd, rp, ts);
         /*
          * The first read must succeed after select() indicates
@@ -4013,7 +4196,7 @@ input_handler_scan(
          * indicating EOF but ntpd didn't remove the descriptor
          * from the activefds set.
          */
-        if (buflen < 0 && EAGAIN != errno)
+        if ((buflen < 0) && (EAGAIN != errno))
         {
             saved_errno = errno;
             clk = refnumtoa(&rp->srcclock->srcadr);
@@ -4043,7 +4226,7 @@ input_handler_scan(
      */
     for (ep = ep_list; ep != NULL; ep = ep->elink)
     {
-        for (doing = 0; doing < 2; doing++)
+        for (doing = 0; doing < 2; ++doing)
         {
             if (!doing)
             {
@@ -4052,17 +4235,23 @@ input_handler_scan(
             else
             {
                 if (!(ep->flags & INT_BCASTOPEN))
+                {
                     break;
+                }
                 fd = ep->bfd;
             }
             if (fd < 0)
+            {
                 continue;
+            }
             if (FD_ISSET(fd, pfds))
+            {
                 do
                 {
                     buflen = read_network_packet(
                         fd, ep, ts);
                 } while (buflen > 0);
+            }
             /* Check more interfaces */
         }
     }
@@ -4078,7 +4267,9 @@ input_handler_scan(
         /* callback may unlink and free asyncio_reader */
         next_asyncio_reader = asyncio_reader->link;
         if (FD_ISSET(asyncio_reader->fd, pfds))
+        {
             (*asyncio_reader->receiver)(asyncio_reader);
+        }
         asyncio_reader = next_asyncio_reader;
     }
 #endif /* HAS_ROUTING_SOCKET */
@@ -4086,11 +4277,13 @@ input_handler_scan(
     /*
      * Check for a response from a blocking child
      */
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
-        if (NULL == c || -1 == c->resp_read_pipe)
+        if ((NULL == c) || (-1 == c->resp_read_pipe))
+        {
             continue;
+        }
         if (FD_ISSET(c->resp_read_pipe, pfds))
         {
             ++c->resp_ready_seen;
@@ -4109,9 +4302,11 @@ input_handler_scan(
     L_SUB(&ts_e, &ts);
     collect_timing(NULL, "input handler", 1, &ts_e);
     if (debug > 3)
+    {
         msyslog(LOG_DEBUG,
                 "input_handler: Processed a gob of fd's in %s msec",
                 lfptoms(&ts_e, 6));
+    }
 #endif /* DEBUG_TIMING */
 }
 #endif /* !HAVE_IO_COMPLETION_PORT */
@@ -4148,11 +4343,15 @@ select_peerinterface(
     {
         ep = findbcastinter(srcadr);
         if (ep != NULL)
+        {
             DPRINTF(4, ("Found *-cast interface %s for address %s\n",
                         stoa(&ep->sin), stoa(srcadr)));
+        }
         else
+        {
             DPRINTF(4, ("No *-cast local address found for address %s\n",
                         stoa(srcadr)));
+        }
     }
     else
     {
@@ -4177,7 +4376,7 @@ select_peerinterface(
      * as our (network) source address would be undefined and
      * crypto will not work without knowing the own transmit address
      */
-    if (ep != NULL && (INT_WILDCARD & ep->flags))
+    if ((ep != NULL) && (INT_WILDCARD & ep->flags))
     {
         if (!accept_wildcard_if_for_winnt)
         {
@@ -4211,8 +4410,10 @@ findinterface(
         iface = ANY_INTERFACE_CHOOSE(addr);
     }
     else
+    {
         DPRINTF(4, ("Found interface #%d %s for address %s\n",
                     iface->ifnum, iface->name, stoa(addr)));
+    }
 
     return iface;
 }
@@ -4293,7 +4494,9 @@ findlocalinterface(
     rtn = getsockname(s, &saddr.sa, &sockaddrlen);
     closesocket(s);
     if (SOCKET_ERROR == rtn)
+    {
         return NULL;
+    }
 
     DPRINTF(4, ("findlocalinterface: kernel maps %s to %s\n",
                 stoa(addr), stoa(&saddr)));
@@ -4308,7 +4511,7 @@ findlocalinterface(
      * See http://bugs.ntp.org/1184 and http://bugs.ntp.org/1683
      * for more background.
      */
-    if (NULL == iface || iface->ignore_packets)
+    if ((NULL == iface) || iface->ignore_packets)
     {
         iface = findclosestinterface(&saddr,
                                      flags | INT_LOOPBACK);
@@ -4317,7 +4520,7 @@ findlocalinterface(
      * Don't select an interface which will ignore replies, or one
      * dedicated to multicast receive.
      */
-    if (iface != NULL && (iface->ignore_packets || (INT_MCASTIF & iface->flags)))
+    if ((iface != NULL) && (iface->ignore_packets || (INT_MCASTIF & iface->flags)))
     {
         iface = NULL;
     }
@@ -4356,24 +4559,30 @@ findclosestinterface(
     for (ep = ep_list; ep != NULL; ep = ep->elink)
     {
         if (ep->ignore_packets ||
-            AF(addr) != ep->family ||
-            flags & ep->flags)
+            (AF(addr) != ep->family) ||
+            (flags & ep->flags))
+        {
             continue;
+        }
 
         calc_addr_distance(&addr_dist, addr, &ep->sin);
-        if (NULL == winner ||
-            -1 == cmp_addr_distance(&addr_dist, &min_dist))
+        if ((NULL == winner) ||
+            (-1 == cmp_addr_distance(&addr_dist, &min_dist)))
         {
             min_dist = addr_dist;
             winner = ep;
         }
     }
     if (NULL == winner)
+    {
         DPRINTF(4, ("findclosestinterface(%s) failed\n",
                     stoa(addr)));
+    }
     else
+    {
         DPRINTF(4, ("findclosestinterface(%s) -> %s\n",
                     stoa(addr), stoa(&winner->sin)));
+    }
 
     return winner;
 }
@@ -4418,9 +4627,9 @@ calc_addr_distance(
     cb = SIZEOF_INADDR(AF(dist));
     different = FALSE;
     a1_greater = FALSE;
-    for (u = 0; u < cb; u++)
+    for (u = 0; u < cb; ++u)
     {
-        if (!different && p1[u] != p2[u])
+        if (!different && (p1[u] != p2[u]))
         {
             a1_greater = (p1[u] > p2[u]);
             different = TRUE;
@@ -4453,19 +4662,29 @@ cmp_addr_distance(
     if (IS_IPV4(d1))
     {
         if (SRCADR(d1) < SRCADR(d2))
+        {
             return -1;
+        }
         else if (SRCADR(d1) == SRCADR(d2))
+        {
             return 0;
+        }
         else
+        {
             return 1;
+        }
     }
 
-    for (i = 0; i < (int)sizeof(NSRCADR6(d1)); i++)
+    for (i = 0; i < (int)sizeof(NSRCADR6(d1)); ++i)
     {
         if (NSRCADR6(d1)[i] < NSRCADR6(d2)[i])
+        {
             return -1;
+        }
         else if (NSRCADR6(d1)[i] > NSRCADR6(d2)[i])
+        {
             return 1;
+        }
     }
 
     return 0;
@@ -4486,8 +4705,10 @@ getinterface(
 
     iface = find_addr_in_list(addr);
 
-    if (iface != NULL && (iface->flags & flags))
+    if ((iface != NULL) && (iface->flags & flags))
+    {
         iface = NULL;
+    }
 
     return iface;
 }
@@ -4523,21 +4744,29 @@ findbcastinter(
     for (iface = ep_list; iface != NULL; iface = iface->elink)
     {
         if (iface->flags & INT_WILDCARD)
+        {
             continue;
+        }
 
         /* Don't bother with ignored interfaces */
         if (iface->ignore_packets)
+        {
             continue;
+        }
 
         /*
          * First look if this is the correct family
          */
         if (AF(&iface->sin) != AF(addr))
+        {
             continue;
+        }
 
         /* Skip the loopback addresses */
         if (iface->flags & INT_LOOPBACK)
+        {
             continue;
+        }
 
         /*
          * If we are looking to match a multicast address and
@@ -4552,7 +4781,9 @@ findbcastinter(
              * and its address is not link-local.
              */
             if (IS_IPV6(addr) && IN6_IS_ADDR_MC_LINKLOCAL(PSOCK_ADDR6(addr)) && !IN6_IS_ADDR_LINKLOCAL(PSOCK_ADDR6(&iface->sin)))
+            {
                 continue;
+            }
 #endif
             break;
         }
@@ -4566,19 +4797,27 @@ findbcastinter(
         if (IS_IPV4(addr))
         {
             if (SOCK_EQ(&iface->bcast, addr))
+            {
                 break;
+            }
 
             if ((NSRCADR(&iface->sin) & NSRCADR(&iface->mask)) == (NSRCADR(addr) & NSRCADR(&iface->mask)))
+            {
                 break;
+            }
         }
 #ifdef INCLUDE_IPV6_SUPPORT
         else if (IS_IPV6(addr))
         {
             if (SOCK_EQ(&iface->bcast, addr))
+            {
                 break;
+            }
 
             if (SOCK_EQ(netof(&iface->sin), netof(addr)))
+            {
                 break;
+            }
         }
 #endif
     }
@@ -4724,7 +4963,9 @@ void kill_asyncio(
     maxactivefd = 0;
 
     while (fd_list != NULL)
+    {
         close_and_delete_fd_from_list(fd_list->fd, NULL);
+    }
 
     UNBLOCKIO();
 }
@@ -4760,7 +5001,9 @@ close_and_delete_fd_from_list(
     UNLINK_EXPR_SLIST(lsock, fd_list, fd == UNLINK_EXPR_SLIST_CURRENT()->fd, link, vsock_t);
 
     if (NULL == lsock)
+    {
         return;
+    }
 
     switch (lsock->type)
     {
@@ -4817,8 +5060,10 @@ add_addr_to_list(
 #ifdef DEBUG
     }
     else
+    {
         DPRINTF(4, ("WARNING: Attempt to add duplicate addr %s to address list\n",
                     stoa(addr)));
+    }
 #endif
 }
 
@@ -4852,7 +5097,9 @@ delete_interface_from_list(
                           remaddr_t);
 
         if (unlinked == NULL)
+        {
             break;
+        }
         DPRINTF(4, ("Deleted addr %s for interface #%d %s from list of addresses\n",
                     stoa(&unlinked->addr), iface->ifnum,
                     iface->name));
@@ -4901,7 +5148,7 @@ find_flagged_addr_in_list(
          entry != NULL;
          entry = entry->link)
 
-        if (SOCK_EQ(&entry->addr, addr) && (entry->ep->flags & flags) == flags)
+        if (SOCK_EQ(&entry->addr, addr) && ((entry->ep->flags & flags) == flags))
         {
 
             DPRINTF(4, ("FOUND\n"));
@@ -4932,7 +5179,7 @@ static void
 process_routing_msgs(struct asyncio_reader* reader)
 {
     static void* buffer;
-    static size_t buffsz = 8192;
+    static size_t buffsz = 8192U;
     int cnt, new, msg_type;
     socklen_t len;
 #ifdef HAVE_RTNETLINK
@@ -4965,8 +5212,8 @@ process_routing_msgs(struct asyncio_reader* reader)
         {
             /* increase socket buffer by 25% */
             len = sizeof cnt;
-            if (0 > getsockopt(reader->fd, SOL_SOCKET, SO_RCVBUF, &cnt, &len) ||
-                sizeof cnt != len)
+            if ((0 > getsockopt(reader->fd, SOL_SOCKET, SO_RCVBUF, &cnt, &len)) ||
+                (sizeof cnt != len))
             {
                 msyslog(LOG_ERR,
                         "routing getsockopt SO_RCVBUF %u %u: %m - disabling",

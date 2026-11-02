@@ -79,9 +79,13 @@ xdirClose(
     XDIR* pxdir)
 {
     if (NULL != pxdir->dir)
-        closedir(pxdir->dir); /* closes the internal FD, too! */
+    {
+        closedir(pxdir->dir);
+    } /* closes the internal FD, too! */
     else if (-1 != pxdir->dfd)
-        close(pxdir->dfd); /* otherwise _we_ have to do it */
+    {
+        close(pxdir->dfd);
+    } /* otherwise _we_ have to do it */
     pxdir->dfd = -1;
     pxdir->dir = NULL;
 }
@@ -100,9 +104,13 @@ xdirOpenAt(
      */
     pxdir->dir = NULL;
     if (-1 == (pxdir->dfd = openat(fdo, path, OModeD)))
+    {
         goto fail;
+    }
     if (NULL == (pxdir->dir = fdopendir(pxdir->dfd)))
+    {
         goto fail;
+    }
     return TRUE;
 
 fail:
@@ -129,23 +137,33 @@ readFileAt(
     ssize_t rdlen;
     int dfd;
 
-    if (-1 == (dfd = openat(rfd, path, OModeF)) || -1 == fstat(dfd, &sb))
+    if ((-1 == (dfd = openat(rfd, path, OModeF))) || (-1 == fstat(dfd, &sb)))
+    {
         goto fail;
+    }
     if ((sb.st_size > 0x2000) || (NULL == (ret = malloc(sb.st_size + 1))))
+    {
         goto fail;
+    }
     if (1 > (rdlen = read(dfd, ret, sb.st_size)))
+    {
         goto fail;
+    }
     close(dfd);
 
-    while (rdlen > 0 && ret[rdlen - 1] <= ' ')
+    while ((rdlen > 0) && (ret[rdlen - 1] <= ' '))
+    {
         --rdlen;
+    }
     ret[rdlen] = '\0';
     return ret;
 
 fail:
     free(ret);
     if (-1 != dfd)
+    {
         close(dfd);
+    }
     return NULL;
 }
 
@@ -163,19 +181,27 @@ findDevByDevId(
     char* name = NULL;
 
     if (!xdirOpenAt(&xdir, AT_FDCWD, "/dev"))
+    {
         goto done;
+    }
 
     while (!name && (dent = readdir(xdir.dir)))
     {
         if (-1 == fstatat(xdir.dfd, dent->d_name,
                           &sb, AT_SYMLINK_NOFOLLOW))
+        {
             continue;
+        }
         if (!S_ISCHR(sb.st_mode))
+        {
             continue;
+        }
         if (sb.st_rdev == rdev)
         {
             if (-1 == asprintf(&name, "/dev/%s", dent->d_name))
+            {
                 name = NULL;
+            }
         }
     }
     xdirClose(&xdir);
@@ -197,14 +223,20 @@ getCharDevId(
     struct stat sb;
 
     if (NULL == psb)
+    {
         psb = &sb;
+    }
     if (-1 != fstat(fd, psb))
     {
         rc = S_ISCHR(psb->st_mode);
         if (rc)
+        {
             *out = psb->st_rdev;
+        }
         else
+        {
             errno = EINVAL;
+        }
     }
     return rc;
 }
@@ -228,9 +260,13 @@ getPpsTuple(
      * we 'stat()' for the device id in 'st_rdev'.
      */
     if (NULL == (bufp = readFileAt(fdDir, "path")))
+    {
         goto done;
+    }
     if ((-1 == stat(bufp, &sb)) || !S_ISCHR(sb.st_mode))
+    {
         goto done;
+    }
     *pTty = sb.st_rdev;
     free(bufp);
 
@@ -239,13 +275,19 @@ getPpsTuple(
      * the PPS device itself, as in 'path' above??? But nooooo....
      */
     if (NULL == (bufp = readFileAt(fdDir, "dev")))
+    {
         goto done;
+    }
     dmaj = strtoul((scan = bufp), &endp, 10);
     if ((endp == scan) || (*endp != ':') || (dmaj >= 256))
+    {
         goto done;
+    }
     dmin = strtoul((scan = endp + 1), &endp, 10);
     if ((endp == scan) || (*endp >= ' ') || (dmin >= 256))
+    {
         goto done;
+    }
     *pPps = makedev((unsigned int)dmaj, (unsigned int)dmin);
     rc = TRUE;
 
@@ -272,7 +314,9 @@ findPpsDevId(
     int fdDevDir;
 
     if (!xdirOpenAt(&ClassDir, AT_FDCWD, "/sys/class/pps"))
+    {
         goto done;
+    }
 
     while (!found && (dent = readdir(ClassDir.dir)))
     {
@@ -281,10 +325,14 @@ findPpsDevId(
          * if we can't open the directory for reading, skipt it:
          */
         if (strncmp("pps", dent->d_name, 3))
+        {
             continue;
+        }
         fdDevDir = openat(ClassDir.dfd, dent->d_name, OModeD);
         if (-1 == fdDevDir)
+        {
             continue;
+        }
 
         /* get the data and check if device ID for the TTY
          * is what we're looking for:
@@ -296,7 +344,9 @@ findPpsDevId(
     xdirClose(&ClassDir);
 
     if (found)
+    {
         *pPpsId = ppsId;
+    }
 done:
     return found;
 }
@@ -319,7 +369,9 @@ findMatchingPpsDev(
 
     /* Without the device identifier of the TTY, we're busted: */
     if (!getCharDevId(fdtty, &ttyId, &sb))
+    {
         goto done;
+    }
 
     /* If we find a matching PPS device ID, return the path to the
      * device. It might not open, but it's the best we can get.
@@ -341,7 +393,9 @@ findMatchingPpsDev(
      * that does not work out, we're busted again:
      */
     if ((0 != geteuid()) || (-1 == ioctl(fdtty, TIOCSETD, &ldisc)))
+    {
         goto done;
+    }
     msyslog(LOG_INFO, "auto-instantiated PPS device for device %u:%u",
             major(ttyId), minor(ttyId));
 
@@ -349,9 +403,13 @@ findMatchingPpsDev(
      * we're root (see above!), we should be able to open that device.
      */
     if (findPpsDevId(ttyId, &ppsId))
+    {
         dpath = findDevByDevId(ppsId);
+    }
     if (!dpath)
+    {
         goto done;
+    }
 
     /* And since we're 'root', we might as well try to clone the
      * ownership and access rights from the original TTY to the
@@ -406,7 +464,9 @@ int ppsdev_reopen(
     (void)oflags;
 
     if (NULL != (altpath = clockdev_lookup(srcadr, 1)))
+    {
         ppspath = altpath;
+    }
 
 #if defined(__unix__) && !defined(_WIN32)
     if (-1 == retfd)
@@ -441,15 +501,21 @@ int ppsdev_reopen(
      * try the FD given for the TTY/COMport...
      */
     if (-1 == retfd)
+    {
         retfd = ppsfd;
+    }
     if (-1 == retfd)
+    {
         retfd = ttyfd;
+    }
 
     /* Close the old pps FD, but only if the new pps FD is neither
      * the tty FD nor the existing pps FD!
      */
     if ((retfd != ttyfd) && (retfd != ppsfd))
+    {
         ppsdev_close(ttyfd, ppsfd);
+    }
 
     return retfd;
 }
@@ -462,7 +528,9 @@ void ppsdev_close(
      * channel only if it's valid and _NOT_ the tty itself:
      */
     if ((-1 != ppsfd) && (ttyfd != ppsfd))
+    {
         close(ppsfd);
+    }
 }
 /* --*-- that's all folks --*-- */
 #else

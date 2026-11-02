@@ -50,7 +50,7 @@ refid_str(
      * ntpd can have stratum = 0 and refid 127.0.0.1 in orphan mode.
      * https://bugs.ntp.org/3854.  Mirror the refid logic in timer().
      */
-    if (0 == stratum && LOOPBACKADR_N == refid)
+    if ((0 == stratum) && (LOOPBACKADR_N == refid))
     {
         return ".ORPH.";
     }
@@ -60,7 +60,7 @@ refid_str(
         text = lib_getbuf();
         text[0U] = '.';
         memcpy(&text[1U], &refid, sizeof(refid));
-        text[1 + sizeof(refid)] = '\0';
+        text[1U + sizeof(refid)] = '\0';
         tlen = strlen(text);
         text[tlen] = '.';
         text[tlen + 1] = '\0';
@@ -80,7 +80,7 @@ refid_str(
                 *cp = '?';
             }
         }
-        if ((stratum < 0 && printable) || stratum < 2)
+        if (((stratum < 0) && printable) || (stratum < 2))
         {
             return text;
         }

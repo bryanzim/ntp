@@ -101,7 +101,7 @@ dumbclock_start(
     register struct dumbclock_unit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
     struct tm* tm_time_p;
     time_t now;
 
@@ -112,11 +112,15 @@ dumbclock_start(
     snprintf(device, sizeof(device), DEVICE, unit);
 #ifdef DEBUG
     if (debug)
+    {
         printf("starting Dumbclock with device %s\n", device);
+    }
 #endif
     fd = refclock_open(&peer->srcadr, device, SPEED232, 0);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     /*
      * Allocate and initialize unit structure
@@ -145,9 +149,13 @@ dumbclock_start(
     tm_time_p = gmtime(&now);
 #endif
     if (tm_time_p)
+    {
         up->ymd = *tm_time_p;
+    }
     else
+    {
         return 0;
+    }
 
     /*
      * Initialize miscellaneous variables
@@ -173,9 +181,13 @@ dumbclock_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -213,7 +225,9 @@ dumbclock_receive(
             up->laststamp = trtmp;
         }
         else
+        {
             up->tcswitch = 0;
+        }
         return;
     }
     pp->lencode = (u_short)temp;
@@ -223,8 +237,10 @@ dumbclock_receive(
 
 #ifdef DEBUG
     if (debug)
+    {
         printf("dumbclock: timecode %d %s\n",
                pp->lencode, pp->a_lastcode);
+    }
 #endif
 
     /*
@@ -304,9 +320,11 @@ dumbclock_receive(
         pp->second = gmtp->tm_sec;
 #ifdef DEBUG
         if (debug)
+        {
             printf("time is %04d/%02d/%02d %02d:%02d:%02d UTC\n",
                    adjyear, adjmon, gmtp->tm_mday, pp->hour, pp->minute,
                    pp->second);
+        }
 #endif
 
         got_good = 1;
@@ -315,9 +333,13 @@ dumbclock_receive(
     if (!got_good)
     {
         if (up->linect > 0)
+        {
             up->linect--;
+        }
         else
+        {
             refclock_report(peer, CEVNT_BADREPLY);
+        }
         return;
     }
 
@@ -362,15 +384,25 @@ dumbclock_poll(
 	pp = peer->procptr;
 	up = pp->unitptr;
 	if (peer->reach == 0)
+	{
 		refclock_report(peer, CEVNT_TIMEOUT);
+	}
 	if (up->linect > 0)
+	{
 		pollchar = 'R';
+	}
 	else
+	{
 		pollchar = 'T';
+	}
 	if (refclock_fdwrite(peer, pp->io.fd, &pollchar, 1) != 1)
+	{
 		refclock_report(peer, CEVNT_FAULT);
+	}
 	else
+	{
 		pp->polls++;
+	}
 #endif
 }
 #endif

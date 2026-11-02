@@ -147,7 +147,7 @@ typedef union pps_timeu
 { /* timestamp format */
     struct timespec tspec;
     ntp_fp_t ntpfp;
-    unsigned long longpad[3];
+    unsigned long longpad[3U];
 } pps_timeu_t; /* generic data type to represent time stamps */
 
 /*
@@ -452,7 +452,7 @@ time_pps_fetch(
      * fake serial here
      */
 
-    if (tv.tv_sec != handle->tv_save.tv_sec || tv.tv_usec != handle->tv_save.tv_usec)
+    if ((tv.tv_sec != handle->tv_save.tv_sec) || (tv.tv_usec != handle->tv_save.tv_usec))
     {
         handle->tv_save = tv;
         handle->serial++;

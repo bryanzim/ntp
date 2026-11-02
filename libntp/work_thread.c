@@ -102,9 +102,13 @@ void worker_global_lock(
     if (worker_memlock)
     {
         if (inOrOut)
+        {
             wait_for_sem(worker_memlock, NULL);
+        }
         else
+        {
             tickle_sem(worker_memlock);
+        }
     }
 }
 
@@ -146,9 +150,13 @@ int worker_sleep(
     until.tv_sec += seconds;
     rc = wait_for_sem(c->wake_scheduled_sleep, &until);
     if (0 == rc)
+    {
         return -1;
-    if (-1 == rc && ETIMEDOUT == errno)
+    }
+    if ((-1 == rc) && (ETIMEDOUT == errno))
+    {
         return 0;
+    }
     msyslog(LOG_ERR, "worker_sleep: sem_timedwait: %m");
     return -1;
 }
@@ -162,11 +170,13 @@ void interrupt_worker_sleep(void)
     u_int idx;
     blocking_child* c;
 
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
-        if (NULL == c || NULL == c->wake_scheduled_sleep)
+        if ((NULL == c) || (NULL == c->wake_scheduled_sleep))
+        {
             continue;
+        }
         tickle_sem(c->wake_scheduled_sleep);
     }
 }
@@ -203,7 +213,9 @@ ensure_workitems_empty_slot(
         new_alloc = c->workitems_alloc + WORKITEMS_ALLOC_INC;
         c->workitems = erealloc(c->workitems, new_alloc * each);
         for (sidx = c->workitems_alloc; sidx < new_alloc; ++sidx)
+        {
             c->workitems[sidx] = NULL;
+        }
         c->tail_workitem = 0;
         c->head_workitem = c->workitems_alloc;
         c->workitems_alloc = new_alloc;
@@ -239,7 +251,9 @@ ensure_workresp_empty_slot(
         new_alloc = c->responses_alloc + RESPONSES_ALLOC_INC;
         c->responses = erealloc(c->responses, new_alloc * each);
         for (sidx = c->responses_alloc; sidx < new_alloc; ++sidx)
+        {
             c->responses[sidx] = NULL;
+        }
         c->tail_response = 0;
         c->head_response = c->responses_alloc;
         c->responses_alloc = new_alloc;
@@ -293,11 +307,15 @@ int send_blocking_req_internal(
     DEBUG_REQUIRE(BLOCKING_REQ_MAGIC == hdr->magic_sig);
 
     if (hdr->octets <= sizeof(*hdr))
-        return 1; /* failure */
+    {
+        return 1;
+    } /* failure */
     payload_octets = hdr->octets - sizeof(*hdr);
 
     if (NULL == c->thread_ref)
+    {
         start_blocking_thread(c);
+    }
     threadcopy = emalloc(hdr->octets);
     memcpy(threadcopy, hdr, sizeof(*hdr));
     memcpy((char*)threadcopy + sizeof(*hdr), data, payload_octets);
@@ -329,7 +347,9 @@ receive_blocking_req_internal(
         {
             qtail = c->tail_workitem;
             if (qhead == qtail)
+            {
                 break;
+            }
             c->tail_workitem = qtail + 1;
             qtail %= c->workitems_alloc;
             req = c->workitems[qtail];
@@ -375,11 +395,13 @@ int send_blocking_resp_internal(
     {
 #ifdef WORK_PIPE
         if (1 != write(c->resp_write_pipe, "", 1))
+        {
             msyslog(LOG_WARNING, "async resolver: blocking_get%sinfo"
                                  " failed to notify main thread!",
                     (BLOCKING_GETNAMEINFO == resp->rtype)
                         ? "name"
                         : "addr");
+        }
 #else
         tickle_sem(c->responses_pending);
 #endif
@@ -413,16 +435,20 @@ void handle_blocking_resp_sem(
     u_int idx;
 
     c = NULL;
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
-        if (c != NULL &&
-            c->thread_ref != NULL &&
+        if ((c != NULL) &&
+            (c->thread_ref != NULL) &&
             same_os_sema(c->responses_pending, context))
+        {
             break;
+        }
     }
     if (idx < blocking_children_alloc)
+    {
         process_blocking_resp(c);
+    }
 }
 #endif /* !WORK_PIPE */
 
@@ -439,11 +465,12 @@ receive_blocking_resp_internal(
 
 #ifdef WORK_PIPE
     int rc;
-    char scratch[32];
+    char scratch[32U];
 
     do
+    {
         rc = read(c->resp_read_pipe, scratch, sizeof(scratch));
-    while (-1 == rc && EINTR == errno);
+    } while ((-1 == rc) && (EINTR == errno));
 #endif
 
     /* >>>> ACCESS LOCKING STARTS >>>> */
@@ -462,8 +489,8 @@ receive_blocking_resp_internal(
 
     if (NULL != removed)
     {
-        DEBUG_ENSURE(CHILD_GONE_RESP == removed ||
-                     BLOCKING_RESP_MAGIC == removed->magic_sig);
+        DEBUG_ENSURE((CHILD_GONE_RESP == removed) ||
+                     (BLOCKING_RESP_MAGIC == removed->magic_sig));
     }
     if (CHILD_GONE_RESP == removed)
     {
@@ -541,7 +568,7 @@ start_blocking_thread_internal(
 #endif
     pthread_attr_t thr_attr;
     int rc;
-    int pipe_ends[2]; /* read then write */
+    int pipe_ends[2U]; /* read then write */
     int is_pipe;
     int flags;
     size_t ostacksize;
@@ -603,27 +630,39 @@ start_blocking_thread_internal(
          * and the PTHREAD min stack size is ultimate override!
          */
         if (nstacksize > THREAD_MAXSTACKSIZE)
+        {
             nstacksize = THREAD_MAXSTACKSIZE;
+        }
 #ifdef PTHREAD_STACK_MAX
         if (nstacksize > PTHREAD_STACK_MAX)
+        {
             nstacksize = PTHREAD_STACK_MAX;
+        }
 #endif
 
         /* now clamp on lower stack limit. */
         if (nstacksize < THREAD_MINSTACKSIZE)
+        {
             nstacksize = THREAD_MINSTACKSIZE;
+        }
 #ifdef PTHREAD_STACK_MIN
         if (nstacksize < PTHREAD_STACK_MIN)
+        {
             nstacksize = PTHREAD_STACK_MIN;
+        }
 #endif
 
         if (nstacksize != ostacksize)
+        {
             rc = pthread_attr_setstacksize(&thr_attr, nstacksize);
+        }
         if (0 != rc)
+        {
             msyslog(LOG_ERR,
                     "start_blocking_thread: pthread_attr_setstacksize(0x%lx -> 0x%lx) -> %s",
                     (u_long)ostacksize, (u_long)nstacksize,
                     strerror(rc));
+        }
     }
 #else
     UNUSED_ARG(nstacksize);
@@ -714,19 +753,23 @@ create_sema(
         svini = (inival < LONG_MAX)
                     ? (long)inival
                     : LONG_MAX;
-        svmax = (maxval < LONG_MAX && maxval > 0)
+        svmax = ((maxval < LONG_MAX) && (maxval > 0))
                     ? (long)maxval
                     : LONG_MAX;
         semptr->shnd = CreateSemaphore(NULL, svini, svmax, NULL);
         if (NULL == semptr->shnd)
+        {
             semptr = NULL;
+        }
     }
 
 #else
 
     (void)maxval;
     if (semptr && sem_init(semptr, FALSE, inival))
+    {
         semptr = NULL;
+    }
 
 #endif
 
@@ -744,14 +787,18 @@ delete_sema(
     if (obj)
     {
         if (obj->shnd)
+        {
             CloseHandle(obj->shnd);
+        }
         obj->shnd = NULL;
     }
 
 #else
 
     if (obj)
+    {
         sem_destroy(obj);
+    }
 
 #endif
 
@@ -777,7 +824,9 @@ prepare_child_sems(
     blocking_child* c)
 {
     if (NULL == worker_memlock)
+    {
         worker_memlock = create_sema(&worker_mmutex, 1, 1);
+    }
 
     c->accesslock = create_sema(&c->sem_table[0U], 1, 1);
     c->workitems_pending = create_sema(&c->sem_table[1U], 0, 0);
@@ -838,7 +887,9 @@ wait_for_sem(
     }
     rc = WaitForSingleObject(sem->shnd, msec);
     if (WAIT_OBJECT_0 == rc)
+    {
         return 0;
+    }
     if (WAIT_TIMEOUT == rc)
     {
         errno = ETIMEDOUT;
@@ -853,15 +904,23 @@ wait_for_sem(
     int rc = -1;
 
     if (sem)
+    {
         do
         {
             if (NULL == timeout)
+            {
                 rc = sem_wait(sem);
+            }
             else
+            {
                 rc = sem_timedwait(sem, timeout);
-        } while (rc == -1 && errno == EINTR);
+            }
+        } while ((rc == -1) && (errno == EINTR));
+    }
     else
+    {
         errno = EINVAL;
+    }
 
     return rc;
 }

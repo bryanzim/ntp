@@ -9,7 +9,7 @@
 
 typedef union ctl_pkt_u_tag
 {
-    u_char data[480 + MAX_MAC_LEN]; /* data + auth */
+    u_char data[480U + MAX_MAC_LEN]; /* data + auth */
     u_int32 u32[(480 + MAX_MAC_LEN) / sizeof(u_int32)];
 } ctl_pkt_u;
 

@@ -82,9 +82,9 @@ int main()
 {
     int i;
     int rc;
-    char resp[16];
+    char resp[16U];
 
-    for (i = 0; i < sizeof tv / sizeof tv[0]; ++i)
+    for (i = 0; i < sizeof tv / sizeof tv[0U]; ++i)
     {
         rc = omac1_aes_128_vector(
             tv[i].key,

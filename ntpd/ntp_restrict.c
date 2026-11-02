@@ -245,7 +245,7 @@ alloc_res4(void)
     rl = eallocarray(count, cb);
     /* link all but the first onto free list */
     res = (void*)((char*)rl + (count - 1) * cb);
-    for (i = count - 1; i > 0; i--)
+    for (i = count - 1; i > 0; --i)
     {
         LINK_SLIST(resfree4, res, link);
         res = (void*)((char*)res - cb);
@@ -273,7 +273,7 @@ alloc_res6(void)
     rl = eallocarray(count, cb);
     /* link all but the first onto free list */
     res = (void*)((char*)rl + (count - 1) * cb);
-    for (i = count - 1; i > 0; i--)
+    for (i = count - 1; i > 0; --i)
     {
         LINK_SLIST(resfree6, res, link);
         res = (void*)((char*)res - cb);
@@ -352,11 +352,11 @@ match_restrict4_addr(
     for (res = restrictlist4; res != NULL; res = next)
     {
         next = res->link;
-        if (res->expire && res->expire <= current_time)
+        if (res->expire && (res->expire <= current_time))
         {
             free_res(res, v6); /* zeroes the contents */
         }
-        if (res->u.v4.addr == (addr & res->u.v4.mask) && (!(RESM_NTPONLY & res->mflags) || NTP_PORT == port))
+        if ((res->u.v4.addr == (addr & res->u.v4.mask)) && (!(RESM_NTPONLY & res->mflags) || (NTP_PORT == port)))
         {
 
             break;
@@ -379,12 +379,12 @@ match_restrict6_addr(
     for (res = restrictlist6; res != NULL; res = next)
     {
         next = res->link;
-        if (res->expire && res->expire <= current_time)
+        if (res->expire && (res->expire <= current_time))
         {
             free_res(res, v6);
         }
         MASK_IPV6_ADDR(&masked, addr, &res->u.v6.mask);
-        if (ADDR6_EQ(&masked, &res->u.v6.addr) && (!(RESM_NTPONLY & res->mflags) || NTP_PORT == (int)port))
+        if (ADDR6_EQ(&masked, &res->u.v6.addr) && (!(RESM_NTPONLY & res->mflags) || (NTP_PORT == (int)port)))
         {
 
             break;
@@ -425,7 +425,7 @@ match_restrict_entry(
 
     for (res = rlist; res != NULL; res = res->link)
     {
-        if (res->mflags == pmatch->mflags &&
+        if ((res->mflags == pmatch->mflags) &&
             !memcmp(&res->u, &pmatch->u, cb))
         {
             break;
@@ -581,9 +581,13 @@ void restrictions(
          * would be just before the final default.
          */
         if (&restrict_def4 == match)
+        {
             res_not_found++;
+        }
         else
+        {
             res_found++;
+        }
         r4a->rflags = match->rflags;
         r4a->ippeerlimit = match->ippeerlimit;
     }
@@ -606,9 +610,13 @@ void restrictions(
         DEBUG_INSIST(match != NULL);
         match->count++;
         if (&restrict_def6 == match)
+        {
             res_not_found++;
+        }
         else
+        {
             res_found++;
+        }
         r4a->rflags = match->rflags;
         r4a->ippeerlimit = match->ippeerlimit;
     }
@@ -809,7 +817,7 @@ hack_restrict(
          * found one. Don't remove the default entry and
          * don't remove an interface entry unless asked.
          */
-        if (res != NULL && (RESTRICT_REMOVEIF == op || !(RESM_INTERFACE & res->mflags)) && res != &restrict_def4 && res != &restrict_def6)
+        if ((res != NULL) && ((RESTRICT_REMOVEIF == op) || !(RESM_INTERFACE & res->mflags)) && (res != &restrict_def4) && (res != &restrict_def6))
         {
 
             free_res(res, v6);
@@ -842,7 +850,7 @@ void restrict_source(
         return;
     }
 
-    REQUIRE(AF_INET == AF(addr) || AF_INET6 == AF(addr));
+    REQUIRE((AF_INET == AF(addr)) || (AF_INET6 == AF(addr)));
 
     SET_HOSTMASK(&onesmask, AF(addr));
     if (farewell)

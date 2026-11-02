@@ -131,7 +131,7 @@ zyfer_start(
     register struct zyferunit* up;
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port.
@@ -140,7 +140,9 @@ zyfer_start(
     snprintf(device, sizeof(device), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, device, SPEED232, LDISC_RAW);
     if (fd <= 0)
+    {
         return (0);
+    }
 
     msyslog(LOG_NOTICE, "zyfer(%d) fd: %d dev <%s>", unit, fd, device);
 
@@ -190,9 +192,13 @@ zyfer_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (pp->io.fd != -1)
+    {
         io_closeclock(&pp->io);
+    }
     if (up != NULL)
+    {
         free(up);
+    }
 }
 
 
@@ -235,15 +241,21 @@ zyfer_receive(
      */
 
     if (pp->lencode >= LENZYFER)
+    {
         pp->lencode = 0;
+    }
 
     if (!pp->lencode)
     {
         if (*p == '!')
+        {
             pp->lencode = refclock_gtlin(rbufp, pp->a_lastcode,
                                          BMAX, &pp->lastrec);
+        }
         else
+        {
             return;
+        }
     }
     else
     {
@@ -253,7 +265,9 @@ zyfer_receive(
     }
 
     if (pp->lencode < LENZYFER)
+    {
         return;
+    }
 
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
 
@@ -342,9 +356,13 @@ zyfer_poll(
     pp = peer->procptr;
     up = pp->unitptr;
     if (!up->pollcnt)
+    {
         refclock_report(peer, CEVNT_TIMEOUT);
+    }
     else
+    {
         up->pollcnt--;
+    }
     pp->polls++;
     up->polled = 1;
 }

@@ -13,11 +13,11 @@
 #include <string.h>
 
 /* For CMAC Calculation */
-unsigned char const_Rb[16] = {
+unsigned char const_Rb[16U] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x87
 };
-unsigned char const_Zero[16] = {
+unsigned char const_Zero[16U] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
@@ -30,7 +30,7 @@ void AES_128(unsigned char* key, unsigned char* K1, unsigned char* K2);
 void xor_128(unsigned char* a, unsigned char* b, unsigned char* out)
 {
     int i;
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < 16; ++i)
     {
         out[i] = a[i] ^ b[i];
     }
@@ -40,39 +40,51 @@ void print_hex(char* str, unsigned char* buf, int len)
 {
     int i;
 
-    for (i = 0; i < len; i++)
+    for (i = 0; i < len; ++i)
     {
-        if ((i % 16) == 0 && i != 0)
+        if (((i % 16) == 0) && (i != 0))
+        {
             printf(str);
+        }
         printf("%02x", buf[i]);
         if ((i % 4) == 3)
+        {
             printf(" ");
+        }
         if ((i % 16) == 15)
+        {
             printf("\n");
+        }
     }
     if ((i % 16) != 0)
+    {
         printf("\n");
+    }
 }
 
 void print128(unsigned char* bytes)
 {
     int j;
-    for (j = 0; j < 16; j++)
+    for (j = 0; j < 16; ++j)
     {
         printf("%02x", bytes[j]);
         if ((j % 4) == 3)
+        {
             printf(" ");
+        }
     }
 }
 
 void print96(unsigned char* bytes)
 {
     int j;
-    for (j = 0; j < 12; j++)
+    for (j = 0; j < 12; ++j)
     {
         printf("%02x", bytes[j]);
         if ((j % 4) == 3)
+        {
             printf(" ");
+        }
     }
 }
 
@@ -83,7 +95,7 @@ void leftshift_onebit(unsigned char* input, unsigned char* output)
     int i;
     unsigned char overflow = 0;
 
-    for (i = 15; i >= 0; i--)
+    for (i = 15; i >= 0; --i)
     {
         output[i] = input[i] << 1;
         output[i] |= overflow;
@@ -94,13 +106,15 @@ void leftshift_onebit(unsigned char* input, unsigned char* output)
 
 void generate_subkey(unsigned char* key, unsigned char* K1, unsigned char* K2)
 {
-    unsigned char L[16];
-    unsigned char Z[16];
-    unsigned char tmp[16];
+    unsigned char L[16U];
+    unsigned char Z[16U];
+    unsigned char tmp[16U];
     int i;
 
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < 16; ++i)
+    {
         Z[i] = 0;
+    }
 
     AES_128(key, Z, L);
 
@@ -131,7 +145,7 @@ void padding(unsigned char* lastb, unsigned char* pad, int length)
     int j;
 
     /* original last block */
-    for (j = 0; j < 16; j++)
+    for (j = 0; j < 16; ++j)
     {
         if (j < length)
         {
@@ -151,8 +165,8 @@ void padding(unsigned char* lastb, unsigned char* pad, int length)
 void AES_CMAC(unsigned char* key, unsigned char* input, int length,
               unsigned char* mac)
 {
-    unsigned char X[16], Y[16], M_last[16], padded[16];
-    unsigned char K1[16], K2[16];
+    unsigned char X[16U], Y[16U], M_last[16U], padded[16U];
+    unsigned char K1[16U], K2[16U];
     int n, i, flag;
     generate_subkey(key, K1, K2);
 
@@ -177,26 +191,28 @@ void AES_CMAC(unsigned char* key, unsigned char* input, int length,
 
     if (flag)
     { /* last block is complete block */
-        xor_128(&input[16 * (n - 1)], K1, M_last);
+        xor_128(&input[16U * (n - 1)], K1, M_last);
     }
     else
     {
-        padding(&input[16 * (n - 1)], padded, length % 16);
+        padding(&input[16U * (n - 1)], padded, length % 16);
         xor_128(padded, K2, M_last);
     }
 
-    for (i = 0; i < 16; i++)
-        X[i] = 0;
-    for (i = 0; i < n - 1; i++)
+    for (i = 0; i < 16; ++i)
     {
-        xor_128(X, &input[16 * i], Y); /* Y := Mi (+) X  */
-        AES_128(key, Y, X);            /* X := AES-128(KEY, Y); */
+        X[i] = 0;
+    }
+    for (i = 0; i < n - 1; ++i)
+    {
+        xor_128(X, &input[16U * i], Y); /* Y := Mi (+) X  */
+        AES_128(key, Y, X);             /* X := AES-128(KEY, Y); */
     }
 
     xor_128(X, M_last, Y);
     AES_128(key, Y, X);
 
-    for (i = 0; i < 16; i++)
+    for (i = 0; i < 16; ++i)
     {
         mac[i] = X[i];
     }
@@ -204,8 +220,8 @@ void AES_CMAC(unsigned char* key, unsigned char* input, int length,
 
 int main()
 {
-    unsigned char L[16], K1[16], K2[16], T[16], TT[12];
-    unsigned char M[64] = {
+    unsigned char L[16U], K1[16U], K2[16U], T[16U], TT[12U];
+    unsigned char M[64U] = {
         0x6b, 0xc1, 0xbe, 0xe2, 0x2e, 0x40, 0x9f, 0x96,
         0xe9, 0x3d, 0x7e, 0x11, 0x73, 0x93, 0x17, 0x2a,
         0xae, 0x2d, 0x8a, 0x57, 0x1e, 0x03, 0xac, 0x9c,
@@ -215,7 +231,7 @@ int main()
         0xf6, 0x9f, 0x24, 0x45, 0xdf, 0x4f, 0x9b, 0x17,
         0xad, 0x2b, 0x41, 0x7b, 0xe6, 0x6c, 0x37, 0x10
     };
-    unsigned char key[16] = {
+    unsigned char key[16U] = {
         0x2b, 0x7e, 0x15, 0x16, 0x28, 0xae, 0xd2, 0xa6,
         0xab, 0xf7, 0x15, 0x88, 0x09, 0xcf, 0x4f, 0x3c
     };
@@ -287,8 +303,8 @@ int main()
 #if 0
    AES_128(key,Z,L)
    unsigned char *key;
-   unsigned char Z[16];
-   unsigned char L[16];
+   unsigned char Z[16U];
+   unsigned char L[16U];
 
            AES_128(key,Y,X);      /* X := AES-128(KEY, Y); */
 #endif

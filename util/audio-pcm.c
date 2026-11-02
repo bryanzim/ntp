@@ -45,27 +45,49 @@ void d_fmt(
 {
 
     if (format & AFMT_MU_LAW)
+    {
         printf("MU_LAW ");
+    }
     if (format & AFMT_A_LAW)
+    {
         printf("A_LAW ");
+    }
     if (format & AFMT_IMA_ADPCM)
+    {
         printf("IMA_ADPCM ");
+    }
     if (format & AFMT_U8)
+    {
         printf("U8 ");
+    }
     if (format & AFMT_S16_LE)
+    {
         printf("S16_LE ");
+    }
     if (format & AFMT_S16_BE)
+    {
         printf("S16_BE ");
+    }
     if (format & AFMT_S8)
+    {
         printf("S8 ");
+    }
     if (format & AFMT_U16_LE)
+    {
         printf("U16_LE ");
+    }
     if (format & AFMT_U16_BE)
+    {
         printf("U16_BE ");
+    }
     if (format & AFMT_MPEG)
+    {
         printf("MPEG ");
+    }
     if (format & AFMT_AC3)
+    {
         printf("AC3 ");
+    }
     printf("\n");
 }
 
@@ -79,7 +101,9 @@ void d_mixer(
         if ((1 << i) & mixer)
         {
             if (n)
+            {
                 printf(", ");
+            }
             printf("%s", m_names[i]);
             n = 1;
         }
@@ -91,8 +115,8 @@ int main()
     int unit = 0; /* device unit (0-3) */
 #define AI_DEV "/dev/audio%d"
 #define AC_DEV "/dev/mixer%d"
-    char ai_dev[30];
-    char ac_dev[30];
+    char ai_dev[30U];
+    char ac_dev[30U];
     struct snd_size s_size;
     snd_chan_param s_c_p;
     snd_capabilities s_c;
@@ -110,7 +134,9 @@ int main()
      */
     fd = open(dname, O_RDWR | O_NONBLOCK, 0777);
     if (fd < 0)
+    {
         return (fd);
+    }
 
     /*
      * Open audio control device.
@@ -127,11 +153,17 @@ int main()
     printf("control: <%s> %d\n", actl, ctl_fd);
 
     if (ioctl(ctl_fd, SOUND_MIXER_READ_DEVMASK, &devmask) == -1)
+    {
         printf("SOUND_MIXER_READ_DEVMASK: %s\n", strerror(errno));
+    }
     if (ioctl(ctl_fd, SOUND_MIXER_READ_RECMASK, &recmask) == -1)
+    {
         printf("SOUND_MIXER_READ_RECMASK: %s\n", strerror(errno));
+    }
     if (ioctl(ctl_fd, SOUND_MIXER_READ_RECSRC, &recsrc) == -1)
+    {
         printf("SOUND_MIXER_READ_RECSRC: %s\n", strerror(errno));
+    }
 
     printf("devmask: %#x recmask: %#x recsrc: %#x\n",
            devmask, recmask, recsrc);
@@ -148,13 +180,19 @@ int main()
     rval = fd;
 
     if (ioctl(fd, AIOGSIZE, &s_size) == -1)
+    {
         printf("AIOGSIZE: %s\n", strerror(errno));
+    }
     else
+    {
         printf("play_size %d, rec_size %d\n",
                s_size.play_size, s_size.rec_size);
+    }
 
     if (ioctl(fd, AIOGFMT, &s_c_p) == -1)
+    {
         printf("AIOGFMT: %s\n", strerror(errno));
+    }
     else
     {
         printf("play_rate %lu, rec_rate %lu, play_format %#lx, rec_format %#lx\n",

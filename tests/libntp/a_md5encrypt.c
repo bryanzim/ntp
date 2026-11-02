@@ -16,7 +16,7 @@
  * echo -n abcdefghijklmnopqrstuvwx | openssl sha1 -
  */
 #ifdef OPENSSL
-const keyid_t keyId = 42;
+const keyid_t keyId = 42U;
 const int keytype = NID_sha1;
 const u_char key[] = "abcdefgh";
 const size_t keyLength = sizeof(key) - 1;
@@ -28,7 +28,7 @@ const u_char payload[] = "ijklmnopqrstuvwx";
 union
 {
     u_char u8[packetLength];
-    uint32_t u32[1];
+    uint32_t u32[1U];
 } expectedPacket = {
     { 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
      'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
@@ -42,7 +42,7 @@ union
 union
 {
     u_char u8[packetLength];
-    uint32_t u32[1];
+    uint32_t u32[1U];
 } invalidPacket = {
     { 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p',
      'q', 'r', 's', 't', 'u', 'v', 'w', 'x',
@@ -52,10 +52,10 @@ union
      0xad, 0x6e, 0xf0, 0x88,
      0x64, 0x92, 0x3d, 0xb6,
      0x4a, 0xba, 0x9c, 0xff }
-}; /* same as expectedPacket but with last octet modified */
+};     /* same as expectedPacket but with last octet modified */
 #endif /* OPENSSL */
 
-u_long current_time = 4;
+u_long current_time = 4U;
 
 void test_Encrypt(void);
 void test_DecryptValid(void);

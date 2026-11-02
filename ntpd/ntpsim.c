@@ -157,7 +157,7 @@ int ntpsim(
      * Pop the queue until nothing is left or time is exceeded
      */
     /* maxtime = simulation.sim_time + simulation.end_time;*/
-    while (simulation.sim_time <= simulation.end_time &&
+    while ((simulation.sim_time <= simulation.end_time) &&
            (!empty(event_queue)))
     {
         curr_event = dequeue(event_queue);
@@ -207,7 +207,9 @@ Event* event(double t, funcTkn f)
     Event* e;
 
     if ((e = get_node(sizeof(*e))) == NULL)
+    {
         abortsim("get_node failed in event");
+    }
     e->time = t;
     e->function = f;
     return (e);
@@ -286,7 +288,9 @@ int simulate_server(
     fprintf(stderr, "Received packet from %s on %s\n",
             stoa(serv_addr), latoa(inter));
     if (server == NULL)
+    {
         abortsim("Server with specified address not found!!!");
+    }
 
     /* Get the current script for the server */
     curr_script = server->curr_script;
@@ -361,8 +365,8 @@ int simulate_server(
     /*
      * Check if the time of the script has expired. If yes, delete it.
      */
-    if (curr_script->duration > simulation.sim_time &&
-        NULL == HEAD_PFIFO(server->script))
+    if ((curr_script->duration > simulation.sim_time) &&
+        (NULL == HEAD_PFIFO(server->script)))
     {
         printf("Hello\n");
         /*
@@ -391,13 +395,17 @@ void sim_update_clocks(Event* e)
     time_gap = e->time - simulation.sim_time;
 
     if (time_gap < 0)
+    {
         printf("WARNING: e->time %.6g comes before sim_time %.6g (gap %+.6g)\n",
                e->time, simulation.sim_time, time_gap);
+    }
 
     /* Advance the client clock */
     if (e->time + time_gap < simclock.local_time)
+    {
         printf("WARNING: e->time + gap %.6g comes before local_time %.6g\n",
                e->time + time_gap, simclock.local_time);
+    }
     simclock.local_time = e->time + time_gap;
 
     /* Advance the simulation time */
@@ -453,7 +461,9 @@ void sim_event_recv_packet(Event* e)
 
     /* Allocate a receive buffer and copy the packet to it */
     if ((rbuf = get_node(sizeof(*rbuf))) == NULL)
+    {
         abortsim("get_node failed in sim_event_recv_packet");
+    }
     memcpy(rbuf, &e->rcv_buf, sizeof(*rbuf));
 
     /* Store the local time in the received packet */
@@ -534,7 +544,9 @@ void get_systime(
      * change when the need comes to implement picosecond clocks.
      */
     if (simclock.local_time == simclock.last_read_time)
+    {
         simclock.local_time += 200e-9;
+    }
 
     simclock.last_read_time = simclock.local_time;
     DTOLFP(simclock.local_time, now);
@@ -607,8 +619,10 @@ step_systime(
 {
 #ifdef DEBUG
     if (debug)
+    {
         printf("step_systime: time %.6f adj %.6f\n",
                simclock.local_time, now);
+    }
 #endif
     simclock.local_time += now;
     return (1);
@@ -631,7 +645,9 @@ gauss(
      * std(y) = 1.
      */
     if (s == 0)
+    {
         return (m);
+    }
     while ((q1 = drand48()) == 0)
         /* empty statement */;
     q2 = drand48();
@@ -656,7 +672,9 @@ poisson(
      * For m = 0, s = 1, mean(y) = std(y) = 1.
      */
     if (s == 0)
+    {
         return (m);
+    }
     while ((q1 = drand48()) == 0)
         /* empty statement */;
     return (m - s * log(q1 * s));

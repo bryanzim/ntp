@@ -42,9 +42,13 @@ FindConfig(
                     /* Second choice is of form default.835 */
                     (void)uname(&unamebuf);
                     if (strncmp(unamebuf.machine, "9000/", 5) == 0)
+                    {
                         cp = unamebuf.machine + 5;
+                    }
                     else
+                    {
                         cp = unamebuf.machine;
+                    }
                     snprintf(result, sizeof(result), "%s/default.%s", base, cp);
                     if (stat(result, &sbuf) == 0)
                     {

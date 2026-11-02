@@ -67,13 +67,13 @@ int ntp_getopt(
         ntp_optind++;
     }
 
-    if (scan == NULL || *scan == '\0')
+    if ((scan == NULL) || (*scan == '\0'))
     {
-        if (ntp_optind >= argc || argv[ntp_optind][0U] != '-' || argv[ntp_optind][1U] == '\0')
+        if ((ntp_optind >= argc) || (argv[ntp_optind][0U] != '-') || (argv[ntp_optind][1U] == '\0'))
         {
             return (EOF);
         }
-        if (argv[ntp_optind][1U] == '-' && argv[ntp_optind][2U] == '\0')
+        if ((argv[ntp_optind][1U] == '-') && (argv[ntp_optind][2U] == '\0'))
         {
             ntp_optind++;
             return (EOF);
@@ -84,11 +84,15 @@ int ntp_getopt(
 
     c = *scan++;
     ntp_optopt = c & 0377;
-    for (place = optstring; place != NULL && *place != '\0'; ++place)
+    for (place = optstring; (place != NULL) && (*place != '\0'); ++place)
+    {
         if (*place == c)
+        {
             break;
+        }
+    }
 
-    if (place == NULL || *place == '\0' || c == ':' || c == '?')
+    if ((place == NULL) || (*place == '\0') || (c == ':') || (c == '?'))
     {
         return (badopt(": unknown option -", c));
     }

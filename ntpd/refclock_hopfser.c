@@ -119,7 +119,7 @@ hopfserial_start(
     register struct hopfclock_unit* up;
     struct refclockproc* pp;
     int fd;
-    char gpsdev[20];
+    char gpsdev[20U];
 
     snprintf(gpsdev, sizeof(gpsdev), DEVICE, unit);
 
@@ -189,9 +189,13 @@ hopfserial_shutdown(
     up = pp->unitptr;
 
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -222,7 +226,9 @@ hopfserial_receive(
     up = pp->unitptr;
 
     if (up->rpt_next == 0)
+    {
         return;
+    }
 
     up->rpt_next = 0; /* wait until next poll interval occur */
 
@@ -230,7 +236,9 @@ hopfserial_receive(
                                           sizeof(pp->a_lastcode),
                                           &pp->lastrec);
     if (pp->lencode == 0)
+    {
         return;
+    }
 
     converted = sscanf(pp->a_lastcode,
 #if 1

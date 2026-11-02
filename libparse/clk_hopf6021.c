@@ -233,9 +233,13 @@ inp_hopf6021(
         parseprintf(DD_PARSE, ("inp_hopf6021: EOL seen\n"));
         parseio->parse_dtime.parse_stime = *tstamp; /* collect timestamp */
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
     default:
         return parse_addchar(parseio, ch);
@@ -253,7 +257,7 @@ hexval(
 
     if ((dv = ch - '0') >= 10u)
     {
-        if ((dv -= 'A' - '0') < 6u || (dv -= 'a' - 'A') < 6u)
+        if (((dv -= 'A' - '0') < 6u) || ((dv -= 'a' - 'A') < 6u))
         {
             dv += 10;
         }

@@ -1522,7 +1522,9 @@ yy_symbol_value_print(FILE* yyo,
     FILE* yyoutput = yyo;
     YY_USE(yyoutput);
     if (!yyvaluep)
+    {
         return;
+    }
     YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
     YY_USE(yykind);
     YY_IGNORE_MAYBE_UNINITIALIZED_END
@@ -1553,7 +1555,7 @@ static void
 yy_stack_print(yy_state_t* yybottom, yy_state_t* yytop)
 {
     YYFPRINTF(stderr, "Stack now");
-    for (; yybottom <= yytop; yybottom++)
+    for (; yybottom <= yytop; ++yybottom)
     {
         int yybot = *yybottom;
         YYFPRINTF(stderr, " %d", yybot);
@@ -1583,7 +1585,7 @@ yy_reduce_print(yy_state_t* yyssp, YYSTYPE* yyvsp,
     YYFPRINTF(stderr, "Reducing stack by rule %d (line %d):\n",
               yyrule - 1, yylno);
     /* The symbols being reduced.  */
-    for (yyi = 0; yyi < yynrhs; yyi++)
+    for (yyi = 0; yyi < yynrhs; ++yyi)
     {
         YYFPRINTF(stderr, "   $%d = ", yyi + 1);
         yy_symbol_print(stderr,
@@ -1642,7 +1644,9 @@ yydestruct(const char* yymsg,
 {
     YY_USE(yyvaluep);
     if (!yymsg)
+    {
         yymsg = "Deleting";
+    }
     YY_SYMBOL_PRINT(yymsg, yykind, yyvaluep, yylocationp);
 
     YY_IGNORE_MAYBE_UNINITIALIZED_BEGIN
@@ -1726,7 +1730,7 @@ yynewstate:
 `--------------------------------------------------------------------*/
 yysetstate:
     YYDPRINTF((stderr, "Entering state %d\n", yystate));
-    YY_ASSERT(0 <= yystate && yystate < YYNSTATES);
+    YY_ASSERT((0 <= yystate) && (yystate < YYNSTATES));
     YY_IGNORE_USELESS_CAST_BEGIN
     *yyssp = YY_CAST(yy_state_t, yystate);
     YY_IGNORE_USELESS_CAST_END
@@ -1762,10 +1766,14 @@ yysetstate:
 #else /* defined YYSTACK_RELOCATE */
         /* Extend the stack our own way.  */
         if (YYMAXDEPTH <= yystacksize)
+        {
             YYNOMEM;
+        }
         yystacksize *= 2;
         if (YYMAXDEPTH < yystacksize)
+        {
             yystacksize = YYMAXDEPTH;
+        }
 
         {
             yy_state_t* yyss1 = yyss;
@@ -1773,12 +1781,16 @@ yysetstate:
                 YY_CAST(union yyalloc*,
                         YYSTACK_ALLOC(YY_CAST(YYSIZE_T, YYSTACK_BYTES(yystacksize))));
             if (!yyptr)
+            {
                 YYNOMEM;
+            }
             YYSTACK_RELOCATE(yyss_alloc, yyss);
             YYSTACK_RELOCATE(yyvs_alloc, yyvs);
 #undef YYSTACK_RELOCATE
             if (yyss1 != yyssa)
+            {
                 YYSTACK_FREE(yyss1);
+            }
         }
 #endif
 
@@ -1791,13 +1803,17 @@ yysetstate:
         YY_IGNORE_USELESS_CAST_END
 
         if (yyss + yystacksize - 1 <= yyssp)
+        {
             YYABORT;
+        }
     }
 #endif /* !defined yyoverflow && !defined YYSTACK_RELOCATE */
 
 
     if (yystate == YYFINAL)
+    {
         YYACCEPT;
+    }
 
     goto yybackup;
 
@@ -1812,7 +1828,9 @@ yybackup:
     /* First try to decide what to do without reference to lookahead token.  */
     yyn = yypact[yystate];
     if (yypact_value_is_default(yyn))
+    {
         goto yydefault;
+    }
 
     /* Not known => get a lookahead token if don't already have one.  */
 
@@ -1848,13 +1866,17 @@ yybackup:
     /* If the proper action on seeing token YYTOKEN is to reduce or to
        detect an error, take that action.  */
     yyn += yytoken;
-    if (yyn < 0 || YYLAST < yyn || yycheck[yyn] != yytoken)
+    if ((yyn < 0) || (YYLAST < yyn) || (yycheck[yyn] != yytoken))
+    {
         goto yydefault;
+    }
     yyn = yytable[yyn];
     if (yyn <= 0)
     {
         if (yytable_value_is_error(yyn))
+        {
             goto yyerrlab;
+        }
         yyn = -yyn;
         goto yyreduce;
     }
@@ -1862,7 +1884,9 @@ yybackup:
     /* Count tokens shifted since error; after three, turn off error
        status.  */
     if (yyerrstatus)
+    {
         yyerrstatus--;
+    }
 
     /* Shift the lookahead token.  */
     YY_SYMBOL_PRINT("Shifting", yytoken, &yylval, &yylloc);
@@ -1882,7 +1906,9 @@ yybackup:
 yydefault:
     yyn = yydefact[yystate];
     if (yyn == 0)
+    {
         goto yyerrlab;
+    }
     goto yyreduce;
 
 
@@ -1901,7 +1927,7 @@ yyreduce:
        users should not rely upon it.  Assigning to YYVAL
        unconditionally makes the parser a bit smaller, and it avoids a
        GCC warning that YYVAL may be used uninitialized.  */
-    yyval = yyvsp[1 - yylen];
+    yyval = yyvsp[1U - yylen];
 
 
     YY_REDUCE_PRINT(yyn);
@@ -2023,7 +2049,9 @@ yyreduce:
 
         my_node = create_unpeer_node((yyvsp[0U].Address_node));
         if (my_node)
+        {
             APPEND_G_FIFO(cfgt.unpeers, my_node);
+        }
     }
 #line 2023 "ntp_parser.c"
     break;
@@ -2354,9 +2382,13 @@ yyreduce:
         {
             (yyval.Attr_val) = NULL;
             if (T_Link == (yyvsp[0U].Integer))
+            {
                 err = "filegen link remote config ignored";
+            }
             else
+            {
                 err = "filegen nolink remote config ignored";
+            }
             yyerror(err);
         }
     }
@@ -2673,7 +2705,7 @@ yyreduce:
     case 185: /* fudge_factor: T_Stratum T_Integer  */
 #line 1072 "ntp_parser.y"
     {
-        if ((yyvsp[0U].Integer) >= 0 && (yyvsp[0U].Integer) <= 16)
+        if (((yyvsp[0U].Integer) >= 0) && ((yyvsp[0U].Integer) <= 16))
         {
             (yyval.Attr_val) = create_attr_ival((yyvsp[-1].Integer), (yyvsp[0U].Integer));
         }
@@ -2824,7 +2856,7 @@ yyreduce:
         }
         else
         {
-            char err_str[128];
+            char err_str[128U];
 
             (yyval.Attr_val) = NULL;
             snprintf(err_str, sizeof(err_str),
@@ -2906,7 +2938,7 @@ yyreduce:
     case 245: /* miscellaneous_command: misc_cmd_str_lcl_keyword T_String  */
 #line 1301 "ntp_parser.y"
     {
-        char error_text[64];
+        char error_text[64U];
         attr_val* av;
 
         if (lex_from_file())
@@ -3144,7 +3176,7 @@ yyreduce:
     case 274: /* pollskew_spec: pollskew_cycle T_Integer '|' T_Integer  */
 #line 1455 "ntp_parser.y"
     {
-        if ((yyvsp[-2].Integer) < 0 || (yyvsp[0U].Integer) < 0)
+        if (((yyvsp[-2].Integer) < 0) || ((yyvsp[0U].Integer) < 0))
         {
             /* bad numbers */
             yyerror("pollskewlist: skew values must be >=0");
@@ -3161,7 +3193,7 @@ yyreduce:
             (yyvsp[-3].Attr_val)->value.r.first = (yyvsp[-2].Integer);
             (yyvsp[-3].Attr_val)->value.r.last = (yyvsp[0U].Integer);
         }
-        else if ((yyvsp[-2].Integer) < (1 << ((yyvsp[-3].Attr_val)->attr - 1)) && (yyvsp[0U].Integer) < (1 << ((yyvsp[-3].Attr_val)->attr - 1)))
+        else if (((yyvsp[-2].Integer) < (1 << ((yyvsp[-3].Attr_val)->attr - 1))) && ((yyvsp[0U].Integer) < (1 << ((yyvsp[-3].Attr_val)->attr - 1))))
         {
             (yyvsp[-3].Attr_val)->value.r.first = (yyvsp[-2].Integer);
             (yyvsp[-3].Attr_val)->value.r.last = (yyvsp[0U].Integer);
@@ -3180,7 +3212,7 @@ yyreduce:
     case 275: /* pollskew_cycle: T_Integer  */
 #line 1481 "ntp_parser.y"
     {
-        (yyval.Attr_val) = ((yyvsp[0U].Integer) >= NTP_MINPOLL && (yyvsp[0U].Integer) <= NTP_MAXPOLL)
+        (yyval.Attr_val) = (((yyvsp[0U].Integer) >= NTP_MINPOLL) && ((yyvsp[0U].Integer) <= NTP_MAXPOLL))
                                ? create_attr_rval((yyvsp[0U].Integer), 0, 0)
                                : NULL;
     }
@@ -3429,7 +3461,7 @@ yyreduce:
     case 319: /* boolean: T_Integer  */
 #line 1693 "ntp_parser.y"
     {
-        if ((yyvsp[0U].Integer) != 0 && (yyvsp[0U].Integer) != 1)
+        if (((yyvsp[0U].Integer) != 0) && ((yyvsp[0U].Integer) != 1))
         {
             yyerror("Integer value is not boolean (0 or 1). Assuming 1");
             (yyval.Integer) = 1;
@@ -3647,7 +3679,7 @@ yyreduce:
     {
         const int yylhs = yyr1[yyn] - YYNTOKENS;
         const int yyi = yypgoto[yylhs] + *yyssp;
-        yystate = (0 <= yyi && yyi <= YYLAST && yycheck[yyi] == *yyssp
+        yystate = ((0 <= yyi) && (yyi <= YYLAST) && (yycheck[yyi] == *yyssp)
                        ? yytable[yyi]
                        : yydefgoto[yylhs]);
     }
@@ -3678,7 +3710,9 @@ yyerrlab:
         {
             /* Return failure if at end of input.  */
             if (yychar == YYEOF)
+            {
                 YYABORT;
+            }
         }
         else
         {
@@ -3700,7 +3734,9 @@ yyerrorlab:
     /* Pacify compilers when the user code never invokes YYERROR and the
        label yyerrorlab therefore never appears in user code.  */
     if (0)
+    {
         YYERROR;
+    }
     ++yynerrs;
 
     /* Do not reclaim the symbols of the rule whose action triggered
@@ -3725,17 +3761,21 @@ yyerrlab1:
         if (!yypact_value_is_default(yyn))
         {
             yyn += YYSYMBOL_YYerror;
-            if (0 <= yyn && yyn <= YYLAST && yycheck[yyn] == YYSYMBOL_YYerror)
+            if ((0 <= yyn) && (yyn <= YYLAST) && (yycheck[yyn] == YYSYMBOL_YYerror))
             {
                 yyn = yytable[yyn];
                 if (0 < yyn)
+                {
                     break;
+                }
             }
         }
 
         /* Pop the current state because it cannot handle the error token.  */
         if (yyssp == yyss)
+        {
             YYABORT;
+        }
 
 
         yydestruct("Error: popping",
@@ -3806,7 +3846,9 @@ yyreturnlab:
     }
 #ifndef yyoverflow
     if (yyss != yyssa)
+    {
         YYSTACK_FREE(yyss);
+    }
 #endif
 
     return yyresult;
@@ -3836,7 +3878,9 @@ void yyerror(
 
         /* Increment the value of err_pos */
         if (retval > 0)
+        {
             remote_config.err_pos += retval;
+        }
 
         /* Increment the number of errors */
         ++remote_config.no_errors;
@@ -3862,7 +3906,9 @@ int main(int argc, char *argv[])
 {
 	ip_file = FOPEN(argv[1U], "r");
 	if (!ip_file)
+	{
 		fprintf(stderr, "ERROR!! Could not open file: %s\n", argv[1U]);
+	}
 	yyparse();
 	return 0;
 }

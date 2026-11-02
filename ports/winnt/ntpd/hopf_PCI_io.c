@@ -44,7 +44,7 @@ HANDLE hRdEvent;
 OVERLAPPED Rdoverlapped;
 OVERLAPPED* pRdOverlapped;
 
-ULONG iobuffer[256];
+ULONG iobuffer[256U];
 DWORD cbReturned;
 BOOL HaveBoard = FALSE;
 
@@ -58,8 +58,8 @@ struct
 
 BOOL OpenHopfDevice(void)
 {
-    ULONG deviceNumber = 0;
-    CHAR deviceName[255];
+    ULONG deviceNumber = 0U;
+    CHAR deviceName[255U];
 
     snprintf(deviceName, sizeof(deviceName),
              "\\\\.\\hclk6039%d", deviceNumber + 1);
@@ -72,8 +72,10 @@ BOOL OpenHopfDevice(void)
         FILE_FLAG_DELETE_ON_CLOSE | FILE_FLAG_OVERLAPPED,
         NULL);
 
-    if (INVALID_HANDLE_VALUE == hDevice) // the system didn't return a handle
-        return FALSE;                    //"A handle to the driver could not be obtained properly"
+    if (INVALID_HANDLE_VALUE == hDevice)
+    { // the system didn't return a handle
+        return FALSE;
+    } //"A handle to the driver could not be obtained properly"
 
     // an event to be used for async transfers
     hRdEvent = CreateEvent(
@@ -83,7 +85,9 @@ BOOL OpenHopfDevice(void)
         NULL);
 
     if (INVALID_HANDLE_VALUE == hRdEvent)
-        return FALSE; // the system didn't return a handle
+    {
+        return FALSE;
+    } // the system didn't return a handle
 
     pRdOverlapped = &Rdoverlapped;
     pRdOverlapped->hEvent = hRdEvent;
@@ -105,7 +109,9 @@ BOOL CloseHopfDevice(void)
 void ReadHopfDevice(void)
 {
     if (!HaveBoard)
+    {
         return;
+    }
 
     DeviceIoControl(
         hDevice,
@@ -166,8 +172,10 @@ void GetHopfTime(
     Data->wMonth = LOBYTE(HIWORD(iobuffer[1U]));
     Data->wYear = LOWORD(iobuffer[1U]);
     Data->wDayOfWeek = HIBYTE(HIWORD(iobuffer[2U]));
-    if (Data->wDayOfWeek == 7) // Dow Korrektur
+    if (Data->wDayOfWeek == 7)
+    { // Dow Korrektur
         Data->wDayOfWeek = 0;
+    }
 
     io_params.region = 1;
     io_params.offset += 0x08;
@@ -183,7 +191,7 @@ void GetHopfTime(
 void GetHopfLocalTime(
     LPHOPFTIME Data)
 {
-    DWORD Offset = 0;
+    DWORD Offset = 0U;
 
     GetHopfTime(Data, Offset);
 }
@@ -193,7 +201,7 @@ void GetHopfLocalTime(
 void GetHopfSystemTime(
     LPHOPFTIME Data)
 {
-    DWORD Offset = 0x10;
+    DWORD Offset = 0x10U;
 
     GetHopfTime(Data, Offset);
 }
@@ -277,7 +285,7 @@ void GetHardwareVersion(
 
     Data->cVersion[0U] = '\0';
     iobuffer[13U] = 0;
-    for (i = 0; i < 13; i++)
+    for (i = 0; i < 13; ++i)
     {
         Data->cVersion[i * 4] = HIBYTE(HIWORD(iobuffer[i]));
         Data->cVersion[i * 4 + 1] = LOBYTE(HIWORD(iobuffer[i]));

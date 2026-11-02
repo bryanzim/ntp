@@ -129,7 +129,7 @@ int main(
             errflg++;
             break;
         }
-    if (errflg || ntp_optind + 1 != argc)
+    if (errflg || (ntp_optind + 1 != argc))
     {
 #ifdef STREAM
         (void)fprintf(stderr, "usage: %s [-dft] tty_device\n",
@@ -153,12 +153,16 @@ int main(
     init_chu();
 #ifdef STREAM
     if (usechuldisc)
+    {
         process_ldisc(c);
+    }
     else
 #endif
 #ifdef CHULDISC
         if (usechuldisc)
+    {
         process_ldisc(c);
+    }
     else
 #endif
         process_raw(c);
@@ -176,28 +180,46 @@ int openterm(
     struct sgttyb ttyb;
 
     if (debug)
+    {
         (void)fprintf(stderr, "Doing open...");
+    }
     if ((s = open(dev, O_RDONLY, 0777)) < 0)
+    {
         error("open(%s)", dev, "");
+    }
     if (debug)
+    {
         (void)fprintf(stderr, "open okay\n");
+    }
 
     if (debug)
+    {
         (void)fprintf(stderr, "Setting exclusive use...");
+    }
     if (ioctl(s, TIOCEXCL, (char*)0) < 0)
+    {
         error("ioctl(TIOCEXCL)", "", "");
+    }
     if (debug)
+    {
         (void)fprintf(stderr, "done\n");
+    }
 
     ttyb.sg_ispeed = ttyb.sg_ospeed = B300;
     ttyb.sg_erase = ttyb.sg_kill = 0;
     ttyb.sg_flags = EVENP | ODDP | RAW;
     if (debug)
+    {
         (void)fprintf(stderr, "Setting baud rate et al...");
+    }
     if (ioctl(s, TIOCSETP, (char*)&ttyb) < 0)
+    {
         error("ioctl(TIOCSETP, raw)", "", "");
+    }
     if (debug)
+    {
         (void)fprintf(stderr, "done\n");
+    }
 
 #ifdef CHULDISC
     if (usechuldisc)
@@ -205,12 +227,18 @@ int openterm(
         int ldisc;
 
         if (debug)
+        {
             (void)fprintf(stderr, "Switching to CHU ldisc...");
+        }
         ldisc = CHULDISC;
         if (ioctl(s, TIOCSETD, (char*)&ldisc) < 0)
+        {
             error("ioctl(TIOCSETD, CHULDISC)", "", "");
+        }
         if (debug)
+        {
             (void)fprintf(stderr, "okay\n");
+        }
     }
 #endif
 #ifdef STREAM
@@ -218,17 +246,27 @@ int openterm(
     {
 
         if (debug)
+        {
             (void)fprintf(stderr, "Poping off streams...");
+        }
         while (ioctl(s, I_POP, 0) >= 0)
             ;
         if (debug)
+        {
             (void)fprintf(stderr, "okay\n");
+        }
         if (debug)
+        {
             (void)fprintf(stderr, "Pushing CHU stream...");
+        }
         if (ioctl(s, I_PUSH, "chu") < 0)
+        {
             error("ioctl(I_PUSH, \"chu\")", "", "");
+        }
         if (debug)
+        {
             (void)fprintf(stderr, "okay\n");
+        }
     }
 #endif
     return s;
@@ -250,7 +288,9 @@ int process_raw(
     {
         (void)gettimeofday(&tv, (struct timezone*)0);
         if (dofilter)
+        {
             raw_filter((unsigned int)c, &tv);
+        }
         else
         {
             difftv.tv_sec = tv.tv_sec - lasttv.tv_sec;
@@ -273,7 +313,9 @@ int process_raw(
         exit(1);
     }
     else
+    {
         error("read()", "", "");
+    }
 }
 
 
@@ -284,15 +326,17 @@ void raw_filter(
     unsigned int c,
     struct timeval* tv)
 {
-    static struct timeval diffs[10];
+    static struct timeval diffs[10U];
     struct timeval diff;
     l_fp ts;
 
-    if ((c & 0xf) > 9 || ((c >> 4) & 0xf) > 9)
+    if (((c & 0xf) > 9) || (((c >> 4) & 0xf) > 9))
     {
         if (debug)
+        {
             (void)fprintf(stderr,
                           "character %02x failed BCD test\n", c);
+        }
         chudata.ncodechars = 0;
         return;
     }
@@ -318,7 +362,9 @@ void raw_filter(
     chudata.codechars[chudata.ncodechars] = c;
     chudata.codetimes[chudata.ncodechars] = *tv;
     if (chudata.ncodechars > 0)
+    {
         diffs[chudata.ncodechars] = diff;
+    }
     if (++chudata.ncodechars == 10)
     {
         if (doprocess)
@@ -331,7 +377,7 @@ void raw_filter(
         {
             register int i;
 
-            for (i = 0; i < chudata.ncodechars; i++)
+            for (i = 0; i < chudata.ncodechars; ++i)
             {
                 (void)printf("%x%x\t%lu.%06lu\t%lu.%06lu\n",
                              chudata.codechars[i] & 0xf,
@@ -377,10 +423,12 @@ int process_ldisc(
         }
         else
         {
-            for (i = 0; i < NCHUCHARS; i++)
+            for (i = 0; i < NCHUCHARS; ++i)
             {
                 if (i == 0)
+                {
                     diff.tv_sec = diff.tv_usec = 0;
+                }
                 else
                 {
                     diff.tv_sec = chu.codetimes[i].tv_sec - chu.codetimes[i - 1].tv_sec;
@@ -404,7 +452,9 @@ int process_ldisc(
         exit(1);
     }
     else
+    {
         error("read()", "", "");
+    }
 }
 /*#endif*/
 
@@ -568,15 +618,17 @@ void chufilter(
     /*
      * print the code
      */
-    for (i = 0; i < NCHUCHARS; i++)
+    for (i = 0; i < NCHUCHARS; ++i)
+    {
         printf("%c%c", (chuc->codechars[i] & 0xf) + '0',
                ((chuc->codechars[i] >> 4) & 0xf) + '0');
+    }
     printf("\n");
 
     /*
      * Format check.  Make sure the two halves match.
      */
-    for (i = 0; i < NCHUCHARS / 2; i++)
+    for (i = 0; i < NCHUCHARS / 2; ++i)
         if (chuc->codechars[i] != chuc->codechars[i + (NCHUCHARS / 2)])
         {
             (void)printf("Bad format, halves don't match\n");
@@ -589,7 +641,7 @@ void chufilter(
      * BCD character is the low order nibble, the second the high order.
      */
     code = lastcode;
-    for (i = 0; i < NCHUCHARS / 2; i++)
+    for (i = 0; i < NCHUCHARS / 2; ++i)
     {
         *code++ = chuc->codechars[i] & 0xf;
         *code++ = (chuc->codechars[i] >> 4) & 0xf;
@@ -623,7 +675,7 @@ void chufilter(
      * only occurs on the 31st through the 39th second
      * of the minute.
      */
-    if (day < 1 || day > 366 || hour > 23 || minute > 59 || second < 31 || second > 39)
+    if ((day < 1) || (day > 366) || (hour > 23) || (minute > 59) || (second < 31) || (second > 39))
     {
         (void)printf("Failed date sanity check: %d %d %d %d\n",
                      day, hour, minute, second);
@@ -646,8 +698,10 @@ void chufilter(
      */
     date_ui = tmp + yearstart;
 #define CLOCK_WAYTOOBIG 1000 /* revived from ancient sources */
-    if (date_ui < (rtime->l_ui + CLOCK_WAYTOOBIG) && date_ui > (rtime->l_ui - CLOCK_WAYTOOBIG))
-        goto codeokay; /* looks good */
+    if ((date_ui < (rtime->l_ui + CLOCK_WAYTOOBIG)) && (date_ui > (rtime->l_ui - CLOCK_WAYTOOBIG)))
+    {
+        goto codeokay;
+    } /* looks good */
 
     /*
      * Trouble.  Next check is to see if the year rolled over and, if
@@ -660,8 +714,10 @@ void chufilter(
         date_ui += tmp;
         (void)printf("time %u, code %u, difference %d\n",
                      date_ui, rtime->l_ui, (long)date_ui - (long)rtime->l_ui);
-        if (date_ui < (rtime->l_ui + CLOCK_WAYTOOBIG) && date_ui > (rtime->l_ui - CLOCK_WAYTOOBIG))
-            goto codeokay; /* okay this time */
+        if ((date_ui < (rtime->l_ui + CLOCK_WAYTOOBIG)) && (date_ui > (rtime->l_ui - CLOCK_WAYTOOBIG)))
+        {
+            goto codeokay;
+        } /* okay this time */
     }
 
     ts.l_uf = 0;
@@ -684,7 +740,9 @@ void chufilter(
         date_ui += calyearstart(yearstart - CLOCK_WAYTOOBIG,
                                 NULL);
         if ((rtime->l_ui - date_ui) < CLOCK_WAYTOOBIG)
+        {
             goto codeokay;
+        }
     }
 
     /*
@@ -708,7 +766,7 @@ codeokay:
      * The fractional part comes from the table.  We next compute
      * the offsets for each character.
      */
-    for (i = 0; i < NCHUCHARS; i++)
+    for (i = 0; i < NCHUCHARS; ++i)
     {
         register u_long tmp2;
 
@@ -737,12 +795,18 @@ codeokay:
      */
     date_ui = 0;
     tmp = 0;
-    for (i = 0; i < NCHUCHARS; i++)
+    for (i = 0; i < NCHUCHARS; ++i)
+    {
         M_ADD(date_ui, tmp, off[i].l_ui, off[i].l_uf);
+    }
     if (M_ISNEG(date_ui, tmp))
+    {
         isneg = 1;
+    }
     else
+    {
         isneg = 0;
+    }
 
     /*
      * Here is a multiply-by-0.1 optimization that should apply
@@ -750,7 +814,7 @@ codeokay:
      * is less than 9 we don't have to worry about overflow
      * out of a 64 bit product, even after rounding.
      */
-    if (date_ui < 9 || date_ui > 0xfffffff7)
+    if ((date_ui < 9) || (date_ui > 0xfffffff7))
     {
         register u_long prod_ui;
         register u_long prod_uf;
@@ -759,11 +823,13 @@ codeokay:
         /*
          * This code knows the low order bit in 0.1 is zero
          */
-        for (i = 1; i < NZPOBITS; i++)
+        for (i = 1; i < NZPOBITS; ++i)
         {
             M_LSHIFT(date_ui, tmp);
             if (ZEROPTONE & (1 << i))
+            {
                 M_ADD(prod_ui, prod_uf, date_ui, tmp);
+            }
         }
 
         /*
@@ -771,11 +837,17 @@ codeokay:
          * fraction.
          */
         if (prod_uf & 0x80000000)
+        {
             prod_ui++;
+        }
         if (isneg)
+        {
             date_ui = 0xffffffff;
+        }
         else
+        {
             date_ui = 0;
+        }
         tmp = prod_ui;
         /*
          * date_ui is integral part, tmp is fraction.
@@ -790,22 +862,30 @@ codeokay:
 
         prod_ovr = prod_ui = prod_uf = 0;
         if (isneg)
-            highbits = 0xffffffff; /* sign extend */
+        {
+            highbits = 0xffffffff;
+        } /* sign extend */
         else
+        {
             highbits = 0;
+        }
         /*
          * This code knows the low order bit in 0.1 is zero
          */
-        for (i = 1; i < NZPOBITS; i++)
+        for (i = 1; i < NZPOBITS; ++i)
         {
             M_LSHIFT3(highbits, date_ui, tmp);
             if (ZEROPTONE & (1 << i))
+            {
                 M_ADD3(prod_ovr, prod_uf, prod_ui,
                        highbits, date_ui, tmp);
+            }
         }
 
         if (prod_uf & 0x80000000)
+        {
             M_ADDUF(prod_ovr, prod_ui, (u_long)1);
+        }
         date_ui = prod_ovr;
         tmp = prod_ui;
     }
@@ -824,7 +904,7 @@ codeokay:
      * Find the minimun and maximum offset
      */
     imin = imax = 0;
-    for (i = 1; i < NCHUCHARS; i++)
+    for (i = 1; i < NCHUCHARS; ++i)
     {
         if (L_ISGEQ(&off[i], &off[imax]))
         {
@@ -838,7 +918,9 @@ codeokay:
 
     L_ADD(&off[imin], &offset_fudge);
     if (imin != imax)
+    {
         L_ADD(&off[imax], &offset_fudge);
+    }
     (void)printf("mean %s, min %s, max %s\n",
                  mfptoa(date_ui, tmp, 8), lfptoa(&off[imin], 8),
                  lfptoa(&off[imax], 8));

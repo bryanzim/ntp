@@ -157,17 +157,21 @@ tspec_to_fp(
     out.I.u = (u_int32)ts->tv_sec;
     tmp = ts->tv_nsec;
     if (tmp < 0)
+    {
         do
         {
             tmp += PPS_NANOSECOND;
             out.I.u--;
         } while (tmp < 0);
+    }
     else if (tmp >= PPS_NANOSECOND)
+    {
         do
         {
             tmp -= PPS_NANOSECOND;
             out.I.u++;
         } while (tmp >= PPS_NANOSECOND);
+    }
     out.F.u = (u_int32)((u_int64)tmp << 32) + (PPS_NANOSECOND / 2) / PPS_NANOSECOND;
     return out;
 }
@@ -181,8 +185,10 @@ popcount(
 {
     size_t res;
 
-    for (res = 0; val; res++)
+    for (res = 0; val; ++res)
+    {
         val &= (val - 1);
+    }
     return res;
 }
 
@@ -209,7 +215,9 @@ prov_time_pps_create(
      */
     loopunit = (loopback_unit*)calloc(1, sizeof(loopback_unit));
     if (NULL == loopunit)
+    {
         return ENOMEM;
+    }
 
     /* Try to attach to NTPD internal data with the device handle.
      * Free unit buffer on failure.
@@ -253,9 +261,13 @@ prov_time_pps_destroy(
 
     loopunit = (loopback_unit*)context;
     if (unit->context == context)
+    {
         unit->context = NULL;
+    }
     if (NULL != loopunit)
+    {
         ntp_pps_detach_device(loopunit->hnd_pps);
+    }
     free(loopunit);
     return 0;
 }
@@ -281,7 +293,9 @@ prov_time_pps_setparams(
      * I require `api_version' to be set!
      */
     if (params->api_version != PPS_API_VERS_1)
+    {
         return EINVAL;
+    }
 
     /*
      * We support all edges and formats plus offsets, but not
@@ -292,9 +306,11 @@ prov_time_pps_setparams(
     /*
      * Only one of the time formats may be selected.
      */
-    if ((mode & PPS_OFFSETBOTH) != 0 &&
-        popcount(mode & PPS_TSFMT_BOTH) != 1)
+    if (((mode & PPS_OFFSETBOTH) != 0) &&
+        (popcount(mode & PPS_TSFMT_BOTH) != 1))
+    {
         return EINVAL;
+    }
 
     /* turn off read-only bits */
     mode &= ~SERIALPPS_RO;
@@ -303,7 +319,9 @@ prov_time_pps_setparams(
      * test remaining bits.
      */
     if (mode & ~(PPS_CAPTUREBOTH | PPS_OFFSETBOTH | PPS_TSFMT_BOTH))
+    {
         return EOPNOTSUPP;
+    }
 
     /*
      * ok, ready to go.
@@ -314,16 +332,24 @@ prov_time_pps_setparams(
     if (mode & PPS_OFFSETASSERT)
     {
         if (mode & PPS_TSFMT_TSPEC)
+        {
             loopunit->ofs_assert = tspec_to_fp(&params->assert_offset);
+        }
         else
+        {
             loopunit->ofs_assert = params->assert_offset_ntpfp;
+        }
     }
     if (mode & PPS_OFFSETCLEAR)
     {
         if (mode & PPS_TSFMT_TSPEC)
+        {
             loopunit->ofs_clear = tspec_to_fp(&params->clear_offset);
+        }
         else
+        {
             loopunit->ofs_clear = params->clear_offset_ntpfp;
+        }
     }
     /* save remaining bits */
     mode |= unit->params.mode;
@@ -451,7 +477,9 @@ ppsapi_prov_init(
     UNUSED(ntp_timestamp_from_counter);
 
     if (ppsapi_timepps_prov_ver < PPSAPI_TIMEPPS_PROV_VER)
+    {
         return 0;
+    }
 
     p_create_pps_handle = create_pps_handle;
 

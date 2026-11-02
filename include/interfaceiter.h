@@ -52,7 +52,7 @@
 
 struct isc_interface
 {
-    char name[32];            /* Interface name, null-terminated. */
+    char name[32U];           /* Interface name, null-terminated. */
     unsigned int af;          /* Address family. */
     isc_netaddr_t address;    /* Local address. */
     isc_netaddr_t netmask;    /* Network mask. */

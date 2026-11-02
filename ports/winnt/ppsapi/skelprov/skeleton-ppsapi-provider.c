@@ -107,7 +107,9 @@ prov_time_pps_create(
 
     pskelunit = malloc(sizeof(*pskelunit));
     if (NULL == pskelunit)
+    {
         return ENOMEM;
+    }
 
     pskelunit->device = device;
     pskelunit->p_ntp_timestamp_from_counter = p_ntp_timestamp_from_counter;
@@ -165,7 +167,9 @@ prov_time_pps_setparams(
      */
 
     if (params->api_version != PPS_API_VERS_1)
+    {
         return EINVAL;
+    }
 
     /*
      * The only settable modes are PPS_CAPTUREASSERT,
@@ -183,7 +187,9 @@ prov_time_pps_setparams(
 
         if (params->assert_offset.tv_sec ||
             params->assert_offset.tv_nsec)
+        {
             return EINVAL;
+        }
 
         /*
          * If no offset was specified but both time
@@ -205,7 +211,9 @@ prov_time_pps_setparams(
 
     if (mode_in & ~(PPS_CAPTUREASSERT | PPS_OFFSETASSERT |
                     PPS_TSFMT_TSPEC | PPS_TSFMT_NTPFP))
+    {
         return EOPNOTSUPP;
+    }
 
     /*
      * ok, ready to go.
@@ -357,7 +365,9 @@ ppsapi_prov_init(
     ppsapi_provider test_prov;
 
     if (ppsapi_timepps_prov_ver < PPSAPI_TIMEPPS_PROV_VER)
+    {
         return 0;
+    }
 
     p_create_pps_handle = create_pps_handle;
     p_ntp_timestamp_from_counter = ntp_timestamp_from_counter;

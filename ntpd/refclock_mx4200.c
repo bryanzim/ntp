@@ -211,7 +211,7 @@ mx4200_start(
     register struct mx4200unit* up;
     struct refclockproc* pp;
     int fd;
-    char gpsdev[20];
+    char gpsdev[20U];
 
     /*
      * Open serial port
@@ -219,7 +219,9 @@ mx4200_start(
     snprintf(gpsdev, sizeof(gpsdev), DEVICE, unit);
     fd = refclock_open(&peer->srcadr, gpsdev, SPEED232, LDISC_PPS);
     if (fd <= 0)
+    {
         return 0;
+    }
 
     /*
      * Allocate unit structure
@@ -265,9 +267,13 @@ mx4200_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -427,9 +433,13 @@ mx4200_config(
      */
 
     if (pp->sloppyclockflag & CLK_FLAG2)
-        up->moving = 1; /* Receiver on mobile platform */
+    {
+        up->moving = 1;
+    } /* Receiver on mobile platform */
     else
-        up->moving = 0; /* Static Installation */
+    {
+        up->moving = 0;
+    } /* Static Installation */
 
     up->pollcnt = 2;
     if (up->moving)
@@ -494,7 +504,7 @@ mx4200_ref(
     register struct mx4200unit* up;
     struct refclockproc* pp;
     double minute, lat, lon, alt;
-    char lats[16], lons[16];
+    char lats[16U], lons[16U];
     char nsc, ewc;
 
     pp = peer->procptr;
@@ -502,7 +512,9 @@ mx4200_ref(
 
     /* Should never happen! */
     if (up->moving)
+    {
         return;
+    }
 
     /*
      * Set up to output status information in the near future
@@ -563,9 +575,13 @@ mx4200_ref(
     {
         up->avg_lon += up->central_meridian;
         if (up->avg_lon < -180.0)
+        {
             up->avg_lon += 360.0;
+        }
         if (up->avg_lon > 180.0)
+        {
             up->avg_lon -= 360.0;
+        }
     }
 
     if (up->avg_lat >= 0.0)
@@ -722,7 +738,9 @@ mx4200_receive(
      * There is a case where <cr><lf> generates 2 timestamps.
      */
     if (pp->lencode == 0)
+    {
         return;
+    }
 
     up->pollcnt = 2;
     pp->a_lastcode[pp->lencode] = '\0';
@@ -753,7 +771,7 @@ mx4200_receive(
      * Reject if any important landmarks are missing.
      */
     cp = pp->a_lastcode + pp->lencode - 3;
-    if (cp < pp->a_lastcode || *pp->a_lastcode != '$' || cp[0U] != '*')
+    if ((cp < pp->a_lastcode) || (*pp->a_lastcode != '$') || (cp[0U] != '*'))
     {
         mx4200_debug(peer, "mx4200_receive: bad format\n");
         refclock_report(peer, CEVNT_BADREPLY);
@@ -764,7 +782,7 @@ mx4200_receive(
      * Check and discard the checksum
      */
     ck = mx4200_cksum(&pp->a_lastcode[1U], pp->lencode - 4);
-    if (char2hex[ck >> 4] != cp[1U] || char2hex[ck & 0xf] != cp[2U])
+    if ((char2hex[ck >> 4] != cp[1U]) || (char2hex[ck & 0xf] != cp[2U]))
     {
         mx4200_debug(peer, "mx4200_receive: bad checksum\n");
         refclock_report(peer, CEVNT_BADREPLY);
@@ -905,7 +923,9 @@ mx4200_receive(
          * want one when polled.  If we havn't been polled, bail out.
          */
         if (!up->polled)
+        {
             return;
+        }
 
         /*
          * Return offset and dispersion to control module.  We use
@@ -1002,7 +1022,9 @@ mx4200_parse_t(
            &oscillator_offset, &time_mark_error, &time_bias, &leapsec_warn);
 
     if (sentence_type != PMVXG_D_TRECOVOUT)
+    {
         return ("wrong rec-type");
+    }
 
     switch (time_mark_valid)
     {
@@ -1029,14 +1051,16 @@ mx4200_parse_t(
     /*
      * Check for insane time (allow for possible leap seconds)
      */
-    if (second > 60 || minute > 59 || hour > 23 ||
-        second < 0 || minute < 0 || hour < 0)
+    if ((second > 60) || (minute > 59) || (hour > 23) ||
+        (second < 0) || (minute < 0) || (hour < 0))
     {
         mx4200_debug(peer,
                      "mx4200_parse_t: bad time %02d:%02d:%02d",
                      hour, minute, second);
         if (leapsec_warn != 0)
+        {
             mx4200_debug(peer, " (leap %+d\n)", leapsec_warn);
+        }
         mx4200_debug(peer, "\n");
         refclock_report(peer, CEVNT_BADTIME);
         return ("bad time");
@@ -1052,8 +1076,8 @@ mx4200_parse_t(
      * Check for insane date
      * (Certainly can't be any year before this code was last altered!)
      */
-    if (day_of_month > 31 || month > 12 ||
-        day_of_month < 1 || month < 1 || year < YEAR_LAST_MODIFIED)
+    if ((day_of_month > 31) || (month > 12) ||
+        (day_of_month < 1) || (month < 1) || (year < YEAR_LAST_MODIFIED))
     {
         mx4200_debug(peer,
                      "mx4200_parse_t: bad date (%4d-%02d-%02d)\n",
@@ -1144,7 +1168,7 @@ mx4200_parse_t(
     /*
      * Toss if sentence is marked invalid
      */
-    if (!valid || pp->leap == LEAP_NOTINSYNC)
+    if (!valid || (pp->leap == LEAP_NOTINSYNC))
     {
         mx4200_debug(peer, "mx4200_parse_t: time mark not valid\n");
         refclock_report(peer, CEVNT_BADTIME);
@@ -1164,8 +1188,10 @@ mx4200_cksum(
 {
     register u_char ck;
 
-    for (ck = 0; n-- > 0; cp++)
+    for (ck = 0; n-- > 0; ++cp)
+    {
         ck ^= *cp;
+    }
     return (ck);
 }
 
@@ -1225,8 +1251,10 @@ mx4200_jday(
         {
             return (0);
         }
-        for (i = 0; i < month - 1; i++)
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day2tab[i];
+        }
     }
     else
     {
@@ -1235,8 +1263,10 @@ mx4200_jday(
         {
             return (0);
         }
-        for (i = 0; i < month - 1; i++)
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day1tab[i];
+        }
     }
     return (day);
 }
@@ -1300,7 +1330,9 @@ mx4200_parse_p(
 
     /* Should never happen! */
     if (up->moving)
+    {
         return ("mobile platform - no pos!");
+    }
 
     sscanf(pp->a_lastcode,
            "$PMVXG,%d,%lf,%lf,%c,%lf,%c,%lf,%lf,%lf,%lf,%d",
@@ -1309,21 +1341,31 @@ mx4200_parse_p(
 
     /* Sentence type */
     if (sentence_type != PMVXG_D_PHV)
+    {
         return ("wrong rec-type");
+    }
 
     /*
      * return if not navigating
      */
     if (mode > 10)
+    {
         return ("not navigating");
-    if (mode != 3 && mode != 5)
+    }
+    if ((mode != 3) && (mode != 5))
+    {
         return ("not navigating in 3D");
+    }
 
     /* Latitude (always +ve) and convert DDMM.MMMM to decimal */
     if (lat < 0.0)
+    {
         return ("negative latitude");
+    }
     if (lat > 9000.0)
+    {
         lat = 9000.0;
+    }
     lat *= 0.01;
     lat = ((int)lat) + (((lat - (int)lat)) * 1.6666666666666666);
 
@@ -1341,9 +1383,13 @@ mx4200_parse_p(
 
     /* Longitude (always +ve) and convert DDDMM.MMMM to decimal */
     if (lon < 0.0)
+    {
         return ("negative longitude");
+    }
     if (lon > 180.0)
+    {
         lon = 180.0;
+    }
     lon *= 0.01;
     lon = ((int)lon) + (((lon - (int)lon)) * 1.6666666666666666);
 
@@ -1372,9 +1418,13 @@ mx4200_parse_p(
     }
     lon -= up->central_meridian;
     if (lon < -180.0)
+    {
         lon += 360.0;
+    }
     if (lon > 180.0)
+    {
         lon -= 360.0;
+    }
 
     /*
      * Calculate running averages
@@ -1597,8 +1647,8 @@ mx4200_pps(
     /*
      * Check pps serial number against last one
      */
-    if (up->lastserial + 1 != up->pps_i.assert_sequence &&
-        up->lastserial != 0)
+    if ((up->lastserial + 1 != up->pps_i.assert_sequence) &&
+        (up->lastserial != 0))
     {
         if (up->pps_i.assert_sequence == up->lastserial)
         {
@@ -1674,7 +1724,7 @@ va_dcl
     register char *cp, *ep;
     register int n, m;
     va_list ap;
-    char buf[1024];
+    char buf[1024U];
     u_char ck;
 
     pp = peer->procptr;
@@ -1691,18 +1741,24 @@ va_dcl
 #endif /* __STDC__ */
     n = VSNPRINTF((cp, (size_t)(ep - cp), fmt, ap));
     va_end(ap);
-    if (n < 0 || (size_t)n >= (size_t)(ep - cp))
+    if ((n < 0) || ((size_t)n >= (size_t)(ep - cp)))
+    {
         goto overflow;
+    }
 
     ck = mx4200_cksum(cp, n);
     cp += n;
     n = SNPRINTF((cp, (size_t)(ep - cp), "*%02X\r\n", ck));
-    if (n < 0 || (size_t)n >= (size_t)(ep - cp))
+    if ((n < 0) || ((size_t)n >= (size_t)(ep - cp)))
+    {
         goto overflow;
+    }
     cp += n;
     m = write(pp->io.fd, buf, (unsigned)(cp - buf));
     if (m < 0)
+    {
         msyslog(LOG_ERR, "mx4200_send: write: %m (%s)", buf);
+    }
     mx4200_debug(peer, "mx4200_send: %d %s\n", m, buf);
 
 overflow:

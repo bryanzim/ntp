@@ -149,7 +149,7 @@ struct exten
     u_int32 tstamp;  /* timestamp */
     u_int32 fstamp;  /* filestamp */
     u_int32 vallen;  /* value length */
-    u_int32 pkt[1];  /* start of value field */
+    u_int32 pkt[1U]; /* start of value field */
 };
 
 

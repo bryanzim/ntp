@@ -1,7 +1,7 @@
 struct btfp_time /* Structure for reading 5 time words   */
                  /* in one ioctl(2) operation.           */
 {
-    unsigned short btfp_time[5]; /* Time words 0,1,2,3, and 4. (16bit)*/
+    unsigned short btfp_time[5U]; /* Time words 0,1,2,3, and 4. (16bit)*/
 };
 
 /***** Simple ioctl commands *****/

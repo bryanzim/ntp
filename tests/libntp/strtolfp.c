@@ -26,7 +26,7 @@ void setUp(void)
 
 static const char* fmtLFP(const l_fp* e, const l_fp* a)
 {
-    static char buf[100];
+    static char buf[100U];
     snprintf(buf, sizeof(buf), "e=$%08x.%08x, a=$%08x.%08x",
              e->l_ui, e->l_uf, a->l_ui, a->l_uf);
     return buf;

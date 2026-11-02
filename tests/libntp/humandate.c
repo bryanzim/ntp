@@ -20,7 +20,7 @@ void setUp(void)
 void test_RegularTime(void)
 {
     time_t sample = 1276601278;
-    char expected[15];
+    char expected[15U];
     struct tm* tm;
 
     tm = localtime(&sample);
@@ -36,7 +36,7 @@ void test_RegularTime(void)
 void test_CurrentTime(void)
 {
     time_t sample;
-    char expected[15];
+    char expected[15U];
     struct tm* tm;
 
     time(&sample);

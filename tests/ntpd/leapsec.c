@@ -237,9 +237,13 @@ static int stringreader(void* farg)
     const char** cpp = (const char**)farg;
 
     if (**cpp)
+    {
         return *(*cpp)++;
+    }
     else
+    {
         return EOF;
+    }
 }
 
 static int /*BOOL*/
@@ -262,7 +266,9 @@ setup_clear_table(void)
     leap_table_t* pt = leapsec_get_table(0);
 
     if (pt)
+    {
         leapsec_clear(pt);
+    }
     rc = leapsec_set_table(pt);
     return rc;
 }
@@ -285,13 +291,13 @@ static int
 IsEqual(const struct calendar expected, const struct calendar actual)
 {
 
-	if (   expected.year == actual.year
-	    && (   expected.yearday == actual.yearday
-		|| (   expected.month == actual.month
-		    && expected.monthday == actual.monthday))
-	    && expected.hour == actual.hour
-	    && expected.minute == actual.minute
-	    && expected.second == actual.second) {
+	if (   (expected.year == actual.year)
+	    && (   (expected.yearday == actual.yearday)
+		|| (   (expected.month == actual.month)
+		    && (expected.monthday == actual.monthday)))
+	    && (expected.hour == actual.hour)
+	    && (expected.minute == actual.minute)
+	    && (expected.second == actual.second)) {
 		return TRUE;
 	} else {
 		const char *p_exp = CalendarToString(expected);

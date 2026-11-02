@@ -30,8 +30,8 @@ normalize_tval(
      * here: it has implementation-defined behaviour when applied
      * to LONG_MIN.
      */
-    if (x.tv_usec < -3l * MICROSECONDS ||
-        x.tv_usec > 3l * MICROSECONDS)
+    if ((x.tv_usec < -3l * MICROSECONDS) ||
+        (x.tv_usec > 3l * MICROSECONDS))
     {
         z = x.tv_usec / MICROSECONDS;
         x.tv_usec -= z * MICROSECONDS;
@@ -45,17 +45,21 @@ normalize_tval(
      * division adjustment if the above division was executed.)
      */
     if (x.tv_usec < 0)
+    {
         do
         {
             x.tv_usec += MICROSECONDS;
             x.tv_sec--;
         } while (x.tv_usec < 0);
+    }
     else if (x.tv_usec >= MICROSECONDS)
+    {
         do
         {
             x.tv_usec -= MICROSECONDS;
             x.tv_sec++;
         } while (x.tv_usec >= MICROSECONDS);
+    }
 
     return x;
 }
@@ -179,12 +183,14 @@ static int do_test(struct timeval timetv, struct timeval tvlast)
     failed = cond_new != cond_old;
 
     if (failed || verbose)
+    {
         printf("timetv %lli|%07li, tvlast  %lli|%07li: tvdiff_old: %lli|%07li -> %i, tvdiff_new: %lli|%07li -> %i, same cond: %s\n",
                (long long)timetv.tv_sec, timetv.tv_usec,
                (long long)tvlast.tv_sec, tvlast.tv_usec,
                (long long)tvdiff_old.tv_sec, tvdiff_old.tv_usec, cond_old,
                (long long)tvdiff_new.tv_sec, tvdiff_new.tv_usec, cond_new,
                failed ? "NO <<" : "yes");
+    }
 
     return failed ? -1 : 0;
 }
@@ -208,8 +214,10 @@ static int test_loop(long long start_sec, long start_usec,
                 for (tvlast.tv_usec = start_usec; tvlast.tv_usec <= stop_usec; tvlast.tv_usec += step_usec)
                 {
                     int rc = do_test(timetv, tvlast);
-                    if (rc < 0 && exit_on_err)
+                    if ((rc < 0) && exit_on_err)
+                    {
                         return rc;
+                    }
                 }
 
     return 0;

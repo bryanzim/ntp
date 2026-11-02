@@ -62,7 +62,7 @@ netread(
             l -= r;
             b += r;
         }
-        else if (r == 0 || errno != EINTR)
+        else if ((r == 0) || (errno != EINTR))
         {
             l = 0;
         }
@@ -117,7 +117,9 @@ void exit_worker(
     int exitcode)
 {
     if (syslog_file != NULL)
+    {
         fflush(syslog_file);
+    }
     fflush(stdout);
     fflush(stderr);
     WORKER_CHILD_EXIT(exitcode); /* space before ( required */
@@ -129,7 +131,9 @@ worker_sighup(
     int sig)
 {
     if (SIGHUP == sig)
+    {
         worker_sighup_received = 1;
+    }
 }
 
 
@@ -143,7 +147,9 @@ int worker_sleep(
     do
     {
         if (!worker_sighup_received)
+        {
             sleep_remain = sleep(sleep_remain);
+        }
         if (worker_sighup_received)
         {
             TRACE(1, ("worker SIGHUP with %us left to sleep",
@@ -163,18 +169,22 @@ void interrupt_worker_sleep(void)
     blocking_child* c;
     int rc;
 
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
 
-        if (NULL == c || c->reusable == TRUE)
+        if ((NULL == c) || (c->reusable == TRUE))
+        {
             continue;
+        }
 
         rc = kill(c->pid, SIGHUP);
         if (rc < 0)
+        {
             msyslog(LOG_ERR,
                     "Unable to signal HUP to wake child pid %d: %m",
                     c->pid);
+        }
     }
 }
 
@@ -195,9 +205,13 @@ harvest_child_status(
     {
         /* Wait on the child so it can finish terminating */
         if (waitpid(c->pid, NULL, 0) == c->pid)
+        {
             TRACE(4, ("harvested child %d\n", c->pid));
+        }
         else if (errno != ECHILD)
+        {
             msyslog(LOG_ERR, "error waiting on child %d: %m", c->pid);
+        }
         c->pid = 0;
     }
 }
@@ -248,13 +262,17 @@ send_worker_home_atexit(void)
     blocking_child* c;
 
     if (worker_process)
+    {
         return;
+    }
 
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
         if (NULL == c)
+        {
             continue;
+        }
         req_child_exit(c);
     }
 }
@@ -286,7 +304,9 @@ int send_blocking_req_internal(
         octets = hdr->octets - sizeof(*hdr);
         rc = netwrite(c->req_write_pipe, data, octets);
         if (rc == octets)
+        {
             return 0;
+        }
     }
 
     msyslog(LOG_ERR,
@@ -326,7 +346,7 @@ receive_blocking_req_internal(
     }
     else
     {
-        INSIST(sizeof(hdr) < hdr.octets && hdr.octets < 4 * 1024);
+        INSIST(sizeof((hdr) < hdr.octets) && (hdr.octets < 4 * 1024));
         req = emalloc(hdr.octets);
         memcpy(req, &hdr, sizeof(*req));
         octets = hdr.octets - sizeof(hdr);
@@ -334,19 +354,27 @@ receive_blocking_req_internal(
                      octets);
 
         if (rc != octets)
+        {
             msyslog(LOG_ERR,
                     "receive_blocking_req_internal: short read (%zu of %zu), %m",
                     rc, octets);
+        }
         else if (BLOCKING_REQ_MAGIC != req->magic_sig)
+        {
             msyslog(LOG_ERR,
                     "receive_blocking_req_internal: packet header mismatch (0x%x)",
                     req->magic_sig);
+        }
         else
+        {
             return req;
+        }
     }
 
     if (req != NULL)
+    {
         free(req);
+    }
 
     return NULL;
 }
@@ -366,7 +394,9 @@ int send_blocking_resp_internal(
     free(resp);
 
     if (octets == rc)
+    {
         return 0;
+    }
 
     TRACE(1, ("send_blocking_resp_internal: short write (%zu of %zu), %m\n",
               rc, octets));
@@ -404,8 +434,8 @@ receive_blocking_resp_internal(
     }
     else
     {
-        INSIST(sizeof(hdr) < hdr.octets &&
-               hdr.octets < 16 * 1024);
+        INSIST(sizeof((hdr) < hdr.octets) &&
+               (hdr.octets < 16 * 1024));
         resp = emalloc(hdr.octets);
         memcpy(resp, &hdr, sizeof(*resp));
         octets = hdr.octets - sizeof(hdr);
@@ -413,16 +443,22 @@ receive_blocking_resp_internal(
                      octets);
 
         if (rc != octets)
+        {
             TRACE(1, ("receive_blocking_resp_internal: short read (%zu of %zu), %m\n",
                       rc, octets));
+        }
         else
+        {
             return resp;
+        }
     }
 
     cleanup_after_child(c);
 
     if (resp != NULL)
+    {
         free(resp);
+    }
 
     return NULL;
 }
@@ -436,13 +472,17 @@ void fork_deferred_worker(void)
 
     REQUIRE(droproot && root_dropped);
 
-    for (idx = 0; idx < blocking_children_alloc; idx++)
+    for (idx = 0; idx < blocking_children_alloc; ++idx)
     {
         c = blocking_children[idx];
         if (NULL == c)
+        {
             continue;
-        if (-1 != c->req_write_pipe && 0 == c->pid)
+        }
+        if ((-1 != c->req_write_pipe) && (0 == c->pid))
+        {
             fork_blocking_child(c);
+        }
     }
 }
 #endif
@@ -453,7 +493,7 @@ fork_blocking_child(
     blocking_child* c)
 {
     static int atexit_installed;
-    static int blocking_pipes[4] = { -1, -1, -1, -1 };
+    static int blocking_pipes[4U] = { -1, -1, -1, -1 };
     int rc;
     int was_pipe;
     int is_pipe;
@@ -519,10 +559,14 @@ fork_blocking_child(
 #if defined(HAVE_DROPROOT) && !defined(NEED_EARLY_FORK)
     /* defer the fork until after root is dropped */
     if (droproot && !root_dropped)
+    {
         return;
+    }
 #endif
     if (syslog_file != NULL)
+    {
         fflush(syslog_file);
+    }
     fflush(stdout);
     fflush(stderr);
 
@@ -573,7 +617,7 @@ fork_blocking_child(
         int argcc;
         int argvlen = 0;
         /* Clear argv */
-        for (argcc = 0; argcc < saved_argc; argcc++)
+        for (argcc = 0; argcc < saved_argc; ++argcc)
         {
             int l = strlen(saved_argv[argcc]);
             argvlen += l + 1;
@@ -600,10 +644,14 @@ fork_blocking_child(
         syslogit = TRUE;
     }
     keep_fd = max(c->req_read_pipe, c->resp_write_pipe);
-    for (fd = 3; fd < keep_fd; fd++)
-        if (fd != c->req_read_pipe &&
-            fd != c->resp_write_pipe)
+    for (fd = 3; fd < keep_fd; ++fd)
+    {
+        if ((fd != c->req_read_pipe) &&
+            (fd != c->resp_write_pipe))
+        {
             close(fd);
+        }
+    }
     close_all_beyond(keep_fd);
     /*
      * We get signals from refclock serial I/O on NetBSD in the

@@ -216,7 +216,7 @@ filegen_open(
         /*
          * try to resolve name collisions
          */
-        static u_long conflicts = 0;
+        static u_long conflicts = 0U;
 
 #ifndef S_ISREG
 #define S_ISREG(mode) (((mode) & S_IFREG) == S_IFREG)
@@ -238,9 +238,11 @@ filegen_open(
                              (int)getpid(), conflicts++);
 
                     if (rename(filename, savename) != 0)
+                    {
                         msyslog(LOG_ERR,
                                 "couldn't save %s: %m",
                                 filename);
+                    }
                     free(savename);
                 }
                 else
@@ -257,9 +259,11 @@ filegen_open(
                         delete(filename) != 0
 #endif
                     )
+                    {
                         msyslog(LOG_ERR,
                                 "couldn't unlink %s: %m",
                                 filename);
+                    }
                 }
             }
             else
@@ -281,8 +285,10 @@ filegen_open(
              * 'basename' not to exist
              */
             if (ENOENT != errno)
+            {
                 msyslog(LOG_ERR, "stat(%s) failed: %m",
                         filename);
+            }
         }
     }
 
@@ -306,7 +312,9 @@ filegen_open(
          */
 
         if (ENOENT != errno)
+        {
             msyslog(LOG_ERR, "can't open %s: %m", fullname);
+        }
     }
     else
     {
@@ -338,10 +346,14 @@ filegen_open(
             errno = 0; /* On VMS, don't support FGEN_FLAG_LINK */
 #else  /* not (VMS) / VXWORKS / WINNT ; DO THE LINK) */
             if (link(fullname, filename) != 0)
+            {
                 if (EEXIST != errno)
+                {
                     msyslog(LOG_ERR,
                             "can't link(%s, %s): %m",
                             fullname, filename);
+                }
+            }
 #endif /* SYS_WINNT || VXWORKS */
         } /* flags & FGEN_FLAG_LINK */
     } /* else fp == NULL */
@@ -405,7 +417,7 @@ void filegen_setup(
      * try to open file if not yet open
      * reopen new file generation file on change of generation id
      */
-    if (NULL == gen->fp || !current)
+    if ((NULL == gen->fp) || !current)
     {
         DPRINTF(1, ("filegen  %0x %u\n", gen->type, now));
         pivot = time(NULL);
@@ -431,14 +443,18 @@ void filegen_config(
     /*
      * if nothing would be changed...
      */
-    if (strcmp(dir, gen->dir) == 0 && strcmp(fname, gen->fname) == 0 && type == gen->type && flag == gen->flag)
+    if ((strcmp(dir, gen->dir) == 0) && (strcmp(fname, gen->fname) == 0) && (type == gen->type) && (flag == gen->flag))
+    {
         return;
+    }
 
     /*
      * validate parameters
      */
     if (!valid_fileref(dir, fname))
+    {
         return;
+    }
 
     if (NULL != gen->fp)
     {
@@ -516,11 +532,15 @@ valid_fileref(
     /*
      * Just to catch, dumb errors opening up the world...
      */
-    if (NULL == dir || '\0' == dir[0U])
+    if ((NULL == dir) || ('\0' == dir[0U]))
+    {
         return FALSE;
+    }
 
     if (NULL == fname)
+    {
         return FALSE;
+    }
 
 #ifdef SYS_WINNT
     /*
@@ -538,8 +558,10 @@ valid_fileref(
 
     for (p = fname; p != NULL; p = strchr(p, DIR_SEP))
     {
-        if ('.' == p[0U] && '.' == p[1U] && ('\0' == p[2U] || DIR_SEP == p[2U]))
+        if (('.' == p[0U]) && ('.' == p[1U]) && (('\0' == p[2U]) || (DIR_SEP == p[2U])))
+        {
             return FALSE;
+        }
     }
 
     return TRUE;
@@ -566,7 +588,7 @@ filegen_get(
 
     while (f)
     {
-        if (f->name == name || strcmp(name, f->name) == 0)
+        if ((f->name == name) || (strcmp(name, f->name) == 0))
         {
             DPRINTF(4, ("filegen_get(%s) = %p\n",
                         name, f->filegen));
@@ -593,7 +615,7 @@ void filegen_register(
     ppfe = &filegen_registry;
     while (NULL != *ppfe)
     {
-        if ((*ppfe)->name == name || !strcmp((*ppfe)->name, name))
+        if (((*ppfe)->name == name) || !strcmp((*ppfe)->name, name))
         {
 
             DPRINTF(5, ("replacing filegen %p\n",
@@ -625,8 +647,10 @@ void filegen_statsdir(void)
     struct filegen_entry* f;
 
     for (f = filegen_registry; f != NULL; f = f->next)
+    {
         filegen_config(f->filegen, statsdir, f->filegen->fname,
                        f->filegen->type, f->filegen->flag);
+    }
 }
 
 
@@ -648,7 +672,7 @@ void filegen_unregister(
 
     while (NULL != *ppfe)
     {
-        if ((*ppfe)->name == name || !strcmp((*ppfe)->name, name))
+        if (((*ppfe)->name == name) || !strcmp((*ppfe)->name, name))
         {
             pfe = *ppfe;
             *ppfe = (*ppfe)->next;

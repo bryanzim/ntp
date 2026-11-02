@@ -62,7 +62,9 @@ void ntp_crypto_srandom(
     if (!crypto_rand_init)
     {
         if (RAND_poll())
+        {
             crypto_rand_ok = 1;
+        }
         crypto_rand_init = 1;
     }
 #elif HAVE_ARC4RANDOM_BUF
@@ -77,7 +79,9 @@ void ntp_crypto_srandom(
      * entropy from the system.
      */
     if (!evutil_secure_rng_init())
+    {
         crypto_rand_ok = 1;
+    }
 #endif
 }
 
@@ -92,7 +96,9 @@ int ntp_crypto_random_buf(
     size_t nbytes)
 {
     if (!crypto_rand_ok)
+    {
         return -1;
+    }
 
 #if defined(USE_OPENSSL_CRYPTO_RAND)
     if (1 != RAND_bytes(buf, size2int_chk(nbytes)))

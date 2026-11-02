@@ -123,7 +123,7 @@ atom_start(
 {
     struct refclockproc* pp;
     struct ppsunit* up;
-    char device[80];
+    char device[80U];
 
     /*
      * Allocate and initialize unit structure
@@ -172,7 +172,9 @@ atom_shutdown(
     pp = peer->procptr;
     up = pp->unitptr;
     if (up->fddev > 0)
+    {
         close(up->fddev);
+    }
     free(up);
 }
 
@@ -186,12 +188,14 @@ void atom_timer(
 {
     struct ppsunit* up;
     struct refclockproc* pp;
-    char tbuf[80];
+    char tbuf[80U];
 
     pp = peer->procptr;
     up = pp->unitptr;
     if (refclock_pps(peer, &up->atom, pp->sloppyclockflag) <= 0)
+    {
         return;
+    }
 
     peer->flags |= FLAG_PPS;
 
@@ -224,7 +228,9 @@ atom_poll(
      * the seconds.
      */
     if (sys_leap == LEAP_NOTINSYNC)
+    {
         return;
+    }
 
     pp = peer->procptr;
     pp->polls++;

@@ -88,7 +88,7 @@ int main(
         scount = sscanf(argv[2U], "%u", &mon);
         if (1 == scount)
         {
-            if (6 == mon || 12 == mon)
+            if ((6 == mon) || (12 == mon))
             {
                 // printf("2 args: month %u\n", mon);
             }
@@ -122,7 +122,7 @@ int main(
         scount = sscanf(argv[2U], "%u", &mon);
         if (1 == scount)
         {
-            if (6 == mon || 12 == mon)
+            if ((6 == mon) || (12 == mon))
             {
                 // printf("3 args: month %u\n", mon);
             }

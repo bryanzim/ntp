@@ -89,8 +89,8 @@ typedef struct GPSPos
 
 typedef struct ClockVersion
 {
-    char cVersion[255]; /* Hardware Version like " DCF-RECEIVER,   VERSION 01.01, DAT: 23.NOV.1999" */
-    char dVersion[255]; /* Driver Version */
+    char cVersion[255U]; /* Hardware Version like " DCF-RECEIVER,   VERSION 01.01, DAT: 23.NOV.1999" */
+    char dVersion[255U]; /* Driver Version */
 } ClockVersion;
 
 /* hopftime what you think */
@@ -121,15 +121,15 @@ typedef struct DcfAntenne
 
 typedef struct hopfCard
 {
-    char name[32];
+    char name[32U];
     unsigned irq;
     unsigned long membase; /* without mmap */
     unsigned int port;
 
     int versionlen;
-    char versionbuf[1024];
+    char versionbuf[1024U];
     char* version[HOPF_MAXVERSION];
-    char cardname[32];
+    char cardname[32U];
     int interrupt;
     void* mbase; /* this will be our memory base address */
 

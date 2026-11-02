@@ -41,16 +41,21 @@ void signal_no_reset(
     /* Added for PPS clocks on Solaris 7 which get EINTR errors */
 #ifdef SIGPOLL
     if (SIGPOLL == sig)
+    {
         vec.sa_flags = Z_SA_RESTART;
+    }
 #endif
 #ifdef SIGIO
     if (SIGIO == sig)
+    {
         vec.sa_flags = Z_SA_RESTART;
+    }
 #endif
 
     do
+    {
         n = sigaction(sig, &vec, &ovec);
-    while (-1 == n && EINTR == errno);
+    } while ((-1 == n) && (EINTR == errno));
     if (-1 == n)
     {
         perror("sigaction");
@@ -122,7 +127,9 @@ sigint_handler(
 {
     UNUSED_ARG(signum);
     if (ctrl_c_hook != NULL)
+    {
         (*ctrl_c_hook)();
+    }
 }
 
 void set_ctrl_c_hook(
@@ -153,7 +160,7 @@ console_event_handler(
 {
     BOOL handled;
 
-    if (CTRL_C_EVENT == dwCtrlType && ctrl_c_hook != NULL)
+    if ((CTRL_C_EVENT == dwCtrlType) && (ctrl_c_hook != NULL))
     {
         (*ctrl_c_hook)();
         handled = TRUE;
@@ -181,9 +188,11 @@ void set_ctrl_c_hook(
         install = TRUE;
     }
     if (!SetConsoleCtrlHandler(&console_event_handler, install))
+    {
         msyslog(LOG_ERR, "Can't %s console control handler: %m",
                 (install)
                     ? "add"
                     : "remove");
+    }
 }
 #endif /* SYS_WINNT */

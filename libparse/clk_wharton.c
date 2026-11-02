@@ -90,11 +90,17 @@ cvt_wharton_400a(
     int i;
 
     /* The given `size' includes a terminating null-character. */
-    if (size != 15 || buffer[0U] != STX || buffer[14U] != ETX || buffer[13U] < '0' || buffer[13U] > ('0' + 0xf))
+    if ((size != 15U) || (buffer[0U] != STX) || (buffer[14U] != ETX) || (buffer[13U] < '0') || (buffer[13U] > ('0' + 0xf)))
+    {
         return CVT_NONE;
+    }
     for (i = 1; i < 13; i += 1)
-        if (buffer[i] < '0' || buffer[i] > '9')
+    {
+        if ((buffer[i] < '0') || (buffer[i] > '9'))
+        {
             return CVT_NONE;
+        }
+    }
     clock_time->second = (buffer[2U] - '0') * 10 + buffer[1U] - '0';
     clock_time->minute = (buffer[4U] - '0') * 10 + buffer[3U] - '0';
     clock_time->hour = (buffer[6U] - '0') * 10 + buffer[5U] - '0';
@@ -102,19 +108,27 @@ cvt_wharton_400a(
     clock_time->month = (buffer[10U] - '0') * 10 + buffer[9U] - '0';
     clock_time->year = (buffer[12U] - '0') * 10 + buffer[11U] - '0';
     clock_time->usecond = 0;
-    if (buffer[13U] & 0x1) /* We have CET time */
+    if (buffer[13U] & 0x1)
+    { /* We have CET time */
         clock_time->utcoffset = -1 * 60 * 60;
-    else /* We have BST time */
+    }
+    else
+    { /* We have BST time */
         clock_time->utcoffset = 0;
+    }
     if (buffer[13U] & 0x2)
     {
         clock_time->flags |= PARSEB_DST;
         clock_time->utcoffset += -1 * 60 * 60;
     }
     if (!(buffer[13U] & 0x4))
+    {
         clock_time->flags |= PARSEB_NOSYNC;
+    }
     if (buffer[13U] & 0x8)
+    {
         clock_time->flags |= PARSEB_ANNOUNCE;
+    }
 
     return CVT_OK;
 }
@@ -147,9 +161,13 @@ inp_wharton_400a(
     case ETX:
         parseprintf(DD_PARSE, ("inp_wharton_400a: ETX seen\n"));
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
     default:
         return parse_addchar(parseio, ch);

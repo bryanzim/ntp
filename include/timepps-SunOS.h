@@ -147,7 +147,7 @@ typedef union pps_timeu
 { /* timestamp format */
     struct timespec tspec;
     ntp_fp_t ntpfp;
-    unsigned long longpad[3];
+    unsigned long longpad[3U];
 } pps_timeu_t; /* generic data type to represent time stamps */
 
 /*

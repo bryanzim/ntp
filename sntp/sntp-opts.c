@@ -74,7 +74,7 @@ extern int atoi(const char*);
 /**
  *  static const strings for sntp options
  */
-static char const sntp_opt_strs[2567] =
+static char const sntp_opt_strs[2567U] =
     /*     0 */ "sntp 4.2.8p18\n"
                 "Copyright (C) 1992-2025 The University of Delaware and Network Time Foundation, all rights reserved.\n"
                 "This is free software. It is licensed for use, modification and\n"
@@ -750,7 +750,7 @@ static tOptDesc optDesc[OPTION_CT] = {
 /** sntp configuration file name. */
 #define zRcName (sntp_opt_strs + 2509)
 /** Directories to search for sntp config files. */
-static char const* const apzHomeList[3] = {
+static char const* const apzHomeList[3U] = {
     sntp_opt_strs + 2501,
     sntp_opt_strs + 2507,
     NULL
@@ -917,25 +917,35 @@ doOptSteplimit(tOptions* pOptions, tOptDesc* pOptDesc)
     static struct
     {
         long rmin, rmax;
-    } const rng[1] = {
+    } const rng[1U] = {
         { 0, LONG_MAX }
     };
     int ix;
 
     if (pOptions <= OPTPROC_EMIT_LIMIT)
+    {
         goto emit_ranges;
+    }
     optionNumericVal(pOptions, pOptDesc);
 
-    for (ix = 0; ix < 1; ix++)
+    for (ix = 0; ix < 1; ++ix)
     {
         if (pOptDesc->optArg.argInt < rng[ix].rmin)
-            continue; /* ranges need not be ordered. */
-        if (pOptDesc->optArg.argInt == rng[ix].rmin)
-            return;
-        if (rng[ix].rmax == LONG_MIN)
+        {
             continue;
-        if (pOptDesc->optArg.argInt <= rng[ix].rmax)
+        } /* ranges need not be ordered. */
+        if (pOptDesc->optArg.argInt == rng[ix].rmin)
+        {
             return;
+        }
+        if (rng[ix].rmax == LONG_MIN)
+        {
+            continue;
+        }
+        if (pOptDesc->optArg.argInt <= rng[ix].rmax)
+        {
+            return;
+        }
     }
 
     option_usage_fp = stderr;
@@ -958,25 +968,35 @@ doOptNtpversion(tOptions* pOptions, tOptDesc* pOptDesc)
     static struct
     {
         long rmin, rmax;
-    } const rng[1] = {
+    } const rng[1U] = {
         { 0, 7 }
     };
     int ix;
 
     if (pOptions <= OPTPROC_EMIT_LIMIT)
+    {
         goto emit_ranges;
+    }
     optionNumericVal(pOptions, pOptDesc);
 
-    for (ix = 0; ix < 1; ix++)
+    for (ix = 0; ix < 1; ++ix)
     {
         if (pOptDesc->optArg.argInt < rng[ix].rmin)
-            continue; /* ranges need not be ordered. */
-        if (pOptDesc->optArg.argInt == rng[ix].rmin)
-            return;
-        if (rng[ix].rmax == LONG_MIN)
+        {
             continue;
-        if (pOptDesc->optArg.argInt <= rng[ix].rmax)
+        } /* ranges need not be ordered. */
+        if (pOptDesc->optArg.argInt == rng[ix].rmin)
+        {
             return;
+        }
+        if (rng[ix].rmax == LONG_MIN)
+        {
+            continue;
+        }
+        if (pOptDesc->optArg.argInt <= rng[ix].rmax)
+        {
+            return;
+        }
     }
 
     option_usage_fp = stderr;
@@ -1097,7 +1117,9 @@ AO_gettext(char const* pz)
 {
     char* res;
     if (pz == NULL)
+    {
         return NULL;
+    }
 #ifdef HAVE_DCGETTEXT
     /*
      * While processing the option_xlateable_txt data, try to use the
@@ -1108,15 +1130,21 @@ AO_gettext(char const* pz)
     {
         res = dgettext("libopts", pz);
         if (res == pz)
+        {
             res = (char*)VOIDP(_(pz));
+        }
     }
     else
+    {
         res = (char*)VOIDP(_(pz));
+    }
 #else
     res = (char*)VOIDP(_(pz));
 #endif
     if (res == pz)
+    {
         return res;
+    }
     res = strdup(res);
     if (res == NULL)
     {
@@ -1174,7 +1202,9 @@ translate_option_strings(void)
         {
             tOptDesc* od = opts->pOptDesc;
             for (ix = opts->optCt; ix > 0; ix--, od++)
+            {
                 coerce_it(VOIDP(&(od->pzText)));
+            }
         }
     }
 }

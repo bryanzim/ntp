@@ -5,7 +5,9 @@
 static inline int size2int_chk(size_t v)
 {
     if (v > INT_MAX)
+    {
         abort();
+    }
     return (int)(v);
 }
 

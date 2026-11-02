@@ -156,8 +156,10 @@ CSUM mbg_csum(
     unsigned int sum = 0;
     unsigned int i;
 
-    for (i = 0; i < n; i++)
+    for (i = 0; i < n; ++i)
+    {
         sum += *p++;
+    }
 
     return (CSUM)sum;
 
@@ -225,30 +227,27 @@ struct msg_buf
 #define MBG_STRING 3 /* receiving standard data message */
 
 clockformat_t clock_meinberg[] = {
-    {
-     mbg_input, /* normal input handling */
+    { mbg_input, /* normal input handling */
  cvt_meinberg, /* Meinberg conversion */
  pps_one,                        /* easy PPS monitoring */
                         0,     /* conversion configuration */
      "Meinberg Standard",  /* Meinberg simple format - beware */
-  32,      /* string buffer */
-      0                    /* no private data (complete packets) */ },
-    {
-     mbg_input, /* normal input handling */
+  32,                      /* string buffer */
+                      0 /* no private data (complete packets) */ },
+    { mbg_input, /* normal input handling */
  cvt_meinberg, /* Meinberg conversion */
  pps_one,                        /* easy PPS monitoring */
                         0,     /* conversion configuration */
      "Meinberg Extended",  /* Meinberg enhanced format */
-  32,      /* string buffer */
-      0                    /* no private data (complete packets) */ },
-    {
-     gps_input,     /* no input handling */
+  32,                      /* string buffer */
+                      0 /* no private data (complete packets) */ },
+    { gps_input,     /* no input handling */
      cvt_mgps, /* Meinberg GPS receiver conversion */
  pps_one, /* easy PPS monitoring */
  (void*)&meinberg_fmt[2U], /* conversion configuration */
  "Meinberg GPS Extended", /* Meinberg FAU GPS format */
  512, /* string buffer */
- sizeof(struct msg_buf)    /* no private data (complete packets) */ }
+ sizeof(struct msg_buf) /* no private data (complete packets) */ }
 };
 
 /*
@@ -311,7 +310,9 @@ cvt_meinberg(
         clock_time->flags = PARSEB_S_LEAP;
 
         if (clock_time->second == 60)
+        {
             clock_time->flags |= PARSEB_LEAPSECOND;
+        }
 
         /*
          * in the extended timecode format we have also the
@@ -364,16 +365,24 @@ cvt_meinberg(
          * gather status flags
          */
         if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
+        {
             clock_time->flags |= PARSEB_DST;
+        }
 
         if (f[0U] == '#')
+        {
             clock_time->flags |= PARSEB_POWERUP;
+        }
 
         if (f[1U] == '*')
+        {
             clock_time->flags |= PARSEB_NOSYNC;
+        }
 
         if (f[3U] == '!')
+        {
             clock_time->flags |= PARSEB_ANNOUNCE;
+        }
 
         /*
          * oncoming leap second
@@ -381,10 +390,14 @@ cvt_meinberg(
          * expected to speed up
          */
         if (f[3U] == 'A')
+        {
             clock_time->flags |= PARSEB_LEAPADD;
+        }
 
         if (f[3U] == 'a')
+        {
             clock_time->flags |= PARSEB_LEAPDEL;
+        }
 
 
         if (format->flags & MBG_EXTENDED)
@@ -399,10 +412,14 @@ cvt_meinberg(
             clock_time->flags &= ~PARSEB_LEAPDEL;
 
             if (f[4U] == 'A')
+            {
                 clock_time->flags |= PARSEB_LEAPADD;
+            }
 
             if (f[5U] == 'R')
+            {
                 clock_time->flags |= PARSEB_CALLBIT;
+            }
         }
         return CVT_OK;
     }
@@ -437,9 +454,13 @@ mbg_input(
     case ETX:
         parseprintf(DD_PARSE, ("mbg_input: ETX seen\n"));
         if ((rtc = parse_addchar(parseio, ch)) == PARSE_INP_SKIP)
+        {
             return parse_end(parseio);
+        }
         else
+        {
             return rtc;
+        }
 
     default:
         return parse_addchar(parseio, ch);
@@ -519,30 +540,42 @@ cvt_mgps(
              * gather status flags
              */
             if (buffer[format->field_offsets[O_ZONE].offset] == 'S')
+            {
                 clock_time->flags |= PARSEB_DST;
+            }
 
             if (clock_time->utcoffset == 0)
+            {
                 clock_time->flags |= PARSEB_UTC;
+            }
 
             /*
              * no sv's seen - no time & position
              */
             if (f[0U] == '#')
+            {
                 clock_time->flags |= PARSEB_POWERUP;
+            }
 
             /*
              * at least one sv seen - time (for last position)
              */
             if (f[1U] == '*')
+            {
                 clock_time->flags |= PARSEB_NOSYNC;
+            }
             else if (!(clock_time->flags & PARSEB_POWERUP))
+            {
                 clock_time->flags |= PARSEB_POSITION;
+            }
 
             /*
              * oncoming zone switch
              */
             if (f[3U] == '!')
+            {
                 clock_time->flags |= PARSEB_ANNOUNCE;
+            }
 
             /*
              * oncoming leap second
@@ -550,10 +583,14 @@ cvt_mgps(
              * expected to speed up
              */
             if (f[4U] == 'A')
+            {
                 clock_time->flags |= PARSEB_LEAPADD;
+            }
 
             if (f[4U] == 'a')
+            {
                 clock_time->flags |= PARSEB_LEAPDEL;
+            }
 
             /*
              * f[5] == ' '
@@ -563,7 +600,9 @@ cvt_mgps(
              * this is the leap second
              */
             if ((f[6U] == 'L') || (clock_time->second == 60))
+            {
                 clock_time->flags |= PARSEB_LEAPSECOND;
+            }
 
             return CVT_OK;
         }
@@ -590,7 +629,9 @@ gps_input(
     parseprintf(DD_PARSE, ("gps_input(0x%p, 0x%x, ...)\n", (void*)parseio, ch));
 
     if (!msg_buf)
+    {
         return PARSE_INP_SKIP;
+    }
 
     if (msg_buf->phase == MBG_NONE)
     { /* not receiving yet */
@@ -627,7 +668,9 @@ gps_input(
     /* save incoming character in both buffers if needbe */
     if ((msg_buf->phase == MBG_STRING) &&
         (parseio->parse_index < parseio->parse_dsize))
+    {
         parseio->parse_data[parseio->parse_index++] = ch;
+    }
 
     parseio->parse_dtime.parse_msg[parseio->parse_dtime.parse_msglen++] = ch;
 
@@ -646,8 +689,10 @@ gps_input(
     case MBG_DATA:
         msg_buf->len--;
 
-        if (msg_buf->len) /* transfer not complete */
+        if (msg_buf->len)
+        { /* transfer not complete */
             return PARSE_INP_SKIP;
+        }
 
         parseprintf(DD_PARSE, ("gps_input: %s complete\n", (msg_buf->phase == MBG_DATA) ? "data" : "header"));
 

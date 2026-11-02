@@ -126,7 +126,7 @@ enum MBG_FRAMING_STR_IDXS
 typedef struct
 {
     BAUD_RATE baud_rate; ///< transmission speed, e.g. 19200L, see ::MBG_BAUD_RATES
-    char framing[4];     ///< ASCIIZ framing string, e.g. "8N1" or "7E2", see ::MBG_FRAMING_STRS
+    char framing[4U];    ///< ASCIIZ framing string, e.g. "8N1" or "7E2", see ::MBG_FRAMING_STRS
     int16_t handshake;   ///< handshake mode, yet only ::HS_NONE supported
 
 } COM_PARM;
@@ -719,7 +719,7 @@ typedef struct
  *
  * @note Up to 5 printable characters, plus trailing zero
  */
-typedef char TZ_NAME[6];
+typedef char TZ_NAME[6U];
 
 /**
  * @brief Time zone / daylight saving parameters
@@ -736,11 +736,11 @@ typedef char TZ_NAME[6];
  */
 typedef struct
 {
-    int32_t offs;    ///< standard offset from %UTC to local time [sec]
-    int32_t offs_dl; ///< additional offset if daylight saving enabled [sec]
-    TM_GPS tm_on;    ///< date/time when daylight saving starts
-    TM_GPS tm_off;   ///< date/time when daylight saving ends
-    TZ_NAME name[2]; ///< names without and with daylight saving enabled
+    int32_t offs;     ///< standard offset from %UTC to local time [sec]
+    int32_t offs_dl;  ///< additional offset if daylight saving enabled [sec]
+    TM_GPS tm_on;     ///< date/time when daylight saving starts
+    TM_GPS tm_off;    ///< date/time when daylight saving ends
+    TZ_NAME name[2U]; ///< names without and with daylight saving enabled
 
 } TZDL;
 
@@ -875,7 +875,7 @@ typedef struct
 {
     CSUM csum;     ///< checksum of the remaining bytes */
     int16_t valid; ///< flag data are valid
-    char s[23];    ///< 22 chars GPS ASCII message plus trailing zero
+    char s[23U];   ///< 22 chars GPS ASCII message plus trailing zero
 
 } ASCII_MSG;
 

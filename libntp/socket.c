@@ -98,7 +98,7 @@ move_fd(
      */
     do
     {
-        if (fd >= 0 && fd < socket_boundary)
+        if ((fd >= 0) && (fd < socket_boundary))
         {
             /* inside reserved range: attempt to move fd */
             newfd = fcntl(fd, F_DUPFD, socket_boundary);

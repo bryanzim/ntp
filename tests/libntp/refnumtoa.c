@@ -24,9 +24,9 @@ void test_LocalClock(void)
     /* We test with a refclock address of type LOCALCLOCK.
      * with unit id 8
      */
-    const u_char unit = 8;
+    const u_char unit = 8U;
     u_int32 addr;
-    char expected[100];
+    char expected[100U];
     sockaddr_u address;
 
     addr = REFCLOCK_ADDR;
@@ -49,10 +49,10 @@ void test_UnknownId(void)
 #ifdef REFCLOCK /* refnumtoa() is useless otherwise */
     /* We test with a currently unused refclock ID */
     /* Might need to be updated if a new refclock gets this id. */
-    const u_char UNUSED_REFCLOCK_ID = 250;
-    const u_char unit = 4;
+    const u_char UNUSED_REFCLOCK_ID = 250U;
+    const u_char unit = 4U;
     u_int32 addr;
-    char expected[100];
+    char expected[100U];
     sockaddr_u address;
 
     addr = REFCLOCK_ADDR;

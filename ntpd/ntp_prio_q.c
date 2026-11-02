@@ -112,7 +112,9 @@ void* next_node(
     pn--;
 
     if (pn->node_next == NULL)
+    {
         return NULL;
+    }
 
     return pn->node_next + 1;
 }
@@ -129,8 +131,10 @@ int empty(
 void* queue_head(
     queue* q)
 {
-    if (NULL == q || NULL == q->front)
+    if ((NULL == q) || (NULL == q->front))
+    {
         return NULL;
+    }
 
     return q->front + 1;
 }
@@ -148,8 +152,8 @@ queue* enqueue(
     node* i = NULL;
     node* j = my_queue->front;
 
-    while (j != NULL &&
-           (*my_queue->get_order)(new_node + 1, j + 1) > 0)
+    while ((j != NULL) &&
+           ((*my_queue->get_order)(new_node + 1, j + 1) > 0))
     {
         i = j;
         j = j->node_next;
@@ -186,7 +190,9 @@ void* dequeue(
         return my_node + 1;
     }
     else
+    {
         return NULL;
+    }
 }
 
 
@@ -214,7 +220,9 @@ void append_queue(
     queue* q2)
 {
     while (!empty(q2))
+    {
         enqueue(q1, dequeue(q2));
+    }
     destroy_queue(q2);
 }
 

@@ -45,11 +45,17 @@ int wpa_debug_timestamp = 0;
 static int wpa_to_android_level(int level)
 {
     if (level == MSG_ERROR)
+    {
         return ANDROID_LOG_ERROR;
+    }
     if (level == MSG_WARNING)
+    {
         return ANDROID_LOG_WARN;
+    }
     if (level == MSG_INFO)
+    {
         return ANDROID_LOG_INFO;
+    }
     return ANDROID_LOG_DEBUG;
 }
 
@@ -68,7 +74,9 @@ void wpa_debug_print_timestamp(void)
     struct os_time tv;
 
     if (!wpa_debug_timestamp)
+    {
         return;
+    }
 
     os_get_time(&tv);
 #ifdef CONFIG_DEBUG_FILE
@@ -99,7 +107,9 @@ void wpa_debug_open_syslog(void)
 void wpa_debug_close_syslog(void)
 {
     if (wpa_debug_syslog)
+    {
         closelog();
+    }
 }
 
 
@@ -127,7 +137,7 @@ static int syslog_priority(int level)
 int wpa_debug_open_linux_tracing(void)
 {
     int mounts, trace_fd;
-    char buf[4096] = {};
+    char buf[4096U] = {};
     ssize_t buflen;
     char *line, *tmp1, *path = NULL;
 
@@ -192,7 +202,9 @@ int wpa_debug_open_linux_tracing(void)
 void wpa_debug_close_linux_tracing(void)
 {
     if (wpa_debug_tracing_file == NULL)
+    {
         return;
+    }
     fclose(wpa_debug_tracing_file);
     wpa_debug_tracing_file = NULL;
 }
@@ -287,16 +299,20 @@ static void _wpa_hexdump(int level, const char* title, const u8* buf,
         }
         else
         {
-            for (i = 0; i < len; i++)
+            for (i = 0; i < len; ++i)
+            {
                 fprintf(wpa_debug_tracing_file,
                         " %02x", buf[i]);
+            }
         }
         fflush(wpa_debug_tracing_file);
     }
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 
     if (level < wpa_debug_level)
+    {
         return;
+    }
 #ifdef CONFIG_ANDROID_LOG
     {
         const char* display;
@@ -314,7 +330,9 @@ static void _wpa_hexdump(int level, const char* title, const u8* buf,
         {
             /* Limit debug message length for Android log */
             if (slen > 32)
+            {
                 slen = 32;
+            }
             strbuf = os_malloc(1 + 3 * slen);
             if (strbuf == NULL)
             {
@@ -323,9 +341,11 @@ static void _wpa_hexdump(int level, const char* title, const u8* buf,
                 return;
             }
 
-            for (i = 0; i < slen; i++)
+            for (i = 0; i < slen; ++i)
+            {
                 os_snprintf(&strbuf[i * 3], 4, " %02x",
                             buf[i]);
+            }
 
             display = strbuf;
         }
@@ -367,9 +387,11 @@ static void _wpa_hexdump(int level, const char* title, const u8* buf,
                 return;
             }
 
-            for (i = 0; i < len; i++)
+            for (i = 0; i < len; ++i)
+            {
                 os_snprintf(&strbuf[i * 3], 4, " %02x",
                             buf[i]);
+            }
 
             display = strbuf;
         }
@@ -396,8 +418,10 @@ static void _wpa_hexdump(int level, const char* title, const u8* buf,
         }
         else if (show)
         {
-            for (i = 0; i < len; i++)
+            for (i = 0; i < len; ++i)
+            {
                 fprintf(out_file, " %02x", buf[i]);
+            }
         }
         else
         {
@@ -415,8 +439,10 @@ static void _wpa_hexdump(int level, const char* title, const u8* buf,
         }
         else if (show)
         {
-            for (i = 0; i < len; i++)
+            for (i = 0; i < len; ++i)
+            {
                 printf(" %02x", buf[i]);
+            }
         }
         else
         {
@@ -446,7 +472,7 @@ static void _wpa_hexdump_ascii(int level, const char* title, const u8* buf,
 {
     size_t i, llen;
     const u8* pos = buf;
-    const size_t line_len = 16;
+    const size_t line_len = 16U;
 
 #ifdef CONFIG_DEBUG_LINUX_TRACING
     if (wpa_debug_tracing_file != NULL)
@@ -465,16 +491,20 @@ static void _wpa_hexdump_ascii(int level, const char* title, const u8* buf,
         else
         {
             /* can do ascii processing in userspace */
-            for (i = 0; i < len; i++)
+            for (i = 0; i < len; ++i)
+            {
                 fprintf(wpa_debug_tracing_file,
                         " %02x", buf[i]);
+            }
         }
         fflush(wpa_debug_tracing_file);
     }
 #endif /* CONFIG_DEBUG_LINUX_TRACING */
 
     if (level < wpa_debug_level)
+    {
         return;
+    }
 #ifdef CONFIG_ANDROID_LOG
     _wpa_hexdump(level, title, buf, len, show);
 #else /* CONFIG_ANDROID_LOG */
@@ -502,20 +532,30 @@ static void _wpa_hexdump_ascii(int level, const char* title, const u8* buf,
         {
             llen = len > line_len ? line_len : len;
             fprintf(out_file, "    ");
-            for (i = 0; i < llen; i++)
+            for (i = 0; i < llen; ++i)
+            {
                 fprintf(out_file, " %02x", pos[i]);
-            for (i = llen; i < line_len; i++)
+            }
+            for (i = llen; i < line_len; ++i)
+            {
                 fprintf(out_file, "   ");
+            }
             fprintf(out_file, "   ");
-            for (i = 0; i < llen; i++)
+            for (i = 0; i < llen; ++i)
             {
                 if (isprint(pos[i]))
+                {
                     fprintf(out_file, "%c", pos[i]);
+                }
                 else
+                {
                     fprintf(out_file, "_");
+                }
             }
-            for (i = llen; i < line_len; i++)
+            for (i = llen; i < line_len; ++i)
+            {
                 fprintf(out_file, " ");
+            }
             fprintf(out_file, "\n");
             pos += llen;
             len -= llen;
@@ -541,20 +581,30 @@ static void _wpa_hexdump_ascii(int level, const char* title, const u8* buf,
         {
             llen = len > line_len ? line_len : len;
             printf("    ");
-            for (i = 0; i < llen; i++)
+            for (i = 0; i < llen; ++i)
+            {
                 printf(" %02x", pos[i]);
-            for (i = llen; i < line_len; i++)
+            }
+            for (i = llen; i < line_len; ++i)
+            {
                 printf("   ");
+            }
             printf("   ");
-            for (i = 0; i < llen; i++)
+            for (i = 0; i < llen; ++i)
             {
                 if (isprint(pos[i]))
+                {
                     printf("%c", pos[i]);
+                }
                 else
+                {
                     printf("_");
+                }
             }
-            for (i = llen; i < line_len; i++)
+            for (i = llen; i < line_len; ++i)
+            {
                 printf(" ");
+            }
             printf("\n");
             pos += llen;
             len -= llen;
@@ -611,9 +661,11 @@ int wpa_debug_open_file(const char* path)
 {
 #ifdef CONFIG_DEBUG_FILE
     if (!path)
+    {
         return 0;
+    }
 
-    if (last_path == NULL || os_strcmp(last_path, path) != 0)
+    if ((last_path == NULL) || (os_strcmp(last_path, path) != 0))
     {
         /* Save our path to enable re-open */
         os_free(last_path);
@@ -639,7 +691,9 @@ void wpa_debug_close_file(void)
 {
 #ifdef CONFIG_DEBUG_FILE
     if (!out_file)
+    {
         return;
+    }
     fclose(out_file);
     out_file = NULL;
     os_free(last_path);
@@ -673,7 +727,7 @@ void wpa_msg(void* ctx, int level, const char* fmt, ...)
     char* buf;
     const int buflen = 2048;
     int len;
-    char prefix[130];
+    char prefix[130U];
 
     buf = os_malloc(buflen);
     if (buf == NULL)
@@ -691,15 +745,19 @@ void wpa_msg(void* ctx, int level, const char* fmt, ...)
         {
             int res = os_snprintf(prefix, sizeof(prefix), "%s: ",
                                   ifname);
-            if (res < 0 || res >= (int)sizeof(prefix))
+            if ((res < 0) || (res >= (int)sizeof(prefix)))
+            {
                 prefix[0U] = '\0';
+            }
         }
     }
     len = vsnprintf(buf, buflen, fmt, ap);
     va_end(ap);
     wpa_printf(level, "%s%s", prefix, buf);
     if (wpa_msg_cb)
+    {
         wpa_msg_cb(ctx, level, buf, len);
+    }
     os_free(buf);
 }
 
@@ -712,7 +770,9 @@ void wpa_msg_ctrl(void* ctx, int level, const char* fmt, ...)
     int len;
 
     if (!wpa_msg_cb)
+    {
         return;
+    }
 
     buf = os_malloc(buflen);
     if (buf == NULL)
@@ -758,12 +818,18 @@ void hostapd_logger(void* ctx, const u8* addr, unsigned int module, int level,
     len = vsnprintf(buf, buflen, fmt, ap);
     va_end(ap);
     if (hostapd_logger_cb)
+    {
         hostapd_logger_cb(ctx, addr, module, level, buf, len);
+    }
     else if (addr)
+    {
         wpa_printf(MSG_DEBUG, "hostapd_logger: STA " MACSTR " - %s",
                    MAC2STR(addr), buf);
+    }
     else
+    {
         wpa_printf(MSG_DEBUG, "hostapd_logger: %s", buf);
+    }
     os_free(buf);
 }
 #endif /* CONFIG_NO_HOSTAPD_LOGGER */

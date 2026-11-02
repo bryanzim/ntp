@@ -71,7 +71,7 @@ tpro_start(
 {
     register struct tprounit* up;
     struct refclockproc* pp;
-    char device[20];
+    char device[20U];
     int fd;
 
     /*
@@ -121,7 +121,9 @@ tpro_shutdown(
     up = pp->unitptr;
     io_closeclock(&pp->io);
     if (NULL != up)
+    {
         free(up);
+    }
 }
 
 
@@ -175,9 +177,11 @@ tpro_poll(
     pp->lencode = strlen(pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("tpro: time %s timecode %d %s\n",
                ulfptoa(&pp->lastrec, 6), pp->lencode,
                pp->a_lastcode);
+    }
 #endif
     if (sscanf(pp->a_lastcode, "%3d %2d:%2d:%2d.%6ld", &pp->day,
                &pp->hour, &pp->minute, &pp->second, &pp->nsec) != 5)
@@ -187,9 +191,13 @@ tpro_poll(
     }
     pp->nsec *= 1000; /* Convert usec to nsec */
     if (!tp->status & 0x3)
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else
+    {
         pp->leap = LEAP_NOWARNING;
+    }
     if (!refclock_process(pp))
     {
         refclock_report(peer, CEVNT_BADTIME);

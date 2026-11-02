@@ -27,9 +27,13 @@ int search_entry(
 {
     register int a, b, resc = 0;
 
-    for (a = 0; a < kod_db_cnt; a++)
+    for (a = 0; a < kod_db_cnt; ++a)
+    {
         if (!strcmp(kod_db[a]->hostname, hostname))
+        {
             resc++;
+        }
+    }
 
     if (!resc)
     {
@@ -40,7 +44,7 @@ int search_entry(
     *dst = eallocarray(resc, sizeof(**dst));
 
     b = 0;
-    for (a = 0; a < kod_db_cnt; a++)
+    for (a = 0; a < kod_db_cnt; ++a)
         if (!strcmp(kod_db[a]->hostname, hostname))
         {
             (*dst)[b] = *kod_db[a];
@@ -68,12 +72,16 @@ void add_entry(
     /*
      * insert in address ("hostname") order to find duplicates
      */
-    for (n = 0; n < kod_db_cnt; n++)
+    for (n = 0; n < kod_db_cnt; ++n)
+    {
         if (strcmp(kod_db[n]->hostname, pke->hostname) >= 0)
+        {
             break;
+        }
+    }
 
-    if (n < kod_db_cnt &&
-        0 == strcmp(kod_db[n]->hostname, pke->hostname))
+    if ((n < kod_db_cnt) &&
+        (0 == strcmp(kod_db[n]->hostname, pke->hostname)))
     {
         kod_db[n]->timestamp = pke->timestamp;
         free(pke);
@@ -83,8 +91,10 @@ void add_entry(
     kod_db_cnt++;
     kod_db = erealloc(kod_db, kod_db_cnt * sizeof(kod_db[0U]));
     if (n != kod_db_cnt - 1)
+    {
         memmove(&kod_db[n + 1], &kod_db[n],
                 sizeof(kod_db[0U]) * ((kod_db_cnt - 1) - n));
+    }
     kod_db[n] = pke;
 }
 
@@ -95,19 +105,27 @@ void delete_entry(
 {
     int a;
 
-    for (a = 0; a < kod_db_cnt; a++)
+    for (a = 0; a < kod_db_cnt; ++a)
+    {
         if (!strcmp(kod_db[a]->hostname, hostname) && !strcmp(kod_db[a]->type, type))
+        {
             break;
+        }
+    }
 
     if (a == kod_db_cnt)
+    {
         return;
+    }
 
     free(kod_db[a]);
     kod_db_cnt--;
 
     if (a < kod_db_cnt)
+    {
         memmove(&kod_db[a], &kod_db[a + 1],
                 (kod_db_cnt - a) * sizeof(kod_db[0U]));
+    }
 }
 
 
@@ -115,7 +133,9 @@ void atexit_write_kod_db(void)
 {
 #ifdef WORK_FORK
     if (worker_process)
+    {
         return;
+    }
 #endif
     write_kod_db();
 }
@@ -134,14 +154,14 @@ int write_kod_db(void)
      * If opening fails, blindly attempt to create each directory
      * in the path first, then retry the open.
      */
-    if (NULL == db_s && strlen(kod_db_file))
+    if ((NULL == db_s) && strlen(kod_db_file))
     {
         dirmode = S_IRUSR | S_IWUSR | S_IXUSR | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
         pch = strchr(kod_db_file + 1, DIR_SEP);
         while (NULL != pch)
         {
             *pch = '\0';
-            if (-1 == mkdir(kod_db_file, dirmode) && errno != EEXIST)
+            if ((-1 == mkdir(kod_db_file, dirmode)) && (errno != EEXIST))
             {
                 msyslog(LOG_ERR, "mkdir(%s) failed: %m",
                         kod_db_file);
@@ -161,7 +181,7 @@ int write_kod_db(void)
         return FALSE;
     }
 
-    for (a = 0; a < kod_db_cnt; a++)
+    for (a = 0; a < kod_db_cnt; ++a)
     {
         fprintf(db_s, "%16.16llx %s %s\n", (unsigned long long)kod_db[a]->timestamp, kod_db[a]->type,
                 kod_db[a]->hostname);
@@ -182,7 +202,7 @@ void kod_init_kod_db(
      * Max. of 254 characters for hostname, 10 for timestamp, 4 for
      * kisscode, 2 for spaces, 1 for \n, and 1 for \0
      */
-    char fbuf[254 + 10 + 4 + 2 + 1 + 1];
+    char fbuf[254U + 10 + 4 + 2 + 1 + 1];
     FILE* db_s;
     int a, b, sepc, len;
     unsigned long long ull;
@@ -204,32 +224,40 @@ void kod_init_kod_db(
     }
 
     if (debug)
+    {
         printf("Starting to read KoD file %s...\n", db_file);
+    }
     /* First let's see how many entries there are and check for right syntax */
 
-    while (!feof(db_s) && NULL != fgets(fbuf, sizeof(fbuf), db_s))
+    while (!feof(db_s) && (NULL != fgets(fbuf, sizeof(fbuf), db_s)))
     {
 
         /* ignore blank lines */
         if ('\n' == fbuf[0U])
+        {
             continue;
+        }
 
         sepc = 0;
         len = strlen(fbuf);
-        for (a = 0; a < len; a++)
+        for (a = 0; a < len; ++a)
         {
             if (' ' == fbuf[a])
+            {
                 sepc++;
+            }
 
             if ('\n' == fbuf[a])
             {
                 if (sepc != 2)
                 {
                     if (strcmp(db_file, "/dev/null"))
+                    {
                         msyslog(LOG_DEBUG,
                                 "Syntax error in KoD db file %s in line %i (missing space)",
                                 db_file,
                                 kod_db_cnt + 1);
+                    }
                     fclose(db_s);
                     return;
                 }
@@ -254,8 +282,8 @@ void kod_init_kod_db(
 
     /* Read contents of file */
     for (b = 0;
-         !feof(db_s) && !ferror(db_s) && b < kod_db_cnt;
-         b++)
+         !feof(db_s) && !ferror(db_s) && (b < kod_db_cnt);
+         ++b)
     {
 
         str_ptr = fgets(fbuf, sizeof(fbuf), db_s);
@@ -300,12 +328,16 @@ void kod_init_kod_db(
 
 wrapup:
     fclose(db_s);
-    for (a = 0; a < kod_db_cnt; a++)
+    for (a = 0; a < kod_db_cnt; ++a)
+    {
         TRACE(2, ("KoD entry %d: %s at %llx type %s\n", a,
                   kod_db[a]->hostname,
                   (unsigned long long)kod_db[a]->timestamp,
                   kod_db[a]->type));
+    }
 
     if (!readonly && write_kod_db())
+    {
         atexit(&atexit_write_kod_db);
+    }
 }

@@ -13,7 +13,9 @@ time_t
 timefunc(time_t* ptr)
 {
     if (ptr)
+    {
         *ptr = nowtime;
+    }
     return nowtime;
 }
 

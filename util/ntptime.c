@@ -94,7 +94,7 @@ int main(
 #endif
     struct timeval tv;
     struct timex ntx, _ntx;
-    int times[20] = { 0 };
+    int times[20U] = { 0 };
     double ftemp, gtemp, htemp;
     double nscale = 1.0; /* assume usec scale for now */
     long time_frac;      /* ntv.time.tv_frac_sec (us/ns) */
@@ -161,8 +161,10 @@ int main(
         case 's':
             ntx.modes |= MOD_STATUS;
             ntx.status = atoi(ntp_optarg);
-            if (ntx.status < 0 || ntx.status >= 0x100)
+            if ((ntx.status < 0) || (ntx.status >= 0x100))
+            {
                 errflg++;
+            }
             break;
 
         case 't':
@@ -237,10 +239,14 @@ int main(
     {
         status = syscall(BADCALL, &ntv); /* dummy parameter */
         if ((status < 0) && (errno == ENOSYS))
+        {
             --pll_control;
+        }
     }
     if (pll_control)
+    {
         printf("sigaction() failed to catch an invalid syscall\n");
+    }
 #endif /* BADCALL */
 
     if (cost)
@@ -249,21 +255,27 @@ int main(
         if (sigsetjmp(env, 1) == 0)
 #endif
         {
-            for (c = 0; c < COUNTOF(times); c++)
+            for (c = 0; c < COUNTOF(times); ++c)
             {
                 status = ntp_gettime(&ntv);
                 if ((status < 0) && (errno == ENOSYS))
+                {
                     --pll_control;
+                }
                 if (pll_control < 0)
+                {
                     break;
+                }
                 times[c] = ntv.time.tv_frac_sec;
             }
         }
         if (pll_control >= 0)
         {
             printf("[ us %06d:", times[0U]);
-            for (c = 1; c < COUNTOF(times); c++)
+            for (c = 1; c < COUNTOF(times); ++c)
+            {
                 printf(" %d", times[c] - times[c - 1]);
+            }
             printf(" ]\n");
         }
     }
@@ -273,7 +285,9 @@ int main(
     {
         status = ntp_gettime(&ntv);
         if ((status < 0) && (errno == ENOSYS))
+        {
             --pll_control;
+        }
     }
     _ntx.modes = 0; /* Ensure nothing is set */
 #ifdef SIGSYS
@@ -282,7 +296,9 @@ int main(
     {
         status = ntp_adjtime(&_ntx);
         if ((status < 0) && (errno == ENOSYS))
+        {
             --pll_control;
+        }
         flash = _ntx.status;
     }
     if (pll_control < 0)
@@ -324,11 +340,13 @@ int main(
         printf("  maximum error %ld us, estimated error %ld us",
                ntv.maxerror, ntv.esterror);
         if (rawtime)
+        {
             printf("  ntptime=%x.%x unixtime=%x.%0*d %s",
                    (u_int)ts.l_ui, (u_int)ts.l_uf,
                    (int)ntv.time.tv_sec, fdigits,
                    (int)time_frac,
                    ctime((time_t*)&ntv.time.tv_sec));
+        }
 #if defined(NTP_API) && NTP_API > 3
         printf(", TAI offset %ld\n", (long)ntv.tai);
 #else
@@ -348,7 +366,9 @@ int main(
         printf("  modes %s,\n", sprintb(ntx.modes, TIMEX_MOD_BITS));
 #ifdef STA_NANO
         if (flash & STA_NANO)
+        {
             nscale = 1e-3;
+        }
 #endif
         ftemp = (double)ntx.offset * nscale;
         printf("  offset %.3f", ftemp);
@@ -364,7 +384,9 @@ int main(
             "  time constant %lu, precision %.3f us, tolerance %.0f ppm,\n",
             (u_long)ntx.constant, gtemp, ftemp);
         if (ntx.shift == 0)
+        {
             exit(0);
+        }
         ftemp = (double)ntx.ppsfreq / SCALE_FREQ;
         gtemp = (double)ntx.stabil / SCALE_FREQ;
         htemp = (double)ntx.jitter * nscale;
@@ -415,12 +437,16 @@ sprintb(
     int i;
     int any;
     char c;
-    static char buf[132];
+    static char buf[132U];
 
-    if (bits != NULL && *bits == 8)
+    if ((bits != NULL) && (*bits == 8))
+    {
         snprintf(buf, sizeof(buf), "0%o", v);
+    }
     else
+    {
         snprintf(buf, sizeof(buf), "0x%x", v);
+    }
     cp = buf + strlen(buf);
     cplim = buf + sizeof(buf);
     if (bits != NULL)
@@ -437,25 +463,33 @@ sprintb(
                 {
                     *cp++ = ',';
                     if (cp >= cplim)
+                    {
                         goto overrun;
+                    }
                 }
                 any = TRUE;
-                for (; (c = *bits) > 32; bits++)
+                for (; (c = *bits) > 32; ++bits)
                 {
                     *cp++ = c;
                     if (cp >= cplim)
+                    {
                         goto overrun;
+                    }
                 }
             }
             else
             {
-                for (; *bits > 32; bits++)
+                for (; *bits > 32; ++bits)
+                {
                     continue;
+                }
             }
         }
         *cp++ = ')';
         if (cp >= cplim)
+        {
             goto overrun;
+        }
     }
     *cp = '\0';
     return buf;
@@ -472,10 +506,12 @@ const char*
 timex_state(
     int s)
 {
-    static char buf[32];
+    static char buf[32U];
 
     if ((size_t)s < COUNTOF(timex_states))
+    {
         return timex_states[s];
+    }
     snprintf(buf, sizeof(buf), "TIME-#%d", s);
     return buf;
 }

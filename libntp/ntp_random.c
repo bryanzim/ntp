@@ -264,7 +264,9 @@ good_rand(
     lo = x % 127773;
     x = 16807 * lo - 2836 * hi;
     if (x <= 0)
+    {
         x += 0x7fffffff;
+    }
     return (x);
 #endif /* !USE_WEAK_SEEDING */
 }
@@ -293,12 +295,16 @@ void ntp_srandom(
     else
     {
         state[0U] = x;
-        for (i = 1; i < rand_deg; i++)
+        for (i = 1; i < rand_deg; ++i)
+        {
             state[i] = good_rand(state[i - 1]);
+        }
         fptr = &state[rand_sep];
         rptr = &state[0U];
-        for (i = 0; i < 10 * rand_deg; i++)
+        for (i = 0; i < 10 * rand_deg; ++i)
+        {
             x = ntp_random();
+        }
     }
 
     /* seed the likely faster (and poorer) rand() as well */
@@ -379,9 +385,13 @@ char* ntp_initstate(
     register long* long_arg_state = (long*)arg_state;
 
     if (rand_type == TYPE_0)
+    {
         state[-1] = rand_type;
+    }
     else
+    {
         state[-1] = MAX_TYPES * (rptr - state) + rand_type;
+    }
     if (n < BREAK_0)
     {
         (void)fprintf(stderr,
@@ -422,9 +432,13 @@ char* ntp_initstate(
     end_ptr = &state[rand_deg];                   /* must set end_ptr before srandom */
     ntp_srandom(seed);
     if (rand_type == TYPE_0)
+    {
         long_arg_state[0U] = rand_type;
+    }
     else
+    {
         long_arg_state[0U] = MAX_TYPES * (rptr - state) + rand_type;
+    }
     return (ostate);
 }
 
@@ -457,9 +471,13 @@ char* ntp_setstate(
     char* ostate = (char*)(&state[-1]);
 
     if (rand_type == TYPE_0)
+    {
         state[-1] = rand_type;
+    }
     else
+    {
         state[-1] = MAX_TYPES * (rptr - state) + rand_type;
+    }
     switch (type)
     {
     case TYPE_0:

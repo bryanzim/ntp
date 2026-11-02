@@ -215,7 +215,7 @@ heath_start(
 {
     struct refclockproc* pp;
     int fd;
-    char device[20];
+    char device[20U];
 
     /*
      * Open serial port
@@ -224,7 +224,9 @@ heath_start(
     fd = refclock_open(&peer->srcadr, device, speed[peer->ttl & 0x3],
                        LDISC_REMOTE);
     if (fd <= 0)
+    {
         return (0);
+    }
     pp = peer->procptr;
     pp->io.clock_recv = heath_receive;
     pp->io.srcclock = peer;
@@ -259,7 +261,9 @@ heath_shutdown(
 
     pp = peer->procptr;
     if (-1 != pp->io.fd)
+    {
         io_closeclock(&pp->io);
+    }
 }
 
 
@@ -275,7 +279,7 @@ heath_receive(
     l_fp trtmp;
     int month, day;
     int i;
-    char dsec, a[5];
+    char dsec, a[5U];
 
     /*
      * Initialize pointers and read the timecode and timestamp
@@ -355,7 +359,7 @@ heath_receive(
      * be avoided if the engineers had been required to write a
      * device driver before finalizing the timecode format.
      */
-    if (month < 1 || month > 12 || day < 1)
+    if ((month < 1) || (month > 12) || (day < 1))
     {
         refclock_report(peer, CEVNT_BADTIME);
         return;
@@ -367,8 +371,10 @@ heath_receive(
             refclock_report(peer, CEVNT_BADTIME);
             return;
         }
-        for (i = 0; i < month - 1; i++)
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day1tab[i];
+        }
     }
     else
     {
@@ -377,8 +383,10 @@ heath_receive(
             refclock_report(peer, CEVNT_BADTIME);
             return;
         }
-        for (i = 0; i < month - 1; i++)
+        for (i = 0; i < month - 1; ++i)
+        {
             day += day2tab[i];
+        }
     }
     pp->day = day;
 
@@ -386,14 +394,18 @@ heath_receive(
      * Determine synchronization and last update
      */
     if (!isdigit((unsigned char)dsec))
+    {
         pp->leap = LEAP_NOTINSYNC;
+    }
     else
     {
         pp->nsec = (dsec - '0') * 100000000;
         pp->leap = LEAP_NOWARNING;
     }
     if (!refclock_process(pp))
+    {
         refclock_report(peer, CEVNT_BADTIME);
+    }
 }
 
 
@@ -431,10 +443,14 @@ heath_poll(
      * I'm leaving the 'T' write in for timing purposes.
      */
     if (ioctl(pp->io.fd, TIOCMBIC, (char*)&bits) < 0)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
     get_systime(&pp->lastrec);
     if (refclock_write(peer, "T", 1, "T") != 1)
+    {
         refclock_report(peer, CEVNT_FAULT);
+    }
     ioctl(pp->io.fd, TIOCMBIS, (char*)&bits);
     if (pp->coderecv == pp->codeproc)
     {
@@ -446,8 +462,10 @@ heath_poll(
     record_clock_stats(&peer->srcadr, pp->a_lastcode);
 #ifdef DEBUG
     if (debug)
+    {
         printf("heath: timecode %d %s\n", pp->lencode,
                pp->a_lastcode);
+    }
 #endif
     pp->polls++;
 }

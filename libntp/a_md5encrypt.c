@@ -28,13 +28,15 @@ static size_t
 cmac_ctx_size(
     CMAC_CTX* ctx)
 {
-    size_t mlen = 0;
+    size_t mlen = 0U;
 
     if (ctx)
     {
         EVP_CIPHER_CTX* cctx;
         if (NULL != (cctx = CMAC_CTX_get0_cipher_ctx(ctx)))
+        {
             mlen = EVP_CIPHER_CTX_block_size(cctx);
+        }
     }
     return mlen;
 }
@@ -84,7 +86,7 @@ make_mac(
      * key type and digest type have been verified when the key
      * was created.
      */
-    size_t retlen = 0;
+    size_t retlen = 0U;
 
 #ifdef OPENSSL
 
@@ -134,13 +136,15 @@ make_mac(
         }
     cmac_fail:
         if (ctx)
+        {
             CMAC_CTX_free(ctx);
+        }
     }
     else
 #endif /* ENABLE_CMAC */
     {  /* generic MAC handling */
         EVP_MD_CTX* ctx;
-        u_int uilen = 0;
+        u_int uilen = 0U;
 
         ctx = get_md_ctx(ktype);
         if (NULL == ctx)
@@ -256,10 +260,10 @@ int MD5authdecrypt(
     rwbuffT digb = { digest, sizeof(digest) };
     robuffT keyb = { key, klen };
     robuffT msgb = { pkt, length };
-    size_t dlen = 0;
+    size_t dlen = 0U;
 
     dlen = make_mac(&digb, type, &keyb, &msgb);
-    if (0 == dlen || size != dlen + KEY_MAC_LEN)
+    if ((0 == dlen) || (size != dlen + KEY_MAC_LEN))
     {
         msyslog(LOG_ERR,
                 "MAC decrypt: MAC length error: %u not %u for key %u",

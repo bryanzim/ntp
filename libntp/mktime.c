@@ -89,12 +89,12 @@
 #define TM_YEAR_BASE 1900
 #define isleap(y) ((((y) % 4) == 0 && ((y) % 100) != 0) || ((y) % 400) == 0)
 
-static int mon_lengths[2][MONSPERYEAR] = {
+static int mon_lengths[2U][MONSPERYEAR] = {
     { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 },
     { 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }
 };
 
-static int year_lengths[2] = {
+static int year_lengths[2U] = {
     DAYSPERNYEAR, DAYSPERLYEAR
 };
 
@@ -157,25 +157,35 @@ tmcomp(
 
     /* compare down to the same day */
 
-    if ((result = (atmp->tm_year - btmp->tm_year)) == 0 &&
-        (result = (atmp->tm_mon - btmp->tm_mon)) == 0)
+    if (((result = (atmp->tm_year - btmp->tm_year)) == 0) &&
+        ((result = (atmp->tm_mon - btmp->tm_mon)) == 0))
+    {
         result = (atmp->tm_mday - btmp->tm_mday);
+    }
 
     if (result != 0)
+    {
         return result;
+    }
 
     /* get rid of one-sided dst bias */
 
-    if (atmp->tm_isdst == 1 && !btmp->tm_isdst)
+    if ((atmp->tm_isdst == 1) && !btmp->tm_isdst)
+    {
         btmp = mkdst(btmp);
-    else if (btmp->tm_isdst == 1 && !atmp->tm_isdst)
+    }
+    else if ((btmp->tm_isdst == 1) && !atmp->tm_isdst)
+    {
         atmp = mkdst(atmp);
+    }
 
     /* compare the rest of the way */
 
-    if ((result = (atmp->tm_hour - btmp->tm_hour)) == 0 &&
-        (result = (atmp->tm_min - btmp->tm_min)) == 0)
+    if (((result = (atmp->tm_hour - btmp->tm_hour)) == 0) &&
+        ((result = (atmp->tm_min - btmp->tm_min)) == 0))
+    {
         result = atmp->tm_sec - btmp->tm_sec;
+    }
     return result;
 }
 
@@ -195,8 +205,10 @@ time2(
 
     *okayp = FALSE;
     yourtm = *tmp;
-    if (yourtm.tm_sec >= SECSPERMIN + 2 || yourtm.tm_sec < 0)
+    if ((yourtm.tm_sec >= SECSPERMIN + 2) || (yourtm.tm_sec < 0))
+    {
         normalize(&yourtm.tm_min, &yourtm.tm_sec, SECSPERMIN);
+    }
     normalize(&yourtm.tm_hour, &yourtm.tm_min, MINSPERHOUR);
     normalize(&yourtm.tm_mday, &yourtm.tm_hour, HOURSPERDAY);
     normalize(&yourtm.tm_year, &yourtm.tm_mon, MONSPERYEAR);
@@ -211,7 +223,9 @@ time2(
         i = mon_lengths[isleap(yourtm.tm_year +
                                TM_YEAR_BASE)][yourtm.tm_mon];
         if (yourtm.tm_mday <= i)
+        {
             break;
+        }
         yourtm.tm_mday -= i;
         if (++yourtm.tm_mon >= MONSPERYEAR)
         {
@@ -227,7 +241,9 @@ time2(
     ** signed or unsigned, though lint complains if unsigned).
     */
     for (bits = 0, t = 1; t > 0; ++bits, t <<= 1)
+    {
         ;
+    }
     /*
     ** If time_t is signed, then 0 is the median value,
     ** if time_t is unsigned, then 1 << bits is median.
@@ -236,32 +252,50 @@ time2(
     for (;;)
     {
         if (usezn)
+        {
             mytm = *localtime(&t);
+        }
         else
+        {
             mytm = *gmtime(&t);
+        }
         dir = tmcomp(&mytm, &yourtm);
         if (dir != 0)
         {
             if (bits-- < 0)
+            {
                 return WRONG;
+            }
             if (bits < 0)
+            {
                 --t;
+            }
             else if (dir > 0)
+            {
                 t -= (time_t)1 << bits;
+            }
             else
+            {
                 t += (time_t)1 << bits;
+            }
             continue;
         }
-        if (yourtm.tm_isdst < 0 || mytm.tm_isdst == yourtm.tm_isdst)
+        if ((yourtm.tm_isdst < 0) || (mytm.tm_isdst == yourtm.tm_isdst))
+        {
             break;
+        }
 
         return WRONG;
     }
     t += saved_seconds;
     if (usezn)
+    {
         *tmp = *localtime(&t);
+    }
     else
+    {
         *tmp = *gmtime(&t);
+    }
     *okayp = TRUE;
     return t;
 }
@@ -278,10 +312,14 @@ time1(
     int okay;
 
     if (tmp->tm_isdst > 1)
+    {
         tmp->tm_isdst = 1;
+    }
     t = time2(tmp, &okay, 1);
-    if (okay || tmp->tm_isdst < 0)
+    if (okay || (tmp->tm_isdst < 0))
+    {
         return t;
+    }
 
     return WRONG;
 }
@@ -305,8 +343,10 @@ timegm(
 
     tmp->tm_isdst = 0;
     t = time2(tmp, &okay, 0);
-    if (okay || tmp->tm_isdst < 0)
+    if (okay || (tmp->tm_isdst < 0))
+    {
         return t;
+    }
 
     return WRONG;
 }

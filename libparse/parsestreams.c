@@ -192,7 +192,9 @@ void ntp_memset(
     int c)
 {
     while (c-- > 0)
+    {
         *a++ = x;
+    }
 }
 
 /*
@@ -275,7 +277,9 @@ int xxxinit(
                     s++;
                 }
                 if (*s == ' ')
+                {
                     s++;
+                }
             }
 
             t = parsesync_vd.Drv_name;
@@ -284,7 +288,9 @@ int xxxinit(
                 t++;
             }
             if (*t == ' ')
+            {
                 t++;
+            }
 
             S = s;
             while (*S && (((*S >= '0') && (*S <= '9')) || (*S == '.')))
@@ -332,7 +338,9 @@ int xxxinit(
                 return (ENXIO);
             }
             else
+            {
                 return (0);
+            }
         }
 
 
@@ -564,7 +572,9 @@ parseclose(
     s = splhigh();
 
     if (parse->parse_dqueue)
+    {
         close_linemon(parse->parse_dqueue, q);
+    }
     parse->parse_dqueue = (queue_t*)0;
 
     (void)splx(s);
@@ -645,12 +655,14 @@ parsewput(
              * taken from Craig Leres ppsclock module (and modified)
              */
             datap = allocb(sizeof(struct ppsclockev), BPRI_MED);
-            if (datap == NULL || mp->b_cont)
+            if ((datap == NULL) || mp->b_cont)
             {
                 mp->b_datap->db_type = M_IOCNAK;
                 iocp->ioc_error = (datap == NULL) ? ENOMEM : EINVAL;
                 if (datap != NULL)
+                {
                     freeb(datap);
+                }
                 qreply(q, mp);
                 break;
             }
@@ -773,7 +785,9 @@ parserput(
             putnext(q, mp);
         }
         else
+        {
             putq(q, mp);
+        }
         break;
 
     case M_BREAK:
@@ -796,7 +810,9 @@ parserput(
                 putnext(q, mp);
             }
             else
+            {
                 putq(q, mp);
+            }
         }
         else
         {
@@ -810,7 +826,7 @@ parserput(
                 while (mp != (mblk_t*)NULL)
                 {
                     ch = rdchar(&mp);
-                    if (ch != ~0 && parse_ioread(&parse->parse_io, (unsigned int)ch, &ctime))
+                    if ((ch != ~0) && parse_ioread(&parse->parse_io, (unsigned int)ch, &ctime))
                     {
                         /*
                          * up up and away (hopefully ...)
@@ -824,7 +840,9 @@ parserput(
                             putnext(parse->parse_queue, nmp);
                         }
                         else if (nmp)
+                        {
                             freemsg(nmp);
+                        }
                         parse_iodone(&parse->parse_io);
                     }
                 }
@@ -845,7 +863,9 @@ parserput(
                         putnext(parse->parse_queue, nmp);
                     }
                     else if (nmp)
+                    {
                         freemsg(nmp);
+                    }
                     parse_iodone(&parse->parse_io);
                 }
                 freemsg(mp);
@@ -879,7 +899,9 @@ parserput(
                 putnext(parse->parse_queue, nmp);
             }
             else if (nmp)
+            {
                 freemsg(nmp);
+            }
             parse_iodone(&parse->parse_io);
             freemsg(mp);
         }
@@ -888,7 +910,9 @@ parserput(
             putnext(q, mp);
         }
         else
+        {
             putq(q, mp);
+        }
 
         if (status)
         {
@@ -1154,7 +1178,9 @@ zs_xsisr(
         {
             usec = cdevent.tv.tv_usec - usec;
             if (usec < 0)
+            {
                 usec += 1000000;
+            }
 
             hardpps(&cdevent.tv, usec);
         }
@@ -1229,10 +1255,14 @@ zs_xsisr(
         }
     }
 
-    if (zsstatus & cdmask) /* fake CARRIER status */
+    if (zsstatus & cdmask)
+    { /* fake CARRIER status */
         za->za_flags |= ZAS_CARR_ON;
+    }
     else
+    {
         za->za_flags &= ~ZAS_CARR_ON;
+    }
 
     /*
      * we are now gathered here to process some unusual external status
@@ -1265,9 +1295,13 @@ zs_xsisr(
                  * prove dangerous to your health)
                  */
                 if ((zsisr = ((struct savedzsops*)((parsestream_t*)(void*)q->q_ptr)->parse_data)->oldzsops->zsop_xsint))
+                {
                     return zsisr(zs);
+                }
                 else
+                {
                     panic("zs_xsisr: unable to locate original ISR");
+                }
 
                 parseprintf(DD_ISR, ("zs_xsisr: non CD event was processed for \"%s\"\n", dname));
                 /*
@@ -1292,9 +1326,13 @@ zs_xsisr(
     printf("zs_zsisr: looking for \"%s\" - found \"%s\" - taking EMERGENCY path\n", parseinfo.st_rdinit->qi_minfo->mi_idname, dname ? dname : "-NIL-");
 
     if (emergencyzs && emergencyzs->zsop_xsint)
+    {
         emergencyzs->zsop_xsint(zs);
+    }
     else
+    {
         panic("zs_xsisr: no emergency ISR handler");
+    }
     return 0;
 }
 #endif /* sun */

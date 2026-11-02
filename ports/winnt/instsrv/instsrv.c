@@ -26,9 +26,9 @@
 ** to hold the closing double-NUL and should have *exactly* the required size. Since the
 ** dependencies are fixed here, we take exactly the required 11 bytes:
 */
-static const char s_acSvcDeps[11] = "TcpIp\0Afd\0\0";
+static const char s_acSvcDeps[11U] = "TcpIp\0Afd\0\0";
 /* likewise we do with the PPAS API list... */
-static const char s_acPpsDlls[30] = "loopback-ppsapi-provider.dll\0\0";
+static const char s_acPpsDlls[30U] = "loopback-ppsapi-provider.dll\0\0";
 
 SC_HANDLE schService;
 SC_HANDLE schSCManager;
@@ -49,12 +49,16 @@ getServicePath(
     char *cbuf, *cpos;
 
     /* if just the executable and no dangerous chars, return the exe path. */
-    if (argc == 1 && !strpbrk(execPath, s_chars_to_quote))
+    if ((argc == 1) && !strpbrk(execPath, s_chars_to_quote))
+    {
         return execPath;
+    }
 
     /* calculate buffer size and get the buffer */
     for (i = 0; i < argc; ++i)
+    {
         minsize += strlen(argv[i]);
+    }
 
     cpos = cbuf = malloc(minsize);
     if (NULL == cbuf)
@@ -207,10 +211,10 @@ int RemoveService(
 #define SZ_ENUM_BUF 4096
         ENUM_SERVICE_STATUS essServiceStatus[SZ_ENUM_BUF];
         DWORD dwBufSize = sizeof(essServiceStatus);
-        DWORD dwBytesNeeded = 0;
-        DWORD dwServicesReturned = 0;
-        DWORD dwResumeHandle = 0;
-        DWORD dwI = 0;
+        DWORD dwBytesNeeded = 0U;
+        DWORD dwServicesReturned = 0U;
+        DWORD dwResumeHandle = 0U;
+        DWORD dwI = 0U;
         BOOLEAN bFound = FALSE;
 
         if (!EnumServicesStatusA(schSCManager, SERVICE_WIN32, SERVICE_ACTIVE,
@@ -298,7 +302,7 @@ int addSourceToRegistry(
     HKEY hk; /* registry key handle */
     DWORD dwData;
     BOOL bSuccess;
-    char regarray[200];
+    char regarray[200U];
     int rc;
 
     /* When an application uses the RegisterEventSource or OpenEventLog function to get a
@@ -311,7 +315,7 @@ int addSourceToRegistry(
     rc = _snprintf(regarray, sizeof(regarray), "%s%s",
                    "SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\",
                    pszAppname);
-    if (rc < 0 || rc >= sizeof(regarray))
+    if ((rc < 0) || (rc >= sizeof(regarray)))
     {
         fputs("addSourceToRegistry: buffer overrun(app name)", stderr);
         return 1;
@@ -419,9 +423,11 @@ int main(int argc, char* argv[])
     }
 
     if (argc >= 2)
+    {
         bRemovingService = (!_stricmp(argv[1U], "remove"));
+    }
 
-    if ((bRemovingService && argc != 2) || (!bRemovingService && argc < 2))
+    if ((bRemovingService && (argc != 2)) || (!bRemovingService && (argc < 2)))
     {
         DisplayHelp();
         return 1;
@@ -465,21 +471,29 @@ int main(int argc, char* argv[])
     }
 
     if (bRemovingService)
+    {
         ok = RemoveService(szServiceName);
+    }
     else
+    {
         ok = InstallService(szServiceName, szDisplayName,
                             getServicePath((const char* const*)(argv + 1),
                                            argc - 1),
                             s_acSvcDeps);
+    }
 
     CloseServiceHandle(schSCManager);
 
     if (!bRemovingService)
     {
         if (ok == 0)
-            ok = addSourceToRegistry("NTP", argv[1U]); /* Set the Event-ID message-file name. */
+        {
+            ok = addSourceToRegistry("NTP", argv[1U]);
+        } /* Set the Event-ID message-file name. */
         if (ok == 0)
-            ok = addKeysToRegistry(); /* add other stuff */
+        {
+            ok = addKeysToRegistry();
+        } /* add other stuff */
 
         if (ok == 0)
         {

@@ -46,9 +46,9 @@ extern const u_int32 ustotshi[];
  * fraction is assumed to be unsigned.
  */
 #ifdef USE_TSF_USEC_TABLES
-extern const u_int32 tstouslo[256];
-extern const u_int32 tstousmid[256];
-extern const u_int32 tstoushi[128];
+extern const u_int32 tstouslo[256U];
+extern const u_int32 tstousmid[256U];
+extern const u_int32 tstoushi[128U];
 
 /*
  * TV_SHIFT is used to turn the table result into a usec value.  To
@@ -147,8 +147,8 @@ normalize_tval(
      * here: it has implementation-defined behaviour when applied
      * to LONG_MIN.
      */
-    if (x.tv_usec < -3l * MICROSECONDS ||
-        x.tv_usec > 3l * MICROSECONDS)
+    if ((x.tv_usec < -3l * MICROSECONDS) ||
+        (x.tv_usec > 3l * MICROSECONDS))
     {
         z = x.tv_usec / MICROSECONDS;
         x.tv_usec -= z * MICROSECONDS;
@@ -162,17 +162,21 @@ normalize_tval(
      * division adjustment if the above division was executed.)
      */
     if (x.tv_usec < 0)
+    {
         do
         {
             x.tv_usec += MICROSECONDS;
             x.tv_sec--;
         } while (x.tv_usec < 0);
+    }
     else if (x.tv_usec >= MICROSECONDS)
+    {
         do
         {
             x.tv_usec -= MICROSECONDS;
             x.tv_sec++;
         } while (x.tv_usec >= MICROSECONDS);
+    }
 
     return x;
 }
@@ -285,8 +289,10 @@ cmp_tval(
 
     r = (a.tv_sec > b.tv_sec) - (a.tv_sec < b.tv_sec);
     if (0 == r)
+    {
         r = (a.tv_usec > b.tv_usec) -
             (a.tv_usec < b.tv_usec);
+    }
 
     return r;
 }
@@ -315,7 +321,9 @@ test_tval(
 
     r = (a.tv_sec > 0) - (a.tv_sec < 0);
     if (r == 0)
+    {
         r = (a.tv_usec > 0);
+    }
 
     return r;
 }

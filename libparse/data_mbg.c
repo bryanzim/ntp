@@ -56,7 +56,7 @@ static offsets_t mbg_float  = { 1, 0, 3, 2, 0, 0, 0, 0 }; /* byte order for mein
 #endif
 static offsets_t mbg_double = { 1, 0, 3, 2, 5, 4, 7, 6 }; /* byte order for meinberg doubles */
 static int32 rad2deg_i = 57;
-static u_int32 rad2deg_f = 0x4BB834C7; /* 57.2957795131 == 180/PI */
+static u_int32 rad2deg_f = 0x4BB834C7U; /* 57.2957795131 == 180/PI */
 
 void put_mbg_header(
     unsigned char** bufpp,
@@ -210,7 +210,7 @@ mbg_time_status_str(
 
         start = p = *buffpp;
 
-        for (s = states; s->flag; s++)
+        for (s = states; s->flag; ++s)
         {
             if (s->flag & status)
             {
@@ -244,7 +244,9 @@ void mbg_tm_str(
     *buffpp += strlen(*buffpp);
 
     if (print_status)
+    {
         mbg_time_status_str(buffpp, tmp->status, size - (*buffpp - s));
+    }
 }
 
 void mbg_tgps_str(
@@ -270,12 +272,12 @@ void get_mbg_cfgh(
     get_mbg_tgps(buffpp, &cfghp->tot_63);
     get_mbg_tgps(buffpp, &cfghp->t0a);
 
-    for (i = 0; i < N_SVNO_GPS; i++)
+    for (i = 0; i < N_SVNO_GPS; ++i)
     {
         get_mbg_cfg(buffpp, &cfghp->cfg[i]);
     }
 
-    for (i = 0; i < N_SVNO_GPS; i++)
+    for (i = 0; i < N_SVNO_GPS; ++i)
     {
         get_mbg_health(buffpp, &cfghp->health[i]);
     }
@@ -312,7 +314,7 @@ void get_mbg_lla(
 {
     int i;
 
-    for (i = LAT; i <= ALT; i++)
+    for (i = LAT; i <= ALT; ++i)
     {
         if (fetch_ieee754(buffpp, IEEE_DOUBLE, &lla[i], mbg_double) != IEEE_OK)
         {
@@ -331,7 +333,7 @@ void get_mbg_xyz(
 {
     int i;
 
-    for (i = XP; i <= ZP; i++)
+    for (i = XP; i <= ZP; ++i)
     {
         if (fetch_ieee754(buffpp, IEEE_DOUBLE, &xyz[i], mbg_double) != IEEE_OK)
         {
@@ -348,7 +350,7 @@ get_mbg_comparam(
     size_t i;
 
     comparamp->baud_rate = get_lsb_long(buffpp);
-    for (i = 0; i < sizeof(comparamp->framing); i++)
+    for (i = 0; i < sizeof(comparamp->framing); ++i)
     {
         comparamp->framing[i] = *(*buffpp)++;
     }
@@ -361,11 +363,11 @@ void get_mbg_portparam(
 {
     int i;
 
-    for (i = 0; i < DEFAULT_N_COM; i++)
+    for (i = 0; i < DEFAULT_N_COM; ++i)
     {
         get_mbg_comparam(buffpp, &portparamp->com[i]);
     }
-    for (i = 0; i < DEFAULT_N_COM; i++)
+    for (i = 0; i < DEFAULT_N_COM; ++i)
     {
         portparamp->mode[i] = *(*buffpp)++;
     }

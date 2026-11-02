@@ -48,22 +48,22 @@ const s_char AM[AM_MODES][AM_MODES] = {
     /*NONE*/ { AM_ERR, AM_NEWPASS, AM_NOMATCH,   AM_FXMIT, AM_MANYCAST,  AM_NEWBCL },
 
     /*A*/
-     { AM_ERR, AM_PROCPKT, AM_PROCPKT, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
+    { AM_ERR, AM_PROCPKT, AM_PROCPKT, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
 
     /*P*/
-     { AM_ERR, AM_PROCPKT,     AM_ERR, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
+    { AM_ERR, AM_PROCPKT,     AM_ERR, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
 
     /*C*/
-     { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_PROCPKT, AM_NOMATCH },
+    { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_PROCPKT, AM_NOMATCH },
 
     /*S*/
-     { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
+    { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
 
     /*BCST*/
-     { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
+    { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_NOMATCH, AM_NOMATCH },
 
     /*BCL*/
-     { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_NOMATCH, AM_PROCPKT },
+    { AM_ERR, AM_NOMATCH, AM_NOMATCH, AM_NOMATCH,  AM_NOMATCH, AM_PROCPKT },
 };
 
 #define MATCH_ASSOC(x, y) (AM[CLAMP((x), 0, AM_MODES)][CLAMP((y), 0, AM_MODES)])
@@ -144,8 +144,10 @@ void init_peer(void)
     /*
      * Initialize peer free list from static allocation.
      */
-    for (i = COUNTOF(init_peer_alloc) - 1; i >= 0; i--)
+    for (i = COUNTOF(init_peer_alloc) - 1; i >= 0; --i)
+    {
         LINK_SLIST(peer_free, &init_peer_alloc[i], p_link);
+    }
     total_peer_structs = COUNTOF(init_peer_alloc);
     peer_free_count = COUNTOF(init_peer_alloc);
 
@@ -153,8 +155,9 @@ void init_peer(void)
      * Initialize our first association ID
      */
     do
+    {
         current_association_ID = ntp_random() & ASSOCID_MAX;
-    while (!current_association_ID);
+    } while (!current_association_ID);
     initial_association_ID = current_association_ID;
 }
 
@@ -170,8 +173,10 @@ getmorepeermem(void)
 
     peers = eallocarray(INC_PEER_ALLOC, sizeof(*peers));
 
-    for (i = INC_PEER_ALLOC - 1; i >= 0; i--)
+    for (i = INC_PEER_ALLOC - 1; i >= 0; --i)
+    {
         LINK_SLIST(peer_free, &peers[i], p_link);
+    }
 
     total_peer_structs += INC_PEER_ALLOC;
     peer_free_count += INC_PEER_ALLOC;
@@ -188,12 +193,20 @@ findexistingpeer_name(
     struct peer* p;
 
     if (NULL == start_peer)
+    {
         p = peer_list;
+    }
     else
+    {
         p = start_peer->p_link;
+    }
     for (; p != NULL; p = p->p_link)
-        if (p->hostname != NULL && (-1 == mode || p->hmode == mode) && (AF_UNSPEC == hname_fam || AF_UNSPEC == AF(&p->srcadr) || hname_fam == AF(&p->srcadr)) && !strcasecmp(p->hostname, hostname))
+    {
+        if ((p->hostname != NULL) && ((-1 == mode) || (p->hmode == mode)) && ((AF_UNSPEC == hname_fam) || (AF_UNSPEC == AF(&p->srcadr)) || (hname_fam == AF(&p->srcadr))) && !strcasecmp(p->hostname, hostname))
+        {
             break;
+        }
+    }
     return p;
 }
 
@@ -226,9 +239,13 @@ findexistingpeer_addr(
      * MDF_BCLNT with the same srcadr (remote, unicast address).
      */
     if (NULL == start_peer)
+    {
         peer = peer_hash[NTP_HASH_ADDR(addr)];
+    }
     else
+    {
         peer = start_peer->adr_link;
+    }
 
     while (peer != NULL)
     {
@@ -242,7 +259,7 @@ findexistingpeer_addr(
                 (*ip_count)++;
             }
         }
-        if ((-1 == mode || peer->hmode == mode ||
+        if (((-1 == mode) || (peer->hmode == mode) ||
              ((MDF_BCLNT & peer->cast_flags) &&
               (MDF_BCLNT & cast_flags))) &&
             ADDR_PORT_EQ(addr, &peer->srcadr))
@@ -271,11 +288,15 @@ findexistingpeer(
     int* ip_count)
 {
     if (hostname != NULL)
+    {
         return findexistingpeer_name(hostname, AF(addr),
                                      start_peer, mode);
+    }
     else
+    {
         return findexistingpeer_addr(addr, start_peer, mode,
                                      cast_flags, ip_count);
+    }
 }
 
 
@@ -319,12 +340,16 @@ findpeer(
 
         /* [Bug 3072] ensure interface of peer matches */
         /* [Bug 3356] ... if NOT a broadcast peer!     */
-        if (p->hmode != MODE_BCLIENT && p->dstadr != rbufp->dstadr)
+        if ((p->hmode != MODE_BCLIENT) && (p->dstadr != rbufp->dstadr))
+        {
             continue;
+        }
 
         /* ensure peer source address matches */
         if (!ADDR_PORT_EQ(srcadr, &p->srcadr))
+        {
             continue;
+        }
 
         /* If the association matching rules determine that this
          * is not a valid combination, then look for the next
@@ -340,13 +365,15 @@ findpeer(
          * solicitation response, return AM_ERR to discard it.
          * [Bug 1762]
          */
-        if (MODE_SERVER == pkt_mode && AM_PROCPKT == *action)
+        if ((MODE_SERVER == pkt_mode) && (AM_PROCPKT == *action))
         {
             pkt = &rbufp->recv_pkt;
             NTOHL_FP(&pkt->org, &pkt_org);
             if (!L_ISEQU(&p->aorg, &pkt_org) &&
                 findmanycastpeer(rbufp))
+            {
                 *action = AM_ERR;
+            }
         }
 
         /* if an error was returned, exit back right here. */
@@ -383,8 +410,12 @@ findpeerbyassoc(
     assocpeer_calls++;
     hash = assoc & NTP_HASH_MASK;
     for (p = assoc_hash[hash]; p != NULL; p = p->aid_link)
+    {
         if (assoc == p->associd)
+        {
             break;
+        }
+    }
     return p;
 }
 
@@ -401,8 +432,12 @@ void clear_all(void)
      * previously saved time values are untrusted.
      */
     for (p = peer_list; p != NULL; p = p->p_link)
+    {
         if (!(MDF_TXONLY_MASK & p->cast_flags))
+        {
             peer_clear(p, "STEP");
+        }
+    }
 
     DPRINTF(1, ("clear_all: at %lu\n", current_time));
 }
@@ -431,13 +466,17 @@ int score_all(
         {
             x = score(speer);
             if (x < temp)
+            {
                 temp = x;
+            }
         }
     DPRINTF(1, ("score_all: at %lu score %d min %d\n",
                 current_time, tamp, temp));
 
     if (tamp != temp)
+    {
         temp = 0;
+    }
 
     return temp;
 }
@@ -459,17 +498,29 @@ score(
      */
     temp = 0;
     if (!(peer->flash & TEST10))
-        temp++; /* 1 good synch and stratum */
+    {
+        temp++;
+    } /* 1 good synch and stratum */
     if (!(peer->flash & TEST13))
-        temp++; /* 2 reachable */
+    {
+        temp++;
+    } /* 2 reachable */
     if (!(peer->flash & TEST12))
-        temp++; /* 3 no loop */
+    {
+        temp++;
+    } /* 3 no loop */
     if (!(peer->flash & TEST11))
-        temp++; /* 4 good distance */
+    {
+        temp++;
+    } /* 4 good distance */
     if (peer->status >= CTL_PST_SEL_SELCAND)
-        temp++; /* 5 in the hunt */
+    {
+        temp++;
+    } /* 5 in the hunt */
     if (peer->status != CTL_PST_SEL_EXCESS)
-        temp++;    /* 6 not spare tire */
+    {
+        temp++;
+    } /* 6 not spare tire */
     return (temp); /* selection status */
 }
 
@@ -521,18 +572,26 @@ free_peer(
         UNLINK_SLIST(unlinked, peer_list, p, p_link,
                      struct peer);
         if (NULL == unlinked)
+        {
             msyslog(LOG_ERR, "%s not in peer list!",
                     stoa(&p->srcadr));
+        }
     }
 
     if (p->hostname != NULL)
+    {
         free(p->hostname);
+    }
 
     if (p->ident != NULL)
+    {
         free(p->ident);
+    }
 
     if (p->addrs != NULL)
-        free(p->addrs); /* from copy_addrinfo_list() */
+    {
+        free(p->addrs);
+    } /* from copy_addrinfo_list() */
 
     /* Add his corporeal form to peer free list */
     ZERO(*p);
@@ -554,13 +613,17 @@ void unpeer(
     peer_demobilizations++;
     peer_associations--;
     if (FLAG_PREEMPT & peer->flags)
+    {
         peer_preempt--;
+    }
 #ifdef REFCLOCK
     /*
      * If this peer is actually a clock, shut it down first
      */
     if (FLAG_REFCLOCK & peer->flags)
+    {
         refclock_unpeer(peer);
+    }
 #endif
 
     free_peer(peer, TRUE);
@@ -597,18 +660,28 @@ peer_config(
     {
     case MODE_BROADCAST:
         if (IS_MCAST(srcadr))
+        {
             cast_flags = MDF_MCAST;
+        }
         else
+        {
             cast_flags = MDF_BCAST;
+        }
         break;
 
     case MODE_CLIENT:
-        if (hostname != NULL && SOCK_UNSPEC(srcadr))
+        if ((hostname != NULL) && SOCK_UNSPEC(srcadr))
+        {
             cast_flags = MDF_POOL;
+        }
         else if (IS_MCAST(srcadr))
+        {
             cast_flags = MDF_ACAST;
+        }
         else
+        {
             cast_flags = MDF_UCAST;
+        }
         break;
 
     default:
@@ -624,9 +697,13 @@ peer_config(
      */
     flags |= FLAG_CONFIG;
     if (mode_ntpdate)
+    {
         flags |= FLAG_IBURST;
+    }
     if ((MDF_ACAST | MDF_POOL) & cast_flags)
+    {
         flags &= ~FLAG_PREEMPT;
+    }
     return newpeer(srcadr, hostname, dstadr, ippeerlimit, hmode, version,
                    minpoll, maxpoll, flags, cast_flags, ttl, key, ident);
 }
@@ -644,17 +721,21 @@ void set_peerdstadr(
     DEBUG_INSIST(p != NULL);
 
     if (p == NULL)
+    {
         return;
+    }
 
     /* check for impossible or identical assignment */
     if (p->dstadr == dstadr)
+    {
         return;
+    }
 
     /*
      * Do not change the local address of a link-local
      * peer address.
      */
-    if (p->dstadr != NULL && is_linklocal(&p->dstadr->sin) && dstadr != NULL)
+    if ((p->dstadr != NULL) && is_linklocal(&p->dstadr->sin) && (dstadr != NULL))
     {
         return;
     }
@@ -663,7 +744,7 @@ void set_peerdstadr(
      * Do not set the local address for a link-local IPv6 peer
      * to one with a different scope ID.
      */
-    if (dstadr != NULL && IS_IPV6(&p->srcadr) && SCOPE(&dstadr->sin) != SCOPE(&p->srcadr))
+    if ((dstadr != NULL) && IS_IPV6(&p->srcadr) && (SCOPE(&dstadr->sin) != SCOPE(&p->srcadr)))
     {
         return;
     }
@@ -672,8 +753,8 @@ void set_peerdstadr(
      * Don't accept updates to a separate multicast receive-only
      * endpt while a BCLNT peer is running its unicast protocol.
      */
-    if (dstadr != NULL && (FLAG_BC_VOL & p->flags) &&
-        (INT_MCASTIF & dstadr->flags) && MODE_CLIENT == p->hmode)
+    if ((dstadr != NULL) && (FLAG_BC_VOL & p->flags) &&
+        (INT_MCASTIF & dstadr->flags) && (MODE_CLIENT == p->hmode))
     {
         return;
     }
@@ -727,8 +808,10 @@ peer_refresh_interface(
                        niface->flags, niface->ifindex,
                        stoa(&niface->sin)));
         if (niface->flags & INT_BROADCAST)
+        {
             DPRINTF(4, (", bcast=%s",
                         stoa(&niface->bcast)));
+        }
         DPRINTF(4, (", mask=%s\n", stoa(&niface->mask)));
     }
     else
@@ -743,21 +826,27 @@ peer_refresh_interface(
         /*
          * clear crypto if we change the local address
          */
-        if (p->dstadr != piface && !(MDF_ACAST & p->cast_flags) && MODE_BROADCAST != p->pmode)
+        if ((p->dstadr != piface) && !(MDF_ACAST & p->cast_flags) && (MODE_BROADCAST != p->pmode))
+        {
             peer_clear(p, "XFAC");
+        }
 
         /*
          * Broadcast needs the socket enabled for broadcast
          */
         if (MDF_BCAST & p->cast_flags)
+        {
             enable_broadcast(p->dstadr, &p->srcadr);
+        }
 
         /*
          * Multicast needs the socket interface enabled for
          * multicast
          */
         if (MDF_MCAST & p->cast_flags)
+        {
             enable_multicast_if(p->dstadr, &p->srcadr);
+        }
     }
 }
 
@@ -782,7 +871,7 @@ void refresh_all_peerinterfaces(void)
          * have a local address already or if the one
          * they have hasn't worked for a while.
          */
-        if (p->dstadr != NULL && (p->reach & 0x3))
+        if ((p->dstadr != NULL) && (p->reach & 0x3))
         {
             continue;
         }
@@ -839,7 +928,7 @@ newpeer(
     /*
      * For now only pool associations have a hostname.
      */
-    INSIST(NULL == hostname || (MDF_POOL & cast_flags));
+    INSIST((NULL == hostname) || (MDF_POOL & cast_flags));
 
     /*
      * First search from the beginning for an association with given
@@ -855,12 +944,16 @@ newpeer(
                                 cast_flags, &ip_count);
         while (peer != NULL)
         {
-            if (peer->dstadr == dstadr || ((MDF_BCLNT & cast_flags) && (MDF_BCLNT & peer->cast_flags)))
+            if ((peer->dstadr == dstadr) || ((MDF_BCLNT & cast_flags) && (MDF_BCLNT & peer->cast_flags)))
+            {
                 break;
+            }
 
-            if (dstadr == ANY_INTERFACE_CHOOSE(srcadr) &&
-                peer->dstadr == findinterface(srcadr))
+            if ((dstadr == ANY_INTERFACE_CHOOSE(srcadr)) &&
+                (peer->dstadr == findinterface(srcadr)))
+            {
                 break;
+            }
 
             peer = findexistingpeer(srcadr, hostname, peer,
                                     hmode, cast_flags, &ip_count);
@@ -945,13 +1038,17 @@ newpeer(
      * the initialization requires knowlege of our system state.
      */
     if (peer_free_count == 0)
+    {
         getmorepeermem();
+    }
     UNLINK_HEAD_SLIST(peer, peer_free, p_link);
     INSIST(peer != NULL);
     peer_free_count--;
     peer_associations++;
     if (FLAG_PREEMPT & flags)
+    {
         peer_preempt++;
+    }
 
     /*
      * Assign an available association ID.  Zero is reserved.
@@ -1008,20 +1105,22 @@ newpeer(
     /*
      * Broadcast needs the socket enabled for broadcast
      */
-    if ((MDF_BCAST & cast_flags) && peer->dstadr != NULL)
+    if ((MDF_BCAST & cast_flags) && (peer->dstadr != NULL))
     {
         enable_broadcast(peer->dstadr, srcadr);
     }
     /*
      * Multicast needs the socket interface enabled for multicast
      */
-    if ((MDF_MCAST & cast_flags) && peer->dstadr != NULL)
+    if ((MDF_MCAST & cast_flags) && (peer->dstadr != NULL))
     {
         enable_multicast_if(peer->dstadr, srcadr);
     }
 #ifdef AUTOKEY
     if (key > NTP_MAXKEY)
+    {
         peer->flags |= FLAG_SKEY;
+    }
 #endif /* AUTOKEY */
     peer->ttl = ttl;
     peer->keyid = key;
@@ -1130,7 +1229,9 @@ void peer_reset(
     struct peer* peer)
 {
     if (peer == NULL)
+    {
         return;
+    }
 
     peer->timereset = current_time;
     peer->sent = 0;
@@ -1152,7 +1253,9 @@ void peer_all_reset(void)
     struct peer* peer;
 
     for (peer = peer_list; peer != NULL; peer = peer->p_link)
+    {
         peer_reset(peer);
+    }
 }
 
 

@@ -15,7 +15,7 @@
 #include <ctype.h>
 
 struct key* key_ptr;
-size_t key_cnt = 0;
+size_t key_cnt = 0U;
 
 typedef struct key Key_T;
 
@@ -29,9 +29,9 @@ compute_mac(
     void const* key_data,
     size_t key_size)
 {
-    u_int len = 0;
+    u_int len = 0U;
 #if defined(OPENSSL) && defined(ENABLE_CMAC)
-    size_t slen = 0;
+    size_t slen = 0U;
 #endif
     int key_type;
 
@@ -75,7 +75,9 @@ compute_mac(
         len = (u_int)slen;
 
         if (ctx)
+        {
             CMAC_CTX_free(ctx);
+        }
         /* Test our AES-128-CMAC implementation */
     }
     else /* MD5 MAC handling */
@@ -149,7 +151,7 @@ make_mac(
     u_int len;
     u_char dbuf[EVP_MAX_MD_SIZE];
 
-    if (cmp_key->key_len > 64 || pkt_len % 4 != 0)
+    if ((cmp_key->key_len > 64) || (pkt_len % 4 != 0))
     {
         return 0;
     }
@@ -173,11 +175,11 @@ int auth_md5(
     size_t mac_len,
     Key_T const* cmp_key)
 {
-    u_int len = 0;
+    u_int len = 0U;
     u_char const* pkt_ptr = pkt_data;
     u_char dbuf[EVP_MAX_MD_SIZE];
 
-    if (0 == mac_len || mac_len > sizeof(dbuf))
+    if ((0 == mac_len) || (mac_len > sizeof(dbuf)))
     {
         return FALSE;
     }
@@ -191,7 +193,7 @@ int auth_md5(
      * is a 1-shot program, so snooping for timing attacks is
      * Harder.
      */
-    return mac_len == len && !memcmp(dbuf, pkt_ptr, mac_len);
+    return (mac_len == len) && !memcmp(dbuf, pkt_ptr, mac_len);
 }
 
 static int
@@ -200,14 +202,22 @@ hex_val(
 {
     int val;
 
-    if ('0' <= x && x <= '9')
+    if (('0' <= x) && (x <= '9'))
+    {
         val = x - '0';
-    else if ('a' <= x && x <= 'f')
+    }
+    else if (('a' <= x) && (x <= 'f'))
+    {
         val = x - 'a' + 0xa;
-    else if ('A' <= x && x <= 'F')
+    }
+    else if (('A' <= x) && (x <= 'F'))
+    {
         val = x - 'A' + 0xA;
+    }
     else
+    {
         val = -1;
+    }
 
     return val;
 }
@@ -223,8 +233,8 @@ int auth_init(
     FILE* keyf = fopen(keyfile, "r");
     struct key* prev = NULL;
     int scan_cnt, line_cnt = 1;
-    char kbuf[200];
-    char keystring[129];
+    char kbuf[200U];
+    char keystring[129U];
 
     /* HMS: Is it OK to do this later, after we know we have a key file? */
     INIT_SSL();
@@ -232,13 +242,17 @@ int auth_init(
     if (keyf == NULL)
     {
         if (debug)
+        {
             printf("sntp auth_init: Couldn't open key file %s for reading!\n", keyfile);
+        }
         return -1;
     }
     if (feof(keyf))
     {
         if (debug)
+        {
             printf("sntp auth_init: Key file %s is empty!\n", keyfile);
+        }
         fclose(keyf);
         return -1;
     }
@@ -250,12 +264,16 @@ int auth_init(
         int goodline = 0;
 
         if (NULL == fgets(kbuf, sizeof(kbuf), keyf))
+        {
             continue;
+        }
 
         kbuf[sizeof(kbuf) - 1] = '\0';
         octothorpe = strchr(kbuf, '#');
         if (octothorpe)
+        {
             *octothorpe = '\0';
+        }
         act = emalloc(sizeof(*act));
         /* keep width 15 = sizeof struct key.typen - 1 synced */
         scan_cnt = sscanf(kbuf, "%d %15s %128s",
@@ -303,9 +321,13 @@ int auth_init(
         {
             act->next = NULL;
             if (NULL == prev)
+            {
                 *keys = act;
+            }
             else
+            {
                 prev->next = act;
+            }
             prev = act;
             key_cnt++;
         }

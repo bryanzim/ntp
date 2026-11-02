@@ -87,7 +87,9 @@ int main(
     {
         timey += (double)(1000000) / HZ;
         if (timey >= 1000000)
+        {
             timey -= 1000000;
+        }
         hardclock();
         if (timex.tv_usec >= 1000000)
         {
@@ -99,9 +101,13 @@ int main(
             {
                 timez = (long)timey - timex.tv_usec;
                 if (timez > 500000)
+                {
                     timez -= 1000000;
+                }
                 if (timez < -500000)
+                {
                     timez += 1000000;
+                }
                 hardupdate(timez);
                 printf("%10li%10li%10.2f  %08lx  %08lx  %08lx\n",
                        timex.tv_sec, timez,
@@ -128,22 +134,34 @@ void hardupdate(
     mtemp = timex.tv_sec - time_reftime;
     time_reftime = timex.tv_sec;
     if (mtemp > MAXSEC)
+    {
         mtemp = 0;
+    }
 
     /* ugly multiply should be replaced */
     if (offset < 0)
+    {
         time_freq -= (-offset * mtemp) >>
                      (time_constant + time_constant);
+    }
     else
+    {
         time_freq += (offset * mtemp) >>
                      (time_constant + time_constant);
+    }
     ltemp = time_tolerance << SHIFT_KF;
     if (time_freq > ltemp)
+    {
         time_freq = ltemp;
+    }
     else if (time_freq < -ltemp)
+    {
         time_freq = -ltemp;
+    }
     if (time_status == TIME_BAD)
+    {
         time_status = TIME_OK;
+    }
 }
 
 /*
@@ -199,9 +217,13 @@ void second_overflow(void)
         time_adj = ltemp << (SHIFT_SCALE - SHIFT_HZ - SHIFT_UPDATE);
     }
     if (time_freq < 0)
+    {
         time_adj -= -time_freq >> (SHIFT_KF + SHIFT_HZ - SHIFT_SCALE);
+    }
     else
+    {
         time_adj += time_freq >> (SHIFT_KF + SHIFT_HZ - SHIFT_SCALE);
+    }
     time_adj += fixtick << (SHIFT_SCALE - SHIFT_HZ);
 
     /* ugly divide should be replaced */

@@ -18,7 +18,7 @@ extern "C" {
 
 typedef struct _CLOCKVER
 {
-    CHAR cVersion[255];
+    CHAR cVersion[255U];
 } CLOCKVER, *PCLOCKVER, *LPCLOCKVER;
 
 typedef struct _HOPFTIME

@@ -289,7 +289,7 @@ typedef struct big_scan_state_tag
 const char* current_keyword;   /* for error reporting */
 big_scan_state sst[MAXSTATES]; /* scanner FSM state entries */
 u_short sst_highwater;         /* next entry index to consider */
-char* symb[1024];              /* map token ID to symbolic name */
+char* symb[1024U];             /* map token ID to symbolic name */
 
 /* for libntp */
 const char* progname = "keyword-gen";
@@ -329,7 +329,7 @@ static void
 generate_preamble(void)
 {
     time_t now;
-    char timestamp[128];
+    char timestamp[128U];
     char preamble[] =
         "/*\n"
         " * ntp_keyword.h\n"
@@ -345,7 +345,9 @@ generate_preamble(void)
     time(&now);
     if (!strftime(timestamp, sizeof(timestamp),
                   "%Y-%m-%d %H:%M:%S", gmtime(&now)))
+    {
         timestamp[0U] = '\0';
+    }
 
     printf(preamble, timestamp);
 }
@@ -356,7 +358,7 @@ generate_fsm(void)
 {
     char rprefix[MAX_TOK_LEN + 1];
     char prefix[MAX_TOK_LEN + 1];
-    char token_id_comment[16 + MAX_TOK_LEN + 1];
+    char token_id_comment[16U + MAX_TOK_LEN + 1];
     size_t prefix_len;
     char* p;
     char* r;
@@ -382,10 +384,10 @@ generate_fsm(void)
      * finishes_token is nonzero.
      */
 
-    for (i = 0; i < COUNTOF(ntp_keywords); i++)
+    for (i = 0; i < COUNTOF(ntp_keywords); ++i)
     {
         token = ntp_keywords[i].token;
-        if (1 > token || token >= COUNTOF(sst))
+        if ((1 > token) || (token >= COUNTOF(sst)))
         {
             fprintf(stderr,
                     "keyword-gen sst[%u] too small "
@@ -414,7 +416,7 @@ generate_fsm(void)
            sst_highwater,
            0, "");
 
-    for (i = 1; i < sst_highwater; i++)
+    for (i = 1; i < sst_highwater; ++i)
     {
 
         /* verify fields will fit */
@@ -427,7 +429,7 @@ generate_fsm(void)
             exit(7);
         }
 
-        if (sst_highwater <= sst[i].match_next_s || sst[i].match_next_s & ~0x7ff)
+        if ((sst_highwater <= sst[i].match_next_s) || (sst[i].match_next_s & ~0x7ff))
         {
             fprintf(stderr,
                     "keyword-gen internal error "
@@ -436,7 +438,7 @@ generate_fsm(void)
             exit(8);
         }
 
-        if (sst_highwater <= sst[i].other_next_s || sst[i].other_next_s & ~0x7ff)
+        if ((sst_highwater <= sst[i].other_next_s) || (sst[i].other_next_s & ~0x7ff))
         {
             fprintf(stderr,
                     "keyword-gen internal error "
@@ -481,7 +483,7 @@ generate_fsm(void)
             this_state = i;
             do
             {
-                for (state = 1; state < sst_highwater; state++)
+                for (state = 1; state < sst_highwater; ++state)
                     if (sst[state].other_next_s == this_state)
                     {
                         this_state = state;
@@ -502,7 +504,9 @@ generate_fsm(void)
                 p = prefix + prefix_len;
                 r = rprefix;
                 while (r < rprefix + prefix_len)
+                {
                     *--p = *r++;
+                }
             }
             prefix[prefix_len] = '\0';
 
@@ -578,8 +582,9 @@ create_scan_states(
     else
     {
         do
+        {
             my_state = sst_highwater++;
-        while (my_state < COUNTOF(sst) && sst[my_state].finishes_token);
+        } while ((my_state < COUNTOF(sst)) && sst[my_state].finishes_token);
         if (my_state >= COUNTOF(sst))
         {
             fprintf(stderr,
@@ -595,9 +600,13 @@ create_scan_states(
         sst[my_state].followedby = FOLLBY_NON_ACCEPTING;
 
         if (prev_char_s)
+        {
             sst[prev_char_s].other_next_s = my_state;
+        }
         else
+        {
             return_state = my_state;
+        }
     }
 
     /* Check if the next character is '\0'.
@@ -623,22 +632,29 @@ create_scan_states(
             sst[token] = sst[my_state];
             ZERO(sst[my_state]);
             do
+            {
                 sst_highwater--;
-            while (sst[sst_highwater].finishes_token);
+            } while (sst[sst_highwater].finishes_token);
             my_state = token;
             if (prev_char_s)
+            {
                 sst[prev_char_s].other_next_s = my_state;
+            }
             else
+            {
                 return_state = my_state;
+            }
         }
     }
     else
+    {
         sst[my_state].match_next_s =
             create_scan_states(
                 &text[1U],
                 token,
                 followedby,
                 sst[my_state].match_next_s);
+    }
 
     return return_state;
 }
@@ -657,7 +673,7 @@ create_keyword_scanner(void)
     sst_highwater = 1; /* index 0 invalid, unused */
     scanner = 0;
 
-    for (i = 0; i < COUNTOF(ntp_keywords); i++)
+    for (i = 0; i < COUNTOF(ntp_keywords); ++i)
     {
         current_keyword = ntp_keywords[i].key;
         scanner =
@@ -704,7 +720,9 @@ generate_token_text(void)
             id++;
         }
         if (i > 0)
+        {
             printf(",");
+        }
         printf("\n\t/* %-5d %5d %20s */\t\"%s\"",
                id - lowest_id, id, symbname(id),
                ntp_keywords[i].key);
@@ -724,12 +742,18 @@ int compare_key_tok_id(
     const struct key_tok* p2 = a2;
 
     if (p1->token == p2->token)
+    {
         return 0;
+    }
 
     if (p1->token < p2->token)
+    {
         return -1;
+    }
     else
+    {
         return 1;
+    }
 }
 
 
@@ -752,8 +776,8 @@ void populate_symb(
     char* header_file)
 {
     FILE* yh;
-    char line[2 * MAX_TOK_LEN];
-    char name[2 * MAX_TOK_LEN];
+    char line[2U * MAX_TOK_LEN];
+    char name[2U * MAX_TOK_LEN];
     int token;
 
     yh = fopen(header_file, "r");
@@ -764,7 +788,7 @@ void populate_symb(
     }
 
     while (NULL != fgets(line, sizeof(line), yh))
-        if (2 == sscanf(line, "#define %s %d", name, &token) && 'T' == name[0U] && '_' == name[1U] && token >= 0 && token < COUNTOF(symb))
+        if (2 == sscanf(line, "#define %s %d", name, &token) && ('T' == name[0U]) && ('_' == name[1U]) && (token >= 0) && (token < COUNTOF(symb)))
         {
 
             symb[token] = estrdup(name);
@@ -787,7 +811,7 @@ symbname(
 {
     char* name;
 
-    if (token < COUNTOF(symb) && symb[token] != NULL)
+    if ((token < COUNTOF(symb)) && (symb[token] != NULL))
     {
         name = symb[token];
     }

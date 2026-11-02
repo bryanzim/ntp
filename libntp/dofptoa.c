@@ -17,7 +17,7 @@ char* dofptoa(
     register u_char *cp, *cpend;
     register u_long val;
     register short dec;
-    u_char cbuf[12];
+    u_char cbuf[12U];
     u_char* cpdec;
     char* buf;
     char* bp;
@@ -43,12 +43,14 @@ char* dofptoa(
      * If we have to, decode the integral part
      */
     if (!(val & 0xffff0000))
+    {
         cp--;
+    }
     else
     {
         register u_short sv = (u_short)(val >> 16);
         register u_short tmp;
-        register u_short ten = 10;
+        register u_short ten = 10U;
 
         do
         {
@@ -65,7 +67,9 @@ char* dofptoa(
     {
         dec = (short)(ndec + 3);
         if (dec < 3)
+        {
             dec = 3;
+        }
         cpdec = &cbuf[8U];
     }
     else
@@ -75,7 +79,9 @@ char* dofptoa(
     }
 
     if (dec > 6)
+    {
         dec = 6;
+    }
 
     if (dec > 0)
     {
@@ -105,20 +111,26 @@ char* dofptoa(
     /*
      * Remove leading zeroes if necessary
      */
-    while (cp < (cpdec - 1) && *cp == 0)
+    while ((cp < (cpdec - 1)) && (*cp == 0))
+    {
         cp++;
+    }
 
     /*
      * Copy it into the buffer, asciizing as we go.
      */
     bp = buf;
     if (sign)
+    {
         *bp++ = sign;
+    }
 
     while (cp < cpend)
     {
         if (cp == cpdec)
+        {
             *bp++ = '.';
+        }
         *bp++ = (char)(*cp++ + '0');
     }
     *bp = '\0';
