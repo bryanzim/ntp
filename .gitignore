@@ -15,3 +15,7 @@ sntp/libevent/build-aux
 ports/winnt/**/*-out/
 ports/winnt/**/*-tmp/
 ports/winnt/**/scm-rev
+
+# CMake (Ninja presets / Visual Studio CMake)
+out/
+CMakeUserPresets.json
